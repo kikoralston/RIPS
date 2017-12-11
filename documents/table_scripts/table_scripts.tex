@@ -104,6 +104,57 @@ Selects periods to include in CE model. Those inputs are:
 Demand (+ renewable generation) for days to be included in CE & CE \\
 %
 %
+Weights to scale costs on representative days to full season
+& 
+\texttt{DemandFuncsCE} 
+& 
+Scalars equal to demand on representative days $\div$ ?? demand for season
+&
+Seasonal weights & CE \\
+%
+%
+Max generation by each hydro plant using PNNL data
+& 
+\texttt{GetHydroMaxGen} 
+& 
+Imports monthly gen by each hydro plant from PNNL, then translates that monthly gen into max gen on each set of representative + special days for CE model. This translation is done by dividing demand on the set of days by that month's demand. The script also assigns max gen to plants NOT in the PNNL data using average capacity factor of plants in the PNNL data \hfill \textit{OBS: You should revisit this once you figure out how many days you can run the CE model for. If it is a lot of days, this approach is good. If only a few , it may not be a good idea to just scale by demand.}
+&
+Max gen by each hydro plant & CE \\
+%
+%
+Curtailments of thermal plants that can be built by the CE model + regulation based on UW data, Aviva coefficients + regulation limit
+& \texttt{ModifyNewTechCapacity}  & 
+Similar procedure as for existing plants. Note, though, that the CE model chooses how many of each type to build in EACH CELL.
+&
+Hourly time series of curtailments for each tech type in each cell &  \texttt{GetHourlyCapacsForCE} \\
+%
+%
+Mapping of cells to zones & \texttt{AssignCellsToIPMZones} 
+& 
+Uses shapely + shape files of IPM regions to map UW cells to IPM zones
+&
+Cells zone maps & CE \\
+%
+%
+RBM data for UW
+& 
+\texttt{ModifyGeneratorCapac...} (\texttt{processRBMData...}) 
+& 
+This script processes RBM data from UW + saves water temp ($T$) data for each cell in a separate csv file. The script
+\begin{enumerate}[leftmargin=*]
+\item Gets a list of all cells with water temperature data from the \texttt{.spat} file
+\item For each cell:
+\begin{enumerate}[leftmargin=*]
+\item Gets the total number of river segments in the cell + the number of days with data
+\item Maps segment numbers to cell from \texttt{.spat} file
+\item open the \texttt{.temp} file + reads out data for each segment in the cell
+\item saves that raw data
+\item Get an average temperature for each cell, which is what we use in other script, by averaging $T$ over all segments in the cell, then saves this.
+\end{enumerate}
+\end{enumerate}
+\textit{OBS: You can use this procedure with future data from Yifan}
+&
+Average water temperature per segment & Scripts on curtailment \\
       \bottomrule
 \end{longtable}
 %   \label{tab:booktabs}
