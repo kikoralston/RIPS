@@ -13,6 +13,7 @@
 
 \usepackage{booktabs}
 \usepackage{longtable}
+\usepackage[table]{xcolor}
 
 \begin{document}
 
@@ -20,7 +21,8 @@
 %\begin{table}[h!]
 %   \centering
 {
-   \renewcommand{\arraystretch}{1.5}	
+   \renewcommand{\arraystretch}{1.5}
+   {\rowcolors{2}{gray!10}{white}
    \begin{longtable}{p{1.8in} p{1.8in} p{1.8in} p{1.8in} p{1.8in}}
       \toprule
       \textbf{Inputs} & \textbf{Scripts} & \textbf{Description} & \textbf{Outputs} & \textbf{Feeds into} \\ 
@@ -31,7 +33,7 @@
 Transmission Lines and Capacities. \hfill \textit{OBS: no data for this now! Need to update for region, e.g. using IPM data} & \texttt{TransmissionLineFuncs} & Imports data & Transmission line source, sink, capacity & CE Model \\
 %
 %
-Reserve Types + ??  from ??? + Michael's Storage Paper & \texttt{RIPSMaster} (\texttt{DefineReserve}...) & Sets parameters used to compute reserves, which are determined in CE + UC models & Parameters for computing reserves & CE pre-process \hfill \textit{OBS: Don't have operational reserves in CE model since there are no unit commitment constraints. Will use this for CE model.} \\
+Reserve Types + requirements from WWSIS (Western Wind and Solar Integration Study) + Michael's Storage Paper & \texttt{RIPSMaster} (\texttt{DefineReserve}...) & Sets parameters used to compute reserves, which are determined in CE + UC models & Parameters for computing reserves & CE pre-process (for use in UCED) \hfill \textit{OBS: Don't have operational reserves in CE model since there are no unit commitment constraints. Will use this for CE model.} \\
 %
 %
 Fuel Prices from EIA AEO + EPA IPM & \texttt{RIPSMaster} & Imports Fuel Prices & Fuel Prices & CE + UCED \\
@@ -49,7 +51,7 @@ Hourly Zonal Demand & \texttt{ForecastDemandWithRegion} & Computes hourly demand
 New plant types for construction (see SI of storage paper for sources) & \texttt{ImportNewTechs} & Tech data compiled already in Excel from variety of sources. Script imports data, then modifies plant costs per particular cooling type with IECM data. Also filters particular plant types given inputs & Plant Types able to be built in CE & CE \\
 %
 %
-Hourly Capacity Factors (CFs) of renewables form NREL (Wind data set + Solar Integration data set, both from NREL) \hfill \textit{OBS: should update solar to NSRDB with PVLib - Michael has downloaded NSRDB data + code for PVLib is in Solar ??? folder} 
+Hourly Capacity Factors (CFs) of renewables form NREL (Wind data set + Solar Integration data set, both from NREL) \hfill \textit{OBS: should update solar to NSRDB with PVLib - Michael has downloaded NSRDB data + code for PVLib is in Solar MOE folder} 
 & \texttt{GetRenewableCFs}  & 
 Get hourly CFs for wind + solar by zone by:
 \begin{enumerate}[leftmargin=*]
@@ -108,7 +110,7 @@ Weights to scale costs on representative days to full season
 & 
 \texttt{DemandFuncsCE} 
 & 
-Scalars equal to demand on representative days $\div$ ?? demand for season
+Scalars equal to [demand on representative days] $\div$ [demand for entire season]
 &
 Seasonal weights & CE \\
 %
