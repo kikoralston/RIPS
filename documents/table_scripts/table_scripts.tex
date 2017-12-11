@@ -1,0 +1,58 @@
+\documentclass[11pt, oneside]{article}   	% use "amsart" instead of "article" for AMSLaTeX format
+\usepackage{geometry}                		% See geometry.pdf to learn the layout options. There are lots.
+\geometry{letterpaper}                   		% ... or a4paper or a5paper or ... 
+\geometry{landscape}                		% Activate for rotated page geometry
+\geometry{margin=0.3in}
+
+%\usepackage[parfill]{parskip}    		% Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}				% Use pdf, png, jpg, or eps§ with pdflatex; use eps in DVI mode
+								% TeX will automatically convert eps --> pdf in pdflatex		
+\usepackage{amssymb}
+
+\usepackage{booktabs}
+\usepackage{longtable}
+
+\begin{document}
+
+% Requires the booktabs if the memoir class is not being used
+%\begin{table}[h!]
+%   \centering
+{
+   \renewcommand{\arraystretch}{1.5}	
+   \begin{longtable}{p{1.8in} p{1.8in} p{1.8in} p{1.8in} p{1.8in}}
+      \toprule
+      \textbf{Inputs} & \textbf{Scripts} & \textbf{Description} & \textbf{Outputs} & \textbf{Feeds into} \\ 
+      \midrule
+\endhead      
+%
+%
+Transmission Lines and Capacities. \hfill \textit{OBS: no data for this now! Need to update for region, e.g. using IPM data} & \texttt{TransmissionLineFuncs} & Imports data & Transmission line source, sink, capacity & CE Model \\
+%
+%
+Reserve Types +  from + Michael's Storage Paper & \texttt{RIPSMaster} (\texttt{DefineReserve}...) & Sets parameters used to compute reserves, which are determined in CE + UC models & Parameters for computing reserves & CE pre-process \hfill \textit{OBS: Don't have operational reserves in CE model since there are no unit commitment constraints. Will use this for CE model.} \\
+%
+%
+Fuel Prices from EIA AEO + EPA IPM & \texttt{RIPSMaster} & Imports Fuel Prices & Fuel Prices & CE + UCED \\
+%
+%
+Generator Fleet from EIA 860, Needs, eGrid, PHORUM and AEO + IPM & \texttt{SetupGeneratorFleet} & Sets up generator fleet. Starts with NEEDs fleet, then adds emission rates (eGrid), cooling techs + sources (EIA 860), lat/long (eGrid), Var O\&M + Fix O\&M (AEO + IPM), unit commitment parameters (PHORUM), fuel prices, a random operational cost added (to expedite solution of optimization) + eligibility to provide regulated reserves. Script also combines plants of certain types (for computational efficiency) & Generator Fleet & CE + UCED \\
+%
+%
+CO$_2$ cap & \texttt{InterpolateCO2Cap} & Sets CO$_2$ cap based on input limits & CO$_2$ cap & CE \\
+%
+%
+Hourly Zonal Demand & \texttt{ForecastDemandWithRegion} & Computes hourly demand by zone given Francisco coeff + future met data from UW & Hourly Demand & Selectweeks... (DemandFuncCE) \\
+%
+%
+New plant types for construction (see SI of storage paper for sources) & \texttt{ImportNewTechs} & Tech data compiled already in Excel from variety of sources. Script imports data, then modifies plant costs per particular cooling type with IECM data. Also filters particular plant types given inputs & Plant Types able to be built in CE & CE \\
+%
+%
+
+      \bottomrule
+\end{longtable}
+%   \label{tab:booktabs}
+%\end{table}
+}
+
+
+\end{document}  
