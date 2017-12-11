@@ -9,6 +9,8 @@
 								% TeX will automatically convert eps --> pdf in pdflatex		
 \usepackage{amssymb}
 
+\usepackage{enumitem}
+
 \usepackage{booktabs}
 \usepackage{longtable}
 
@@ -47,7 +49,44 @@ Hourly Zonal Demand & \texttt{ForecastDemandWithRegion} & Computes hourly demand
 New plant types for construction (see SI of storage paper for sources) & \texttt{ImportNewTechs} & Tech data compiled already in Excel from variety of sources. Script imports data, then modifies plant costs per particular cooling type with IECM data. Also filters particular plant types given inputs & Plant Types able to be built in CE & CE \\
 %
 %
-Hourly Capacity Factors (CFs) of renewables form NREL (Wind data set + Solar Integration data set, both from NREL)\\
+Hourly Capacity Factors (CFs) of renewables form NREL (Wind data set + Solar Integration data set, both from NREL) \hfill \textit{OBS: should update solar to NSRDB with PVLib - Michael has downloaded NSRDB data + code for PVLib is in Solar ??? folder} 
+& \texttt{GetRenewableCFs}  & 
+Get hourly CFs for wind + solar by zone by:
+\begin{enumerate}[leftmargin=*]
+\item 'ID-ing' best wind sites
+\item Getting hourly CFs for these sites
+\item Replacing wind/solar in zone with best wind/solar sites until capacity zero'd out
+\end{enumerate}
+&
+Hourly wind + solar CFs + metadata for plants to which those CFs correspond &  \texttt{GetNetDemand} $\to$ (\textit{script combines all plants + CFs into single hourly max gen profile for all wind + solar, which is input to CE + UCED}) \\
+%
+%
+Hourly Capacity Factors (CFs) of new wind + solar that CE can build
+& 
+\texttt{GetRenewableCFs}  & 
+Relies on \texttt{GetRenewableCFs} scripts to determine CFs for any incrementl (5 GW now) amount of capacity to existing wind + solar capacity. All wind + solar added by CE have that same avg CF profile.
+&
+Hourly CFs for all new wind + solar plants & CE \\
+%
+%
+Curtailments of existing (already in fleet) thermal plant duw to ambient conditions + regulation based on UW data, Aviva coefficients + regulation limit
+& \texttt{RIPSMaster} {\small\texttt{(importHourlyThermalCur..)}}  & 
+For each grid cell from UW:
+\begin{enumerate}[leftmargin=*]
+\item Import meteo + water data
+\item For each gen in cell:
+\begin{enumerate}
+\item set coefficients (Aviva)
+\item calculate curtailment from:
+\begin{enumerate}
+\item ambient conditions (Aviva regression)
+\item regulations (based on mixing eqn in word doc)
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+&
+Hourly time series of curtailments os each plant &  \texttt{GetHourlyCapacsForCE} \\
+
       \bottomrule
 \end{longtable}
 %   \label{tab:booktabs}
