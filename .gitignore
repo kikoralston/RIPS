@@ -60,5 +60,5 @@ Icon?
 # RTF and WORD versions #
 ##########################
 *.rtf
-*.docx
-*.doc
+###*.docx
+###*.doc
