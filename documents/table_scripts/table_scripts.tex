@@ -86,7 +86,24 @@ For each grid cell from UW:
 \end{enumerate}
 &
 Hourly time series of curtailments os each plant &  \texttt{GetHourlyCapacsForCE} \\
-
+%
+%
+Hourly Zonal Demand (takes in demand coputed with Francisco data)
+& 
+\texttt{DemandFuncsCE} 
+& 
+Selects periods to include in CE model. Those inputs are:
+\begin{enumerate}[leftmargin=*]
+\item The day with peak net demand
+\item The day with peak thermal curtailment 
+\item The day with peak demand and thermal curtailment (these three itens are the "special days")
+\item Factoring out those days, representative days per season. These days are selected on the basis of minimizing the RMSE between their load duration curve (LDC) and the season's LDC.
+\end{enumerate}
+\textit{You should explore other types of ``special days''. Also, analyze correlation between demand and curtailments.}
+&
+Demand (+ renewable generation) for days to be included in CE & CE \\
+%
+%
       \bottomrule
 \end{longtable}
 %   \label{tab:booktabs}
