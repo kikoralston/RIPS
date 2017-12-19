@@ -33,7 +33,7 @@
 Transmission Lines and Capacities. \hfill \textit{OBS: no data for this now! Need to update for region, e.g. using IPM data} & \texttt{TransmissionLineFuncs} & Imports data & Transmission line source, sink, capacity & CE Model \\
 %
 %
-Reserve Types + requirements from WWSIS (Western Wind and Solar Integration Study) + Michael's Storage Paper & \texttt{RIPSMaster} (\texttt{DefineReserve}...) & Sets parameters used to compute reserves, which are determined in CE + UC models & Parameters for computing reserves & CE pre-process (for use in UCED) \hfill \textit{OBS: Don't have operational reserves in CE model since there are no unit commitment constraints. Will use this for CE model.} \\
+Reserve Types + requirements from WWSIS (Western Wind and Solar Integration Study) + Michael's Storage Paper & \texttt{RIPSMaster} (\texttt{DefineReserve}...) & Sets parameters used to compute reserves, which are determined in CE + UC models & Parameters for computing reserves & CE pre-process (for use in UCED) \hfill \textit{OBS: Don't have operational reserves in CE model since there are no unit commitment constraints. Will use this only for UCED model.} \\
 %
 %
 Fuel Prices from EIA AEO + EPA IPM & \texttt{RIPSMaster} & Imports Fuel Prices & Fuel Prices & CE + UCED \\

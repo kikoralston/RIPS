@@ -56,9 +56,12 @@ Icon?
 ##########################
 # *.pdf
 
-
 # RTF and WORD versions #
 ##########################
 *.rtf
 ###*.docx
 ###*.doc
+
+# PyCharm project files #
+#########################
+.idea/
