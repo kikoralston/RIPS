@@ -26,25 +26,76 @@
 
 In December 2017, Michael Craig handled the remaining implementation of the RIPS Capacity Expansion (CE) model to me. This document summarizes the work plan for the next steps still needed to be implemented in the code of the model. This list is mostly based on the word document \texttt{RIPSGuide\_Craig\_7Dec17.docx} available in the git repository.
 
-\section{To do list}
+\section{Summary of ``to do' list}
+
+\begin{itemize}
+\item Change the source of solar data from NREL Solar Integration Dataset to NSRDB data
+\item Update python code to use Aviva's regressions that link capacity deratings (NOT related to regulatory limits) to ambient conditions.
+\item If we use Aviva's data, we need to use cell-specific meteorological data from UW.
+\item Update demand forecast to include whole SERC (instead of only TVA, which is the current case)
+\item Change `specialh' set of hours to include other events (currently it only includes peak demand events)
+\item Implement plotting script to draw maps of SERC that shows the output of the model (for example where the plants are being built)
+\item 
+\end{itemize}
+
+
+\section{Details of to do list}
 
 According to Michael, ``[T]he Python code for processing inputs to and outputs from the CE model is largely complete, although some debugging may be necessary.'' He goes on to list some modifications to the model that are pending:
 
+\subsection{Update Solar data source}
+Solar data currently comes from the NREL Solar Integration Dataset. However, Bri recommends we instead use NSRDB data, which provides solar irradiance, then use that data to estimate PV generation. I have downloaded NSRDB data at points in a grid over the entire region (Databases/NSRDBRIPS). In the SolarMOEPaper folder, there are Python scripts for inputting NSRDB data to PVLib to get estimated hourly generation. (\texttt{GetRenewableCFs} script)
+
+\subsection{Update use of Aviva's regressions}
+
+Right now, the Python code has placeholder code to insert Aviva's regressions that link capacity deratings (NOT related to regulatory limits) to ambient conditions. You will need to update the form and coefficients in these regressions and the mapping of plants to regressions.  (\texttt{CurtailmentRegressions} script)
+
+\subsection{Read UW meteo data by cell}
+
+The code loads meteorological data at the regional rather than cell-specific data. If you do use regressions from Aviva, you will need to use cell-specific meteorological data from UW.  (\texttt{ModifyGeneratorCapacity} script and \texttt{loadMetData} function)
+
+
+\subsection{Update demand forecast to whole SERC}
+
+The CE model currently uses Francisco's demand forecast for TVA. That code should be updated for the Southeast when regressions are available. \\ \texttt{ForecastDemandWithRegression}
+
+\subsection{Update 'speciah' set of hours}
+
+The CE model has a ``specialh' set of hours, which is currently used to include hours from the day with peak demand. However, you may also want to include days with peak curtailment of generators. If so, then you will need to add a set of hours for these peak curtailment hours. I did not because the day with peak demand may very well overlap with the day with peak curtailment. (\texttt{DemandFuncsCE} script, \texttt{selectWeeksForExpansion} function (also will require modifications to GAMS code))
+
+\subsection{Update curtailment 1}
+
+Need to finicsh implementing the curtailment equations, which use simple mixing formula, from the CurtailmentEquations.doc document. The environmental regulation equation currently includes water flow (availability), but the availability data is not being loaded in the RIPSMasterScript yet
+
 \begin{itemize}
-\item Solar data currently comes from the NREL Solar Integration Dataset. However, Bri recommends we instead use NSRDB data, which provides solar irradiance, then use that data to estimate PV generation. I have downloaded NSRDB data at points in a grid over the entire region (Databases/NSRDBRIPS). In the SolarMOEPaper folder, there are Python scripts for inputting NSRDB data to PVLib to get estimated hourly generation. (\texttt{GetRenewableCFs} script)
-\item Right now, the Python code has placeholder code to insert Aviva's regressions that link capacity deratings (NOT related to regulatory limits) to ambient conditions. You will need to update the form and coefficients in these regressions and the mapping of plants to regressions.  (\texttt{CurtailmentRegressions} script)
-\item The code loads meteorological data at the regional rather than cell-specific data. If you do use regressions from Aviva, you will need to use cell-specific meteorological data from UW.  (\texttt{ModifyGeneratorCapacity} script and \texttt{loadMetData} function)
-\item The CE model currently uses Francisco's demand forecast for TVA. That code should be updated for the Southeast when regressions are available. \\ \texttt{ForecastDemandWithRegression}
-\item The CE model has a ``specialh' set of hours, which is currently used to include hours from the day with peak demand. However, you may also want to include days with peak curtailment of generators. If so, then you will need to add a set of hours for these peak curtailment hours. I did not because the day with peak demand may very well overlap with the day with peak curtailment. (\texttt{DemandFuncsCE} script, \texttt{selectWeeksForExpansion} function (also will require modifications to GAMS code))
+\item For loading water availability data: \texttt{ModifyGeneratorCapacityWithWaterTData} script and \texttt{loadWaterAndMetData} function
+\item For including availability in curtailments: \texttt{CurtailmentFromEnviroRegs} script and \texttt{CurtailmentFromEnviroRegs} function
 \end{itemize}
 
-In addition to the list of modification that Michael pointed out, there are a few that I have been thinking:
+\subsection{Map output}
+
+The result of this model will be the decisions of building different classes of power plants in different regions of the southeast according to demand forecast and climate related constraints. It would be interesting to implement a tool/function in order to be able to visualize these results on a plot. I have not decided what this tool would look like. But one possibility is to have a gridded map (or several gridded maps) where we could observe where the power plants are being installed. I know how to do it in R, but I need to look at how to do it in Python.
+
+\subsection{Update curtailment 2}
+Paulina mentioned that the curtailment procedure should be also a function of cooling technologies. Michael's current function does not account for this.
+
+\subsection{Low priority: Wind data}
+
+Wind generation data right now comes from the WIND dataset. I chose 2009 generation data because it has a moderate average CF, but you may want to select a different year. If there?s a TMY in the WIND data, that would be the best route (you can ask Bri this). 
+
+\subsection{``Tweaks'' and Checks once the model is running}
+
 \begin{itemize}
-\item The result of this model will be the decisions of building different classes of power plants in different regions of the southeast according to demand forecast and climate related constraints. It would be interesting to implement a tool/function in order to be able to visualize these results on a plot. I have not decided what this tool would look like. But one possibility is to have a gridded map (or several gridded maps) where we could observe where the power plants are being installed. I know how to do it in R, but I need to look at how to do it in Python.
-\item Paulina mentioned that the curtailment procedure should be also a function of cooling technologies. Michael's current function does not account for this.
+\item How quickly the CE model runs will partly determine how many days you can include in it. If you include many, then how I currently handle max generation in each set of days by each hydro plant is OK
+\item You should revisit special days that are included in the CE model, and think of other possible interesting days to examine. For these days, you?ll have to figure out how you want to set maximum hydropower generation on those days. 
+\item I did not observe charging by the pumped hydro units in the CE model. I?m not sure if this is a bug or if there was never a reason for them to, so I would check that later after adding the features above. Like I said, pumped hydro will add significant computational burden, so you may end up eliminating it.
 \end{itemize}
 
+
+\newpage
 \section{Capacity Expansion model}
+
+This section presents the formulation of the Capacity Expansion (CE) optimization model. I tried the definitions of variables and equations as close as possible to the way they are defined in the \texttt{.gams} file. This way it should be easier to debug the optimization problem. For example, instead of defining a single variable $n_{(\cdot)}$ for the number of new generators in each pair (location, type), I used the same definitions as the \texttt{.gams} file and created three variables: $n^{(c)}_{c, j}$, $n^{(\bc)}_{z, j}$ and $n^{(r)}_{z, j}$ (which refer, respectively, to thermal generators that can be curtailed, thermal generators that cannot be curtailed and renewable generators).
 
 \subsection{Definitions}
 
@@ -106,7 +157,16 @@ In addition to the list of modification that Michael pointed out, there are a fe
       $P^{NP}_{j}$ & Nameplate electricity generation capacity of plant type $j \in \Jc$ (MWh)\\
       $P^{MAX}_{i, t}$ & Maximum electricity generation capacity, accounting for deratings, of existing generator $i$ (non solar and non wind) at time $t$ (MWh)\\
       $P^{MAX}_{solar, t}$ & Maximum electricity generation by all existing solar generators at time $t$ (MWh) \\
-      $P^{MAX}_{wind, t}$ & Maximum electricity generation by all existing wind generators at time $t$ (MWh) \\      
+      $P^{MAX}_{wind, t}$ & Maximum electricity generation by all existing wind generators at time $t$ (MWh) \\
+      $\overline{\flow}_{\ell}$ &  Upper bound of transmission line $\ell$ (GW)\\
+      $FOM_{j}$ & Annual fixed operation and maintenance costs of plant type $j$ (\$/MW)\\
+      $OCC_{j}$ & Overnight capital cost of plant type $j$ (\$/MW) \\
+      $OC_{j}$ & Operating cost of plant type $j$\ (\$/MWh) \\      
+      $OC_{i}$ & Operating cost of existing plant $i$\ (\$/MWh) \\
+      $M$ & Planning reserve margin as fraction (\%) of demand \\
+      $Q$ & Discount rate \\
+      $D_j$ & lifetime (years) of candidate plant of type $j$ \\
+%      
       \bottomrule
    \end{tabular}
    \label{tab:indices}
@@ -135,21 +195,30 @@ In addition to the list of modification that Michael pointed out, there are a fe
 
 \begin{equation} \label{eq:obj_fun}
 \begin{split}
-TC = &  \sum_{c \in \Cc}\sum_{j \in \Jc^{(c)}} n^{(c)}_{c, j} \times P^{NP}_{j} \times (FOC_{j} + OCC_{j} \times CRF_{j}) \\
-& +  \sum_{z \in \Zc}\sum_{j \in \Jc^{(\bc)}} n^{(\bc)}_{z, j} \times P^{NP}_{j} \times (FOC_{j} + OCC_{j} \times CRF_{j}) \\
-& +  \sum_{z \in \Zc}\sum_{j \in \Jc^{(r)}} n^{(r)}_{z, j} \times P^{NP}_{j} \times (FOC_{j} + OCC_{j} \times CRF_{j}) \\
+TC = &  \sum_{c \in \Cc}\sum_{j \in \Jc^{(c)}} n^{(c)}_{c, j} \times P^{NP}_{j} \times (FOM_{j} + OCC_{j} \times CRF_{j}) \\
+& +  \sum_{z \in \Zc}\sum_{j \in \Jc^{(\bc)}} n^{(\bc)}_{z, j} \times P^{NP}_{j} \times (FOM_{j} + OCC_{j} \times CRF_{j}) \\
+& +  \sum_{z \in \Zc}\sum_{j \in \Jc^{(r)}} n^{(r)}_{z, j} \times P^{NP}_{j} \times (FOM_{j} + OCC_{j} \times CRF_{j}) \\
 & + \sum_b \bigg( W_b \sum_{t_b \in T_b}\bigg( \sum_{c \in \Cc}\sum_{j \in \Jc^{(c)}} p^{(c)}_{c, j, t_b} \times OC_{j, t_b} + \sum_{z \in \Zc}\sum_{j \in \Jc^{(\bc)}} p^{(\bc)}_{z, j, t} \times OC_{j, t_b} \\
 & \qquad\qquad\qquad\qquad +  \sum_{z \in \Zc}\sum_{j \in \Jc^{(r)}} p^{(r)}_{z, j, t_b} \times OC_{j, t_b} + \sum_{i} p_{i, t_b} \times OC_{i, t_b} \bigg)\bigg)
 \end{split}
 \end{equation}
 
-$CRF$ is the capital recovery ratio of each technology and is defined as:
+$CRF_j$ is the capital recovery ratio of each technology $j$ and is defined as:
 
 \begin{equation} \label{eq:cap_rec}
 \begin{aligned}
-CRF_c = \frac{Q}{1-\left(1/(1+Q)^{D_c}\right)}
+CRF_j = \frac{Q}{1-\left(1/(1+Q)^{D_j}\right)}
 \end{aligned}
 \end{equation}
+
+The variable operating cost $OC$ (in \$/MWh) for new and existing generators is equal:
+
+\begin{align} \label{eq:oc}
+OC_{j} = VOM_{j} + HR_{j} \times FC_{j}  &&  \forall~j \in \Jc && \text{(new generators)}\\
+OC_{i} = VOM_{i} + HR_{i} \times FC_{i}  && \forall~i \in \Ic && \text{(existing generators)}
+\end{align}
+
+NOTE: I followed the same convention as the GAMS code, where the operating cost $OC$ does not change by time $t$ or location $c$.
 
 \subsection{Supply vs Demand constraint}
 
@@ -206,6 +275,15 @@ p^{(\bc)}_{z, j, t} \le P^{MAX}_{z, j, t} \times n^{(\bc)}_{z, j} \quad \forall~
 p^{(r)}_{z, j, t} \le n^{(r)}_{z, j}\times P^{NP}_{j} \times CF_{j, t}  \quad \forall~z, t  \text{ and }\forall~j\in \Jc^{(r)}
 \end{split}
 \end{equation}
+
+\subsection{Transmission Constraint}
+
+\begin{equation} \label{eq:trans}
+\begin{split}
+0 \le \flow_{\ell, t} \le   \overline{\flow}_{\ell} \quad \forall~\ell, t
+\end{split}
+\end{equation}
+
 
 
 \end{document}  
