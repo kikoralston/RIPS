@@ -35,7 +35,7 @@ In December 2017, Michael Craig handled the remaining implementation of the RIPS
 \item Update demand forecast to include whole SERC (instead of only TVA, which is the current case)
 \item Change `specialh' set of hours to include other events (currently it only includes peak demand events)
 \item Implement plotting script to draw maps of SERC that shows the output of the model (for example where the plants are being built)
-\item 
+\item Update curtailment procedure to take into account the effect of water temperatures.
 \end{itemize}
 
 
@@ -77,11 +77,13 @@ Need to finicsh implementing the curtailment equations, which use simple mixing 
 The result of this model will be the decisions of building different classes of power plants in different regions of the southeast according to demand forecast and climate related constraints. It would be interesting to implement a tool/function in order to be able to visualize these results on a plot. I have not decided what this tool would look like. But one possibility is to have a gridded map (or several gridded maps) where we could observe where the power plants are being installed. I know how to do it in R, but I need to look at how to do it in Python.
 
 \subsection{Update curtailment 2}
-Paulina mentioned that the curtailment procedure should be also a function of cooling technologies. Michael's current function does not account for this.
+Paulina mentioned that the curtailment procedure should be also a function of the stream temperatures. As the water temperatures increase, power plants will need to intake a larger amount of water in order to be able to perform the cooling. Right now the amount of water intake is NOT a function of stream temperature. Michael has explicitly defined that the increase in the temperature of the cooling water after it goes through the condenser ($\delta T_g$) is a design parameter of the power plant's condenser that does not depend on the actual stream flow temperature.
+
+One solution would be to use a curve of values for $\delta T_g$ that change with the stream temperature. The way I see it this would not add complexity to the pre processing part. However, one challenge would be to find values for these hypothetical curves. I still don't know if generators have such information available.
 
 \subsection{Low priority: Wind data}
 
-Wind generation data right now comes from the WIND dataset. I chose 2009 generation data because it has a moderate average CF, but you may want to select a different year. If there?s a TMY in the WIND data, that would be the best route (you can ask Bri this). 
+Wind generation data right now comes from the WIND dataset. I chose 2009 generation data because it has a moderate average CF, but you may want to select a different year. If there's a TMY in the WIND data, that would be the best route (you can ask Bri this). 
 
 \subsection{``Tweaks'' and Checks once the model is running}
 
