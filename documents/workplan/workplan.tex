@@ -74,7 +74,14 @@ Need to finicsh implementing the curtailment equations, which use simple mixing 
 
 \subsection{Map output}
 
-The result of this model will be the decisions of building different classes of power plants in different regions of the southeast according to demand forecast and climate related constraints. It would be interesting to implement a tool/function in order to be able to visualize these results on a plot. I have not decided what this tool would look like. But one possibility is to have a gridded map (or several gridded maps) where we could observe where the power plants are being installed. I know how to do it in R, but I need to look at how to do it in Python.
+The result of this model will be the decisions of building different classes of power plants in different regions of the southeast according to demand forecast and climate related constraints. It would be interesting to implement a tool/function in order to be able to visualize these results on a plot. I have not decided what this tool would look like. But one possibility is to have a gridded map (or several gridded maps) where we could observe where the power plants are being installed. I know how to do it in R, but I need to look at how to do it in Python. I have started looking at it, so we can create maps of the output like this.
+
+\begin{figure}[H]
+   \centering
+   \includegraphics[width=0.8\textwidth]{../../maps/example} % requires the graphicx package
+   \caption{example map output}
+%   \label{fig:example}
+\end{figure}
 
 \subsection{Update curtailment 2}
 Paulina mentioned that the curtailment procedure should be also a function of the stream temperatures. As the water temperatures increase, power plants will need to intake a larger amount of water in order to be able to perform the cooling. Right now the amount of water intake is NOT a function of stream temperature. Michael has explicitly defined that the increase in the temperature of the cooling water after it goes through the condenser ($\delta T_g$) is a design parameter of the power plant's condenser that does not depend on the actual stream flow temperature.
@@ -285,6 +292,10 @@ p^{(r)}_{z, j, t} \le n^{(r)}_{z, j}\times P^{NP}_{j} \times CF_{j, t}  \quad \f
 0 \le \flow_{\ell, t} \le   \overline{\flow}_{\ell} \quad \forall~\ell, t
 \end{split}
 \end{equation}
+
+
+\newpage
+\section{Curtailment Equations}
 
 
 
