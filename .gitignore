@@ -61,6 +61,14 @@ Icon?
 *.rtf
 ###*.docx
 ###*.doc
+# Word temporary
+~$*.doc*
+# Excel temporary
+~$*.xls*
+# Excel Backup File
+*.xlk
+# PowerPoint temporary
+~$*.ppt*
 
 # PyCharm project files #
 #########################
