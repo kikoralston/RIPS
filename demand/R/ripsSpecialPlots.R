@@ -4,12 +4,138 @@
 
 source("auxiliary_functions.R")
 
+build.ldc <- function(load.data, time=c('year', 'month', 'day')) {
+  # Computes load duration curve (LDC)
+  #
+  # Args:
+  #   time: (string) time interval used to compute the LDC
+  #   
+  #
+  # Returns:
+  #   
+  
+  require(plyr)
+  require(dplyr)
+  require(ggplot2)
+  require(lubridate)
+  
+  ## evaluate choices
+  time <- match.arg(time)
+  
+  if (time == 'year') {
+    
+    load.data$gcm <- as.character(load.data$gcm)
+    load.data$gcm[load.data$gcm != 'present'] <- 'gcm'
+    
+    out <- load.data %>% mutate(hour.year = (yday(day)-1)*24 + hour) %>%
+      group_by(gcm, hour.year) %>% summarize(ldc=mean(gen, na.rm=TRUE)) %>%
+      arrange(-ldc) %>% mutate(hour.year=seq(1, n())) %>% as.data.frame()
+  }
+  
+  return(out)
+}
+
+compute.continuous.hours <- function(nf, value) {
+  # Computes distribution of continous intervals (in hours) of demand above 
+  # a certain value
+  #
+  # Args:
+  #   nf: (string) name of file with simulation results
+  #   value: (numeric) reference value of hourly demand (in MW)
+  #   
+  #
+  # Returns:
+  #   
+  
+  require(plyr)
+  require(dplyr)
+  require(ggplot2)
+  require(lubridate)
+  
+  # reading data
+  cat('Reading RDS file ', nf, '. Please wait...\n')
+  rcp <- readRDS(file=nf)
+  
+  # filter demand
+  cat('Get load values...\n')
+  load <- lapply(X=rcp, 
+                 FUN={function(x){
+                   x %>% filter(plant == 'Load') %>% arrange(day, hour) %>%
+                     select(season, day, hour, gen)}})
+  cat('End of', nf, '! Freeing memory...\n')
+  rm(rcp)
+  gc()
+  
+  cat('Computing duration of events...\n')
+  out <- lapply(X=load, 
+                FUN={function(x, y){
+                  cat('Computing durations for one case...')
+                  
+                  # create column with 1 if demand in that hour is > than value
+                  z <- x %>% mutate(above.value = (gen >= y)*1)
+                  
+                  # sweep data frame to compute duration of events with demand > value
+                  z <- z[!is.na(z$above.value), ]
+                  dur <- rep(NA, nrow(z))
+                  k <- 1
+                  i <- 1
+                  while (i <= nrow(z)){
+                    if (z$above.value[i] > 0) {
+                      j <- 0
+                      while ((i+j <= nrow(z)) & (z$above.value[i+j] > 0)){
+                        j <- j+1
+                      }
+                      dur[k] <- j
+                      k <- k+1
+                      i <- i + j
+                    } else {
+                      i <- i + 1
+                    }
+                  }
+                  dur <- dur[!is.na(dur)]
+                  
+                  cat('Done!\n')
+                  return(dur)
+                }}, y=value)
+  
+  out <- ldply(.data=out, .fun=data.frame, .id = 'case')
+  names(out)[2] <- 'duration'
+  out$case<- as.character(out$case)
+  out$case[out$case != 'present'] <- '2089-2099'
+  
+  ggplot(out, aes(x=duration)) + geom_density(aes(group=case, colour=case, fill=case), alpha=0.3)
+  
+  out %>% group_by(case) %>% summarise(x95=quantile(duration, probs=c(0.99)), mean=mean(duration)) 
+}
+
+plot.ldc <- function(load.data) {
+  require(ggplot2)
+  
+  ldc.list <- lapply(load.data, build.ldc)
+  
+  ldc <- ldply(.data=ldc.list, .fun=data.frame, .id='rcp')
+  ldc$rcp <- as.character(ldc$rcp)
+  
+  ldc$gcm[ldc$gcm != 'present'] <- ldc$rcp[ldc$gcm != 'present']
+  ldc$rcp <- NULL
+  
+  g <- ggplot(data=ldc) + geom_line(aes(x=hour.year, y=ldc, linetype=gcm))
+  g <- g + xlab('hour of year') + ylab('Hourly Load (MW)') + theme_bw()
+  g <- g + theme(legend.position=c(0.95,0.95), legend.justification=c(1,1)) + 
+    guides(linetype=guide_legend(title=NULL))
+  print(g)
+  
+  return(g)
+}
+
 plot.temp.load <- function(reg.model,
                            data.set,
                            temp.breaks = c(-10, 0, 10, 20, 30),
                            temp = c(-15:40),
                            inter.term = NULL,
-                           dir.out = "./out/"){
+                           dir.out = "./out/",
+                           add.marg.hist=FALSE,
+                           normalize.values=FALSE){
   # Creates plot of temperature in X axis and estimated load in Y axis
   # (complete function)
   #
@@ -22,9 +148,14 @@ plot.temp.load <- function(reg.model,
   #   temp: temperature values in X axis
   #   inter.term: (string) name of variable in interaction ("dew.point", "rh") 
   #               or NULL if no interaction
+  #   add.marg.hist: (boolean) if TRUE we add marginal histograms to both axis
+  #   normalize.values: (boolean) if TRUE we "normalize" the load values by 
+  #                     subtracting the fixed effects from them
   #
   # Returns:
   #   nothing
+  
+  require(gridExtra)
   
   # compute temperature components and create X matrix  
   t.c <- createTempComponents(temp, temp.breaks = temp.breaks)
@@ -60,9 +191,33 @@ plot.temp.load <- function(reg.model,
   # computes matrix multiplication y = X * beta
   y.2 <- X.2 %*% coef.values
   
-  # shift curve vertically by average value of annual fixed effects
-  idx <- grep("factor", names(coef(reg.model)))
-  y.2 <- y.2 + mean(coef(reg.model)[idx])
+  if (!normalize.values) {
+    # shift curve vertically by average value of annual fixed effects
+    idx.annual <- grep("factor", names(coef(reg.model)))
+    # shift curve vertically by average value of hourly fixed effects
+    idx.hour <- grep("hour.of.day", names(coef(reg.model)))
+    y.2 <- y.2 + mean(coef(reg.model)[idx.annual], na.rm = TRUE) + 
+      mean(coef(reg.model)[idx.hour], na.rm = TRUE)
+  }else{
+    a <- data.frame(type=names(coef(reg.model)), 
+                    values=coef(reg.model), row.names = NULL, 
+                    stringsAsFactors = FALSE)
+    annual.a <- a[grep('factor', a$type), ]
+    names(annual.a) <- c('annual.type', 'annual.value')
+    hour.a <- a[grep('hour.of.day', a$type), ]
+    names(hour.a) <- c('hour.type', 'hour.value')
+
+    data.set <- data.set %>% 
+      mutate(hour.type=paste0('hour.of.day',hour.of.day,
+                              ':type.day',type.day,
+                              ':season', season),
+             annual.type=paste0('factor(',year,')')) %>%
+      left_join(annual.a, by='annual.type') %>%
+      left_join(hour.a, by='hour.type') %>%
+      mutate(norm.value=load-ifelse(is.na(hour.value), 0, hour.value)-
+               ifelse(is.na(annual.value), 0, annual.value)) %>%
+      mutate(temp=temp, load=norm.value)
+  }
   
   # **** plots resulting curve of load vs temperature ---
   
@@ -71,50 +226,115 @@ plot.temp.load <- function(reg.model,
                                                  x = temp, 
                                                  y = y.2/1e3))
   g <- ggplot()
-  
   g <- g + geom_point(data=data.set, aes(x=temp, y=load/1e3),
                       col = rgb(211, 211, 211, 20,
                                 maxColorValue = 255), size=0.4)
   g <- g + theme_bw() + 
-    xlab(expression(paste("Temperature (", degree, "C)"))) + 
-    ylab("load (GW)")
+    xlab(expression(paste("Temperature (", degree, "C)")))
   
-  g <- g + geom_line(data = df.plot.out1, aes(x=x, y=y, colour = model)) 
-  
+  if (normalize.values){
+    g <- g + ylab("Residualized load (GW)")
+  }else{
+    g <- g + ylab("load (GW)")
+  }
+    
+  g <- g + geom_line(data = df.plot.out1, aes(x=x, y=y, colour = model))
+  g <- g + guides(colour=FALSE)
+  g <- g + theme()
+  #panel.border=element_blank(),
+  #axis.line=element_line()
   #g <- g + geom_point(data = df.plot.out1, aes(x=x, y=y, colour = model)) 
+  #g <- g + guides(colour=guide_legend(title=NULL))
+  #g <- g + theme(legend.position=c(0.98,0.98), legend.justification=c(1,0))
   
-  g <- g + guides(colour=guide_legend(title=NULL))
+  if (add.marg.hist) {
+    
+    # change margins of plot
+#    g <- g + theme(plot.margin=unit(c(0,0,1,1), "cm"))
+    
+    #get info from main plot
+    gb <- ggplot_build(g)
+    
+    y.range <- gb$layout$panel_ranges[[1]]$y.range
+    x.range <- gb$layout$panel_ranges[[1]]$x.range
+    
+    y.major <- gb$layout$panel_ranges[[1]]$y.major_source
+    y.minor <- gb$layout$panel_ranges[[1]]$y.minor_source
+    
+    x.major <- gb$layout$panel_ranges[[1]]$x.major_source
+    x.minor <- gb$layout$panel_ranges[[1]]$x.minor_source
+    
+    # create marginal histograms to top and right
+    x <- data.set$temp[!is.na(data.set$temp)]
+    breaks <- pretty(x.range, n = nclass.FD(x), min.n = 1)
+    bwidth <- breaks[2]-breaks[1]
+    pTop <- ggplot(data.set, aes(x = temp)) +
+      geom_histogram(binwidth=bwidth, na.rm = TRUE, 
+                     fill='gray75', colour='gray40') +
+      theme_bw() +
+      scale_x_continuous(breaks = x.major, minor_breaks = x.minor,
+                         limits = x.range, expand = c(0, 0)) +
+      scale_y_continuous(breaks=NULL, minor_breaks = NULL) +
+      theme(axis.title = element_blank(),
+            axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            plot.margin=unit(c(5.5, 5.5, -1.5, 5.5), "points"),
+            panel.border = element_blank()
+            )
+    
+    x <- data.set$load[!is.na(data.set$load)]/1e3
+    breaks <- pretty(y.range, n = nclass.FD(x), min.n = 1)
+    bwidth <- breaks[2]-breaks[1]
+    pRight <- ggplot(data.set, aes(x = load/1e3)) +
+      geom_histogram(binwidth=bwidth, na.rm = TRUE,
+                     fill='gray75', colour='gray40') + 
+      scale_x_continuous(breaks = y.major, minor_breaks = y.minor,
+                         limits = y.range, expand = c(0,0)) +
+      scale_y_continuous(breaks=NULL, minor_breaks = NULL) +
+      coord_flip() + theme_bw() +
+      theme(axis.title = element_blank(),
+            axis.text = element_blank(),
+            axis.ticks = element_blank(),
+            plot.margin=unit(c(5.5, 5.5, 5.5, -2.75), "points"),
+            panel.border = element_blank()
+            )
   
-  g <- g + theme(legend.position=c(1,0), legend.justification=c(1,0))
-  
-  #dir.out <- paste0("./out/",format(Sys.Date(), "%Y%m%d"), "/")
+    pEmpty <- textGrob("")
+    
+    gmain <- ggplotGrob(g)
+    gtop <- ggplotGrob(pTop)
+    gright <- ggplotGrob(pRight)
+    
+    maxWidth <- grid::unit.pmax(gmain$widths[2:5], gtop$widths[2:5])
+    maxHeight <- grid::unit.pmax(gmain$heights[2:9], gright$heights[2:9])
+    
+    gmain$widths[2:5] <- as.list(maxWidth)
+    gtop$widths[2:5] <- as.list(maxWidth)
+
+    gmain$heights[2:9] <- as.list(maxHeight)
+    gright$heights[2:9] <- as.list(maxHeight)
+    
+    g <- arrangeGrob(gtop, pEmpty, gmain, gright, ncol=2, nrow=2, 
+                     widths = c(7, 1), heights = c(1, 7))
+    
+    #g <- arrangeGrob(gtop, pEmpty, gmain, gright, ncol=2, nrow=2, 
+    #                 widths = c(7, 1), heights = c(1, 7))
+    
+    #grid.arrange(g)
+  }
   
   if(!dir.exists(dir.out)) {
     dir.create(dir.out)
   }
   
   name.out <- "plotTempLoad.png"
-  # flag.name <- TRUE
-  # idx <- 0
-  # while(flag.name) {
-  #   if(file.exists(paste0(dir.out, name.out))) {
-  #     idx <- idx + 1
-  #     name.out <- paste0(substr(name.out, 1, 12), idx, ".png")
-  #   } else {
-  #     flag.name <- FALSE
-  #   }
-  #   
-  #   # to avoid infinite loop, just in case...
-  #   if (idx > 100) break
-  # }
-  
   if (substring(dir.out, first = nchar(dir.out)) != "/") {
     dir.out <- paste0(dir.out, "/")
   }
   
   png(file = paste0(dir.out, name.out), width = 1500, 
       height = 1500, res = 300)
-  print(g)
+  grid.arrange(g)
   dev.off()
   
   return(df.plot.out1)
@@ -156,9 +376,9 @@ plot3d.temp.load <- function(reg.model, data.set,
   
   data.aux <- cbind(data.aux,
                     t(apply(X=data.aux, MARGIN = 1, 
-                            FUN = function(x) {
+                            FUN = {function(x) {
                               nc = length(x)
-                              return(x[3:nc]*x[2])})))
+                              return(x[3:nc]*x[2])}})))
   
   # fix names of interaction columns in data.aux
   n1 <- ncol(data.aux) # number of columns in data aux
@@ -238,10 +458,10 @@ scatter.plot.temp.load <- function(data.set) {
   #   ggplot object
   
   g <- ggplot() + 
-    geom_point(data=data.set, aes(x=temperature, y=load/1e3), 
+    geom_point(data=data.set, aes(x=temp, y=load/1e3), 
                col = rgb(100, 100, 100, 20, maxColorValue = 255), size=0.4) + 
     theme_bw() + xlab(expression(paste("Temperature (", degree, "C)"))) +
-    ylab("load (GW)")
+    ylab("Hourly load (GW)")
   return(g)
 }
 
@@ -372,7 +592,7 @@ plot.intraday.curve <- function(lm.out, out.of.sample = TRUE) {
     }
   } else {
     df.1 <- data.frame(hour.of.day=lm.out$model$model$hour.of.day,
-                       season=lm.out$mode$modell$season,
+                       season=lm.out$model$model$season,
                        load=lm.out$model$model$load/1e3)
     df.2 <- data.frame(hour.of.day=lm.out$model$model$hour.of.day,
                        season=lm.out$model$model$season,
@@ -389,7 +609,7 @@ plot.intraday.curve <- function(lm.out, out.of.sample = TRUE) {
   df.real$type <- factor(x = "Observed", levels = c("Observed", "Predicted"))
   
   df.pred <- df.2
-  df.pred <- df.pred %>% filter(season %in% c("Summer"))
+  df.pred <- df.pred %>% filter(season %in% c("Summer", "Winter"))
   
   df.pred <- as.data.frame(df.pred %>% group_by(season, hour.of.day) %>%
                              summarize(mean.value = mean(load, na.rm=TRUE)))
@@ -419,6 +639,8 @@ plot.intraday.curve <- function(lm.out, out.of.sample = TRUE) {
   g <- g + geom_ribbon(data=df.range, 
                        aes(x=hour.of.day, ymin=qt1, ymax=qt2),
                        alpha=0.2)
+  
+  g <- g + facet_wrap(~ season, ncol=2)
   
   y.range <- layer_scales(g)$y$range$range
   g <- g + ylim(0, y.range[2])

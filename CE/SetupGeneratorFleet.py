@@ -15,31 +15,31 @@ from AuxFuncs import *
 # IN: states, year, & power system for analysis
 # OUT: 2d list of generator fleet
 def setupGeneratorFleet(testModel, statesForAnalysis, ipmZones, retirementYearScreen,
-                        currYear, fuelPricesTimeSeries, compressFleet, runLoc, ocAdderMin, ocAdderMax,
+                        currYear, fuelPricesTimeSeries, compressFleet, dataRoot, ocAdderMin, ocAdderMax,
                         regupCostCoeffs, plantTypesCurtailed):
     # Import entire current fleet
     if not testModel:
-        baseGenFleet = importNEEDSFleet(runLoc)
+        baseGenFleet = importNEEDSFleet(dataRoot)
     else:
-        baseGenFleet = importTestFleet(runLoc)
+        baseGenFleet = importTestFleet(dataRoot)
     # Slim down fleet based on region & year of analysis
     stateColName = "State Name"
     isolateGensInStates(baseGenFleet, statesForAnalysis, stateColName)
     isolateGensInPowerSystem(baseGenFleet, ipmZones)
     # removeRetiredUnits(baseGenFleet,retirementYearScreen)
     # Modify / add fleet parameters
-    addEmissionsRates(baseGenFleet, statesForAnalysis, runLoc)
-    addCoolingTechnologyAndSource(baseGenFleet, statesForAnalysis, runLoc)
-    addLatLong(baseGenFleet, statesForAnalysis, runLoc)
+    addEmissionsRates(baseGenFleet, statesForAnalysis, dataRoot)
+    addCoolingTechnologyAndSource(baseGenFleet, statesForAnalysis, dataRoot)
+    addLatLong(baseGenFleet, statesForAnalysis, dataRoot)
     # Compress fleet to get rid of tiny units
     if compressFleet:
         # write2dListToCSV(baseGenFleet,'genFleetPreCompression.csv')
         baseGenFleet = performFleetCompression(baseGenFleet, ipmZones, plantTypesCurtailed)
     # Add VOM & FOM values
-    vomAndFomData = importVomAndFomData(runLoc)
+    vomAndFomData = importVomAndFomData(dataRoot)
     addVOMandFOM(baseGenFleet, vomAndFomData)
     # Add PHORUM-based UC parameters
-    phorumData = importPhorumData(runLoc)
+    phorumData = importPhorumData(dataRoot)
     addUnitCommitmentParameters(baseGenFleet, phorumData)
     # Add fuel prices
     addFuelPrices(baseGenFleet, currYear, fuelPricesTimeSeries)
@@ -54,8 +54,8 @@ def setupGeneratorFleet(testModel, statesForAnalysis, ipmZones, retirementYearSc
 # ADD COOLING TECHNOLOGY AND SOURCE TO FLEET
 # Imports cooling map and data from EIA 860, then adds them generator fleet
 # IN: generator fleet (2d list), states for analysis (1d list)
-def addCoolingTechnologyAndSource(baseGenFleet, statesForAnalysis, runLoc):
-    [assocData, equipData] = get860Data(statesForAnalysis, runLoc)
+def addCoolingTechnologyAndSource(baseGenFleet, statesForAnalysis, dataRoot):
+    [assocData, equipData] = get860Data(statesForAnalysis, dataRoot)
     unitsToCoolingIDMap = mapUnitsToCoolingID(assocData, baseGenFleet, equipData)
     addCoolingInfoToFleet(baseGenFleet, equipData, unitsToCoolingIDMap)
 
@@ -207,8 +207,8 @@ def getRetirementStatusOfAssocRow(assocRow, assocData, equipData):
 # equipment data to units in states of analysis
 # IN: states for analysis (1d list)
 # OUT: EIA860 cooling IDs and technologies (2d lists)
-def get860Data(statesForAnalysis, runLoc):
-    [assocData, equipData] = import860data(runLoc)
+def get860Data(statesForAnalysis, dataRoot):
+    [assocData, equipData] = import860data(dataRoot)
     # First row is useless data in both lists - remove it
     assocData.pop(0)
     equipData.pop(0)
@@ -220,11 +220,10 @@ def get860Data(statesForAnalysis, runLoc):
 
 # Imports 860 equipment and association data
 # OUT: EIA860 cooling assocation and equipment data (2d lists)
-def import860data(runLoc):
-    if runLoc == 'pc':
-        dir860 = 'C:\\Users\\mtcraig\\Desktop\\EPP Research\\Databases\\EIA8602014'
-    else:
-        dir860 = os.path.join('Data', 'EIA8602014')
+def import860data(dataRoot):
+
+    dir860 = os.path.join(dataRoot, 'EIA8602014')
+
     assocName = '6_1_EnviroAssoc_Y2014_cooling.csv'
     equipName = '6_2_EnviroEquip_Y2014_cooling.csv'
     assocData = readCSVto2dList(os.path.join(dir860, assocName))
@@ -238,8 +237,9 @@ def import860data(runLoc):
 # ADD EMISSION RATES FROM EGRID TO GENERATOR FLEET
 # Adds eGRID emissions rates to generator fleet
 # IN: generator fleet (2d list), states for analysis (1d list)
-def addEmissionsRates(baseGenFleet, statesForAnalysis, runLoc):
-    (egridBoiler, egridPlant) = importeGridData(statesForAnalysis, runLoc)
+def addEmissionsRates(baseGenFleet, statesForAnalysis, dataRoot):
+
+    (egridBoiler, egridPlant) = importeGridData(statesForAnalysis, dataRoot)
     emsHeadersToAdd = ["NOxEmRate(lb/MMBtu)", "SO2EmRate(lb/MMBtu)",
                        "CO2EmRate(lb/MMBtu)"]
     addHeaders(baseGenFleet, emsHeadersToAdd)
@@ -480,8 +480,8 @@ def calculateEmissionsRatesPlnt(egridPlant, egridPlantRow):
 
 ################################################################################
 # ADD LAT/LONG FROM EGRID TO FLEET
-def addLatLong(baseGenFleet, statesForAnalysis, runLoc):
-    (egridBoiler, egridPlant) = importeGridData(statesForAnalysis, runLoc)
+def addLatLong(baseGenFleet, statesForAnalysis, dataRoot):
+    (egridBoiler, egridPlant) = importeGridData(statesForAnalysis, dataRoot)
     latLongHeadersToAdd = ["Latitude", "Longitude"]
     addHeaders(baseGenFleet, latLongHeadersToAdd)
     addLatLongValues(baseGenFleet, egridPlant)
@@ -645,11 +645,10 @@ def addVomAndFomValues(baseGenFleet, vomAndFomData):
             vomValue, fomValue)  # filling in values in row that already has blank space for VOM & FOM
 
 
-def importVomAndFomData(runLoc):
-    if runLoc == 'pc':
-        dirName = 'C:\\Users\\mtcraig\\Desktop\\EPP Research\\NewPlantData'
-    else:
-        dirName = os.path.join('Data', 'NewPlantData')
+def importVomAndFomData(dataRoot):
+
+    dirName = os.path.join(dataRoot, 'NewPlantData')
+
     fileName = 'VOMandFOMValuesExistingPlants4Aug2016.csv'
     fullFileName = os.path.join(dirName, fileName)
     return readCSVto2dList(fullFileName)
@@ -774,21 +773,19 @@ def getFuelPriceForFuelType(fuel, fuelPriceTimeSeries, currYear):
 # IMPORT DATA
 # Import base generator fleet from NEEDS
 # OUT: gen fleet (2d list)
-def importNEEDSFleet(runLoc):
-    if runLoc == 'pc':
-        dirName = 'C:\\Users\\mtcraig\\Desktop\\EPP Research\\Databases\\NEEDS'
-    else:
-        dirName = 'Data'
+def importNEEDSFleet(dataRoot):
+
+    dirName = os.path.join(dataRoot, 'NEEDS')
+
     fileName = 'needs_v515_nocommas.csv'
     fullFileName = os.path.join(dirName, fileName)
     return readCSVto2dList(fullFileName)
 
 
-def importTestFleet(runLoc):
-    if runLoc == 'pc':
-        dirName = 'C:\\Users\\mtcraig\\Desktop\\EPP Research\\Databases\\CETestFleet'
-    else:
-        dirName = ''
+def importTestFleet(dataRoot):
+
+    dirName = os.path.join(dataRoot, 'CETestFleet')
+
     fileName = 'testFleetTiny.csv'
     fullFileName = os.path.join(dirName, fileName)
     return readCSVto2dList(fullFileName)
@@ -797,11 +794,10 @@ def importTestFleet(runLoc):
 # Import eGRID boiler and plant level data, then isolate plants and boilers in state
 # IN: states for analysis (1d list)
 # OUT: eGRID boiler and plant data (2d lists)
-def importeGridData(statesForAnalysis, runLoc):
-    if runLoc == 'pc':
-        dirName = 'C:\\Users\\mtcraig\\Desktop\\EPP Research\\Databases\\eGRID2015'
-    else:
-        dirName = os.path.join('Data', 'eGRID2015')
+def importeGridData(statesForAnalysis, dataRoot):
+
+    dirName = os.path.join(dataRoot, 'eGRID2015')
+
     egridBoiler = importeGridBoilerData(dirName)
     egridPlant = importeGridPlantData(dirName)
     egridStateColName = 'Plant state abbreviation'
@@ -880,12 +876,12 @@ def isolateGensInPowerSystem(baseGenFleet, ipmZones):
 
 
 # Import PHORUM data (VOM + UC parameters)
-def importPhorumData(runLoc):
-    if runLoc == 'pc':
-        dirName = 'C:\\Users\\mtcraig\\Desktop\\EPP Research\\Databases\\PHORUM'
-    else:
-        dirName = 'Data'
+def importPhorumData(dataRoot):
+
+    dirName = os.path.join(dataRoot, 'PHORUM')
+
     fileName = 'PHORUMUCParameters10Jun2016CapacExpPaper.csv'
+
     return readCSVto2dList(os.path.join(dirName, fileName))
 
 

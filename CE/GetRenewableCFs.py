@@ -16,19 +16,17 @@ from AssignCellsToIPMZones import locInZone
 # Function takes in generator fleet that has already been isolated to a single zone
 # and maps data to CFs for RE sites in same zone.
 def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desiredTz,
-                    runLoc, windGenDataYr, currZone, fipsToZones, fipsToPolys):
+                    dataRoot, windGenDataYr, currZone, fipsToZones, fipsToPolys):
     # Isolate wind & solar units
     plantTypeCol = genFleet[0].index('PlantType')
     windUnits = [genFleet[0]] + [row for row in genFleet if row[plantTypeCol] == 'Wind']
     solarUnits = [genFleet[0]] + [row for row in genFleet if row[plantTypeCol] == 'Solar PV']
+
     # Get list of wind / solar sites in region
-    if runLoc == 'pc':
-        databaseDir = 'C:\\Users\\mtcraig\\Desktop\\EPP Research\\Databases'
-        windDir = os.path.join(databaseDir, 'WINDSERCData')
-        solarDir = os.path.join(databaseDir, 'NRELSolarPVData\\SERC')
-    else:
-        windDir = os.path.join('Data', 'WINDSERCData')
-        solarDir = os.path.join('Data', 'NRELSolarPVDataTX')
+
+    windDir = os.path.join(dataRoot, 'WINDSERCData')
+    solarDir = os.path.join(dataRoot, 'NRELSolarPVData', 'SERC')
+
     if len(windUnits) > 1:  # have wind in zone
         (windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac) = getWindCFs(windUnits, windDir,
                                                                            startWindCapacForCFs, desiredTz,

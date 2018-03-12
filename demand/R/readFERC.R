@@ -122,10 +122,10 @@ readFercOld <- function(read.zip = FALSE, flag.download = FALSE) {
   # Returns:
   #   data frame with load data older than 2006
   
-  library(xlsx)
+  #library(xlsx)
   
   if (read.zip) {
-    url.ferc <- "http://www.ferc.gov/docs-filing/forms/form-714/data/"
+    url.ferc <- get.url.714()
     
     # paths of SERC zip files
     df.paths.zip <- data.frame(path=c("2004/SERC.zip", "2003/SERC.zip", 
@@ -164,12 +164,12 @@ readFercOld <- function(read.zip = FALSE, flag.download = FALSE) {
       if(length(irow) > 0) {
         files.tva <- list.of.files.zip$Name[irow]
         if (flag.download) {
-          path.save <- paste0("../FERC/pre2006/", df.paths.zip$year[i]) 
+          path.save <- paste0("./FERC/pre2006/", df.paths.zip$year[i]) 
         } else {
-          path.save <- paste0("../FERC/pre2006/", substring(a[i], 1, nchar(a[i])-4))
+          path.save <- paste0("./FERC/pre2006/", substring(a[i], 1, nchar(a[i])-4))
         }
         
-        dir.create(path=path.save)
+        dir.create(path=path.save, recursive = TRUE)
         unzip(zipfile = temp, files=files.tva, junkpaths = TRUE, 
               exdir = path.save)
         
@@ -183,7 +183,7 @@ readFercOld <- function(read.zip = FALSE, flag.download = FALSE) {
     files.tva.total
   }
   
-  path.data <- paste0(dirname(getwd()), "/FERC/pre2006")
+  path.data <- paste0(getwd(), "/FERC/pre2006")
   
   dir.years <- list.dirs(path = path.data, full.names = FALSE, 
                          recursive = FALSE)
@@ -198,9 +198,9 @@ readFercOld <- function(read.zip = FALSE, flag.download = FALSE) {
   name.files <- c("TVALOAD.PRN", "LOADS.PRN", "TVALOAD.PRN", "TVALOAD.PRN", 
                   "output.prn", "TVALOADS.PRN", "CY99.csv", "CY2000.csv", 
                   "TVA2001Load&Cost.csv", "cy02pscosts.csv", 
-                  "CY03714hourlydata.csv")
+                  "CY03714hourlydata.xls")
   
-  path.files <- paste("../FERC/pre2006", dir.years, name.files, sep="/")
+  path.files <- paste("./FERC/pre2006", dir.years, name.files, sep="/")
   
   df.ferc.2 <- data.frame(date=as.Date(character()), 
                           hour=numeric(), 
@@ -219,6 +219,15 @@ readFercOld <- function(read.zip = FALSE, flag.download = FALSE) {
       names(dat) <- names(df.ferc.2)
       df.ferc.2 <- rbind(df.ferc.2, dat)
     } else {
+      # check cases where the file is xls and convert to csv
+      if (tolower(ext) == 'xls' || tolower(ext) == 'xlsx') {
+        csv.file <- convert.xls2csv(xls.file = path.files[i], 
+                                    csv.file = "./temp.csv")
+        out <- system(paste0("cp ", csv.file, " ", dirname(path.files[i])))
+        csv.file <- paste0(csv.file, '.0')
+        path.files[i] <- paste0(dirname(path.files[i]), '/', basename(csv.file))
+      }
+      
       dat <- read.csv(file=path.files[i], stringsAsFactors = FALSE, 
                       strip.white = TRUE)
       if (sum(!complete.cases(dat[,c(1:3)])) > 0 ) {
@@ -229,7 +238,7 @@ readFercOld <- function(read.zip = FALSE, flag.download = FALSE) {
         dat[ ,3] <- gsub(",", "", dat[ ,3])
         dat[ ,3] <- as.numeric(dat[ ,3])
       }
-      dat[,1] <- as.Date(dat[ ,1], format="%m/%d/%y", tz='UTC')
+      dat[,1] <- as.Date(as.character(dat[ ,1]), format="%m/%d/%y", tz='UTC')
       names(dat) <- names(df.ferc.2)
       df.ferc.2  <- rbind(df.ferc.2, dat)
     }

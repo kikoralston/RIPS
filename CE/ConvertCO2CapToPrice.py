@@ -10,6 +10,7 @@ from DemandFuncs import *
 from CalculateOpCost import calcOpCosts
 from GetHydroMaxGenPotential import importHydroPotentialGen,getMonthsPotential
 
+
 ################################################################################
 ########### MAIN FUNCTION ######################################################
 ################################################################################
@@ -18,16 +19,17 @@ from GetHydroMaxGenPotential import importHydroPotentialGen,getMonthsPotential
 #or gen stack approach.
 #Outputs: co2 price ($/ton)
 def convertCo2CapToPrice(genFleet,hourlyWindGen,hourlySolarGen,demandScaled,co2Cap,
-        scaleMWtoGW,scaleDollarsToThousands,scaleLbToShortTon,runLoc,currYear,useGAMS=False):
+        scaleMWtoGW,scaleDollarsToThousands,scaleLbToShortTon,dataRoot,currYear,useGAMS=False):
     if useGAMS == False:
         return convertCo2CapToPriceWithGenStack(genFleet,hourlyWindGen,hourlySolarGen,
                                                 demandScaled,co2Cap,scaleLbToShortTon,currYear)
     else:
         return convertCo2CapToPriceWithGAMS(genFleet,hourlyWindGen,hourlySolarGen,demandScaled,co2Cap,
-                        scaleMWtoGW,scaleDollarsToThousands,runLoc)
+                        scaleMWtoGW,scaleDollarsToThousands,dataRoot)
 ################################################################################
 ################################################################################
 ################################################################################
+
 
 ################################################################################
 ########### CALCULATE CO2 PRICE TO COMPLY WITH CO2 LIMIT USING GEN STACK #######
@@ -59,21 +61,25 @@ def convertCo2CapToPriceWithGenStack(genFleet,hourlyWindGen,hourlySolarGen,
         print(annualCo2Ems)
     return co2Price
 
+
 #Net out hydro generation from demand by loading monthly potentials of hydro units,
 #combining potentials, and then assumign load follow.
-def removeHydroFromDemand(genFleetNoRE,currYear,netDemand):
+def removeHydroFromDemand(genFleetNoRE, currYear, netDemand):
     daysPerMonth = {1:31,2:28,3:31,4:30,5:31,6:30,7:31,8:31,9:30,10:31,11:30,12:31}
     plantCol,orisCol = genFleetNoRE[0].index('PlantType'),genFleetNoRE[0].index('ORIS Plant Code')
     capacCol = genFleetNoRE[0].index('Capacity (MW)')
-    hydroPots = importHydroPotentialGen(currYear,runLoc) #2d list of monthly gen by ORIS in current year; col 1 = ID
+
+    # 2d list of monthly gen by ORIS in current year; col 1 = ID
+    hydroPots = importHydroPotentialGen(currYear,dataRoot)
+
     hydroUnits = [row for row in fleet[1:] if row[plantCol] == 'Hydro']
     monthlyPotential,netDemandNetHydro,lastHr = [0 for idx in range(12)],list(),0
     for month in range(1,13):
         capacNoData,capacData = 0,0
         for row in hydroUnits:
-            oris,capac = row[orisCol],row[capacCol]
+            oris, capac = row[orisCol],row[capacCol]
             potential,hasData = getMonthsPotential(oris,hydroPots,month)
-            print('**',oris,capac,potential)
+            print('**', oris, capac, potential)
             if hasData == False: capacNoData += capac
             else: 
                 monthlyPotential[month-1] += potential
@@ -91,6 +97,7 @@ def removeHydroFromDemand(genFleetNoRE,currYear,netDemand):
         print(netDemandNetHydro)
     return netDemandNetHydro
 
+
 #Returns 1d list of gen fleet's emissions (ton/MWh) & capacities (MW)
 def getGenCapacsAndCo2Ems(genFleetNoRE,genHrs,scaleLbToShortTon):
     capacCol = genFleetNoRE[0].index('Capacity (MW)')
@@ -98,7 +105,8 @@ def getGenCapacsAndCo2Ems(genFleetNoRE,genHrs,scaleLbToShortTon):
     genCapacities = [float(row[capacCol]) for row in genFleetNoRE[1:]]
     genCo2Ems = [float(row[co2Col])/scaleLbToShortTon for row in genFleetNoRE[1:]] #ton/MMBtu
     genCo2Ems = list(map(mul,genCo2Ems,genHrs)) #ton/MWh
-    return (genCapacities,genCo2Ems)
+    return (genCapacities, genCo2Ems)
+
 
 #Calculates annual CO2 ems 
 #Inputs: 1d lists of op costs (HR*FC+VOM) ($/MWh), CO2 ems (ton/MWh), capacities (MW),
@@ -111,8 +119,9 @@ def calculateAnnualCo2Ems(genCo2Ems,genCapacities,netDemand,co2Price,genFleetNoR
     sortedCostCapacEms = sorted(costCapacEms)
     sortedCapacs = [row[1] for row in sortedCostCapacEms]
     cumCapacs = [sum(sortedCapacs[:idx+1]) for idx in range(len(sortedCapacs))]
-    hourlyCo2Ems = [getHourCo2Ems(hourNetDemand,cumCapacs,sortedCostCapacEms) for hourNetDemand in netDemand]
+    hourlyCo2Ems = [getHourCo2Ems(hourNetDemand, cumCapacs, sortedCostCapacEms) for hourNetDemand in netDemand]
     return sum(hourlyCo2Ems)
+
 
 #For given hourly net demand value, calculate total system CO2 ems using
 #gen stack. 
@@ -126,8 +135,8 @@ def getHourCo2Ems(hourNetDemand,cumCapacs,sortedCostCapacEms):
     idxMeetDemand = supplyGapLessThanZero.index(True)
     hourCo2Ems = sum([sortedCostCapacEms[idx][2]*sortedCostCapacEms[idx][1] 
                         for idx in range(idxMeetDemand)]) #excludes last unit
-    hourCo2Ems += (sortedCostCapacEms[idxMeetDemand][2] * 
-                (sortedCostCapacEms[idxMeetDemand][1]+supplyGap[idxMeetDemand])) #include last unit
+    hourCo2Ems += (sortedCostCapacEms[idxMeetDemand][2] *
+                   (sortedCostCapacEms[idxMeetDemand][1]+supplyGap[idxMeetDemand])) #include last unit
     return hourCo2Ems
 ################################################################################
 ################################################################################
@@ -142,14 +151,15 @@ from GAMSAddSetToDatabaseFuncs import *
 from GAMSAuxFuncs import *
 from TrimDemandREGenAndResForUC import getDemandAndREGenForUC
 
+
 #Converts CO2 mass limit to CO2 price [$/ton]
 def convertCo2CapToPriceWithGAMS(fleetUC,hourlyWindGen,hourlySolarGen,demandScaled,co2Cap,
-                        scaleMWtoGW,scaleDollarsToThousands,runLoc):
+                        scaleMWtoGW,scaleDollarsToThousands,dataRoot):
     co2Emissions = co2Cap+1
     (co2Price,co2PriceIncrement) = (0,1)
     while co2Emissions>co2Cap:
         co2Emissions = runEdAndGetCo2Ems(fleetUC,hourlyWindGen,hourlySolarGen,demandScaled,
-                                        co2Price,scaleMWtoGW,scaleDollarsToThousands,runLoc)
+                                        co2Price,scaleMWtoGW,scaleDollarsToThousands,dataRoot)
         print('CO2 mass limit:',co2Cap,',CO2 ems:',co2Emissions,',CO2 price:',co2Price)
         if co2Emissions>co2Cap:
             co2Price+=co2PriceIncrement
@@ -164,8 +174,9 @@ def convertCo2CapToPriceWithGAMS(fleetUC,hourlyWindGen,hourlySolarGen,demandScal
                     print('Final CO2 price:',co2Price,'$/ton')
                     return co2Price+1 
 
+
 def runEdAndGetCo2Ems(fleetUC,hourlyWindGen,hourlySolarGen,demandScaled,co2Price,
-                    scaleMWtoGW,scaleDollarsToThousands,runLoc):
+                    scaleMWtoGW,scaleDollarsToThousands,dataRoot):
     fuelCol = fleetUC[0].index('Modeled Fuels')
     fleetED = [row for row in fleetUC if (row[fuelCol] != 'Wind' and row[fuelCol] != 'Solar')]
     (yearCO2Ems,dayIncrement,daysInYear) = (0,5,365)
@@ -174,30 +185,33 @@ def runEdAndGetCo2Ems(fleetUC,hourlyWindGen,hourlySolarGen,demandScaled,co2Price
                                                                 dayIncrement,demandScaled,
                                                                 hourlyWindGen,hourlySolarGen)
         netDemandED = calcNetDemand(demandED,hourlyWindGenED,hourlySolarGenED)
-        edModel = callEconDispatch(fleetED,netDemandED,hoursForED,co2Price,scaleMWtoGW,scaleDollarsToThousands,runLoc)
+        edModel = callEconDispatch(fleetED,netDemandED,hoursForED,co2Price,scaleMWtoGW,scaleDollarsToThousands,dataRoot)
         yearCO2Ems += extractDailyCO2Ems(edModel)
     return yearCO2Ems
 
-def callEconDispatch(fleetED,netDemandED,hoursForED,co2Price,scaleMWtoGW,scaleDollarsToThousands,runLoc):
+
+def callEconDispatch(fleetED, netDemandED, hoursForED, co2Price, scaleMWtoGW, scaleDollarsToThousands, dataRoot):
+
     currDir = os.getcwd()
-    if runLoc == 'pc':
-        gamsFileDir = 'C:\\Users\\mtcraig\\Desktop\\EPP Research\\GAMS' 
-        gamsSysDir = 'C:\\GAMS\\win64\\24.7'
-    else:
-        gamsFileDir = ''
-        gamsSysDir = ''
-    wsED = GamsWorkspace(working_directory=gamsFileDir,system_directory=gamsSysDir)
+
+    gamsFileDir = os.path.join(dataRoot, 'GAMS')
+    gamsSysDir = 'C:\\GAMS\\win64\\24.7'
+
+    wsED = GamsWorkspace(working_directory=gamsFileDir, system_directory=gamsSysDir)
     dbED = wsED.add_database()
-    (genSet,genSymbols,hourSet,hourSymbols) = addSetsEconDispatch(dbED,fleetED,hoursForED)
-    addParametersToEconDispatch(dbED,hourSet,hourSymbols,genSet,genSymbols,netDemandED,
+
+    (genSet,genSymbols,hourSet,hourSymbols) = addSetsEconDispatch(dbED, fleetED, hoursForED)
+    addParametersToEconDispatch(dbED,hourSet, hourSymbols, genSet, genSymbols, netDemandED,
                                 fleetED,co2Price,scaleMWtoGW,scaleDollarsToThousands)
+
     edFile = 'EconDispatch25June2016.gms'
     edModel = wsED.add_job_from_file(edFile)
     optED = GamsOptions(wsED)
     optED.defines['gdxincname'] = dbED.name
-    edModel.run(optED,databases=dbED)
+    edModel.run(optED, databases=dbED)
     return edModel
-    
+
+
 def addSetsEconDispatch(dbED,fleetED,hoursForED):
     (hourSet,hourSymbols) = addHourSet(dbED,hoursForED)
     genSymbols = isolateGenSymbols(fleetED,'')
@@ -205,12 +219,14 @@ def addSetsEconDispatch(dbED,fleetED,hoursForED):
     genSet = addSet(dbED,genSymbols,genSetName,genSetDescription,genSetDimension) 
     return (genSet,genSymbols,hourSet,hourSymbols)
 
+
 def addParametersToEconDispatch(dbED,hourSet,hourSymbols,genSet,genSymbols,netDemandED,
                                 fleetED,co2Price,scaleMWtoGW,scaleDollarsToThousands):
     addDemandParam(dbED,netDemandED,hourSet,hourSymbols,scaleMWtoGW) 
     addEguParams(dbED,fleetED,genSet,genSymbols,scaleMWtoGW,scaleDollarsToThousands)
     addEguCapacParam(dbED,fleetED,genSet,genSymbols,scaleMWtoGW)
     addCo2Price(dbED,co2Price,scaleDollarsToThousands) 
+
 
 def extractDailyCO2Ems(edModel):
     return extract0dVarResultsFromGAMSModel(edModel,'vCO2ems')

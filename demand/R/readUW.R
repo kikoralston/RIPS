@@ -44,7 +44,9 @@ read.uw <- function(url.uw="~/GoogleDrive/CMU/RIPS/UW/meteo_memphis.txt",
                                          uw.data$temp)
     
     if (!is.null(years.data)) {
-      uw.data <- uw.data %>% dplyr::filter(year(time) %in% c(years.data))
+      uw.data <- uw.data %>% 
+        dplyr::filter((year(time) >= years.data[1]) & 
+                        (year(time) <= years.data[2]))
     }
     
     uw.data <- data.frame(year=year(uw.data$time), uw.data)
@@ -76,7 +78,8 @@ read.uw.txt <- function(url.uw="~/GoogleDrive/CMU/RIPS/UW/meteo_memphis.txt",
   
   if (!is.null(years.data)) {
     uw.data.projection <- uw.data.projection %>% 
-      dplyr::filter(year(time) %in% c(years.data))
+      dplyr::filter((year(time) >= years.data[1]) & 
+                      (year(time) <= years.data[2]))
   }
   
   uw.data.projection <- data.frame(year=year(uw.data.projection$time),
@@ -338,6 +341,36 @@ convert.txt2rds <- function(name.zip, yinf=-Inf, ysup=Inf, prefix=NULL,
                                            '_', 'rcp8.rds')))
   }
 }
+
+read.data.meteo.uw <- function(nf.uw){
+  # this function reads a csv/txt file that contains
+  # past gridded weather data from the UofI METEO created by UW.
+  # It saves the resulting data frame as a RDS file and silently returns
+  # the data frame
+  #
+  # nf.uw: ocmplete path to csv/txt file
+  # 
+  # convention of columns:
+  # [time, rel_humid, air_T]
+  
+  require(tools)
+  
+  df.uw <- read.csv(file=nf.uw, stringsAsFactors = FALSE)
+  df.uw$X <- as.POSIXct(df.uw$X, tz='GMT')
+  
+  df.uw <- df.uw %>% 
+    transmute(time=X, temp=air_T, 
+              dp=convertRelHum2DewPoint(rel_humid, air_T)) %>%
+    as.data.frame()
+  
+  path.uw <- dirname(nf.uw)
+  nf.rds <- basename(file_path_sans_ext(nf.uw))
+  
+  saveRDS(df.uw, file=paste0(path.uw, '/', nf.rds, '.rds'))
+  
+  return(df.uw <- df.uw)
+}
+
 
 #if (FALSE) {
 #  cat(paste0('\"/sharedstorage/user/fralston/GCM/', 

@@ -10,9 +10,9 @@ run.LP <- function(hourly.demand,
                    turndow.constraints=data.frame(type= c("OIL", "NUCLEAR", 
                                                           "COAL", "GAS", 
                                                           "HYDRO", "BIOMASS", 
-                                                          "WIND"),
+                                                          "WIND", "AUX"),
                                                   min.value = c(0, 0.5, 0.5, 0,
-                                                                0, 0, 0)),
+                                                                0, 0, 0, 0)),
                    print.screen=TRUE, use.binary=TRUE) {
   
   require(lpSolve, quietly=TRUE, warn.conflicts=FALSE)
@@ -450,7 +450,7 @@ run.multiple.LP <- function(list.load, utility.data, run.parallell=TRUE,
   if(run.parallell) {
     if(is.na(n.clusters)) n.clusters <- parallel::detectCores()-1
     # overwrite old file and write number of clusters
-    cat(n.clusters,'\n', file='~/out_parallel.txt', sep="")
+    cat(n.clusters,'\n', file='~/out_parallel.txt', sep="", append=FALSE)
     parallelCluster <- parallel::makeCluster(n.clusters,
                                              outfile="~/out_parallel.txt")
     #print(parallelCluster)

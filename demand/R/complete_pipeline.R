@@ -40,9 +40,10 @@ divide.load.daily.curves <- function(range.dates, load.data, n.clusters=NA) {
 
 dispatch.future <- function(lm.model, gcm.data.path, base.line.data,
                             utility.data, n.clusters=NA,
-                            type=c('original', 'paulina'),
+                            type=c('uofi', 'original', 'paulina'),
                             ref.period=c(2005, 2015), 
-                            future.period=c(2035, 2045)) {
+                            future.period=c(2035, 2045),
+                            temp.breaks=c(0, 10, 20, 30)) {
   # This function runs a complete pipeline of analysis for a given 
   # GCM future scenario and given weather and load historical data
   
@@ -50,16 +51,25 @@ dispatch.future <- function(lm.model, gcm.data.path, base.line.data,
   type <- match.arg(type)
   
   # get future weather
-  future.weather <- create.projection.weather(url.uw=gcm.data.path,
-                                              base.line.data = base.line.data,
-                                              type = type,
-                                              ref.period=ref.period,
-                                              future.period=future.period)
+  if(type != 'uofi') {
+    future.weather <- create.projection.weather(url.uw=gcm.data.path,
+                                                base.line.data = base.line.data,
+                                                type = type,
+                                                ref.period=ref.period,
+                                                future.period=future.period)
+  } else {
+    cat('\n   Read UofI METEO    \n')
+    future.weather <- read.uw(url.uw=gcm.data.path, 
+                              years.data=future.period)
+    future.weather <- future.weather %>% select(time, temp, dp)
+    future.weather <- compute.calendar.variables(future.weather)
+  }
   
   # Future demand
   cat('\n-------- Computing future demand --------\n')
   load.future <- project.demand.2(lm.hourly=lm.model, 
-                                  weather.data = future.weather)
+                                  weather.data = future.weather,
+                                  temp.breaks = temp.breaks)
   
   range.dates <- unique(date(load.future$time))
   list.load <- divide.load.daily.curves(range.dates = range.dates, 
@@ -74,13 +84,15 @@ dispatch.future <- function(lm.model, gcm.data.path, base.line.data,
 }
 
 dispatch.base.line <- function(lm.model, utility.data, base.line.data,
+                               temp.breaks=c(0, 10, 20, 30),
                                n.clusters=NA) {
   
   # estimate typical load for this baseline weather data
   cat('\n-------- Computing baseline demand --------\n')
   base.line.data <- compute.calendar.variables(base.line.data)
   base.line.load <- project.demand.2(lm.hourly = lm.model,
-                                     weather.data = base.line.data)
+                                     weather.data = base.line.data,
+                                     temp.breaks = temp.breaks)
   
   # divide total load in daily curves
   range.dates <- unique(date(base.line.load$time))
@@ -231,7 +243,7 @@ run.batch.cases <- function(json.file, n.clusters=NA) {
   # - future.period: string of the form 'yyyy;yyyy' with initial and final year 
   #               of the period to be considered in the future projections
   # - type    : when creating the future projections use original or paulina
-  #             method
+  #             method. NULL reads the data as is. No transformations are done.
   # - gcm.data: array of strings with paths to txt files with the GCM outputs
   #             for this specific region/balance authority
   #
@@ -247,6 +259,8 @@ run.batch.cases <- function(json.file, n.clusters=NA) {
   
   n.cases <- length(list.cases$cases)
   
+  temp.breaks <- c(-30, 0, 10, 20, 30)
+  
   for (j in 1:n.cases) {
     case <- list.cases$cases[[j]]
     
@@ -255,13 +269,18 @@ run.batch.cases <- function(json.file, n.clusters=NA) {
     ref.period <- as.numeric(unlist(strsplit(case$ref.period, split = ';')))
     future.period <- as.numeric(unlist(strsplit(case$future.period, split = ';')))
     
+    type <- case$type
+    if(type == 'NULL') type <- NULL
+    
     utility.data <- readRDS(file = case$utility.data)
     
     df.historical <- readRDS(file=case$data.frame)
     
     # fit regression model
     cat('\n-------- Fitting Regression model --------\n')
-    lm.model <- fit.lm.model(df=df.historical)
+    lm.model <- fit.lm.model(df=df.historical,
+                             temp.breaks=temp.breaks,
+                             type.humidity=NULL)
     
     # get baseline weather data
     cat('\n-------- Reading Base line data --------\n')
@@ -272,7 +291,8 @@ run.batch.cases <- function(json.file, n.clusters=NA) {
     
     # compute base line (present day) case
     list.results[['present']] <- dispatch.base.line(lm.model, utility.data, 
-                                                    base.line.data, 
+                                                    base.line.data,
+                                                    temp.breaks=temp.breaks,
                                                     n.clusters = n.clusters)
     
     # compute batch of future gcms
@@ -284,9 +304,10 @@ run.batch.cases <- function(json.file, n.clusters=NA) {
       df.results.future <- dispatch.future(lm.model, case$gcm.data[[i]], 
                                            base.line.data, utility.data,
                                            n.clusters = n.clusters,
-                                           type = case$type,
+                                           type = type,
                                            ref.period=ref.period, 
-                                           future.period=future.period)
+                                           future.period=future.period,
+                                           temp.breaks=temp.breaks)
       name.gcm <- paste0('gcm.', i)
       list.results[[name.gcm]] <- df.results.future
     }
@@ -315,6 +336,9 @@ simulate.weather <- function(json.file, n.clusters=NA) {
   
   for (j in 1:n.cases) {
     case <- list.cases$cases[[j]]
+
+    type <- case$type
+    if(type == 'NULL') type <- NULL
     
     cat('\n-------- ', case$name,' --------\n', sep='')
     
@@ -337,7 +361,7 @@ simulate.weather <- function(json.file, n.clusters=NA) {
       name.gcm <- paste0('gcm.', i)
       list.results[[name.gcm]] <- create.projection.weather(url.uw=case$gcm.data[[i]],
                                                             base.line.data = base.line.data,
-                                                            type = case$type)
+                                                            type = type)
     }
     
     saveRDS(list.results, file = paste0(case$name, '.rds'))

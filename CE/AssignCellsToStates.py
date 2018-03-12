@@ -1,24 +1,26 @@
-#Michael Craig, 9 August 2017
-#Determine what state a given lat/long is in
+# Michael Craig, 9 August 2017
+# Determine what state a given lat/long is in
 
 import os
 from shapely.geometry import MultiPoint, Point, Polygon
 import shapefile
 
-#Load IPM zone shape file and return a dict mapping FIP # to IPM zone and
-#a dict of FIP # to polygon. Note that FIP # is the only unique identifier in the
-#IPM shape file. 
-def getStatePolys(runLoc,states):
-    if runLoc=='pc': dataDir = "C:\\Users\\mtcraig\\Desktop\\EPP Research\\Databases\\StateShapeFiles" 
-    else: dataDir = 'Data'
-    sf = shapefile.Reader(os.path.join(dataDir,'cb_2016_us_state_20m.shp'))
+
+# Load IPM zone shape file and return a dict mapping FIP # to IPM zone and
+# a dict of FIP # to polygon. Note that FIP # is the only unique identifier in the
+# IPM shape file.
+def getStatePolys(dataRoot, states):
+
+    dataDir = os.path.join(dataRoot, "StateShapeFiles")
+
+    sf = shapefile.Reader(os.path.join(dataDir, 'cb_2016_us_state_20m.shp'))
     shapes = sf.shapes()
     fields = sf.fields
     records = sf.records()
-    #Get state idx in records
-    for idx in range(1,len(fields)):
-        if 'NAME' in fields[idx]: nameIdx = idx-1 #need to subtract 1 b/c first entry in fields is metaentry
-    #Map states to polys
+    # Get state idx in records
+    for idx in range(1, len(fields)):
+        if 'NAME' in fields[idx]: nameIdx = idx - 1  # need to subtract 1 b/c first entry in fields is metaentry
+    # Map states to polys
     stateToPoly = dict()
     for i, record in enumerate(records):
         state = record[nameIdx]
@@ -28,7 +30,8 @@ def getStatePolys(runLoc,states):
             stateToPoly[state] = poly
     return stateToPoly
 
-#Returns state that a given lat/lon is in
+
+# Returns state that a given lat/lon is in
 def getStateOfPt(stateToPoly, lat, lon):
     p = Point(lon, lat)
     for key in stateToPoly:

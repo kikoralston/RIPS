@@ -8,11 +8,12 @@ from AuxFuncs import *
 from GAMSAuxFuncs import createGenSymbol
 from DemandFuncsCE import getHoursInMonths
 
+
 #Inputs: gen fleet, zonal demand (dict), rep hrs per season or special block (dict of block:rep hrs,
 #where seasons are labled by name and special hours are 'special'), curr year, and run location.
 #Outputs: dict of season:genSymbol:generation potential
-def getHydroEPotential(fleet,demandZonal,repAndSpeHoursDict,currYear,runLoc):
-    hydroPotentials = importHydroPotentialGen(currYear,runLoc)
+def getHydroEPotential(fleet,demandZonal,repAndSpeHoursDict,currYear,dataRoot):
+    hydroPotentials = importHydroPotentialGen(currYear,dataRoot)
     hydroPotPerSeason = dict()
     plantCol,orisCol = fleet[0].index('PlantType'),fleet[0].index('ORIS Plant Code')
     zoneCol = fleet[0].index('Region Name')
@@ -32,15 +33,18 @@ def getHydroEPotential(fleet,demandZonal,repAndSpeHoursDict,currYear,runLoc):
         hydroPotPerSeason[season] = seasonDict
     return hydroPotPerSeason
 
+
 #Returns hydro potential gen for current year in 2d list w/ col 1 = plant IDs
-def importHydroPotentialGen(currYear,runLoc):
-    if runLoc == 'pc': dataDir = 'C:\\Users\\mtcraig\\Desktop\\EPP Research\\Databases\\HydroMonthlyDataPNNL'
-    else: dataDir = os.path.join('Data','HydroMonthlyDataPNNL')
+def importHydroPotentialGen(currYear, dataRoot):
+
+    dataDir = os.path.join(dataRoot, 'HydroMonthlyDataPNNL')
+
     potentialsAllYears = readCSVto2dList(os.path.join(dataDir,'monhydrogen_1550.csv'))
     #First row in data is months listed w/out years; assign years to each col
     startYr,endYr = [2015,2050]
     yrIndex = (currYear-startYr)*12+1 #+1 to account for first col = PlantID
     return [[row[0]] + row[yrIndex:yrIndex+12] for row in potentialsAllYears]
+
 
 #Inputs: 1d list of hours in a given season. 
 #Function determines which months those hours fall in, and outputs those months in a 1d list.
@@ -52,6 +56,7 @@ def getMonthsOfRepHrs(repHrs):
         elif repHrs[-1] in monthHours: months.append(month)
     return months
 
+
 #Inputs: 1d list of hourly demand, 1d list of months
 #Outputs: total demand in those months
 def getMonthlyDemand(demandZonal,months):
@@ -60,6 +65,7 @@ def getMonthlyDemand(demandZonal,months):
     for zone in demandZonal: demandInMonthsZonal[zone] = sumDemandInHours(demandZonal[zone],monthsHours)
     return demandInMonthsZonal
 
+
 #Inputs: 1d list of demand zonal (dict of zone:hourly demand), 1d list of rep hrs per season
 #Outputs: dict of zone:total demand in those rep hrs
 def getRepHrsDemand(demandZonal,repHrs):
@@ -67,10 +73,12 @@ def getRepHrsDemand(demandZonal,repHrs):
     for zone in demandZonal: demandInRepHrsZonal[zone] = sumDemandInHours(demandZonal[zone],repHrs)
     return demandInRepHrsZonal
 
+
 #Inputs: 1d lists of demand (0-8759 idx) and hours (1-8760 idx).
 #Outputs: sum of demand in those hours
 def sumDemandInHours(demand,hours):
     return sum([demand[hr-1] for hr in hours])
+
 
 #Gets total hydropower generation potential for month(s).
 #Inputs: ORIS ID, hydro potential generation (2d list) for curr year, months of interest
@@ -86,6 +94,7 @@ def getMonthsPotential(oris,hydroPotentials,months):
     else: hasData = False
     return sum(monthsPotentials),hasData
 
+
 #For ORIS units not in PNNL data, assign them potential for season based on
 #average potential as CF of rest of fleet for that season.
 #Inputs: gen symbols (oris+unit ID) for units w/out data, gen fleet, dict of season:genSymbol:potential
@@ -99,6 +108,7 @@ def assignPotentialsToMissingUnits(unitsNoData,fleet,seasonDict,repHrs):
     fleetAvgCF = getFleetAverageCF(genSymbols,capacs,seasonDict,repHrs)
     for genSymbol in unitsNoData: 
         seasonDict[genSymbol] = capacs[genSymbols.index(genSymbol)]*len(repHrs)*fleetAvgCF
+
 
 #Gets average fleet CF for rep hours in given season.
 #Inputs: 1d list of all hydro gen symbols and capac, dict of season:gensymbol:potential, rep hours (1d list)

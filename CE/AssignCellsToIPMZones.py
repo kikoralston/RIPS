@@ -9,11 +9,10 @@ import os
 # Load IPM zone shape file and return a dict mapping FIP # to IPM zone and
 # a dict of FIP # to polygon. Note that FIP # is the only unique identifier in the
 # IPM shape file.
-def getIPMPolys(runLoc, ipmZones):
-    if runLoc == 'pc':
-        dataDir = "C:\\Users\\mtcraig\\Desktop\\EPP Research\\Databases\\IPMRegionsShapeFile"
-    else:
-        dataDir = 'Data'
+def getIPMPolys(dataRoot, ipmZones):
+
+    dataDir = os.path.join(dataRoot, "IPMRegionsShapeFile")
+
     sf = shapefile.Reader(os.path.join(dataDir, 'IPM_Regions_20121023_US'))
     shapes = sf.shapes()
     fields = sf.fields

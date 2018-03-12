@@ -22,14 +22,14 @@ library(ggplot2)
 library(gridExtra)
 library(grid)
 
-companies <- read.csv(file = paste('/Users/kiko/GoogleDrive/CMU/RIPS/SERC companies/SERC.csv'),
+companies <- read.csv(file = paste('/Users/kiko/Google Drive/CMU/RIPS/SERC companies/SERC.csv'),
                       stringsAsFactors = FALSE)
 companies[companies$Name.ferc != "", c("Name")] <- companies[companies$Name.ferc != "", c("Name.ferc")]
 companies <- unlist(companies %>% select(Name, FERC) %>% filter(FERC == 1) %>% select(Name))
 
 source('readFERC.R')
 
-ferc.zip <- downloadFERCdata()
+ferc.zip <- downloadFERCdata(ferc.zip = 'form714-database.zip')
 
 df.results <- data.frame(name=as.character(),
                          year.ini=as.numeric(),
@@ -79,7 +79,7 @@ zz <- left_join(xx, annual.summary, by='year')
 source("excel.R")
 
 cat('\n\nReading EIA data ...\n')
-eia.url <- 'https://www.eia.gov/electricity/data/eia411/xls/net_energy_load_2015.xls'
+eia.url <- 'https://www.eia.gov/electricity/data/eia411/archive/net_energy_load_2015.xls'
 
 eia.file <- tempfile()
 download.file(url = eia.url, destfile = eia.file, method='curl')
@@ -144,7 +144,8 @@ g1$widths[2:3] <- maxWidth
 g2$widths[2:3] <- maxWidth
 g3$widths[2:3] <- maxWidth
 
-png(paste0(path.plot, 'serc_data.png'))
+png(paste0(path.plot, 'serc_data.png'), width=11, height=8.5, units='in', 
+    res=300 )
 grid.arrange(g1, g2, g3)
 dev.off()
 

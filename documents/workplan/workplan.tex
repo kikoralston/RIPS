@@ -297,6 +297,54 @@ p^{(r)}_{z, j, t} \le n^{(r)}_{z, j}\times P^{NP}_{j} \times CF_{j, t}  \quad \f
 \newpage
 \section{Curtailment Equations}
 
+Michael implemented a method to simulate power plant curtailments for sites equipped with once-through cooling due to \underline{REGULATORY LIMITS}. It uses two equations --  a thermal mixing equation and a power plant discharge equation -- to capture the enforcement of environmental regulations.
 
+\subsection{Previous work}
+
+Van Vliet et al did a study to estimate curtailments for power plants with once-through cooling due to environmental regulations. However their equations applied the constraints on the temperature of the power plant discharge and not on the final stream temperature after the mixing has occurred. Therefore, the curtailment constraints end up being stronger. 
+
+\begin{equation}
+q = \text{KW}\cdot\frac{1-\eta_{total}}{\eta_{elec}}\cdot\frac{(1-\alpha)}{\rho_w\cdot C_p\cdot\max{(\min{(Tl_{max} - T_w, \Delta Tl_{max})}, 0)}}
+\end{equation}
+
+\begin{equation}
+\text{KW}_{max} = \frac{\min{(\gamma\cdot Q, q)} \cdot \rho_w\cdot C_p\cdot\max{(\min{(Tl_{max} - T_w, \Delta Tl_{max})}, 0)}}{\frac{1-\eta_{total}}{\eta_{elec}}\cdot \lambda \cdot(1-\alpha)}
+\end{equation}
+
+where $\lambda, \eta_{total}, \eta_{elec}, \rho_w, C_p, \alpha, \gamma$ are constants; KW is installed capacity; $q$ is water withdrawal and discharge by a power plant; $Tl_{max}$ and $ \Delta Tl_{max}$ are regulatory stream temperature limits (respectively, actual temperature and increase in stream temperatures) ; $\text{KW}_{max}$ is the maximum achievable capacity; and $T_w$ is the simulated daily water temperature at the power plant location. 
+
+However, the regulatory limits should be applied to the final river temperature.
+
+\subsection{New approach}
+
+Michael's new approach will apply the regulatory constraints over the stream temperature after the mixing, which is how they are supposed to be applied.
+
+The first equation is a thermal balance equation, that computes the final stream temperature after the mixing of the water from the river and the heated discharge from the power plant occur:
+
+\begin{equation}
+T_x = \frac{\frac{m_g}{m_r}T_g + T_r}{\frac{m_g}{m_r} + 1} = T_r + \frac{\frac{m_g}{m_r}}{\frac{m_g}{m_r} + 1}\cdot \Delta T_g = T_r + \frac{m_g}{m_g + m_r}\cdot \Delta T_g
+\end{equation}
+
+where $T_x$ is the mixed stream temperature; $m_g$ is the flow of the power plant discharge; $m_r$ is the upstream flow of the river; $T_r$ is the upstream stream temperature (before mixing), or stream temperature in that cell; $T_g$ is the temperature of the power plant discharge, which equals $T_r + \Delta T_g$; and $\Delta T_g$ is the increase in temperature of cooling water through the condenser, which we assume is a fixed value that depends on condenser design. 
+
+The second equation is similar to the first from van Vliet. It estimates the withdrawal/discharge flow from a power plant by using the value of $\Delta T_g$ as a design variable at the condenser.
+
+\begin{equation}
+m_g = \min{\left (\gamma \cdot m_r, p \cdot \frac{1-\eta - k_{os}}{\eta} \cdot \frac{1}{\rho_w \cdot C_p \cdot \Delta T_{g}}\right)}
+\end{equation}
+
+where $\eta$ is the net plant efficiency, which equals 3.412 divided by the plant net heat rate; $k_{os}$ is the fraction of waste heat lost to other heat sinks, which equals 12\% for coal-fired plants and 20\% for gas-fired plants per Bartos and Chester; $p$ is the power output of the power plant; and $\gamma$ indicates the maximum fraction of the river flow that can be extracted for cooling purposes. 
+
+Combining the two equations, we get:
+
+\begin{equation}
+T_x = T_r + \left( \frac{ \min{\left (\gamma \cdot m_r, p \cdot \frac{1-\eta - k_{os}}{\eta} \cdot \frac{1}{\rho_w \cdot C_p \cdot \Delta T_{g}}\right)}}{ \min{\left (\gamma \cdot m_r, p \cdot \frac{1-\eta - k_{os}}{\eta} \cdot \frac{1}{\rho_w \cdot C_p \cdot \Delta T_{g}}\right)} + m_r}\right)\cdot \Delta T_g
+\end{equation}
+
+Our objective is to find the maximum value of $p$ such that $T_x$ is still less than the environmental limit. However, we can't analytically solve the above equation for $p$ . Also, it does not explicitly account for environmental limits. However, given a mixed stream temperature $T_x$, I can compare that to the regulatory limit and determine whether the power plant needs to be curtailed. 
+
+Specifically, for each power plant, I can test a range of power output values between 0 and its maximum capacity and determine the maximum potential power output before mixed stream temperatures exceed regulatory limits (this would be performed in the pre-processing phase). The same approach can be applied in conjunction with the upriver stream temperature to capture regulatory limits on the change in water temperatures.
+
+One current issue with this approach is that we simplify it by assuming that $\Delta T_g$ is a fixed design parameter of the power plant condenser. However, the actual temperature change through the  condenser may depend on external variables such as water temperature ($T_r$). That is, on very hot summer days, the condenser may not be able to achieve its designed temperature change, requiring a greater intake. One possible solution would be to parametrize the value of $\Delta T_g$ as a function of $T_r$. 
 
 \end{document}  

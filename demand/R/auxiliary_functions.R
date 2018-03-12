@@ -1,10 +1,5 @@
 # ************* Auxiliary functions ************************
 
-library(ggplot2)
-library(plyr)
-library(dplyr)
-library(lazyeval)
-
 # --------------------------------------------------------------------
 # Definitions of auxiliary functions
 
@@ -92,6 +87,10 @@ mean.value.by.tc <- function(df.data, name.var,
   #
   # Returns:
   #   vector with mean dew point values for each temperature
+
+  require(plyr)
+  require(dplyr)
+  require(lazyeval)
   
   # include -Infinity and +Infinity in break values because of cut function
   temp.breaks2 <- c(-Inf, temp.breaks, Inf)

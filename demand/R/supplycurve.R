@@ -261,7 +261,7 @@ read.e.grid.data <- function(egrid.path='/Users/kiko/GoogleDrive/CMU/RIPS/egrid/
   return(plant.data)
 }
 
-read.eia.923.data <- function(eia1.path = '/Users/kiko/GoogleDrive/CMU/RIPS/egrid/',
+read.eia.923.data <- function(eia1.path = '/Users/kiko/Google Drive/CMU/RIPS/egrid/',
                               eia1.file = 'f923_2014.zip'){
   # Fields in data frame
   #
