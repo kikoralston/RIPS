@@ -28,7 +28,8 @@ def selectWeeksForExpansion(zonalDemandProfile, zonalNetDemand, zonalHourlyWindG
     specialDayHours = []
     (peakNetDemandDayHours, netDemandMinusPeak) = getPeakNetDemandDayHours(netDemand)  # 1-8760 basis
     specialDayHours.extend(peakNetDemandDayHours)
-    if selectCurtailDays == True:  # if considering thermal curtailments in selection of special days
+
+    if selectCurtailDays:  # if considering thermal curtailments in selection of special days
         totalHrlyCurtailments = getTotalSystemCurtailments(hrlyCurtailmentsAllGensInTgtYr)
         eliminateLeapYearDay(totalHrlyCurtailments, currYear)
         write2dListToCSV([totalHrlyCurtailments], os.path.join(resultsDir,

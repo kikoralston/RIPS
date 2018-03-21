@@ -73,3 +73,7 @@ Icon?
 # PyCharm project files #
 #########################
 .idea/
+
+# Python cache #
+########################
+*.pyc

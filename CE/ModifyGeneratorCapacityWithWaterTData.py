@@ -402,7 +402,7 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, rbmOutputDir, locPrecis
                                    curtailmentYear, genFleet, modelName, ptCurtailed, ptCurtailedRegs, incCurtailments,
                                    incRegs, envRegMaxT, dataRoot, coolDesignT, resultsDir):
     hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList = dict(), list()
-    regCoeffs = loadRegCoeffs(dataRoot)  # dict of plant type: cooling type: cool design T: param: coeffs
+    regCoeffs = loadRegCoeffs(dataRoot, 'capacity.json')  # dict of plant type: cooling type: cool design T: param: coeffs
     allCellFolders = os.listdir(rbmOutputDir)
 
     for (cellLat, cellLong) in cellLatLongToGenDict:  # this maps gen lat/lon to gen IDs; cell data may not exist
@@ -415,7 +415,7 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, rbmOutputDir, locPrecis
                 (plantType, hr, fuelAndCoalType, coolType, fgdType, state, capac) = getKeyCurtailParams(gen, genFleet)
                 coeffs = getCoeffsForGenOrTech(plantType, hr, fuelAndCoalType, coolType,
                                                fgdType, ptCurtailed, regCoeffs, coolDesignT)
-                if coeffs != None or plantType in ptCurtailedRegs:  # skip gens that aren't curtailed
+                if (coeffs is not None) and (plantType in ptCurtailedRegs):  # skip gens that aren't curtailed
                     hrlyCurtailmentsGen = calcCurtailmentForGenOrTech(plantType, hr, fuelAndCoalType,
                                                                       coolType, fgdType, state, capac, ptCurtailed,
                                                                       ptCurtailedRegs, metAndWaterData,

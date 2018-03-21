@@ -2,6 +2,134 @@
 library(car)
 library(ggplot2)
 
+regression.model.1 <- function(data.set, 
+                               temp.breaks = c(-10, 0, 10, 20, 30),
+                               test.year = NULL,
+                               type.humidity = NULL,
+                               log.load = FALSE,
+                               idx.annual = 1,
+                               formula.regression=NULL) {
+  # Fits regression model to training set and makes prediction using test set
+  #
+  # Args:
+  #   data.set:  data frame with data set to be used in regression
+  #   temp.breaks:  breakpoints of temperature intervals in stepwise linear 
+  #                 model  
+  #   test.year:  years that should be used as test set. If NULL whole set is 
+  #               used as traning set and there is no prediction
+  #   type.humidity:  (string) Type of humidity metric to use. 
+  #                   Accepted Values: "dp" (dew point) or 
+  #                   "rh" (relative humidity) or NULL (use none). 
+  #   log.load: (boolean) TRUE if log transformation should be applied to load
+  #   idx.annual: (integer) index of annual model to be used.
+  #               (see function "list.annual.models()")
+  #   formula.regression: (string) sets regression formula
+  #               directly (overrides previous arguments != NULL)
+  #
+  # Returns:
+  #   list.out: list with results
+  
+  # prepare data and fit model
+  
+  years.data <- unique(data.set$year)
+  years.data <- years.data[order(years.data)]
+  
+  # temperature components
+  temp.components <- createTempComponents(data.set$temp, temp.breaks)
+  data.set <- cbind(data.set, temp.components)
+  rm(temp.components)
+  
+  if (is.null(formula.regression)) {
+    # test inputs
+    if (!is.null(type.humidity)) {
+      if (!(type.humidity %in% c("dp", "rh"))) {
+        stop("Argument type.humidity invalid! Must be \"dp\" or \"rh\" ")
+      }
+    }
+    
+    # creates regression equation
+    if(log.load) {
+      equation.string <- "log(load) ~ hour.of.day:type.day:season + factor(year)"
+    } else {
+      equation.string <- "load ~ hour.of.day:type.day:season + factor(year)"
+    }
+    
+    n.cp <- length(temp.breaks) + 1  # number of components
+    names.cp <- paste0("tc.", c(1:n.cp))
+    
+    equation.string <- paste0(equation.string, " + ",
+                              paste0(names.cp, collapse = " + "))
+    
+    #name.humidity <- NULL
+    if (!is.null(type.humidity)) {
+      if (type.humidity == "dp") {
+        names.interaction <- paste0(names.cp,":dp")
+        #name.humidity <- "dp"
+      } else {
+        names.interaction <- paste0(names.cp,":rh")
+        #name.humidity <- "rh"
+      }
+      # add interaction term between temperature components and dew point
+      equation.string <- paste0(equation.string, " + ",
+                                paste0(names.interaction, collapse = " + "))
+    }
+  } else {
+    equation.string <- formula.regression
+  }
+  
+  cat("\n--------------------------------------------\n")
+  cat(equation.string)
+  cat("\n--------------------------------------------\n")
+  
+  # separate training data 
+  if(!is.null(test.year)) {
+    df.train <- dplyr::filter(data.set, !(year %in% test.year))
+  } else {
+    df.train <- data.set
+  }
+  
+  # fits hourly model to training data set
+  reg.model <- lm(formula = as.formula(equation.string), 
+                  data = df.train)
+  
+  if (!is.null(idx.annual)) {
+    # fits annual model
+    annual.model <- fit.annual.model(df.train, reg.model, idx.annual)
+  } else {
+    # don't use annual model (repeat previous value of \gamma_a)
+    annual.model <- NULL
+  }
+  
+  # computes performance of prediction (only if a test set is defined)
+  pred.perf <- NULL
+  gg.plot <- NULL
+  if (!is.null(test.year)) {
+    df.test <- dplyr::filter(data.set, year %in% test.year)
+    
+    if (is.null(idx.annual)) {
+      # repeat previous year
+      df.test$year <- years.data[which(years.data == min(test.year)) - 1]
+    } else { 
+      # set to initial year (\gamma_a == 0)
+      df.test$year <- min(df.train$year, na.rm = TRUE)
+    }
+    pred.perf <- compute.performance(df.test, reg.model, annual.model)
+  }
+  
+  # prepare list with results to output
+  
+  list.out <- list()
+  list.out$model <- reg.model
+  list.out$temp.bins <- c(paste0('(-Inf,', min(temp.breaks), ']'), 
+                          levels(cut(1, temp.breaks)), 
+                          paste0('(', max(temp.breaks), ',+Inf)'))
+  list.out$annual.model <- annual.model
+  list.out$performance <- pred.perf
+  # list.out$gg.plot <- gg.plot
+  
+  return(list.out)
+}
+
 compute.performance <- function(test.data, reg.model, annual.model) {
   # Computes the performance of forecasting power of regression model
   #
@@ -165,134 +293,6 @@ getAnnualFixedEffects <- function(reg.model, flag.plot = FALSE,
   }
   
   return(df.fe)
-}
-
-regression.model.1 <- function(data.set, 
-                               temp.breaks = c(-10, 0, 10, 20, 30),
-                               test.year = NULL,
-                               type.humidity = NULL,
-                               log.load = FALSE,
-                               idx.annual = 1,
-                               formula.regression=NULL) {
-  # Fits regression model to training set and makes prediction using test set
-  #
-  # Args:
-  #   data.set:  data frame with data set to be used in regression
-  #   temp.breaks:  breakpoints of temperature intervals in stepwise linear 
-  #                 model  
-  #   test.year:  years that should be used as test set. If NULL whole set is 
-  #               used as traning set and there is no prediction
-  #   type.humidity:  (string) Type of humidity metric to use. 
-  #                   Accepted Values: "dp" (dew point) or 
-  #                   "rh" (relative humidity) or NULL (use none). 
-  #   log.load: (boolean) TRUE if log transformation should be applied to load
-  #   idx.annual: (integer) index of annual model to be used.
-  #               (see function "list.annual.models()")
-  #   formula.regression: (string) sets regression formula
-  #               directly (overrides previous arguments != NULL)
-  #
-  # Returns:
-  #   list.out: list with results
-  
-  # prepare data and fit model
-
-  years.data <- unique(data.set$year)
-  years.data <- years.data[order(years.data)]
-  
-  # temperature components
-  temp.components <- createTempComponents(data.set$temp, temp.breaks)
-  data.set <- cbind(data.set, temp.components)
-  rm(temp.components)
-
-  if (is.null(formula.regression)) {
-    # test inputs
-    if (!is.null(type.humidity)) {
-      if (!(type.humidity %in% c("dp", "rh"))) {
-        stop("Argument type.humidity invalid! Must be \"dp\" or \"rh\" ")
-      }
-    }
-    
-    # creates regression equation
-    if(log.load) {
-      equation.string <- "log(load) ~ hour.of.day:type.day:season + factor(year)"
-    } else {
-      equation.string <- "load ~ hour.of.day:type.day:season + factor(year)"
-    }
-    
-    n.cp <- length(temp.breaks) + 1  # number of components
-    names.cp <- paste0("tc.", c(1:n.cp))
-    
-    equation.string <- paste0(equation.string, " + ",
-                              paste0(names.cp, collapse = " + "))
-    
-    #name.humidity <- NULL
-    if (!is.null(type.humidity)) {
-      if (type.humidity == "dp") {
-        names.interaction <- paste0(names.cp,":dp")
-        #name.humidity <- "dp"
-      } else {
-        names.interaction <- paste0(names.cp,":rh")
-        #name.humidity <- "rh"
-      }
-      # add interaction term between temperature components and dew point
-      equation.string <- paste0(equation.string, " + ",
-                                paste0(names.interaction, collapse = " + "))
-    }
-  } else {
-    equation.string <- formula.regression
-  }
-  
-  cat("\n--------------------------------------------\n")
-  cat(equation.string)
-  cat("\n--------------------------------------------\n")
-
-  # separate training data 
-  if(!is.null(test.year)) {
-    df.train <- dplyr::filter(data.set, !(year %in% test.year))
-  } else {
-    df.train <- data.set
-  }
-  
-  # fits hourly model to training data set
-  reg.model <- lm(formula = as.formula(equation.string), 
-                  data = df.train)
-  
-  if (!is.null(idx.annual)) {
-    # fits annual model
-    annual.model <- fit.annual.model(df.train, reg.model, idx.annual)
-  } else {
-    # don't use annual model (repeat previous value of \gamma_a)
-    annual.model <- NULL
-  }
-  
-  # computes performance of prediction (only if a test set is defined)
-  pred.perf <- NULL
-  gg.plot <- NULL
-  if (!is.null(test.year)) {
-    df.test <- dplyr::filter(data.set, year %in% test.year)
-    
-    if (is.null(idx.annual)) {
-      # repeat previous year
-      df.test$year <- years.data[which(years.data == min(test.year)) - 1]
-    } else { 
-      # set to initial year (\gamma_a == 0)
-      df.test$year <- min(df.train$year, na.rm = TRUE)
-    }
-    pred.perf <- compute.performance(df.test, reg.model, annual.model)
-  }
-
-  # prepare list with results to output
-  
-  list.out <- list()
-  list.out$model <- reg.model
-  list.out$temp.bins <- c(paste0('(-Inf,', min(temp.breaks), ']'), 
-                          levels(cut(1, temp.breaks)), 
-                          paste0('(', max(temp.breaks), ',+Inf)'))
-  list.out$annual.model <- annual.model
-  list.out$performance <- pred.perf
-  # list.out$gg.plot <- gg.plot
-  
-  return(list.out)
 }
 
 leave.one.year.out.cv <- function(data.set,

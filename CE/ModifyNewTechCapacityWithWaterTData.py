@@ -41,7 +41,7 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
                                                      locPrecision, currYear, cellWaterTsForNewTechs[cell], resultsDir)
             coeffs = getCoeffsForGenOrTech(plantType, hr, fuelAndCoalType, coolType,
                                            fgdType, ptCurtailed, regCoeffs, coolDesignT)
-            if coeffs != None or plantType in ptCurtailedRegs:  # skip gens that aren't curtailed
+            if (coeffs is not None) and (plantType in ptCurtailedRegs):  # skip gens that aren't curtailed
                 hrlyCurtailmentsGen = calcCurtailmentForGenOrTech(plantType, hr, fuelAndCoalType,
                                                                   coolType, fgdType, state, ptCurtailed,
                                                                   ptCurtailedRegs, metAndWaterData,

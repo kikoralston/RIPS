@@ -1,0 +1,21 @@
+{
+   "Coal Steam": {
+      "once through": {
+         "10": {
+            "intercept":  8.14,
+            "airF":  0.09,
+            "waterF":  -0.159
+         },
+         "20": {
+            "intercept":  8.42,
+            "airF":  0.0991,
+            "waterF":  -0.179
+         },
+         "30": {
+            "intercept":  5.72,
+            "airF":  0.071,
+            "waterF":  -0.128
+         }
+      }
+   }
+}

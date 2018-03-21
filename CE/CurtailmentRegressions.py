@@ -6,17 +6,40 @@
 import copy
 import numpy as np
 import pandas as pd
+import json
+import os
 from CurtailmentFromEnviroRegs import *
 from GAMSAuxFuncs import *
 from AuxFuncs import *
 
 
-###### CALCULATE CURTAILMENT FOR NEW AND EXISTING GENS #########################
-# Output 1d list of hourly curtailments for year for given generator with or without
-# curtialments and/or environmental regulations.
 def calcCurtailmentForGenOrTech(plantType, hr, fuelAndCoalType, coolType, fgdType, state, capac,
                                 ptCurtailed, ptCurtailedRegs, metAndWaterData, incCurtailments, incRegs,
                                 envRegMaxT, coolDesignT, coeffs):
+    """
+    CALCULATE CURTAILMENT FOR NEW AND EXISTING GENS
+
+    Output 1d list of hourly final curtailments for year for given generator (or generator type) with or without
+    curtailments and/or environmental regulations.
+
+    :param plantType:
+    :param hr:
+    :param fuelAndCoalType:
+    :param coolType:
+    :param fgdType:
+    :param state:
+    :param capac:
+    :param ptCurtailed:
+    :param ptCurtailedRegs:
+    :param metAndWaterData:
+    :param incCurtailments:
+    :param incRegs:
+    :param envRegMaxT:
+    :param coolDesignT:
+    :param coeffs:
+    :return:
+    """
+
     # hourlyCurtailments = runCurtailRegression(metAndWaterData, coeffs, incCurtailments, incRegs, envRegMaxT[state],
     #  plantType, coolType, ptCurtailed, ptCurtailedRegs)
     hourlyCurtailments = runCurtailRegression(metAndWaterData, coeffs, incCurtailments, plantType, coolType,
@@ -24,86 +47,126 @@ def calcCurtailmentForGenOrTech(plantType, hr, fuelAndCoalType, coolType, fgdTyp
 
     # missing variables: eff, fuelType, ppDeltaT, waterFlow, streamAvailFrac
 
-    # eff = 3.412/hr
+    # according to the documentation on this method (see pdf)
+    eff = 3.412/hr
+
+    # NEED TO CHECK THIS!!!!
+    streamAvailFrac = 0.3
+
     # fuelType = fuelAndCoalType
     # ppDeltaT is the $Delta_g$ in the docuemtn. Where does it come from?
     # waterFlow
     # streamAvailFrac: max fraction of the river flow that can be extracted ($gamma$ in doc).
 
     hourlyCurtailmentsRegs = setEnvRegCurtailments(incCurtailments, incRegs, ptCurtailedRegs, coolType, capac,
-                                                   pt, eff, fuelType, ppDeltaT, metAndWaterData, waterFlow, envRegMaxT,
-                                                   streamAvailFrac)
+                                                   plantType, eff, fuelAndCoalType, ppDeltaT, metAndWaterData,
+                                                   waterFlow, envRegMaxT, streamAvailFrac)
     hourlyCurtailments = np.minimum(hourlyCurtailments, hourlyCurtailmentsRegs)
+
     return hourlyCurtailments
 
 
-################################################################################
-
-###### CALCULATE CURTAILMENTS FROM REGRESSIONS FOR 1 GENERATOR #################
-# Output 1d list w/ hourly curtailment (MW) for generator
 def runCurtailRegression(metAndWaterData, coeffs, incCurtailments, pt, coolType,
                          ptCurtailed):
-    hrlyCurts = np.array([1 for i in range(metAndWaterData.shape[0])])
-    if incCurtailments == True and pt in ptCurtailed: hrlyCurts = setAvivaCurtailments(coeffs, metAndWaterData)
+    """
+    Output 1d list w/ hourly curtailment (% of capacity) for generator
+
+    :param metAndWaterData:
+    :param coeffs:
+    :param incCurtailments:
+    :param pt:
+    :param coolType:
+    :param ptCurtailed:
+    :return:
+    """
+
+    hrlyCurts = np.ones(metAndWaterData.shape[0])
+
+    if incCurtailments and pt in ptCurtailed:
+        hrlyCurts = setAvivaCurtailments(coeffs, metAndWaterData)
     return list(hrlyCurts)
 
 
-# Use Aviva's regressions to curtail generation. Note that curtailment values
-# are fraction of total capacity (val of 0.3 means max capac is 30% of total capac)
 def setAvivaCurtailments(coeffs, metAndWaterData):
-    hrlyCurtsAviva = np.array([0 for i in range(metAndWaterData.shape[0])])
+    """
+    Use Aviva's regressions to curtail generation. Note that curtailment values are fraction of total capacity
+    (val of 0.3 means max capac is 30% of total capac)
+
+    :param coeffs:
+    :param metAndWaterData:
+    :return: array with hourly curtailment values (fraction of total capacity)
+    """
+
+    hrlyCurtsAviva = np.zeros(metAndWaterData.shape[0])
+
     for param in coeffs:
         if param != 'intercept':
             hrlyCurtsAviva = np.add(hrlyCurtsAviva, coeffs[param] * np.array(metAndWaterData[param]))
         else:
             hrlyCurtsAviva = np.add(hrlyCurtsAviva, coeffs[param])
-    hrlyCurtsAviva[hrlyCurtsAviva > 1] = 1  # regressions can result in val >1; constrain to 1.
-    return hrlyCurtsAviva
+
+    # regressions can result in val > 1; constrain to 1.
+    return np.minimum(hrlyCurtsAviva, 1)
 
 
-################################################################################
+def loadRegCoeffs(dataRoot, fname):
+    """
+    Load regression coefficients from JSON file.
 
-###### LOAD REGRESSION COEFFICIENTS ############################################
-# dict of cooling type: reg coeffs
-def loadRegCoeffs(dataRoot):
-    regCoeffs, coalCoeffs, ngccCoeffs = dict(), dict(), dict()
-    coalCoeffs['once through'] = {90: {'waterF': -.024, 'intercept': 2.22},
-                                  100: {'waterF': -.016, 'intercept': 1.97}}
-    coalCoeffs['recirculating'] = {90: {'airF': -.015, 'rh': -.0058, 'intercept': 2.54},
-                                   100: {'airF': -.002, 'rh': -.0006, 'intercept': 1.15}}
-    coalCoeffs['dry cooling'] = {90: {'airF': -.00177, 'intercept': .36},
-                                 100: {'airF': -.00177, 'intercept': .36}}
-    ngccCoeffs['once through'] = {100: {'airF': -.00132, 'intercept': .06}}
-    ngccCoeffs['recirculating'] = {100: {'airF': -.0013, 'intercept': .0628}}
-    ngccCoeffs['dry cooling'] = {100: {'airF': -.0017, 'rh': 5.38E-6, 'intercept': .1}}
-    regCoeffs['Coal Steam'] = coalCoeffs
-    regCoeffs['Combined Cycle'] = ngccCoeffs
+    This function works for both available capacity (%) and water intensity (gal/MWh) files. These files are assumed
+    to be inside the folder /dataRoot/Curtailment/.
+
+    :param dataRoot: root of data folder (see pdf 'structure of data folder' for more details on folder structure)
+    :param fname: name of JSON file (with extension)
+    :return: nested dictionary of cooling type: reg coeffs
+    """
+
+    regCoeffs = json.load(fp=open(os.path.join(dataRoot, 'Curtailment', fname)))
+
     return regCoeffs
 
 
-################################################################################
-
-###### GET COEFFICIENTS FOR PARTICULAR GEN OR TECH #############################
-# If plant not eligible for curtailment or cool type not included in reg coeffs (e.g., wind),
-# assume no curtailment. See loadRegCoeffs for strucutre of coeffs.
-# Inputs: parameters for getting reg coeffs, and regCoeffs (dict of cool type: cool design T:
-# parameter:coefficient)
 def getCoeffsForGenOrTech(plantType, hr, fuelAndCoalType, coolType, fgdType, plantTypesCurtailed,
                           regCoeffs, coolDesignT):
-    if (plantType not in plantTypesCurtailed or coolType not in list(regCoeffs[plantType].keys())
-            or coolDesignT not in list(regCoeffs[plantType][coolType].keys())):
+    """
+    GET COEFFICIENTS FOR PARTICULAR GEN OR TECH. If plant not eligible for curtailment or cool type not included in
+    reg coeffs (e.g., wind), assume no curtailment. See loadRegCoeffs for strucutre of coeffs.
+
+    Inputs: parameters for getting reg coeffs, and regCoeffs (dict of cool type: cool design T: parameter:coefficient)
+
+    :param plantType: (string) with type of plant ('Coal Steam', 'Hydro', 'Combined Cycle', ...)
+    :param hr: (float) heat rate
+    :param fuelAndCoalType: (string) fuel type
+    :param coolType: (string) cooling technology type
+    :param fgdType:
+    :param plantTypesCurtailed: (list) list with plant types that are curtailed
+    :param regCoeffs: (dict) nested dictionary with regression coefficient for all (plantType,coolType,coolDesignT)
+    :param coolDesignT: (string) cooling technology design temperature
+    :return: (dict) dictionary with regression coefficient for this specific (plantType,coolType,coolDesignT)
+    """
+
+    # check if this plant has curtailment data
+    if (plantType not in plantTypesCurtailed or plantType not in list(regCoeffs.keys()) or
+            coolType not in list(regCoeffs[plantType].keys()) or
+            coolDesignT not in list(regCoeffs[plantType][coolType].keys())):
         coeffs = None
     else:
         coeffs = regCoeffs[plantType][coolType][coolDesignT]
     return coeffs
 
 
-################################################################################
-
-###### GET KEY PARAMETERS FOR CURTAILMENT OF EXISTING GENERATORS ###############
-# Parameters that affect curtailment: coal steam vs NGCC, bit vs. subbit vs. lignite,
-# HR, once through vs. recirc vs. dry cooling, wet FGD vs. lime spray dryer
 def getKeyCurtailParams(gen, genFleet):
+    """
+    GET KEY PARAMETERS FOR CURTAILMENT OF EXISTING GENERATORS.
+
+    Parameters that affect curtailment: coal steam vs NGCC, bit vs. subbit vs. lignite, HR,
+    once through vs. recirc vs. dry cooling, wet FGD vs. lime spray dryer
+
+    :param gen:
+    :param genFleet:
+    :return:
+    """
+
     genRow = getGenRowInFleet(gen, genFleet)
     heads = genFleet[0]
     (plantTypeCol, hrCol, coalTypeCol, coolTypeCol, so2ControlCol, stateCol,
@@ -145,10 +208,15 @@ def getSO2Control(so2Control):
     return fgdType
 
 
-################################################################################
-
-####### GET KEY PARAMS FOR REGRESSION ##########################################
 def getKeyCurtailParamsNewTechs(newTechsCE, techRow):
+    """
+    GET KEY PARAMS FOR REGRESSION
+
+    :param newTechsCE:
+    :param techRow:
+    :return:
+    """
+
     heads = newTechsCE[0]
     (plantTypeCol, hrCol, fuelTypeCol, coolTypeCol, fgdCol) = (heads.index('TechnologyType'),
                                                                heads.index('HR(Btu/kWh)'),
@@ -157,5 +225,4 @@ def getKeyCurtailParamsNewTechs(newTechsCE, techRow):
     (plantType, hr, coolType, fgdType) = (techRow[plantTypeCol], techRow[hrCol],
                                           techRow[coolTypeCol], techRow[fgdCol])
     fuelAndCoalType = techRow[fuelTypeCol]
-    return (plantType, hr, fuelAndCoalType, coolType, fgdType)
-################################################################################
+    return plantType, hr, fuelAndCoalType, coolType, fgdType

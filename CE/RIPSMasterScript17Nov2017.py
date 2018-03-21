@@ -360,7 +360,7 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, startYear, currYear, endY
                              dataRoot, resultsDir, scenario, incITC, permitOncethru)
     updateFuelPrices(genFleet, newTechsCE, currYear, fuelPricesTimeSeries)
     write2dListToCSV(newTechsCE, os.path.join(resultsDir, 'newTechsCE' + str(currYear) + '.csv'))
-    if priorCapacExpModel != None:  # if not in first CE loop
+    if priorCapacExpModel is not None:  # if not in first CE loop
         unitsRetireCFPriorCE = retireUnitsCFPriorCE(genFleet, genFleetPriorCE, retirementCFCutoff,
                                                     priorCapacExpModel, priorHoursCE, scaleMWtoGW, ptEligRetCF,
                                                     currYear)
@@ -387,13 +387,13 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, startYear, currYear, endY
          solarFilenameAndCapac) = getRenewableCFs(zonalGenFleet, startWindCapacForCFs, startSolarCapacForCFs,
                                                   tzAnalysis, dataRoot, windGenDataYr, zone, fipsToZones, fipsToPolys)
         print('Got RE CFs')
-        if windCFs != None:
+        if windCFs is not None:
             write2dListToCSV(windCFs, os.path.join(resultsDir, 'windCFsFullYrCE' + zone + str(currYear) + '.csv'))
             write2dListToCSV(windCfsDtHr, os.path.join(resultsDir, 'windCFsDtFullYrCE' + zone + str(currYear) + '.csv'))
             # write2dListToCSV(windCfsDtSubhr,os.path.join(resultsDir,'windCFsDtSubhrFullYrCE' + zone + str(currYear) + '.csv'))
             write2dListToCSV(ewdIdAndCapac,
                              os.path.join(resultsDir, 'windIdAndCapacCE' + zone + str(currYear) + '.csv'))
-        if solarCFs != None:
+        if solarCFs is not None:
             write2dListToCSV(solarCFs, os.path.join(resultsDir, 'solarCFsFullYrCE' + zone + str(currYear) + '.csv'))
             write2dListToCSV(solarCfsDtHr,
                              os.path.join(resultsDir, 'solarCFsDtFullYrCE' + zone + str(currYear) + '.csv'))
