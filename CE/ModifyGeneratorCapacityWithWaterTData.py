@@ -71,9 +71,19 @@ def getAllGridCellLatLongsInSpatFile(rbmDataDir, tempAndSpatFilename):
     return gridCellLatLongs
 
 
-# Average temperature data for all segments in each cell, then save all data
 def saveAndAverageTDataForAllCells(gridCellLatLongs, rbmDataDir, rbmOutputDir, tempAndSpatFilename,
                                    nsegFilename, locPrecision, outputHeaders, numCellsToProcess):
+    """Average temperature data for all segments in each cell, then save all data
+
+    :param gridCellLatLongs:
+    :param rbmDataDir:
+    :param rbmOutputDir:
+    :param tempAndSpatFilename:
+    :param nsegFilename:
+    :param locPrecision:
+    :param outputHeaders:
+    :param numCellsToProcess:
+    """
     print('Num grid cells:', len(gridCellLatLongs))
     (cellCtr, totalCellCtr, tgtCellLatLongs) = (0, 0, [])
     for (cellLat, cellLong) in gridCellLatLongs:
@@ -103,8 +113,15 @@ def saveAndAverageTDataForGridCells(rbmDataDir, rbmOutputDir, tempAndSpatFilenam
                                                mapLatLongToSegmentNum, mapSegmentNumToLatLong)
 
 
-###### CREATE OUTPUT DIRECTORY FOR CELL T DATA #################################
 def createOutputDirs(baseOutputDir, tempAndSpatFilename, locPrecision, tgtCellLatLongs):
+    """CREATE OUTPUT DIRECTORY FOR CELL T DATA
+
+    :param baseOutputDir:
+    :param tempAndSpatFilename:
+    :param locPrecision:
+    :param tgtCellLatLongs:
+    :return:
+    """
     outputDirs = dict()
     for (cellLat, cellLong) in tgtCellLatLongs:
         outputDir = os.path.join(baseOutputDir,
@@ -114,17 +131,30 @@ def createOutputDirs(baseOutputDir, tempAndSpatFilename, locPrecision, tgtCellLa
     return outputDirs
 
 
-###### EXTRACT TOTAL NUM SEGMENTS AND DAYS IN MODEL RUN ########################
 def getNumSegmentsAndDays(dataDir, nsegFilename):
+    """EXTRACT TOTAL NUM SEGMENTS AND DAYS IN MODEL RUN
+
+    :param dataDir:
+    :param nsegFilename:
+    :return:
+    """
     nseg_nday = np.loadtxt(os.path.join(dataDir, nsegFilename))
     (numTotalSegments, numDays) = (int(nseg_nday[0]), int(nseg_nday[1]))
     return (numTotalSegments, numDays)
 
 
-###### GET ALL LINES IN SPATIAL FILE THAT CORRESPOND TO CELL ###################
-# Gets line numbers in spatial file that match cell. Includes all reaches & segments
-# EXCEPT segment 2 in outlet cell (= max segment #) b/c no data for that segment.
 def getLinesInSpatFileForCell(dataDir, tempAndSpatFilename, tgtCellLatLongs, numTotalSegments):
+    """GET ALL LINES IN SPATIAL FILE THAT CORRESPOND TO CELL
+
+    Gets line numbers in spatial file that match cell. Includes all reaches & segments
+    EXCEPT segment 2 in outlet cell (= max segment #) b/c no data for that segment.
+
+    :param dataDir:
+    :param tempAndSpatFilename:
+    :param tgtCellLatLongs:
+    :param numTotalSegments:
+    :return:
+    """
     (mapSegmentNumToLatLong, mapLatLongToSegmentNum) = (dict(), dict())
     spatFile = os.path.join(dataDir, tempAndSpatFilename + '.Spat')  # .Temp file
     f = open(spatFile, 'r')
@@ -150,13 +180,26 @@ def getLinesInSpatFileForCell(dataDir, tempAndSpatFilename, tgtCellLatLongs, num
     return (cellInfo, mapSegmentNumToLatLong, mapLatLongToSegmentNum)
 
 
-###### READ CELL TEMPERATURE DATA ##############################################
-# Temperature data: hour 1, all cells + segments + reaches, then hour 2, all cells + segments + reaches, etc.
 def readCellTemperatureData(dataDir, tempAndSpatFilename, cellInfo, numTotalSegments, outputHeaders):
+    """READ CELL TEMPERATURE DATA
+
+    Temperature data: hour 1, all cells + segments + reaches, then hour 2, all cells + segments + reaches, etc.
+
+    :param dataDir:
+    :param tempAndSpatFilename:
+    :param cellInfo:
+    :param numTotalSegments:
+    :param outputHeaders:
+    :return:
+    """
     tempFile = os.path.join(dataDir, tempAndSpatFilename + '.Temp')  # .Temp file
-    allSegmentData = {}  # total segment number (=line #in .spat file): np array of year, month, day, flow(cfs), streamTemp(degC).
-    for totalSegmentNum in cellInfo: allSegmentData[
-        totalSegmentNum] = []  # initialize b/c adding to lists in dict later
+
+    # total segment number (=line #in .spat file): np array of year, month, day, flow(cfs), streamTemp(degC).
+    allSegmentData = {}
+
+    for totalSegmentNum in cellInfo:
+        allSegmentData[totalSegmentNum] = []  # initialize b/c adding to lists in dict later
+
     waterTAllSegments = {}  # store just water T for each segment
     for totalSegmentNum in cellInfo: waterTAllSegments[totalSegmentNum] = dict()
     f = open(tempFile, 'r')
@@ -350,14 +393,15 @@ def createAverageTFilename(locPrecision, inputLat, inputLong):
 ################################################################################
 ################################################################################
 
-
-################################################################################
-####### MAP GENERATORS TO AND FROM RBM GRID CELLS  #############################
-################################################################################
-# Returns 2 dicts for all gens in fleet that have lat/long coords.
-# 1)gen:[gen,(gen lat, gen long),(cell lat, cell long)]. 2) (cell lat, clell long):genID.
-# & list of [[genID,(genlat,genlong),(celllat,celllong)]]
 def getGenToCellAndCellToGenDictionaries(genFleet):
+    """MAP GENERATORS TO AND FROM RBM GRID CELLS
+
+    Returns 2 dicts for all gens in fleet that have lat/long coords. 1)gen:[gen,(gen lat, gen long),
+    (cell lat, cell long)]. 2) (cell lat, clell long):genID. & list of [[genID,(genlat,genlong),(celllat,celllong)]]
+
+    :param genFleet:
+    :return:
+    """
     (fleetLatCol, fleetLongCol) = (genFleet[0].index('Latitude'), genFleet[0].index('Longitude'))
     genToCellLatLongsList = [['ORIS+UnitID', 'GenLat,GenLong', 'CellLat,CellLong']]
     genToCellLatLongsDict = dict()
@@ -387,20 +431,32 @@ def find125GridMaurerLatLong(lat, lon):
 
 ################################################################################
 ################################################################################
-################################################################################
-
-
-################################################################################
-####### CURTAIL GENERATOR CAPACITY WITH WATER TEMPERATURES #####################
-################################################################################
-# Calculates generator curtailments. If generator isn't curtailed (not right plant type,
-# cell data not avaialble, etc.), ignored here. CalculateHourlyCapacs... script
-# handles those cases (assume curtailment = 0).
-# cellLatLongToGenDict = dict of (cell lat, cell long):gen ID for all gens w/ lat/lon coords
-# in genFleet, including gens that hsould nto be curtailed.
 def calculateGeneratorCurtailments(cellLatLongToGenDict, rbmOutputDir, locPrecision,
                                    curtailmentYear, genFleet, modelName, ptCurtailed, ptCurtailedRegs, incCurtailments,
                                    incRegs, envRegMaxT, dataRoot, coolDesignT, resultsDir):
+    """CURTAIL GENERATOR CAPACITY WITH WATER TEMPERATURES
+
+    Calculates generator curtailments. If generator isn't curtailed (not right plant type, cell data not avaialble,
+    etc.), ignored here. CalculateHourlyCapacs... script handles those cases (assume curtailment = 0).
+    cellLatLongToGenDict = dict of (cell lat, cell long):gen ID for all gens w/ lat/lon coords in genFleet,
+    including gens that should nto be curtailed.
+
+    :param cellLatLongToGenDict:
+    :param rbmOutputDir:
+    :param locPrecision:
+    :param curtailmentYear:
+    :param genFleet:
+    :param modelName:
+    :param ptCurtailed:
+    :param ptCurtailedRegs:
+    :param incCurtailments:
+    :param incRegs:
+    :param envRegMaxT:
+    :param dataRoot:
+    :param coolDesignT:
+    :param resultsDir:
+    :return:
+    """
     hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList = dict(), list()
     regCoeffs = loadRegCoeffs(dataRoot, 'capacity.json')  # dict of plant type: cooling type: cool design T: param: coeffs
     allCellFolders = os.listdir(rbmOutputDir)
@@ -428,10 +484,21 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, rbmOutputDir, locPrecis
     return hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList
 
 
-###### LOAD WATER AND MET DATA BY CELL ON HOURLY BASIS #########################
-# Get DF w/ met (air T and rh) and water T data for cell
 def loadWaterAndMetData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailmentYear,
                         cellFoldername, resultsDir):
+    """LOAD WATER AND MET DATA BY CELL ON HOURLY BASIS
+
+    Get DF w/ met (air T and rh) and water T data for cell
+
+    :param cellLat:
+    :param cellLong:
+    :param rbmOutputDir:
+    :param locPrecision:
+    :param curtailmentYear:
+    :param cellFoldername:
+    :param resultsDir:
+    :return:
+    """
     # Load pandas DF w/ air T and rh and datetime just for current year
     metData = loadMetData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailmentYear)
     # Load cell's avg water T data (2d list of Y-M-D, water T (vertical))
@@ -444,10 +511,18 @@ def loadWaterAndMetData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailme
     return metData
 
 
-###### LOAD WATER T AND METEOROLOGICAL VARIABLES ###############################
-# This should load cell-specific met data, but don't have that currently, so just
-# load regional data.
 def loadMetData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailmentYear):
+    """LOAD WATER T AND METEOROLOGICAL VARIABLES
+
+    This should load cell-specific met data, but don't have that currently, so just load regional data.
+
+    :param cellLat:
+    :param cellLong:
+    :param rbmOutputDir:
+    :param locPrecision:
+    :param curtailmentYear:
+    :return:
+    """
     metData = pd.read_csv('/Users/kiko/Documents/CE/AreaTVACellsallCurtailEnvRegsCnoneSnor//' +
                           'demandAndMetDfS_C_TVA' + str(curtailmentYear) + '.csv')
     return metData
