@@ -1,12 +1,14 @@
-# Michael Craig
-# August 11, 2016
-# Script for modifying generator capacity with water T from RBM.
+"""
+Michael Craig
+August 11, 2016
+Script for modifying generator capacity with water T from RBM.
 
-# 1) Gets list of all grid cells from .spat.
-# 2) Saves T data for each segment in each grid cell into folders for each cell.
-# 3) Averages T data across all segments for each cell and saves that data in folder for each cell.
-# 4) Creates dictionaries mapping generators to cells and vice versa.
-# 5) Using dictionary, pairs generator with water T time series and modifies capacity.
+1) Gets list of all grid cells from .spat.
+2) Saves T data for each segment in each grid cell into folders for each cell.
+3) Averages T data across all segments for each cell and saves that data in folder for each cell.
+4) Creates dictionaries mapping generators to cells and vice versa.
+5) Using dictionary, pairs generator with water T time series and modifies capacity.
+"""
 
 import os, csv, copy
 import numpy as np
@@ -21,41 +23,50 @@ from CurtailmentRegressions import (calcCurtailmentForGenOrTech, loadRegCoeffs, 
 ################################################################################
 ####### MASTER FUNCTIONS #######################################################
 ################################################################################
-def processRBMDataIntoIndividualCellFiles(rbmDataDir, tempAndSpatFilename,
-                                          rbmOutputDir, nsegFilename, locPrecision, outputHeaders, numCellsToProcess):
-    gridCellLatLongs = getAllGridCellLatLongsInSpatFile(rbmDataDir, tempAndSpatFilename)
-    saveAndAverageTDataForAllCells(gridCellLatLongs, rbmDataDir, rbmOutputDir, tempAndSpatFilename,
-                                   nsegFilename, locPrecision, outputHeaders, numCellsToProcess)
+def processRBMDataIntoIndividualCellFiles(curtailparam):
+    """Main routine to pre process RBM Raw data to individual cell files
+
+    This routine reads the raw output files from a RBM simulations and saves the relevant data into separate CSV
+    files which will be used by the CE/UC models.
+
+    :param curtailparam: objcet of class Curtailmentparameters
+    """
+    gridCellLatLongs = getAllGridCellLatLongsInSpatFile(curtailparam.rbmDataDir, curtailparam.tempAndSpatFilename)
+    saveAndAverageTDataForAllCells(gridCellLatLongs, curtailparam)
 
 
-# Outputs: dictionaryof ORIS+UNITID to 2d vertical list of [datetime,curtailment(mw)],
-# list of (ORIS+UNIT,gen lat long, cell lat long), and list of hourly curtailments for existing gens.
-def determineHrlyCurtailmentsForExistingGens(locPrecision, genFleet, rbmOutputDir, curtailmentYear,
-                                             modelName, ptCurtailed, ptCurtailedRegs, incCurtailments, incRegs,
-                                             envRegMaxT, dataRoot,
-                                             coolDesignT, resultsDir):
+def determineHrlyCurtailmentsForExistingGens(genFleet, currYear, modelName, genparam, curtailparam, resultsDir):
+    """Computes times series of hourly curtailments for EXISTING generators
+
+    :param genFleet:
+    :param currYear:
+    :param modelName:
+    :param genparam:
+    :param curtailparam:
+    :param resultsDir:
+    :return: dictionaryof ORIS+UNITID to 2d vertical list of [datetime,curtailment(mw)],
+             list of (ORIS+UNIT,gen lat long, cell lat long), and
+             list of hourly curtailments for existing gens.
+    """
     (genToCellLatLongsDict, cellLatLongToGenDict,
      genToCellLatLongsList) = getGenToCellAndCellToGenDictionaries(genFleet)
-    hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList = calculateGeneratorCurtailments(cellLatLongToGenDict,
-                                                                                          rbmOutputDir, locPrecision,
-                                                                                          curtailmentYear, genFleet,
-                                                                                          modelName, ptCurtailed,
-                                                                                          ptCurtailedRegs,
-                                                                                          incCurtailments, incRegs,
-                                                                                          envRegMaxT, dataRoot,
-                                                                                          coolDesignT, resultsDir)
+    hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList = \
+        calculateGeneratorCurtailments(cellLatLongToGenDict, curtailmentYear, genFleet, modelName, genparam,
+                                       curtailparam, resultsDir)
     return hrlyCurtailmentsAllGensInTgtYr, genToCellLatLongsList, hrlyCurtailmentsList
 
 
-################################################################################
-################################################################################
-################################################################################
+#####################################################################################################
+# ----------- ROUTINES USED IN THE PRE-PROCESSING OF RBM DATA INTO INDIVIDUAL CELL FILES -----------
+#####################################################################################################
 
-################################################################################
-####### PROCESS RBM DATA INTO INDIVIDUAL CELL FILES ############################
-################################################################################
-# Get all grid cell lat/longs in spat file
 def getAllGridCellLatLongsInSpatFile(rbmDataDir, tempAndSpatFilename):
+    """Get all grid cell lat/longs in spat file
+
+    :param rbmDataDir:
+    :param tempAndSpatFilename:
+    :return:
+    """
     spatFile = os.path.join(rbmDataDir, tempAndSpatFilename + '.Spat')
     f = open(spatFile, 'r')
     lineCtr = 0
@@ -134,9 +145,12 @@ def createOutputDirs(baseOutputDir, tempAndSpatFilename, locPrecision, tgtCellLa
 def getNumSegmentsAndDays(dataDir, nsegFilename):
     """EXTRACT TOTAL NUM SEGMENTS AND DAYS IN MODEL RUN
 
-    :param dataDir:
-    :param nsegFilename:
-    :return:
+    This function reads the total number of segments and days in a model run. This information is in the a text file
+    'nsegFilename'. The name of this file is defined in Curtailment parameters
+
+    :param dataDir: string with location of nsegFilename.
+    :param nsegFilename: string with name of nsegFilename. The name of this file is defined in Curtailment parameters.
+    :return: tuple with number of segments and number of days
     """
     nseg_nday = np.loadtxt(os.path.join(dataDir, nsegFilename))
     (numTotalSegments, numDays) = (int(nseg_nday[0]), int(nseg_nday[1]))
@@ -186,10 +200,12 @@ def readCellTemperatureData(dataDir, tempAndSpatFilename, cellInfo, numTotalSegm
     Temperature data: hour 1, all cells + segments + reaches, then hour 2, all cells + segments + reaches, etc.
 
     :param dataDir:
-    :param tempAndSpatFilename:
+    :param tempAndSpatFilename: string with name of .TEMP and .Spat files for this simulation. This is defined in
+                                Curtailment parameters
     :param cellInfo:
     :param numTotalSegments:
-    :param outputHeaders:
+    :param outputHeaders: list of strings with names of variables in .Temp file. This list is defined in Curtailment
+                          parameters
     :return:
     """
     tempFile = os.path.join(dataDir, tempAndSpatFilename + '.Temp')  # .Temp file
@@ -257,6 +273,14 @@ def processTempDataDictIntoRow(tempDataDict, outputHeaders):
 
 
 def getDataColNums(cols):
+    """Auxiliary function that maps header names to indexes of columns
+
+    This is an auxiliary function used in 'processTempDataDictIntoRow' that maps the header names to indexes of columns
+
+    :param cols: list of strings with names of variables in .Temp file. This list is defined in Curtailment parameters
+    :return: tuple with the indexes of the variables in a specific arbitrary order (defined by the variables
+             returned)
+    """
     (yearCol, monthCol, dayCol, flowCol, streamTCol, headTCol, airTCol) = (cols.index('Year'),
                                                                            cols.index('Month'), cols.index('Day'),
                                                                            cols.index('Streamflow(cfs)'),
@@ -289,6 +313,16 @@ def writeCellTemperatureData(allSegmentData, cellInfo, outputDirs, locPrecision,
 
 
 def createBaseFilenameToReadOrWrite(locPrecision, inputLat, inputLong):
+    """Creates string with name of folder with cell data
+
+    This function creates a string with the formatted name of the folder that contains the data
+    for the respective grid cell
+
+    :param locPrecision:
+    :param inputLat: latitude of grid cell
+    :param inputLong: longitude of grid cell
+    :return: string with name of folder (e.g. 34.4375_-86.4375)
+    """
     return '%.*f_%.*f' % (locPrecision, inputLat, locPrecision, inputLong)
 
 
@@ -396,11 +430,14 @@ def createAverageTFilename(locPrecision, inputLat, inputLong):
 def getGenToCellAndCellToGenDictionaries(genFleet):
     """MAP GENERATORS TO AND FROM RBM GRID CELLS
 
-    Returns 2 dicts for all gens in fleet that have lat/long coords. 1)gen:[gen,(gen lat, gen long),
-    (cell lat, cell long)]. 2) (cell lat, clell long):genID. & list of [[genID,(genlat,genlong),(celllat,celllong)]]
+    Takes the 2d list with generator fleet data and creates dictionaries mapping individual plants to grid cells
+    lat and long
 
-    :param genFleet:
-    :return:
+    :param genFleet: 2d list with generator fleet data
+    :return: genToCellLatLongsDict: dictionary gen:[gen,(gen lat, gen long), (cell lat, cell long)]
+             cellLatLongToGenDict:  dictionary (cell lat, clell long):genID.
+             genToCellLatLongsList: 2d list [[genID,(genlat,genlong),(celllat,celllong)]]
+
     """
     (fleetLatCol, fleetLongCol) = (genFleet[0].index('Latitude'), genFleet[0].index('Longitude'))
     genToCellLatLongsList = [['ORIS+UnitID', 'GenLat,GenLong', 'CellLat,CellLong']]
@@ -418,15 +455,21 @@ def getGenToCellAndCellToGenDictionaries(genFleet):
                 cellLatLongToGenDict[cellLoc] = [genID]
         genToCellLatLongsDict[genID] = [genID, (genLat, genLong), cellLoc]
         genToCellLatLongsList.append([genID, (genLat, genLong), cellLoc])
-    return (genToCellLatLongsDict, cellLatLongToGenDict,
-            genToCellLatLongsList)
+
+    return genToCellLatLongsDict, cellLatLongToGenDict, genToCellLatLongsList
 
 
-# Get (lat,lon) of 1/8 grid cell that a (lat, lon) point falls in
 def find125GridMaurerLatLong(lat, lon):
+    """Get (lat,lon) of 1/8 grid cell that a (lat, lon) point falls in
+
+    :param lat: latitude value
+    :param lon:  longitude value
+    :return: tuple (lat_grid, long_grid) of grid cell that contains the point (lat,lon)
+    """
+
     lat_grid = np.around(8.0 * lat - 0.5) / 8.0 + 0.0625
     lon_grid = np.around(8.0 * lon - 0.5) / 8.0 + 0.0625
-    return (lat_grid, lon_grid)
+    return lat_grid, lon_grid
 
 
 ################################################################################
@@ -458,7 +501,7 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, rbmOutputDir, locPrecis
     :return:
     """
     hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList = dict(), list()
-    regCoeffs = loadRegCoeffs(dataRoot, 'capacity.json')  # dict of plant type: cooling type: cool design T: param: coeffs
+    regCoeffs = loadRegCoeffs(dataRoot, 'capacity.json')  # dict of planttype:coolingtype:cooldesignT:param:coeffs
     allCellFolders = os.listdir(rbmOutputDir)
 
     for (cellLat, cellLong) in cellLatLongToGenDict:  # this maps gen lat/lon to gen IDs; cell data may not exist
@@ -488,16 +531,18 @@ def loadWaterAndMetData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailme
                         cellFoldername, resultsDir):
     """LOAD WATER AND MET DATA BY CELL ON HOURLY BASIS
 
-    Get DF w/ met (air T and rh) and water T data for cell
+    Read text files with data for met (air T and rh) and water T data for one specific cell. The data files were
+    created by the pre-processing function 'processRBMDataIntoIndividualCellFiles' and saved in a folder 'rbmOutputDir'.
 
-    :param cellLat:
-    :param cellLong:
-    :param rbmOutputDir:
-    :param locPrecision:
-    :param curtailmentYear:
+    :param cellLat: latitude of grid cell
+    :param cellLong: longitude of grid cell
+    :param rbmOutputDir: string with folder of pre-processed RBM (Stream temperature, Stream flow, etc...) data. This
+                         pre-processed data is created by the function 'processRBMDataIntoIndividualCellFiles'
+    :param locPrecision: integer with number of decimal digits in latitude and longitude
+    :param curtailmentYear: integer with year that curtailment is being simulated
     :param cellFoldername:
-    :param resultsDir:
-    :return:
+    :param resultsDir: string with folder of output data of CE model
+    :return: panda data frame
     """
     # Load pandas DF w/ air T and rh and datetime just for current year
     metData = loadMetData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailmentYear)
@@ -528,8 +573,19 @@ def loadMetData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailmentYear):
     return metData
 
 
-###### LOAD WATER T ############################################################
 def loadWaterData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailmentYear, cellFoldername):
+    """LOAD WATER TEMPERATURE DATA
+
+    This function reads file with water data simulated by RBM and returns a list with the data
+
+    :param cellLat:
+    :param cellLong:
+    :param rbmOutputDir:
+    :param locPrecision:
+    :param curtailmentYear:
+    :param cellFoldername:
+    :return:
+    """
     cellTemperature = loadCellAvgWaterT(cellLat, cellLong, rbmOutputDir, locPrecision, cellFoldername)
     waterTInCurtailYear = getCellWaterTsInCurtailYear(cellTemperature, curtailmentYear)
     hourlyWaterT = list(np.array([[val] * 24 for val in waterTInCurtailYear]).flatten())
@@ -537,10 +593,46 @@ def loadWaterData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailmentYear
 
 
 def loadCellAvgWaterT(cellLat, cellLong, rbmOutputDir, locPrecision, cellFoldername):
+    """
+
+    :param cellLat: latitide of grid cell
+    :param cellLong:  longitude of grid cell
+    :param rbmOutputDir: string with path to folder with processed RBM data
+    :param locPrecision:  integer with number of decimal digits in logintude and latitude values
+    :param cellFoldername:
+    :return:
+    """
     cellFolder = os.path.join(rbmOutputDir, cellFoldername)
     averageTFilename = createAverageTFilename(locPrecision, cellLat, cellLong)
     cellTemperature = readCSVto2dList(os.path.join(cellFolder, averageTFilename))
     return cellTemperature
+
+
+def getCellLatAndLongFromFolderName(dummyFolder):
+    """
+
+    :param dummyFolder:
+    :return:
+    """
+    dividerIdx = dummyFolder.index('_')
+    return (float(dummyFolder[:dividerIdx]), float(dummyFolder[dividerIdx + 1:]))
+
+
+def getCellWaterTsInCurtailYear(cellTemperature, curtailmentYear):
+    """ISOLATE DATA FOR YEAR OF ANALYSIS
+
+    Return 2 1d lists of dates and water Ts in year of analysis. Daily basis.
+
+    :param cellTemperature:
+    :param curtailmentYear: year being analyzed (integer)
+    :return: 2 1d lists of dates and water Ts in year of analysis. Daily basis.
+    """
+    (dateCol, waterTCol) = (cellTemperature[0].index('Datetime'), cellTemperature[0].index('AverageWaterT(degC)'))
+    rowsInCurtailmentYear = [row for row in cellTemperature[1:]
+                             if int(getElementsOfDate(row[dateCol])[0]) == curtailmentYear]  # skip header row
+    datesInCurtailmentYear = [row[dateCol] for row in rowsInCurtailmentYear]
+    temperaturesInCurtailmentYear = [float(row[waterTCol]) for row in rowsInCurtailmentYear]
+    return temperaturesInCurtailmentYear
 
 
 # Looking up gen by gen lat/lon. May not be cell @ corresponding location.
@@ -553,18 +645,3 @@ def loadCellAvgWaterT(cellLat, cellLong, rbmOutputDir, locPrecision, cellFoldern
 #     (dateCol,waterTCol) = (dummyCellT[0].index('Datetime'),dummyCellT[0].index('AverageWaterT(degC)'))
 #     for row in dummyCellT[1:]: row[waterTCol] = fakeWaterT
 #     return dummyCellT
-
-def getCellLatAndLongFromFolderName(dummyFolder):
-    dividerIdx = dummyFolder.index('_')
-    return (float(dummyFolder[:dividerIdx]), float(dummyFolder[dividerIdx + 1:]))
-
-
-###### ISOLATE DATA FOR YEAR OF ANALYSIS #######################################
-# Return 2 1d lists of dates and water Ts in year of analysis. Daily basis.
-def getCellWaterTsInCurtailYear(cellTemperature, curtailmentYear):
-    (dateCol, waterTCol) = (cellTemperature[0].index('Datetime'), cellTemperature[0].index('AverageWaterT(degC)'))
-    rowsInCurtailmentYear = [row for row in cellTemperature[1:]
-                             if int(getElementsOfDate(row[dateCol])[0]) == curtailmentYear]  # skip header row
-    datesInCurtailmentYear = [row[dateCol] for row in rowsInCurtailmentYear]
-    temperaturesInCurtailmentYear = [float(row[waterTCol]) for row in rowsInCurtailmentYear]
-    return temperaturesInCurtailmentYear

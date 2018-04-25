@@ -1,0 +1,89 @@
+#
+# ------ PARAMETER FILE --------
+#
+# Description:
+#
+# End Description.
+#
+datadir = /Volumes/BFPROD/Data
+xsedeRun = False
+runCE = True
+runUC = False
+runFirstUCYear = False
+startYear = 2015
+endYear = 2046
+yearStepCE = 10
+daysPerSeason = 10
+analysisArea = TVA
+#
+# -------- KEY CURTAILMENT PARAMETERS --------
+#
+incCurtailments = True  # whether to model curtailments,whether to model env regs on water T
+incRegs = True  # whether to model curtailments,whether to model env regs on water T
+coolDesignT = 100  # design temperature of cooling techs
+# PTs curtailed via regression (ptCurtailed) and via enviro regulations (ptCurtailedRegs). Names need to be under quotes
+ptCurtailed = Coal Steam, Combined Cycle
+ptCurtailedRegs = Coal Steam, Coal Steam CCS, Combined Cycle, Combined Cycle CCS, Nuclear
+# Determines which cells new plants can be sited in; can be all all cells or those w/ gens already
+cellsEligibleForNewPlants = withGens  # 'all' (all cells) or 'withGens' (only cells with gen inside)
+# Of those cells given above parameter, whether input all of them or just the one w/ max wtr T per zone.
+cellNewTechCriteria = all  # 'all' or 'maxWaterT' (maxWaterT: only include cell w/ max water T in CE.)
+#
+# -------- GENERAL PARAMETERS --------
+#
+compressFleet = True
+co2CapScenario = none
+scenario = normal
+#
+# -------- RESULTS DIRECTORY --------
+#
+resultsDir = /Users/kiko/Documents/CE
+#
+# -------- THERMAL CURTAILMENT PARAMETERS --------
+#
+processRBMData = False  # set to True if first time improting set of RBM data
+#
+# -------- RENEWABLE CAPACITY FACTOR PARAMETERS --------
+#
+tzAnalysis = EST
+projectName = rips
+windGenDataYr = 2009  # picked somewhat arbitrarily - average CF of all years in WIND data
+#
+# -------- CAPACITY EXPANSION PARAMETERS --------
+#
+capacExpFilename = CERIPS24July2017PS.gms
+maxAddedZonalCapacPerTech = 10000
+incITC = True
+retirementCFCutoff = .3  # retire units w/ CF lower than given value
+ptEligRetCF = Coal Steam
+selectCurtailDays = True
+planningReserve = 0.15  # fraction of peak demand
+discountRate = 0.07  # fraction
+allowCoalWithoutCCS = True
+onlyNSPSUnits = False
+permitOncethru = True
+#
+# -------- UNIT COMMITMENT PARAMETERS --------
+#
+ucFilename = UCRIPS18April2017.gms
+calculateCO2Price = True
+daysOpt = 1
+daysLA = 1
+ocAdderMin = 0
+ocAdderMax = 0.05  # $/MWh
+#
+# -------- PUMPED HYDRO PARAMETERS --------
+#
+phEff = 0.81
+phMaxSoc = 5
+phInitSoc = .5  # max soc as multiple of capacity; init SOC as fraction of max soc
+#
+# -------- CONVERSION PARAMETERS --------
+#
+scaleMWtoGW = 1000
+scaleDollarsToThousands = 1000
+scaleLbToShortTon = 2000
+#
+# -------- TEMPORARY PARAMETERS --------
+#
+annualDemandGrowth = 0.02  # fraction per year

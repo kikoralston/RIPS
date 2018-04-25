@@ -32,20 +32,24 @@ def selectWeeksForExpansion(zonalDemandProfile, zonalNetDemand, zonalHourlyWindG
     if selectCurtailDays:  # if considering thermal curtailments in selection of special days
         totalHrlyCurtailments = getTotalSystemCurtailments(hrlyCurtailmentsAllGensInTgtYr)
         eliminateLeapYearDay(totalHrlyCurtailments, currYear)
-        write2dListToCSV([totalHrlyCurtailments], os.path.join(resultsDir,
-                                                               'curtailmentsHourlyCombined' + str(currYear) + '.csv'))
-        peakCurtailmentDayHours = getPeakCurtailmentDayHours(totalHrlyCurtailments)  # 1-8760
-        if peakCurtailmentDayHours != peakNetDemandDayHours:  # use netDemandMinusPeak if change this
-            specialDayHours.extend(peakCurtailmentDayHours)
-        peakNetDemandAndCurtailmentDayHours = getPeakDemandPlusCurtailmentDayHours(netDemand,
-                                                                                   totalHrlyCurtailments)  # 1-8760
-        if (peakNetDemandAndCurtailmentDayHours != peakCurtailmentDayHours and
-                    peakNetDemandAndCurtailmentDayHours != peakNetDemandDayHours):  # use netDemandMinusPeak if change this
-            specialDayHours.extend(peakNetDemandAndCurtailmentDayHours)
-        print('Peak net demand hours:', peakNetDemandDayHours)
-        print('Peak curtailment hours:', peakCurtailmentDayHours)
-        print('Peak net demand + curtailment hours:', peakNetDemandAndCurtailmentDayHours)
-        print('Special hours:', specialDayHours)
+        if len(totalHrlyCurtailments) > 0:
+            write2dListToCSV([totalHrlyCurtailments], os.path.join(resultsDir,
+                                                                   'curtailmentsHourlyCombined' + str(currYear) + '.csv'))
+            peakCurtailmentDayHours = getPeakCurtailmentDayHours(totalHrlyCurtailments)  # 1-8760
+            if peakCurtailmentDayHours != peakNetDemandDayHours:  # use netDemandMinusPeak if change this
+                specialDayHours.extend(peakCurtailmentDayHours)
+            peakNetDemandAndCurtailmentDayHours = getPeakDemandPlusCurtailmentDayHours(netDemand,
+                                                                                       totalHrlyCurtailments)  # 1-8760
+            if (peakNetDemandAndCurtailmentDayHours != peakCurtailmentDayHours and
+                        peakNetDemandAndCurtailmentDayHours != peakNetDemandDayHours):  # use netDemandMinusPeak if change this
+                specialDayHours.extend(peakNetDemandAndCurtailmentDayHours)
+            print('Peak net demand hours:', peakNetDemandDayHours)
+            print('Peak curtailment hours:', peakCurtailmentDayHours)
+            print('Peak net demand + curtailment hours:', peakNetDemandAndCurtailmentDayHours)
+            print('Special hours:', specialDayHours)
+        else:
+            print('List of hourly curtailment is empty!')
+
     # Get representative hours by NLDC
     (repSeasonalHours, repHrsBySeason, regHrsBySeason) = getRepSeasonalHoursByNLDC(netDemand,
                                                                                    daysPerSeason, specialDayHours)
@@ -111,14 +115,17 @@ def removeHoursFrom1dList(list1d, hoursToRemove):
     return list1dCopy
 
 
-# Determine total system hourly curtailments by summing curtailments for each generator
-# Input: dict mapping each gen to 2d list of datetime for year of run to hourly net capacity curtailments (MW)
-# Output: 1d list w/ total system hourly thermal curtailments
 def getTotalSystemCurtailments(hrlyCurtailmentsAllGensInTgtYr):
-    totalHrlyCurtailments = None
+    """Determine total system hourly curtailments by summing curtailments for each generator
+
+    :param hrlyCurtailmentsAllGensInTgtYr: dict mapping each gen to 2d list of datetime for year of run to hourly net
+                                           capacity curtailments (MW)
+    :return: 1d list w/ total system hourly thermal curtailments
+    """
+    totalHrlyCurtailments = []
     for gen in hrlyCurtailmentsAllGensInTgtYr:
         genHrlyCurtailments = hrlyCurtailmentsAllGensInTgtYr[gen]
-        if totalHrlyCurtailments == None:
+        if len(totalHrlyCurtailments) == 0:
             totalHrlyCurtailments = copy.deepcopy(genHrlyCurtailments)
         else:
             totalHrlyCurtailments = list(map(operator.add, totalHrlyCurtailments, genHrlyCurtailments))

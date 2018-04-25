@@ -130,7 +130,7 @@ def getCoeffsForGenOrTech(plantType, hr, fuelAndCoalType, coolType, fgdType, pla
                           regCoeffs, coolDesignT):
     """
     GET COEFFICIENTS FOR PARTICULAR GEN OR TECH. If plant not eligible for curtailment or cool type not included in
-    reg coeffs (e.g., wind), assume no curtailment. See loadRegCoeffs for strucutre of coeffs.
+    reg coeffs (e.g., wind), assume no curtailment. See loadRegCoeffs for structure of coeffs.
 
     Inputs: parameters for getting reg coeffs, and regCoeffs (dict of cool type: cool design T: parameter:coefficient)
 
@@ -142,7 +142,7 @@ def getCoeffsForGenOrTech(plantType, hr, fuelAndCoalType, coolType, fgdType, pla
     :param plantTypesCurtailed: (list) list with plant types that are curtailed
     :param regCoeffs: (dict) nested dictionary with regression coefficient for all (plantType,coolType,coolDesignT)
     :param coolDesignT: (string) cooling technology design temperature
-    :return: (dict) dictionary with regression coefficient for this specific (plantType,coolType,coolDesignT)
+    :return: (dict) dictionary with regression coeffs for this specific combination of (plantType,coolType,coolDesignT)
     """
 
     # check if this plant has curtailment data
@@ -156,15 +156,16 @@ def getCoeffsForGenOrTech(plantType, hr, fuelAndCoalType, coolType, fgdType, pla
 
 
 def getKeyCurtailParams(gen, genFleet):
-    """
-    GET KEY PARAMETERS FOR CURTAILMENT OF EXISTING GENERATORS.
+    """GET KEY PARAMETERS OF INDIVIDUAL GENERATOR FOR CURTAILMENT OF EXISTING GENERATORS.
 
-    Parameters that affect curtailment: coal steam vs NGCC, bit vs. subbit vs. lignite, HR,
-    once through vs. recirc vs. dry cooling, wet FGD vs. lime spray dryer
+    Reads data base of generators and returns Parameters that affect curtailment:
+    coal steam vs NGCC, bit vs. subbit vs. lignite, HR, once through vs. recirc vs. dry cooling,
+    wet FGD vs. lime spray dryer
 
-    :param gen:
-    :param genFleet:
-    :return:
+    :param gen: (String) id of generator
+    :param genFleet: 2d list with generator fleet
+    :return: tuple with parameters of generator: (plantType, heat rate, fuel Type, cooling Type,
+                                                 fgdType, state, capacity)
     """
 
     genRow = getGenRowInFleet(gen, genFleet)
@@ -209,8 +210,9 @@ def getSO2Control(so2Control):
 
 
 def getKeyCurtailParamsNewTechs(newTechsCE, techRow):
-    """
-    GET KEY PARAMS FOR REGRESSION
+    """GET KEY PARAMS FOR REGRESSION
+
+    Function returns the key parameters of individual NEW generators needed to define which regression function to use
 
     :param newTechsCE:
     :param techRow:

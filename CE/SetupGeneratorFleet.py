@@ -10,43 +10,52 @@ from AuxFuncs import *
 
 
 ################################################################################
-# Imports fleet, isolates fleet to given state and power system, removes
-# retired units, and adds emissions rates and cooling information.
-# IN: states, year, & power system for analysis
-# OUT: 2d list of generator fleet
-def setupGeneratorFleet(testModel, statesForAnalysis, ipmZones, retirementYearScreen,
-                        currYear, fuelPricesTimeSeries, compressFleet, dataRoot, ocAdderMin, ocAdderMax,
-                        regupCostCoeffs, plantTypesCurtailed):
+#
+#
+# IN:
+# OUT:
+def setupGeneratorFleet(currYear, genparam, reserveparam):
+    """Imports fleet data
+
+    Uses pre defined parameters of this analysis (states, year, & power system for analysis) to import data
+    of generator fleet. Imports fleet, isolates fleet to given state and power system, removes retired units, and
+    adds emissions rates and cooling information.
+
+    :param currYear: year of fleet
+    :param genparam: object of class GeneralParameters
+    :param reserveparam: object of class ReserveParameters
+    :return: 2d list of generator fleet
+    """
     # Import entire current fleet
-    if not testModel:
-        baseGenFleet = importNEEDSFleet(dataRoot)
-    else:
-        baseGenFleet = importTestFleet(dataRoot)
+    # if not testModel:
+    baseGenFleet = importNEEDSFleet(genparam.dataRoot)
+    # else:
+    #    baseGenFleet = importTestFleet(genparam.dataRoot)
     # Slim down fleet based on region & year of analysis
     stateColName = "State Name"
-    isolateGensInStates(baseGenFleet, statesForAnalysis, stateColName)
-    isolateGensInPowerSystem(baseGenFleet, ipmZones)
+    isolateGensInStates(baseGenFleet, genparam.states, stateColName)
+    isolateGensInPowerSystem(baseGenFleet, genparam.ipmZones)
     # removeRetiredUnits(baseGenFleet,retirementYearScreen)
     # Modify / add fleet parameters
-    addEmissionsRates(baseGenFleet, statesForAnalysis, dataRoot)
-    addCoolingTechnologyAndSource(baseGenFleet, statesForAnalysis, dataRoot)
-    addLatLong(baseGenFleet, statesForAnalysis, dataRoot)
+    addEmissionsRates(baseGenFleet, genparam.states, genparam.dataRoot)
+    addCoolingTechnologyAndSource(baseGenFleet, genparam.states, genparam.dataRoot)
+    addLatLong(baseGenFleet, genparam.states, genparam.dataRoot)
     # Compress fleet to get rid of tiny units
-    if compressFleet:
+    if genparam.compressFleet:
         # write2dListToCSV(baseGenFleet,'genFleetPreCompression.csv')
-        baseGenFleet = performFleetCompression(baseGenFleet, ipmZones, plantTypesCurtailed)
+        baseGenFleet = performFleetCompression(baseGenFleet, genparam.ipmZones, genparam.ptCurtailedAll)
     # Add VOM & FOM values
-    vomAndFomData = importVomAndFomData(dataRoot)
+    vomAndFomData = importVomAndFomData(genparam.dataRoot)
     addVOMandFOM(baseGenFleet, vomAndFomData)
     # Add PHORUM-based UC parameters
-    phorumData = importPhorumData(dataRoot)
+    phorumData = importPhorumData(genparam.dataRoot)
     addUnitCommitmentParameters(baseGenFleet, phorumData)
     # Add fuel prices
-    addFuelPrices(baseGenFleet, currYear, fuelPricesTimeSeries)
+    addFuelPrices(baseGenFleet, currYear, genparam.fuelPricesTimeSeries)
     # Add random value to rows that will be included in op cost
-    addRandomOpCostAdder(baseGenFleet, ocAdderMin, ocAdderMax)
+    addRandomOpCostAdder(baseGenFleet, genparam.ocAdderMin, genparam.ocAdderMax)
     # Add reg offer costs and reg offer eligibility
-    addRegResOfferAndElig(baseGenFleet, regupCostCoeffs)
+    addRegResOfferAndElig(baseGenFleet, reserveparam.regUpCostCoeffs)
     return baseGenFleet
 
 

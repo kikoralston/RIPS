@@ -57,14 +57,14 @@ class Curtailmentparameters:
                         else:
                             row[1] = row[1].strip()
                         data.append(row)
-                        print('{0:3d} : {1}'.format(i, row))
+                        #print('{0:3d} : {1}'.format(i, row))
                         i = i + 1
 
         # Env reg parameters: dict of state : max water T (deg C)
 
         self.envRegMaxT = self.string2dict(data[0][1])    # dict
         # RBM processing parameters
-        self.outputHeaders = list(map(str.strip, data[1][1]))  # list
+        self.outputHeaders = list(map(str.strip, data[1][1].split(',')))  # list
         self.locPrecision = data[2][1]
         self.numCellsToProcess = data[3][1]
         self.tempAndSpatFilename = data[4][1]

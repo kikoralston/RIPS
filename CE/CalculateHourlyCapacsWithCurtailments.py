@@ -7,12 +7,27 @@ from GAMSAuxFuncs import *
 import os
 
 
-# --------- GET EXISTING GEN HOURLY CAPACITIES W/ THERMAL CONSTRAINTS ----------
-# Return dictionary of gen symbol to 1d list of hourly capacity for year
 def calculateHourlyCapacsWithCurtailments(genFleet, hrlyCurtailmentsAllGensInTgtYr, currYear):
+    """GET EXISTING GENERATORS HOURLY CAPACITIES WITH THERMAL CONSTRAINTS (Curtailments)
+
+    Returns dictionary of gen symbol to 1d list of hourly capacity for year
+
+    :param genFleet: 2d list with Generation Fleet data matrix
+    :param hrlyCurtailmentsAllGensInTgtYr: dict mapping each gen to 2d list of datetime for year of run to hourly net
+                                           capacity curtailments (MW)
+    :param currYear: integer representing year being simulated
+    :return: genHourlyCapacs: dictionary of gen symbol: 1d list of hourly capacity for year
+             genHourlyCapacsList: 2d list with hourly capacity for all generators. first element of each row is
+                                  the generator symbol
+    """
     (genHourlyCapacs, genHourlyCapacsList) = (dict(), [])
     (fuelTypeCol, capacCol) = (genFleet[0].index('Modeled Fuels'), genFleet[0].index('Capacity (MW)'))
-    lenCurtailments = len(hrlyCurtailmentsAllGensInTgtYr[list(hrlyCurtailmentsAllGensInTgtYr.keys())[0]])
+
+    if len(hrlyCurtailmentsAllGensInTgtYr) > 0:
+        lenCurtailments = len(hrlyCurtailmentsAllGensInTgtYr[list(hrlyCurtailmentsAllGensInTgtYr.keys())[0]])
+    else:
+        lenCurtailments = 8760
+
     for row in genFleet[1:]:
         genSymbol = createGenSymbol(row, genFleet[0])
         if row[fuelTypeCol] == 'Wind' or row[fuelTypeCol] == 'Solar':
@@ -22,13 +37,21 @@ def calculateHourlyCapacsWithCurtailments(genFleet, hrlyCurtailmentsAllGensInTgt
             hourlyCapacs = subtractCurtailmentsFromCapac(hrlyCurtailments, float(row[capacCol]), genSymbol)
         else:  # no curtailments
             hourlyCapacs = [float(row[capacCol])] * lenCurtailments  # has header
+
         genHourlyCapacs[genSymbol] = hourlyCapacs
         genHourlyCapacsList.append([genSymbol] + hourlyCapacs)
-    return (genHourlyCapacs, genHourlyCapacsList)
+
+    return genHourlyCapacs, genHourlyCapacsList
 
 
-# Hourly curtailments are fraction fo total capacity.
 def subtractCurtailmentsFromCapac(hrlyCurtailments, capac, genSymbol):
+    """Computes net available capacity (in MW) of curtailed generator
+
+    :param hrlyCurtailments: list with hourly curtailments for generator in current year(fraction of total capacity)
+    :param capac: capacity with generator (MW)
+    :param genSymbol: string with generator symbol (ORIS+UNIT)
+    :return: list of Hourly curtailments in MW
+    """
     hourlyCapacs = [float(val) * capac for val in hrlyCurtailments]
     if min(hourlyCapacs) < 0:
         print('Hourly capacity < 0 for ', genSymbol, ' at idx ', hourlyCapacs.index(min(hourlyCapacs)))
@@ -36,9 +59,16 @@ def subtractCurtailmentsFromCapac(hrlyCurtailments, capac, genSymbol):
     return hourlyCapacs
 
 
-########### GET NEW TECH HOURLY CAPACITIES W/ THERMAL CONSTRAINTS ##############
 def calculateHourlyTechCapacsWithCurtailments(newTechsCE, hrlyCurtailmentsAllTechsInTgtYr,
                                               currYear, ptCurtailedAll):
+    """GET NEW TECH HOURLY CAPACITIES W/ THERMAL CONSTRAINTS
+
+    :param newTechsCE:
+    :param hrlyCurtailmentsAllTechsInTgtYr:
+    :param currYear:
+    :param ptCurtailedAll:
+    :return:
+    """
     (thermalTechHourlyCapacs, thermalTechHourlyCapacsList) = (dict(), [])
     (fuelTypeCol, capacCol) = (newTechsCE[0].index('FuelType'), newTechsCE[0].index('Capacity(MW)'))
     plantTypeCol = newTechsCE[0].index('TechnologyType')

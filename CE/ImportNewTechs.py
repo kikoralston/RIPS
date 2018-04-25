@@ -6,15 +6,20 @@ import os
 from AuxFuncs import *
 
 
-# Import new tech data by loading forecasts of tech data + 2d list w/ missing data,
-# and fill in that 2d list w/ forecast data for current year.
-# Inputs: flags indicating which techs to import or not import
-# Outputs: 2d list w/ headers
-def getNewTechs(allowCoalWithoutCCS, onlyNSPSUnits, regUpCostCoeffs, currYear, dataRoot,
-                resultsDir, scenario, incITC, permitOncethru):
+def getNewTechs(currYear, genparam, reserveparam):
+    """Import new tech data
+    Import new tech data by loading forecasts of tech data + 2d list w/ missing data, and fill in that 2d list w/
+    forecast data for current year. Inputs used from the parameter objects are the flags indicating which
+    techs to import or not import
+
+    :param currYear: current year of analysis
+    :param genparam: object of class General Parameters
+    :param reserveparam: object of class Reserve Parameters
+    :return: 2d list w/ headers
+    """
     # Set directory data is in
 
-    newPlantDataDir = os.path.join(dataRoot, 'NewPlantData', 'ATB')
+    newPlantDataDir = os.path.join(genparam.dataRoot, 'NewPlantData', 'ATB')
 
     # Set which new tech file, based on whether in special scenario
     techFrmwrkFile, techDataFile = 'NewTechFrameworkWithCoolingTechs.csv', 'newTechDataATB.csv'
@@ -26,14 +31,19 @@ def getNewTechs(allowCoalWithoutCCS, onlyNSPSUnits, regUpCostCoeffs, currYear, d
     #     techFrmwrkFile,techDataFile = 'NewTechFramework.csv','newTechDataATB.csv'
     newTechsCEFilename = os.path.join(newPlantDataDir, techFrmwrkFile)
     newTechsCE = readCSVto2dList(newTechsCEFilename)
+
     # Filter out certain units
-    if allowCoalWithoutCCS == False: newTechsCE = removeCoalWithoutCCSFromNewTechs(newTechsCE)
-    if onlyNSPSUnits == True: newTechsCE = removeUnitsNotCompliantWithNSPS(newTechsCE)
-    if permitOncethru == False: newTechsCE = removeOnceThroughUnits(newTechsCE)
-    addRegUpOfferCostAndElig(newTechsCE, regUpCostCoeffs)
+    if not genparam.allowCoalWithoutCCS: newTechsCE = removeCoalWithoutCCSFromNewTechs(newTechsCE)
+    if genpara.onlyNSPSUnits: newTechsCE = removeUnitsNotCompliantWithNSPS(newTechsCE)
+    if not genparam.permitOncethru: newTechsCE = removeOnceThroughUnits(newTechsCE)
+
+    addRegUpOfferCostAndElig(newTechsCE, genparam.regUpCostCoeffs)
     inputValuesForCurrentYear(newTechsCE, newPlantDataDir, currYear, techDataFile)
-    if incITC == True: modRECapCostForITC(newTechsCE, currYear)
+
+    if genparam.incITC: modRECapCostForITC(newTechsCE, currYear)
+
     modCostsForCoolingTechs(newPlantDataDir, newTechsCE)
+
     return newTechsCE
 
 

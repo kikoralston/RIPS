@@ -1,0 +1,20 @@
+#
+# ------ CURTAILMENT PARAMETER FILE --------
+#
+# Description:
+#
+# End Description.
+#
+# ----- Environ regul parameters ----
+# python dictionay format (without quotes and curly braces) state : max water T (deg C)
+envRegMaxT = Alabama: 32, Georgia: 32, Mississippi: 32, South Carolina: 32.2, North Carolina: 32, Tennessee: 30.5, Kentucky: 31.7
+# ----- RBM processing parameters ----
+outputHeaders = Year, Month, Day, Streamflow(cfs), StreamT(degC), HeadwaterT(degC), AirT(degC)
+locPrecision = 4
+numCellsToProcess = 4
+tempAndSpatFilename = bcc-csm1-1-m_rcp45_r1i1p1
+nsegFilename = Tennessee.nseg_nday
+# ----- Water T directories ------
+rbmRootDir = C:\\Users\\mtcraig\\Desktop\\EPP Research\\UWData\\DataFromUW\\DummyDataWithScripts9Aug2016
+rbmDataDir = RBMRawWaterTData10Aug2016   # name of sub folder inside rbmRootDir
+rbmOutputDir = RBMProcessedWaterT25Aug2016    # name of subfolder inside rbmRootDir 

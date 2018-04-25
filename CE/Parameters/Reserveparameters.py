@@ -25,6 +25,28 @@ class Reserveparameters:
         self.rampRateToFlexReserveScalar = self.flexReserveMinutes / self.minutesPerHour        # ramp rate in MW/hr
         self.rampRateToContReserveScalar = self.contingencyReserveMinutes / self.minutesPerHour
 
+    def __str__(self):
+
+        strout = '#\n# ------ RESERVE PARAMETER FILE --------\n#\n# Description:\n#\n# End Description.\n#\n'
+
+        strout = strout + '# ----- Requirement parameters (based on WWSIS Phase 2) ------\n'
+        strout = strout + 'regLoadFrac = {}  # frac of hourly load in reg up & down\n'.format(self.regLoadFrac)
+        strout = strout + 'contLoadFrac = {}  # frac of hourly load in contingency\n'.format(self.contLoadFrac)
+        strout = strout + 'regErrorPercentile = {}  # percentile of 10-m wind & 5-m solar forecast errors ' \
+                          'used in reg reserves\n'.format(self.regErrorPercentile)
+        strout = strout + 'flexErrorPercentile = {}  # percentile of hourly wind & solar forecast errors ' \
+                          'used in reg reserves\n'.format(self.flexErrorPercentile)
+        strout = strout + '# ---- Cost coeff (from Denholm et al. 2013, val of E sto in grid apps) ----\n'
+
+        strout = strout + 'regUpCostCoeffs = {} # $/MWh\n'.format(self.regUpCostCoeffs)
+        strout = strout + '# ---- Timeframes -----\n'
+        strout = strout + 'regReserveMinutes = {}  # reg res must be provided w/in 5 mins\n'.format(self.regReserveMinutes)
+        strout = strout + 'flexReserveMinutes = {}  # spin reserves must be provided w/in 10 minutes\n'.format(self.flexReserveMinutes)
+        strout = strout + 'contingencyReserveMinutes = {}  # contingency res must be provided w/in 30 minutes\n'.format(self.contingencyReserveMinutes)
+        strout = strout + 'minutesPerHour = {}\n'.format(self.minutesPerHour)
+
+        return strout
+
     @staticmethod
     def string2dict(s):
 
@@ -61,7 +83,7 @@ class Reserveparameters:
                         else:
                             row[1] = row[1].strip()
                         data.append(row)
-                        print('{0:3d} : {1}'.format(i, row))
+                        #print('{0:3d} : {1}'.format(i, row))
                         i = i + 1
 
         # Requirement parameters - based on WWSIS Phase 2
@@ -79,3 +101,8 @@ class Reserveparameters:
         self.rampRateToRegReserveScalar = self.regReserveMinutes / self.minutesPerHour
         self.rampRateToFlexReserveScalar = self.flexReserveMinutes / self.minutesPerHour
         self.rampRateToContReserveScalar = self.contingencyReserveMinutes / self.minutesPerHour
+
+    def writefile(self, fname):
+
+        with open(os.path.expanduser(fname), 'w') as csvfile:
+            csvfile.write(self.__str__())

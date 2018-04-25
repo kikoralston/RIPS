@@ -21,16 +21,16 @@ import pandas as pd
 ################################################################################
 # Returns dict of (plant+cooltype,cell):hrly tech curtailments
 def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, cellNewTechCriteria,
-                                         ptCurtailed, ptCurtailedRegs, fipsToZones, fipsToPolys, incCurtailments,
-                                         incRegs, rbmOutputDir,
-                                         locPrecision, statePolys, dataRoot, coolDesignT, envRegMaxT, resultsDir):
+                                         ptCurtailed, ptCurtailedRegs, ptCurtailedAll, fipsToZones, fipsToPolys,
+                                         incCurtailments, incRegs, rbmOutputDir, locPrecision, statePolys,
+                                         dataRoot, coolDesignT, envRegMaxT, resultsDir):
     # Isolate water Ts to year of analysis
     eligibleCellWaterTsCurrYear = getWaterTsInCurrYear(currYear, eligibleCellWaterTs)
     cellWaterTsForNewTechs = selectCells(eligibleCellWaterTsCurrYear, cellNewTechCriteria,
                                          fipsToZones, fipsToPolys)
     # Do curtailments
     (hrlyCurtailmentsAllTechsInTgtYr, hrlyTechCurtailmentsList) = (dict(), [])
-    regCoeffs = loadRegCoeffs(dataRoot)  # dict of cooling type: reg coeffs
+    regCoeffs = loadRegCoeffs(dataRoot, 'capacity.json')  # dict of cooling type: reg coeffs
 
     for techRow in newTechsCE[1:]:
         (plantType, hr, fuelAndCoalType, coolType, fgdType) = getKeyCurtailParamsNewTechs(newTechsCE, techRow)
@@ -48,10 +48,10 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
                                                                   incCurtailments, incRegs, envRegMaxT, coolDesignT,
                                                                   coeffs)
                 hrlyCurtailmentsAllTechsInTgtYr[
-                    (createTechSymbol(techRow, newTechsCE[0], ptCurtailed | ptCurtailedRegs),
+                    (createTechSymbol(techRow, newTechsCE[0], ptCurtailedAll),
                      cell)] = hrlyCurtailmentsGen
                 hrlyTechCurtailmentsList.append(
-                    [createTechSymbol(techRow, newTechsCE[0], ptCurtailed | ptCurtailedRegs), cell]
+                    [createTechSymbol(techRow, newTechsCE[0], ptCurtailedAll), cell]
                     + hrlyCurtailmentsGen)
     return (hrlyCurtailmentsAllTechsInTgtYr, hrlyTechCurtailmentsList)
 
