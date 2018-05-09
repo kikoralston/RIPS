@@ -251,8 +251,8 @@ def masterFunction():
         zonalDemandProfile, zonalTempDfs = forecastZonalDemandWithReg(currYear, genparam.dataRoot,
                                                                       genparam.ipmZones, genparam.resultsDir)
 
-        if currYear > firstUCYear and runCE == True:
-            if currYear == startYear + yearStepCE:
+        if currYear > genparam.startYear and genparam.runCE:
+            if currYear == genparam.startYear + genparam.yearStepCE:
                 priorCapacExpModel, priorHoursCE, genFleetPriorCE = None, None, None  # first CE run
 
             (genFleet, genFleetNoRetiredUnits, genFleetPriorCE, priorCapacExpModel,
@@ -261,7 +261,7 @@ def masterFunction():
                                                   capacExpRetiredUnitsByCE, capacExpRetiredUnitsByAge,
                                                   genFleetPriorCE, priorCapacExpModel, priorHoursCE,
                                                   genparam, reserveparam)
-        if runUC:
+        if genparam.runUC:
             # Either only runs 2015, or runs in all but 2015
             if ((currYear == firstUCYear and runFirstUCYear is True) or
                     (currYear > firstUCYear and runFirstUCYear is False)):
@@ -308,10 +308,10 @@ def getInitialFleetAndDemand(genparam, reserveparam):
 ################################################################################
 def processRBMDataToUsableFormat():
     print('Processing raw RBM data')
-    (outputHeaders, locPrecision, tempAndSpatFilename, nsegFilename,
-     rbmRootDir, rbmDataDir, rbmOutputDir, numCellsToProcess, envRegMaxT) = setThermalCurtailmentParameters()
-    processRBMDataIntoIndividualCellFiles(rbmDataDir, tempAndSpatFilename,
-                                          rbmOutputDir, nsegFilename, locPrecision, outputHeaders, numCellsToProcess)
+    curtailparam = Curtailmentparameters.Curtailmentparameters()
+    curtailparam.load(fname='./curtailmentparameters.txt')
+
+    processRBMDataIntoIndividualCellFiles(curtailparam=curtailparam)
     print('Processed RBM data')
 
 
@@ -324,10 +324,10 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
                          genFleetPriorCE, priorCapacExpModel, priorHoursCE,
                          genparam, reserveparam):
     # get curtailment parameters
-    (outputHeaders, locPrecision, tempAndSpatFilename, nsegFilename, rbmRootDir,
-     rbmDataDir, rbmOutputDir, numCellsToProcess, envRegMaxT) = setThermalCurtailmentParameters()
+    curtailparam = Curtailmentparameters.Curtailmentparameters()
+    curtailparam.load(fname='./curtailmentparameters.txt')
 
-    resultsDir = os.path.join(genparam.dataRoot, 'CE')
+    resultsDir = os.path.join(genparam.resultsDir, 'CE')
 
     if not os.path.exists(resultsDir): os.makedirs(resultsDir)
     print('Entering CE loop for year {0:4d}'.format(currYear))
@@ -407,10 +407,9 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
     writeDictToCSV(zonalNewSolarCFs, os.path.join(resultsDir, 'solarNewCFsFullYrCE' + str(currYear) + '.csv'))
     writeDictToCSV(zonalNetDemand, os.path.join(resultsDir, 'demandNetFullYrCE' + str(currYear) + '.csv'))
 
-    hrlyCurtailmentsAllGensInTgtYr = importHourlyThermalCurtailments(genFleetForCE,  # existing gens only!
-                                                                     currYear, 'CE', ptCurtailed, ptCurtailedRegs,
-                                                                     resultsDir, incCurtailments, incRegs,
-                                                                     envRegMaxT, dataRoot, coolDesignT)
+    # existing gens only!
+    hrlyCurtailmentsAllGensInTgtYr = importHourlyThermalCurtailments(genFleetForCE, currYear, 'CE', resultsDir,
+                                                                     genparam, curtailparam)
 
     (demandCE, hoursForCE, repHrsBySeason, specialHrs, regHrsBySeason, demandCEZonal,
      hourlyWindGenCEZonal, hourlySolarGenCEZonal, peakDemandHourZonal, planningReserveZonal,

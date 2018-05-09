@@ -237,7 +237,7 @@ class Generalparameters:
 
         self.incCurtailments = lev(data[10][1])
         self.incRegs = lev(data[11][1])
-        self.coolDesignT = lev(data[12][1])
+        self.coolDesignT = data[12][1]
 
         self.ptCurtailed = set(map(str.strip, data[13][1].split(',')))  # set
         self.ptCurtailedRegs = set(map(str.strip, data[14][1].split(',')))  # set

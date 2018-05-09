@@ -14,41 +14,33 @@ from AuxFuncs import *
 
 
 def calcCurtailmentForGenOrTech(plantType, hr, fuelAndCoalType, coolType, fgdType, state, capac,
-                                ptCurtailed, ptCurtailedRegs, metAndWaterData, incCurtailments, incRegs,
-                                envRegMaxT, coolDesignT, coeffs):
+                                metAndWaterData, coeffs, genparam, curtailparam):
     """
-    CALCULATE CURTAILMENT FOR NEW AND EXISTING GENS
+    CALCULATE CURTAILMENT FOR A SINGLE GENERATOR
 
     Output 1d list of hourly final curtailments for year for given generator (or generator type) with or without
     curtailments and/or environmental regulations.
 
-    :param plantType:
-    :param hr:
-    :param fuelAndCoalType:
-    :param coolType:
-    :param fgdType:
-    :param state:
-    :param capac:
-    :param ptCurtailed:
-    :param ptCurtailedRegs:
-    :param metAndWaterData:
-    :param incCurtailments:
-    :param incRegs:
-    :param envRegMaxT:
-    :param coolDesignT:
-    :param coeffs:
+    :param plantType: (string) plat type
+    :param hr: (number) heat rate
+    :param fuelAndCoalType: (string) fuel type
+    :param coolType: (string)  cooling type
+    :param fgdType: (string)
+    :param state: (string) state where plant is located
+    :param capac: (number) capacity of plat
+    :param metAndWaterData: (pd data frame) data frame with meteo and water data
+    :param coeffs: (dict) dictionary with curtailment regression coefficients (plantType,coolType,coolDesignT)
+    :param genparam: object of class Generalparameters
+    :param curtailparam: object of class Curtailmentparameters
     :return:
     """
 
     # hourlyCurtailments = runCurtailRegression(metAndWaterData, coeffs, incCurtailments, incRegs, envRegMaxT[state],
     #  plantType, coolType, ptCurtailed, ptCurtailedRegs)
-    hourlyCurtailments = runCurtailRegression(metAndWaterData, coeffs, incCurtailments, plantType, coolType,
-                                              ptCurtailed)
+    hourlyCurtailments = runCurtailRegression(metAndWaterData, coeffs, genparam.incCurtailments, plantType,
+                                              coolType, genparam.ptCurtailed)
 
     # missing variables: eff, fuelType, ppDeltaT, waterFlow, streamAvailFrac
-
-    # according to the documentation on this method (see pdf)
-    eff = 3.412/hr
 
     # NEED TO CHECK THIS!!!!
     streamAvailFrac = 0.3
@@ -58,9 +50,11 @@ def calcCurtailmentForGenOrTech(plantType, hr, fuelAndCoalType, coolType, fgdTyp
     # waterFlow
     # streamAvailFrac: max fraction of the river flow that can be extracted ($gamma$ in doc).
 
-    hourlyCurtailmentsRegs = setEnvRegCurtailments(incCurtailments, incRegs, ptCurtailedRegs, coolType, capac,
-                                                   plantType, eff, fuelAndCoalType, ppDeltaT, metAndWaterData,
-                                                   waterFlow, envRegMaxT, streamAvailFrac)
+    # get regulatory threshold for state where plant is located
+    envRegMaxT = curtailparam.envRegMaxT[state]
+
+    hourlyCurtailmentsRegs = setEnvRegCurtailments(coolType, capac, plantType, fuelAndCoalType, ppDeltaT,
+                                                   metAndWaterData, envRegMaxT, streamAvailFrac)
     hourlyCurtailments = np.minimum(hourlyCurtailments, hourlyCurtailmentsRegs)
 
     return hourlyCurtailments
@@ -92,8 +86,8 @@ def setAvivaCurtailments(coeffs, metAndWaterData):
     Use Aviva's regressions to curtail generation. Note that curtailment values are fraction of total capacity
     (val of 0.3 means max capac is 30% of total capac)
 
-    :param coeffs:
-    :param metAndWaterData:
+    :param coeffs: dictionary with regression coefficients for this power plant
+    :param metAndWaterData: pandas data frame with meteo and water data
     :return: array with hourly curtailment values (fraction of total capacity)
     """
 
@@ -106,7 +100,7 @@ def setAvivaCurtailments(coeffs, metAndWaterData):
             hrlyCurtsAviva = np.add(hrlyCurtsAviva, coeffs[param])
 
     # regressions can result in val > 1; constrain to 1.
-    return np.minimum(hrlyCurtsAviva, 1)
+    return np.maximum(np.minimum(hrlyCurtsAviva, 1), 0)
 
 
 def loadRegCoeffs(dataRoot, fname):
@@ -126,8 +120,7 @@ def loadRegCoeffs(dataRoot, fname):
     return regCoeffs
 
 
-def getCoeffsForGenOrTech(plantType, hr, fuelAndCoalType, coolType, fgdType, plantTypesCurtailed,
-                          regCoeffs, coolDesignT):
+def getCoeffsForGenOrTech(plantType, coolType, plantTypesCurtailed, regCoeffs, coolDesignT):
     """
     GET COEFFICIENTS FOR PARTICULAR GEN OR TECH. If plant not eligible for curtailment or cool type not included in
     reg coeffs (e.g., wind), assume no curtailment. See loadRegCoeffs for structure of coeffs.
@@ -135,10 +128,7 @@ def getCoeffsForGenOrTech(plantType, hr, fuelAndCoalType, coolType, fgdType, pla
     Inputs: parameters for getting reg coeffs, and regCoeffs (dict of cool type: cool design T: parameter:coefficient)
 
     :param plantType: (string) with type of plant ('Coal Steam', 'Hydro', 'Combined Cycle', ...)
-    :param hr: (float) heat rate
-    :param fuelAndCoalType: (string) fuel type
     :param coolType: (string) cooling technology type
-    :param fgdType:
     :param plantTypesCurtailed: (list) list with plant types that are curtailed
     :param regCoeffs: (dict) nested dictionary with regression coefficient for all (plantType,coolType,coolDesignT)
     :param coolDesignT: (string) cooling technology design temperature

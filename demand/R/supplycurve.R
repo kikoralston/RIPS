@@ -73,6 +73,10 @@ get.utility.data <- function(utility.id=18642, bacode=NULL,
   
   utility.data <- utility.data %>% filter(!(PLFUELCT %in% c('OTHF', 'OFSL')))
   
+  # change NAs in CAPFAC and PLNGENAN to zero
+  utility.data$CAPFAC[is.na(utility.data$CAPFAC)] <- 0
+  utility.data$PLNGENAN[is.na(utility.data$PLNGENAN)] <- 0
+  
   # added this line to take into consideration the energy in pumped hydro plant at TVA
   # originally the capacity factor was zero
   utility.data$CAPFAC <- round(abs(utility.data$PLNGENAN)/(utility.data$NAMEPCAP*8760), 3)
@@ -184,6 +188,9 @@ plot.supply.curve <- function(utility.data) {
   shape.pallete <- c(1, 0, 2, 3, 4, 6, 5, 7, 8)
   colour.pallete <- c('#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99',
                       '#e31a1c','#fdbf6f','#ff7f00','#cab2d6')
+  
+  # remove AUX type (this is a dummy generator added to simulate deficits)
+  utility.data.2 <- utility.data.2 %>% filter(PLFUELCT != 'AUX')
   
   g <- ggplot()
   g <- g + geom_point(data=utility.data.2,

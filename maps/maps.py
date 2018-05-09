@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
-from netCDF4 import Dataset
+# from netCDF4 import Dataset
 import os
 import numpy as np
 import numpy.ma as ma
 import math
+import pandas as pd
 import time
 from matplotlib import animation
 
@@ -40,69 +41,146 @@ def draw_map_background(m, ax):
     m.drawmeridians(meridians, labels=[False, False, False, True], size='xx-small', color='gray')
 
 
-dataset = Dataset(os.path.expanduser('~/Downloads/gpw-v4-population-count-rev10_totpop_2pt5_min_nc/gpw_v4_e_atotpopbt_cntm_2pt5_min.nc'))
+def population_map():
+    dataset = Dataset(os.path.expanduser('~/Downloads/gpw-v4-population-count-rev10_totpop_2pt5_min_nc/gpw_v4_e_atotpopbt_cntm_2pt5_min.nc'))
 
-# Extract data from NetCDF file
-lats = dataset.variables['latitude'][:]
-lons = dataset.variables['longitude'][:]
-time = dataset.variables['raster'][:]
-values = dataset.variables['Population Count, v4.10 (2000, 2005, 2010, 2015, 2020): 2.5 arc-minutes'][:]
+    # Extract data from NetCDF file
+    lats = dataset.variables['latitude'][:]
+    lons = dataset.variables['longitude'][:]
+    time = dataset.variables['raster'][:]
+    values = dataset.variables['Population Count, v4.10 (2000, 2005, 2010, 2015, 2020): 2.5 arc-minutes'][:]
 
-years = [2000, 2005, 2010, 2015, 2020]
+    years = [2000, 2005, 2010, 2015, 2020]
 
-ll_lat = 24
-ll_lon = -125
-ur_lat = 50
-ur_lon = -60
+    ll_lat = 24
+    ll_lon = -125
+    ur_lat = 50
+    ur_lon = -60
 
-#ll_lat = 29.65
-#ll_lon = -94.143
-#ur_lat = 38.77
-#ur_lon = -76.56
+    #ll_lat = 29.65
+    #ll_lon = -94.143
+    #ur_lat = 38.77
+    #ur_lon = -76.56
 
-for i, y in enumerate(years):
-    print('Creating plot for year {0:4d}'.format(y))
-    pop = ma.array(values[i, :, :])
+    for i, y in enumerate(years):
+        print('Creating plot for year {0:4d}'.format(y))
+        pop = ma.array(values[i, :, :])
 
-    # get mask
-    mm = pop.mask
+        # get mask
+        mm = pop.mask
 
-    masklon = (lons > ll_lon) & (lons < ur_lon)
-    masklat = (lats > ll_lat) & (lats < ur_lat)
+        masklon = (lons > ll_lon) & (lons < ur_lon)
+        masklat = (lats > ll_lat) & (lats < ur_lat)
 
-    m = Basemap(llcrnrlon=ll_lon, llcrnrlat=ll_lat, urcrnrlon=ur_lon, urcrnrlat=ur_lat,
-                resolution='i', area_thresh=2500.)
+        m = Basemap(llcrnrlon=ll_lon, llcrnrlat=ll_lat, urcrnrlon=ur_lon, urcrnrlat=ur_lat,
+                    resolution='i', area_thresh=2500.)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        draw_map_background(m, ax)
+
+        xx, yy = np.meshgrid(lons, lats)
+
+        bins = np.array([0.0, 1.0, 5, 25, 250, 1000, math.inf])
+
+        pop = np.digitize(pop, bins)
+        pop = np.ma.array(pop, mask=mm)
+
+        # mask values outside the plotting box
+        x = np.outer(masklat, masklon)
+        pop[~x] = ma.masked
+
+        my_cmap = discrete_cmap(6, base_cmap=plt.get_cmap('YlGnBu'))
+
+        my_cmap.set_bad(color='white', alpha=0)
+
+        ax.text(ll_lon, ll_lat, y, fontsize=10, fontweight='bold', ha='left', va='bottom', color='k')
+
+        im1 = m.pcolormesh(xx, yy, pop, vmin=0, vmax=np.max(pop), latlon=True, cmap=my_cmap)
+        cbar = plt.colorbar(im1, orientation='horizontal')
+
+        cbar.ax.get_xaxis().set_ticks([])
+        for j, lab in enumerate(['< 1', ' < 5', '< 25', '< 250', '< 1000', '> 1000']):
+            cbar.ax.text((2 * j + 1) / 12, -0.1, lab, ha='center', va='top')
+
+        plt.savefig('./maps/example{0:4d}.png'.format(y), bbox_inches='tight')
+        plt.close(fig)
+        print('Done!')
+
+    gif_name = './maps/outputName'
+    os.system('convert -delay 45 -loop 0 ./maps/*.png {}.gif'.format(gif_name))
+
+
+def powerplants_map():
+
+    ll_lat = 29.65
+    ll_lon = -94.143
+    ur_lat = 38.77
+    ur_lon = -76.56
+
+    fname='~/Documents/CE/AreaTVACellsallCurtailEnvRegsCnoneSnor/genFleetInitial.csv'
+    genfleet = pd.read_csv(filepath_or_buffer=os.path.expanduser(fname))
+
+    df = genfleet.groupby(by='ORIS Plant Code').agg(({'Plant Name': 'first', 'PlantType': 'first',
+                                                      'Capacity (MW)': 'sum',
+                                                      'Latitude': 'mean', 'Longitude': 'mean'}))
+
+    ptypes = np.unique(genfleet['PlantType'])
+    shapestype = ["o", "v", "^", "<", ">", "s", "p", "P", "*", "+", "x", "D", "8"]
+    df_shapes = pd.DataFrame({'ptypes': ptypes, 'shapes': shapestype})
+
+    df = pd.merge(df, df_shapes, how='inner', left_on='PlantType', right_on='ptypes')
+
+    m = Basemap(llcrnrlon=ll_lon, llcrnrlat=ll_lat, urcrnrlon=ur_lon, urcrnrlat=ur_lat, resolution='i', area_thresh=2500.)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     draw_map_background(m, ax)
 
-    xx, yy = np.meshgrid(lons, lats)
+    list_series = []
+    for i, pt in enumerate(ptypes):
+        df_plot = df[df.PlantType == pt].reset_index(drop=True)
+        sp = m.scatter(x=df_plot['Longitude'], y=df_plot['Latitude'], marker=df_plot.shapes[0], s=15,
+                       label=pt, c='white', edgecolors='black')
+        list_series.append(sp)
 
-    bins = np.array([0.0, 1.0, 5, 25, 250, 1000, math.inf])
+    plt.legend(handles=list_series, loc='upper center',
+               bbox_to_anchor=(0.5, -0.05), ncol=4, fontsize='x-small')
 
-    pop = np.digitize(pop, bins)
-    pop = np.ma.array(pop, mask=mm)
-
-    # mask values outside the plotting box
-    x = np.outer(masklat, masklon)
-    pop[~x] = ma.masked
-
-    my_cmap = discrete_cmap(6, base_cmap=plt.get_cmap('YlGnBu'))
-
-    my_cmap.set_bad(color='white', alpha=0)
-
-    ax.text(ll_lon, ll_lat, y, fontsize=10, fontweight='bold', ha='left', va='bottom', color='k')
-
-    im1 = m.pcolormesh(xx, yy, pop, vmin=0, vmax=np.max(pop), latlon=True, cmap=my_cmap)
-    cbar = plt.colorbar(im1, orientation='horizontal')
-
-    cbar.ax.get_xaxis().set_ticks([])
-    for j, lab in enumerate(['< 1', ' < 5', '< 25', '< 250', '< 1000', '> 1000']):
-        cbar.ax.text((2 * j + 1) / 12, -0.1, lab, ha='center', va='top')
-
-    plt.savefig('./maps/example{0:4d}.png'.format(y), bbox_inches='tight')
+    plt.savefig('./example.png')
     plt.close(fig)
-    print('Done!')
 
-gif_name = './maps/outputName'
-os.system('convert -delay 45 -loop 0 ./maps/*.png {}.gif'.format(gif_name))
+
+def powerplants_map_2():
+
+    fname = '~/Documents/CE/DatafromUW/RBMProcessedWaterT25Aug2016/bcc-csm1-1-m_rcp45_r1i1p1/34.1875_-86.0625/34.1875_-86.0625_reach113_seg1'
+    rbmdatacell = pd.read_csv(filepath_or_buffer=os.path.expanduser(fname), sep=' ')
+    rbmdatacell = rbmdatacell[['Year', 'Month', 'Streamflow(cfs)']]
+    rbmdatacell = rbmdatacell.groupby(['Year', 'Month'], as_index=False)['Streamflow(cfs)'].agg('mean')
+
+    fig = plt.figure()
+    plt.plot(rbmdatacell.iloc[:, 2])
+    plt.savefig('./flow.png')
+    plt.close(fig)
+
+    ptypes = np.unique(genfleet['PlantType'])
+    shapestype = ["o", "v", "^", "<", ">", "s", "p", "P", "*", "+", "x", "D", "8"]
+    df_shapes = pd.DataFrame({'ptypes': ptypes, 'shapes': shapestype})
+
+    df = pd.merge(df, df_shapes, how='inner', left_on='PlantType', right_on='ptypes')
+
+    m = Basemap(llcrnrlon=ll_lon, llcrnrlat=ll_lat, urcrnrlon=ur_lon, urcrnrlat=ur_lat, resolution='i', area_thresh=2500.)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    draw_map_background(m, ax)
+
+    list_series = []
+    for i, pt in enumerate(ptypes):
+        df_plot = df[df.PlantType == pt].reset_index(drop=True)
+        sp = m.scatter(x=df_plot['Longitude'], y=df_plot['Latitude'], marker=df_plot.shapes[0], s=15,
+                       label=pt, c='white', edgecolors='black')
+        list_series.append(sp)
+
+    plt.legend(handles=list_series, loc='upper center',
+               bbox_to_anchor=(0.5, -0.05), ncol=4, fontsize='x-small')
+
+    plt.savefig('./example.png')
+    plt.close(fig)

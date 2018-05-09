@@ -41,13 +41,13 @@ getNoaaFtp <- function() {
 }
 
 getNoaaFileHistory <- function() {
-  # name of file with list of names of weather stations
+  # gets file with list of names of weather stations
   #
   # Args:
   #   none
   #
   # Returns:
-  #   string with name of file
+  #   Data frame with list of weather stations
 
   file.history <- 'isd-history.csv'
   ftp.stations.noaa <- getNoaaFtp()

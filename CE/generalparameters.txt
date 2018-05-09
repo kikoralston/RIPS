@@ -20,7 +20,7 @@ analysisArea = TVA
 #
 incCurtailments = True  # whether to model curtailments,whether to model env regs on water T
 incRegs = True  # whether to model curtailments,whether to model env regs on water T
-coolDesignT = 100  # design temperature of cooling techs
+coolDesignT = 10  # design temperature of cooling techs
 # PTs curtailed via regression (ptCurtailed) and via enviro regulations (ptCurtailedRegs). Names need to be under quotes
 ptCurtailed = Coal Steam, Combined Cycle
 ptCurtailedRegs = Coal Steam, Coal Steam CCS, Combined Cycle, Combined Cycle CCS, Nuclear

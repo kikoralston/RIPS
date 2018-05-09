@@ -12,8 +12,7 @@ import pandas as pd
 import numpy as np
 
 
-def setEnvRegCurtailments(incCurtailments, incRegs, ptCurtailedRegs, coolType, capac, pt, eff, fuelType,
-                          ppDeltaT, metAndWaterData, waterFlow, maxT, streamAvailFrac):
+def setEnvRegCurtailments(coolType, capac, pt, fuelType, ppDeltaT, metAndWaterData, maxT, streamAvailFrac):
     """
     Calculate environmental regulatory curtailments
 
@@ -23,48 +22,40 @@ def setEnvRegCurtailments(incCurtailments, incRegs, ptCurtailedRegs, coolType, c
 
     Inputs: met and water data (PD Dataframe, hourly timescale), whether to model curtailments and curtailments from
     regulations, plant types that are curtailed, plant cooling type, plant capcity, plant plant type, plant efficiency,
-    plant fuel type, plant cooling system designed change in T, water T data ( pd series of hourly data),
-    water flow data (pd series of hourly data), regulatory limit on stream T, and fraction of stream water available
+    plant fuel type, plant cooling system designed change in T, , regulatory limit on stream T, and fraction of stream water available
     for cooling.
 
-    :param incCurtailments:
-    :param incRegs:
-    :param ptCurtailedRegs:
-    :param coolType:
-    :param capac:
-    :param pt:
-    :param eff:
-    :param fuelType:
+    :param coolType: (string) cooling type
+    :param capac: capacity (MW)
+    :param pt: plant type
+    :param fuelType: fuel type
     :param ppDeltaT:
-    :param metAndWaterData:
-    :param waterFlow:
-    :param maxT:
-    :param streamAvailFrac:
+    :param metAndWaterData: (pd data frame) water T data and water flow data (pd series of hourly data)
+    :param maxT: regulatory stream temperature threshold
+    :param streamAvailFrac: Maximum share of stream flow that can be used by power plant
     :return:
     """
 
-    # Set k_os based on Bartos & Chester values of .12 for coal & .2 for gas;
-    # assume non-gas plants all have .12 value
-    kos = .2 if fuelType == 'Natural Gas' else .12
-
     waterC = metAndWaterData['waterC'].values
+    waterFlow = metAndWaterData['waterC'].values
+
     hrlyCurtsRegs = np.ones(metAndWaterData.shape[0])
 
-    capacs = [np.arange(0, capac + .1, 100) for hr in range(len(waterC))]
+    capacs = [np.arange(0, float(capac) + .1, 100) for hr in range(len(waterC))]
 
-    if incCurtailments and incRegs and pt in ptCurtailedRegs and coolType == 'once through':
+    if incCurtailments and incRegs and (pt in ptCurtailedRegs) and (coolType == 'once through'):
 
-        dischargeInputs = [(waterC[hr], waterFlow[hr], streamAvailFrac, capacs[hr], eff,
-                            kos, ppDeltaT) for hr in range(len(waterC))]
         # plantFlows is 2d list of np arrays with hourly flows corresponding to each capac level
-        plantFlowsAllHrs = np.array(list(map(calculateGeneratorDischargeFlow, dischargeInputs)))
+        plantFlowsAllHrs = calculateGeneratorDischargeFlow(coeffs, metAndWaterData, capacs, streamAvailFrac)
 
         mixTInputs = [(waterC[hr], waterFlow[hr], ppDeltaT, plantFlowsAllHrs[hr]) for hr in range(len(waterC))]
+
         # mixedTs is 2d list of np arrays w/ mixed Ts corresponding to each capac level
         mixedTsAllHrs = np.array(list(map(calculateMixedTemperature, mixTInputs)))
 
         idxWaterTExceedMaxT = [(np.where(mixedTsInHr >= maxT)[0][0] if np.any(mixedTsInHr >= maxT)
         else -1) for mixedTsInHr in mixedTsAllHrs]
+
         hrlyCurtsRegs = np.array([capacs[0][idx] for idx in idxWaterTExceedMaxT]).flatten()
 
     return hrlyCurtsRegs
@@ -87,29 +78,60 @@ def calculateMixedTemperature(inputs):
     return streamT + ((ppFlows / streamFlow) / (ppFlows / streamFlow + 1)) * ppDeltaT
 
 
-def calculateGeneratorDischargeFlow(inputs):
+def calculateGeneratorDischargeFlow(coeffs, metAndWaterData, capacs, streamAvailFrac):
     """
-    Computes Generator discharge flow
+    Computes Generator discharge flow using Aviva's regression
 
-    Inputs: stream T, fraction of stream flow available for cooling, stream flow,
-    gen capacity [MW] (array), gen efficiency, k_os (fraction of waste heat lost to other sinks),
-    temperature rise through generator cooling system.
-    Units: min(m3/s,MW*1/(g/cm^3*J/(g*C)*C)) = min(m^3/s,MW*cm^3/J) = min(m^3/s,1E6J/s*cm^3/J)
-    = min(m^3/s,1E6cm^3/s) = min(m^3/s,m^3/s)
-
-    Outputs: flow of generator discharge
-
-    :param inputs:
-    :return:
+    :param coeffs: dictionary with regression coefficients for this power plant
+    :param metAndWaterData: pandas data frame with meteo and water data for each period
+    :param capacs: list of numpy arrays with capacity levels in MW for each period
+    :param streamAvailFrac: Maximum share of stream flow that can be used by power plant
+    :return: 2-d numpy array with water discharge in (gal) for each capacity level (num_per vs num_capacs)
     """
-    streamT, streamFlow, streamAvailFrac, capacs, eff, kos, ppDeltaT = (inputs[0], inputs[1],
-                                                                        inputs[2], inputs[3], inputs[4], inputs[5],
-                                                                        inputs[6])
-    rhow = 1  # g/cm^3 (water density)
-    cp = 4.184  # J/(g*C) (specific heat of water)
-    return [min(streamAvailFrac * streamFlow, capac * ((1 - eff - kos) / eff) * (1 / (rhow * cp * ppDeltaT)))
-            for capac in capacs]
 
+    num_periods = metAndWaterData.shape[0]
+    waterIntensity = np.zeros(num_periods)
+    waterFlow = metAndWaterData['waterC'].values
+
+    for param in coeffs:
+        if param != 'intercept':
+            waterIntensity = np.add(hrlyCurtsAviva, coeffs[param] * np.array(metAndWaterData[param]))
+        else:
+            waterIntensity = np.add(hrlyCurtsAviva, coeffs[param])
+
+    # multiply each water intensity value by the numpy arrays of capacity (MW) for each hour
+    # result is hourly flows corresponding to each capac level
+    hrlydischarge = np.array(list(map(lambda x, y: x*y, waterIntensity, capacs)))
+
+    maxdischarge = (streamAvailFrac*waterFlow).reshape(num_periods, 1)
+
+    hrlydischarge = np.minimum(maxdischarge, hrlydischarge)
+
+    return hrlydischarge
+
+
+# def calculateGeneratorDischargeFlow(inputs):
+#     """
+#     Computes Generator discharge flow
+#
+#     Inputs: stream T, fraction of stream flow available for cooling, stream flow,
+#     gen capacity [MW] (array), gen efficiency, k_os (fraction of waste heat lost to other sinks),
+#     temperature rise through generator cooling system.
+#     Units: min(m3/s,MW*1/(g/cm^3*J/(g*C)*C)) = min(m^3/s,MW*cm^3/J) = min(m^3/s,1E6J/s*cm^3/J)
+#     = min(m^3/s,1E6cm^3/s) = min(m^3/s,m^3/s)
+#
+#     Outputs: flow of generator discharge
+#
+#     :param inputs:
+#     :return:
+#     """
+#     streamT, streamFlow, streamAvailFrac, capacs, eff, kos, ppDeltaT = (inputs[0], inputs[1],
+#                                                                         inputs[2], inputs[3], inputs[4], inputs[5],
+#                                                                         inputs[6])
+#     rhow = 1  # g/cm^3 (water density)
+#     cp = 4.184  # J/(g*C) (specific heat of water)
+#     return [min(streamAvailFrac * streamFlow, capac * ((1 - eff - kos) / eff) * (1 / (rhow * cp * ppDeltaT)))
+#             for capac in capacs]
 # TEST FUNCTIONS
 # def testFuncs():
 #     incCurtailments,incRegs,ptCurtailedRegs,coolType,maxT = True,True,['Coal'],'once through',32

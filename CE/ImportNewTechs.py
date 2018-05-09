@@ -34,10 +34,10 @@ def getNewTechs(currYear, genparam, reserveparam):
 
     # Filter out certain units
     if not genparam.allowCoalWithoutCCS: newTechsCE = removeCoalWithoutCCSFromNewTechs(newTechsCE)
-    if genpara.onlyNSPSUnits: newTechsCE = removeUnitsNotCompliantWithNSPS(newTechsCE)
+    if genparam.onlyNSPSUnits: newTechsCE = removeUnitsNotCompliantWithNSPS(newTechsCE)
     if not genparam.permitOncethru: newTechsCE = removeOnceThroughUnits(newTechsCE)
 
-    addRegUpOfferCostAndElig(newTechsCE, genparam.regUpCostCoeffs)
+    addRegUpOfferCostAndElig(newTechsCE, reserveparam.regUpCostCoeffs)
     inputValuesForCurrentYear(newTechsCE, newPlantDataDir, currYear, techDataFile)
 
     if genparam.incITC: modRECapCostForITC(newTechsCE, currYear)
@@ -69,6 +69,7 @@ def removeUnitsNotCompliantWithNSPS(newTechsCE):
 def removeOnceThroughUnits(newTechsCE):
     coolTechCol = newTechsCE[0].index('Cooling Tech')
     newTechsCE = [newTechsCE[0]] + [row for row in newTechsCE[1:] if row[coolTechCol] != 'once through']
+    return newTechsCE
 
 
 # Add reg offer cost and eligiblity to new techs

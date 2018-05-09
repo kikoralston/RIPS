@@ -1,6 +1,6 @@
 import csv
 import os
-
+from ast import literal_eval as lev
 
 class Curtailmentparameters:
     """
@@ -20,6 +20,28 @@ class Curtailmentparameters:
         self.rbmRootDir = './'
         self.rbmDataDir = './'      # name of sub folder inside rbmRootDir
         self.rbmOutputDir = './'    # name of sub folder inside rbmRootDir
+
+    def __str__(self):
+
+        strout = '#\n#  ------ CURTAILMENT PARAMETER FILE --------\n#\n# Description:\n#\n# End Description.\n#\n'
+
+        strout = strout + '# ----- Environ regul parameters ----------\n'
+        strout = strout + '# python dictionay format (with quotes and curly braces) state : max water T (deg C)\n'
+        strout = strout + 'envRegMaxT = {}\n'.format(self.envRegMaxT)
+
+        strout = strout + '# ----- RBM processing parameters ----\n'
+        strout = strout + 'outputHeaders = {}\n'.format(self.outputHeaders)
+        strout = strout + 'locPrecision = {}\n'.format(self.locPrecision)
+        strout = strout + 'numCellsToProcess = {}\n'.format(self.numCellsToProcess)
+        strout = strout + 'tempAndSpatFilename = {}\n'.format(self.tempAndSpatFilename)
+        strout = strout + 'nsegFilename = {}\n'.format(self.nsegFilename)
+
+        strout = strout + '# ----- Water T directories ------\n'
+        strout = strout + 'rbmRootDir = {}\n'.format(self.rbmRootDir)
+        strout = strout + 'rbmDataDir = {}\n'.format(self.rbmDataDir)
+        strout = strout + 'rbmOutputDir = {}\n'.format(self.rbmOutputDir)
+
+        return strout
 
     @staticmethod
     def string2dict(s):
@@ -65,8 +87,8 @@ class Curtailmentparameters:
         self.envRegMaxT = self.string2dict(data[0][1])    # dict
         # RBM processing parameters
         self.outputHeaders = list(map(str.strip, data[1][1].split(',')))  # list
-        self.locPrecision = data[2][1]
-        self.numCellsToProcess = data[3][1]
+        self.locPrecision = lev(data[2][1])
+        self.numCellsToProcess = lev(data[3][1])
         self.tempAndSpatFilename = data[4][1]
         self.nsegFilename = data[5][1]
         # Water T directories
@@ -75,6 +97,11 @@ class Curtailmentparameters:
         self.rbmDataDir = os.path.join(self.rbmRootDir, self.rbmDataDir)
         self.rbmOutputDir = data[8][1]
         self.rbmOutputDir = os.path.join(self.rbmRootDir, self.rbmOutputDir, self.tempAndSpatFilename)
+
+    def writefile(self, fname):
+
+        with open(os.path.expanduser(fname), 'w') as csvfile:
+            csvfile.write(self.__str__())
 
 
 

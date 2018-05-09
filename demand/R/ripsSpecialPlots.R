@@ -217,6 +217,7 @@ plot.temp.load <- function(reg.model,
       mutate(norm.value=load-ifelse(is.na(hour.value), 0, hour.value)-
                ifelse(is.na(annual.value), 0, annual.value)) %>%
       mutate(temp=temp, load=norm.value)
+    #data.set$load <- data.set$load - coef(reg.model)[1]
   }
   
   # **** plots resulting curve of load vs temperature ---
