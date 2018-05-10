@@ -8,6 +8,10 @@ import math
 import pandas as pd
 import time
 from matplotlib import animation
+import sys
+
+sys.path.insert(0, '../CE')
+from ModifyGeneratorCapacityWithWaterTData import getAllGridCellLatLongsInSpatFile, createAverageTFilename
 
 
 def discrete_cmap(N, base_cmap=None):
@@ -150,37 +154,59 @@ def powerplants_map():
 
 
 def powerplants_map_2():
+    rbmDataDir = '/Volumes/KIKO64/Data/DatafromUW/RBMRawWaterTData10Aug2016'
+    rbmOutputDir = '/Volumes/KIKO64/Data/DatafromUW/RBMProcessedWaterT25Aug2016/bcc-csm1-1-m_rcp45_r1i1p1'
+    spat = 'bcc-csm1-1-m_rcp45_r1i1p1'
+    listcells = list(getAllGridCellLatLongsInSpatFile(rbmDataDir, spat))
 
-    fname = '~/Documents/CE/DatafromUW/RBMProcessedWaterT25Aug2016/bcc-csm1-1-m_rcp45_r1i1p1/34.1875_-86.0625/34.1875_-86.0625_reach113_seg1'
-    rbmdatacell = pd.read_csv(filepath_or_buffer=os.path.expanduser(fname), sep=' ')
-    rbmdatacell = rbmdatacell[['Year', 'Month', 'Streamflow(cfs)']]
-    rbmdatacell = rbmdatacell.groupby(['Year', 'Month'], as_index=False)['Streamflow(cfs)'].agg('mean')
+    lat = np.array([t[0] for t in listcells])
+    lon = np.array([t[1] for t in listcells])
 
-    fig = plt.figure()
-    plt.plot(rbmdatacell.iloc[:, 2])
-    plt.savefig('./flow.png')
-    plt.close(fig)
+    lat = np.sort(np.unique(lat))
+    lon = np.sort(np.unique(lon))
 
-    ptypes = np.unique(genfleet['PlantType'])
-    shapestype = ["o", "v", "^", "<", ">", "s", "p", "P", "*", "+", "x", "D", "8"]
-    df_shapes = pd.DataFrame({'ptypes': ptypes, 'shapes': shapestype})
+    range_lat = (np.min(lat), np.max(lat))
+    range_lon = (np.min(lon), np.max(lon))
 
-    df = pd.merge(df, df_shapes, how='inner', left_on='PlantType', right_on='ptypes')
+    a = np.sort(np.unique(lon))
+    delta = a[1] - a[0]
 
-    m = Basemap(llcrnrlon=ll_lon, llcrnrlat=ll_lat, urcrnrlon=ur_lon, urcrnrlat=ur_lat, resolution='i', area_thresh=2500.)
+    lats_array = np.arange(start=range_lat[0], stop=range_lat[1], step=delta)
+    lons_array = np.arange(start=range_lon[0], stop=range_lon[1], step=delta)
+
+    xx, yy = np.meshgrid(lons_array, lats_array)
+
+    values = ma.array(-1*np.ones(shape=xx.shape))
+
+    locPrecision = 4
+    for i, la in enumerate(lats_array):
+        for j, lo in enumerate(lons_array):
+            outputDir = os.path.join(rbmOutputDir, '{lat:.{p}f}_{long:.{p}f}'.format(p=locPrecision, lat=la, long=lo))
+            fname = os.path.join(outputDir, createAverageTFilename(locPrecision, la, lo))
+            if os.path.exists(outputDir):
+                a = pd.read_csv(filepath_or_buffer=fname)
+                values[i, j] = a['AverageWaterT(degC)'][0]
+
+    empty_cells = np.array((values < 0))
+    values[empty_cells] = ma.masked
+
+    ll_lat = 29.65
+    ll_lon = -94.143
+    ur_lat = 38.77
+    ur_lon = -76.56
+
+    my_cmap = plt.get_cmap('YlGnBu')
+
+    my_cmap.set_bad(color='white', alpha=0)
+
+    m = Basemap(llcrnrlon=ll_lon, llcrnrlat=ll_lat, urcrnrlon=ur_lon, urcrnrlat=ur_lat,
+                resolution='i', area_thresh=2500.)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     draw_map_background(m, ax)
 
-    list_series = []
-    for i, pt in enumerate(ptypes):
-        df_plot = df[df.PlantType == pt].reset_index(drop=True)
-        sp = m.scatter(x=df_plot['Longitude'], y=df_plot['Latitude'], marker=df_plot.shapes[0], s=15,
-                       label=pt, c='white', edgecolors='black')
-        list_series.append(sp)
+    im1 = m.pcolormesh(xx, yy, values, vmin=0, vmax=np.max(values), latlon=True, cmap=my_cmap)
 
-    plt.legend(handles=list_series, loc='upper center',
-               bbox_to_anchor=(0.5, -0.05), ncol=4, fontsize='x-small')
-
-    plt.savefig('./example.png')
+    plt.savefig('./map.png')
     plt.close(fig)
+

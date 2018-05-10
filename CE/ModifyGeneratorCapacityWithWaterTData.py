@@ -128,11 +128,13 @@ def saveAndAverageTDataForAllCells(gridCellLatLongs, curtailparam):
             print('--- Total Cell count: {} ---\n'.format(totalCellCtr))
 
 
-def saveAndAverageTDataForGridCells(tgtCellLatLongs, curtailparam):
+def saveAndAverageTDataForGridCells(tgtCellLatLongs, curtailparam, initialyear=2000):
     """
 
     :param tgtCellLatLongs:
     :param curtailparam:
+    :param initialyear: (integer) Data from previous years will not be saved in the files.
+
     """
     outputDirs = createOutputDirs(tgtCellLatLongs, curtailparam)
     (numTotalSegments, numDays) = getNumSegmentsAndDays(curtailparam.rbmDataDir, curtailparam.nsegFilename)
@@ -145,7 +147,7 @@ def saveAndAverageTDataForGridCells(tgtCellLatLongs, curtailparam):
                              numDays, curtailparam.outputHeaders, mapSegmentNumToLatLong)
 
     averageAndSaveWaterTOverAllSegmentsInCells(waterTAllSegments, outputDirs, curtailparam.locPrecision,
-                                               mapLatLongToSegmentNum, mapSegmentNumToLatLong)
+                                               mapLatLongToSegmentNum, initialyear)
 
 
 def createOutputDirs(tgtCellLatLongs, curtailparam):
@@ -374,14 +376,14 @@ def createHeaderStr(outputHeaders):
 
 
 def averageAndSaveWaterTOverAllSegmentsInCells(waterTAllSegments, outputDirs, locPrecision,
-                                               mapLatLongToSegmentNum, mapSegmentNumToLatLong):
-    """AVERAGE AND SAVE CELL TEMPERATURE DATA
+                                               mapLatLongToSegmentNum, initialyear=2000):
+    """AVERAGE AND SAVE CELL TEMPERATURE DATA TO FILE
 
-    :param waterTAllSegments:
-    :param outputDirs:
-    :param locPrecision:
-    :param mapLatLongToSegmentNum:
-    :param mapSegmentNumToLatLong:
+    :param waterTAllSegments: dictionary with water data for all segments
+    :param outputDirs: (string) base path to output folder
+    :param locPrecision: (integer) number of decimal digits in lat and long values
+    :param mapLatLongToSegmentNum: (dictionary) mapping of (lat, lon) to segments
+    :param initialyear: (integer) data from previous years will not be saved to files
     """
     for (cellLat, cellLon) in mapLatLongToSegmentNum:
         print('Processing and saving data for cell ({lat:.{p}f},{lon:.{p}f})... '.format(lat=cellLat, lon=cellLon,
@@ -395,14 +397,17 @@ def averageAndSaveWaterTOverAllSegmentsInCells(waterTAllSegments, outputDirs, lo
         # average data over all segment in cell
         waterTAvgInCell = averageWaterTOverAllSegmentsInCell(waterTAllSegmentsInCell)
 
-        # convert to PD Data Frame and sort according to date
+        # convert to PD Data Frame
         waterTAvgInCell = pd.DataFrame.from_dict(waterTAvgInCell, orient='index')
         waterTAvgInCell.rename({0: 'waterT', 1: 'AirT', 2: 'flow'}, inplace=True, axis='columns')
         waterTAvgInCell.index.name = 'date'
         waterTAvgInCell.reset_index(inplace=True)
         waterTAvgInCell['date'] = pd.to_datetime(waterTAvgInCell['date'])
+        # sort according to date
         waterTAvgInCell = waterTAvgInCell.sort_values(by=['date'])
         waterTAvgInCell = waterTAvgInCell.reset_index(drop=True)
+        # filter years
+        waterTAvgInCell = waterTAvgInCell[(waterTAvgInCell['date'].dt.year >= initialyear)]
         waterTAvgInCell['date'] = waterTAvgInCell['date'].dt.strftime('%Y-%m-%d')
 
         # convert to numpy array for saving to file
