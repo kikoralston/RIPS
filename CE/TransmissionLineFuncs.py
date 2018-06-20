@@ -11,7 +11,7 @@ def setLines(dataRoot):
     dataDir = os.path.join(dataRoot, 'Transmission')
 
     # Load data
-    lines = readCSVto2dList(os.path.join(dataDir, 'ZonalTranmissionERCOT22Aug17.csv'))
+    lines = readCSVto2dList(os.path.join(dataDir, 'ZonalTranmission.csv'))
 
     sourceCol, sinkCol = lines[0].index('Source'), lines[0].index('Sink')
     capacCol = lines[0].index('Limit')

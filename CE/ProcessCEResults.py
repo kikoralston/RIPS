@@ -52,38 +52,43 @@ def addNewBuildsToList(newTech,capacExpBuilds,newCol,rowLabels):
 #Outputs: new gen fleet w/ new CE builds added
 def addNewGensToFleet(genFleet,newCurtTech,newRETech,newNotCurtTech,newTechsCE,
         currYear,ipmZones,ipmZoneNums,ocAdderMin,ocAdderMax,cellsToZone,ptCurtailed,statePolys):
+
     genFleetWithCEResults = copy.deepcopy(genFleet)
-    print('Curtailed tech additions in ' + str(currYear) + ':',
-            [row for row in newCurtTech if row[1]>0])
-    print('RE tech additions in ' + str(currYear) + ':',newRETech)
-    print('Not curtailed tech additions in ' + str(currYear) + ':',newNotCurtTech)
-    addGeneratorsToFleet(genFleetWithCEResults,newCurtTech,newRETech,newNotCurtTech,
-            newTechsCE,currYear,ipmZones,ipmZoneNums,ocAdderMin,ocAdderMax,cellsToZone,
-            ptCurtailed,statePolys)
+
+    print('Curtailed tech additions in ' + str(currYear) + ':', [row for row in newCurtTech if row[1]>0])
+    print('RE tech additions in ' + str(currYear) + ':', newRETech)
+    print('Not curtailed tech additions in ' + str(currYear) + ':', newNotCurtTech)
+
+    addGeneratorsToFleet(genFleetWithCEResults, newCurtTech, newRETech, newNotCurtTech,
+                         newTechsCE, currYear, ipmZones, ipmZoneNums, ocAdderMin, ocAdderMax, cellsToZone,
+                         ptCurtailed, statePolys)
+
     return genFleetWithCEResults
 
 #Adds generators to fleet
 #Inputs: gen fleet to which new builds are added (2d list), new builds (list of tuples
 #of (tech,#builds)), curr year, OPTIONAL dict of techtype:cell in which tech is added.
-def addGeneratorsToFleet(genFleetWithCEResults,newCurtTech,newRETech,newNotCurtTech,
-        newTechsCE,currYear,ipmZones,ipmZoneNums,ocAdderMin,ocAdderMax,cellsToZone,
-        ptCurtailed,statePolys):
-    (techTypeCol,techCapacCol,techHrCol,techVomCol,techFomCol,techCo2EmsCol,techFuelCol,
-        techMinDownCol,techRampCol,techMinLoadCol,techStartCostCol,techRegCostCol,
-        techRegOfferCol,techCoolCol) = get2dListColNums(newTechsCE,'TechnologyType','Capacity(MW)',
-        'HR(Btu/kWh)','VOM(2012$/MWh)','FOM(2012$/MW/yr)','CO2EmissionsRate(lb/MMBtu)',
-        'FuelType','MinDownTime(hrs)','RampRate(MW/hr)','MinLoad(MW)','StartCost($2011)',
-        'RegOfferCost($/MW)','RegOfferElig','Cooling Tech')
+def addGeneratorsToFleet(genFleetWithCEResults, newCurtTech, newRETech, newNotCurtTech,
+                         newTechsCE, currYear, ipmZones, ipmZoneNums, ocAdderMin, ocAdderMax, cellsToZone,
+                         ptCurtailed, statePolys):
+    (techTypeCol,techCapacCol,techHrCol,techVomCol,techFomCol,techCo2EmsCol,techFuelCol, techMinDownCol,techRampCol,
+     techMinLoadCol,techStartCostCol,techRegCostCol, techRegOfferCol,techCoolCol, techcoolDesignTCol) = \
+        get2dListColNums(newTechsCE, 'TechnologyType', 'Capacity(MW)', 'HR(Btu/kWh)','VOM(2012$/MWh)',
+                         'FOM(2012$/MW/yr)', 'CO2EmissionsRate(lb/MMBtu)', 'FuelType', 'MinDownTime(hrs)',
+                         'RampRate(MW/hr)', 'MinLoad(MW)', 'StartCost($2011)', 'RegOfferCost($/MW)', 'RegOfferElig',
+                         'Cooling Tech', 'coolingDesignT')
+
     (fleetOrisCol,fleetUnitCol,fleetStateCol,fleetYearCol,fleetPlantTypeCol,fleetCapacCol,
-        fleetHrCol,fleetVomCol,fleetFomCol,fleetFuelCol,fleetCO2EmsCol,fleetMinDownCol,fleetRampCol,
-        fleetMinLoadCol,fleetStartCostCol,fleetOnlineYrCol,fleetIPMRetirementCol,fleetLatCol,
-        fleetLongCol,fleetRandAdderCol,fleetRegCostCol,fleetRegOfferCol,
-        fleetCoolCol,fleetZoneCol) = get2dListColNums(genFleetWithCEResults,
-        'ORIS Plant Code','Unit ID','State Name','YearAddedCE','PlantType','Capacity (MW)',
-        'Heat Rate (Btu/kWh)','VOM($/MWh)','FOM($/MW/yr)','Modeled Fuels','CO2EmRate(lb/MMBtu)',
-        'MinDownTime(hrs)','RampRate(MW/hr)','MinLoad(MW)','StartCost($)','On Line Year','Retirement Year',
-        'Latitude','Longitude','RandOpCostAdder($/MWh)','RegOfferCost($/MW)','RegOfferElig','Cooling Tech',
-        'Region Name')
+     fleetHrCol,fleetVomCol,fleetFomCol,fleetFuelCol,fleetCO2EmsCol,fleetMinDownCol,fleetRampCol,
+     fleetMinLoadCol,fleetStartCostCol,fleetOnlineYrCol,fleetIPMRetirementCol,fleetLatCol,
+     fleetLongCol,fleetRandAdderCol,fleetRegCostCol,fleetRegOfferCol,
+     fleetCoolCol,fleetZoneCol, fleetcoolDesignTCol) = \
+        get2dListColNums(genFleetWithCEResults, 'ORIS Plant Code','Unit ID','State Name','YearAddedCE','PlantType',
+                         'Capacity (MW)', 'Heat Rate (Btu/kWh)','VOM($/MWh)','FOM($/MW/yr)','Modeled Fuels',
+                         'CO2EmRate(lb/MMBtu)', 'MinDownTime(hrs)','RampRate(MW/hr)','MinLoad(MW)','StartCost($)',
+                         'On Line Year','Retirement Year', 'Latitude','Longitude','RandOpCostAdder($/MWh)',
+                         'RegOfferCost($/MW)','RegOfferElig','Cooling Tech', 'Region Name', 'coolingDesignT')
+
     #Get tech values
     techSymbols = [createTechSymbol(row,newTechsCE[0],ptCurtailed) for row in newTechsCE]
     techTechs = [row[techTypeCol] for row in newTechsCE]
@@ -100,6 +105,8 @@ def addGeneratorsToFleet(genFleetWithCEResults,newCurtTech,newRETech,newNotCurtT
     techRegCosts = [row[techRegCostCol] for row in newTechsCE]
     techRegOffers = [row[techRegOfferCol] for row in newTechsCE]
     techCoolTechs = [row[techCoolCol] for row in newTechsCE]
+    techcoolDesignTs = [row[techcoolDesignTCol] for row in newTechsCE]
+
     #Get max ORIS ID
     newOrisID = max([int(row[fleetOrisCol]) for row in genFleetWithCEResults[1:]])+1
     # (state,unitID) = ('Texas','1')
@@ -123,6 +130,9 @@ def addGeneratorsToFleet(genFleetWithCEResults,newCurtTech,newRETech,newNotCurtT
                 techRegOffer = techRegOffers[techRow]
                 techCoolTech = techCoolTechs[techRow]
                 techStartCost = convertCostToTgtYr('startup',float(techStartCosts[techRow]))
+
+                techcoolDesignT = techcoolDesignTs[techRow]
+
                 #Check
                 if 'OT' in techAndCT or 'RC' in techAndCT or 'DC' in techAndCT:
                     techCheck,coolCheck = getTechAndCoolFromTechSymbol(techAndCT)
@@ -151,6 +161,8 @@ def addGeneratorsToFleet(genFleetWithCEResults,newCurtTech,newRETech,newNotCurtT
                     genFleetWithCEResults[-1][fleetRegCostCol] = techRegCost
                     genFleetWithCEResults[-1][fleetRegOfferCol] = techRegOffer
                     genFleetWithCEResults[-1][fleetCoolCol] = techCoolTech
+                    genFleetWithCEResults[-1][fleetcoolDesignTCol] = techcoolDesignT
+
                     #Location info (either z1,z2,... for RE/not curtailed or cell lat_lon for curtailed tech)
                     if loc in [createZoneSymbol(zoneNum) for zoneNum in ipmZoneNums]: 
                         zone = ipmZones[[createZoneSymbol(zoneNum) for zoneNum in ipmZoneNums].index(loc)]

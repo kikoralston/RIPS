@@ -5,14 +5,14 @@
 #
 # End Description.
 #
-datadir = /Volumes/BFPROD/Data
+datadir = /Users/kiko/Documents/CE/Data/
 xsedeRun = False
 runCE = True
 runUC = False
 runFirstUCYear = False
 startYear = 2015
 endYear = 2046
-yearStepCE = 10
+yearStepCE = 5
 daysPerSeason = 10
 analysisArea = TVA
 #
@@ -23,9 +23,9 @@ incRegs = True  # whether to model curtailments,whether to model env regs on wat
 coolDesignT = 10  # design temperature of cooling techs
 # PTs curtailed via regression (ptCurtailed) and via enviro regulations (ptCurtailedRegs). Names need to be under quotes
 ptCurtailed = Coal Steam, Combined Cycle
-ptCurtailedRegs = Coal Steam, Coal Steam CCS, Combined Cycle, Combined Cycle CCS, Nuclear
+ptCurtailedRegs = Coal Steam, Coal Steam CCS, Combined Cycle, Combined Cycle CCS
 # Determines which cells new plants can be sited in; can be all all cells or those w/ gens already
-cellsEligibleForNewPlants = withGens  # 'all' (all cells) or 'withGens' (only cells with gen inside)
+cellsEligibleForNewPlants = all  # 'all' (all cells) or 'withGens' (only cells with gen inside)
 # Of those cells given above parameter, whether input all of them or just the one w/ max wtr T per zone.
 cellNewTechCriteria = all  # 'all' or 'maxWaterT' (maxWaterT: only include cell w/ max water T in CE.)
 #
@@ -57,7 +57,7 @@ incITC = True
 retirementCFCutoff = .3  # retire units w/ CF lower than given value
 ptEligRetCF = Coal Steam
 selectCurtailDays = True
-planningReserve = 0.15  # fraction of peak demand
+planningReserve = -10  # fraction of peak demand
 discountRate = 0.07  # fraction
 allowCoalWithoutCCS = True
 onlyNSPSUnits = False

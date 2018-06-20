@@ -31,7 +31,9 @@ def selectWeeksForExpansion(zonalDemandProfile, zonalNetDemand, zonalHourlyWindG
 
     if selectCurtailDays:  # if considering thermal curtailments in selection of special days
         totalHrlyCurtailments = getTotalSystemCurtailments(hrlyCurtailmentsAllGensInTgtYr)
-        eliminateLeapYearDay(totalHrlyCurtailments, currYear)
+
+        totalHrlyCurtailments = eliminateLeapYearDay(totalHrlyCurtailments, currYear)
+
         if len(totalHrlyCurtailments) > 0:
             write2dListToCSV([totalHrlyCurtailments], os.path.join(resultsDir,
                                                                    'curtailmentsHourlyCombined' + str(currYear) + '.csv'))
@@ -126,7 +128,7 @@ def getTotalSystemCurtailments(hrlyCurtailmentsAllGensInTgtYr):
     for gen in hrlyCurtailmentsAllGensInTgtYr:
         genHrlyCurtailments = hrlyCurtailmentsAllGensInTgtYr[gen]
         if len(totalHrlyCurtailments) == 0:
-            totalHrlyCurtailments = copy.deepcopy(genHrlyCurtailments)
+            totalHrlyCurtailments = list(copy.deepcopy(genHrlyCurtailments))
         else:
             totalHrlyCurtailments = list(map(operator.add, totalHrlyCurtailments, genHrlyCurtailments))
     return totalHrlyCurtailments
@@ -136,7 +138,10 @@ def getTotalSystemCurtailments(hrlyCurtailmentsAllGensInTgtYr):
 # Inputs: total system hourly curtailments (1d list w/out head), curr year
 def eliminateLeapYearDay(totalHrlyCurtailments, currYear):
     leapYears = [yr for yr in range(2016, 2101, 4)]
-    if currYear in leapYears: totalHrlyCurtailments = totalHrlyCurtailments[:-24]
+    if currYear in leapYears:
+        totalHrlyCurtailments = totalHrlyCurtailments[:-24]
+
+    return totalHrlyCurtailments
 
 
 # Get hours for entire day for hour w/ peak system curtailment
@@ -243,7 +248,11 @@ def selectRepresentativeHours(netDemandInMonths, hoursInMonthsNotSpecial, daysPe
             if rmse < lowestRmse:
                 lowestRmse = rmse
                 hoursLowestRmse = copy.copy(actualHrsSample)
-    print('Lowest NRMSE:', lowestRmse / (max(netDemandInMonths) - min(netDemandInMonths)))
+    if max(netDemandInMonths) == min(netDemandInMonths):
+        print('Lowest NRMSE:', lowestRmse / (max(netDemandInMonths) - min(netDemandInMonths) + 0.1))
+    else:
+        print('Lowest NRMSE:', lowestRmse / (max(netDemandInMonths) - min(netDemandInMonths)))
+
     return hoursLowestRmse
 
 

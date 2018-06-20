@@ -122,18 +122,26 @@ def modRECost(newTechsCE, itc, plantType):
     newTechsCE[ptRow][capexCol] *= (1 - itc)
 
 
-# Modify costs for thermal plants based on cooling tech. Data from IECM.
-# Inputs: new techs (2d list)
 def modCostsForCoolingTechs(newPlantDataDir, newTechsCE):
+    """Modify costs for thermal plants based on cooling tech. Data from IECM. Also, adds a standard value for
+    cooling design temperature for each pair (plant type, cooling type)
+
+    :param newPlantDataDir: (string) path to folder with new plant data
+    :param newTechsCE: new techs (2d list)
+    """
     coolingCosts = readCSVto2dList(os.path.join(newPlantDataDir, 'CoolingTechCostData_IECM_2017.csv'))
+
     coolCoolCol, techCoolCol = coolingCosts[0].index('Cooling Tech'), coolingCosts[0].index('TechnologyType')
     capCoolCol = coolingCosts[0].index('Total capital requirement ($/kWnet)')
     fomCoolCol = coolingCosts[0].index('Fixed O&M ($/yr)')
     capacCoolCol = coolingCosts[0].index('Capacity(MW)')
     hrPenCoolCol = coolingCosts[0].index('Net heat rate penalty')
+    coolDesignTcol = coolingCosts[0].index('coolingDesignT')
+
     coolTechCol, techTechCol = newTechsCE[0].index('Cooling Tech'), newTechsCE[0].index('TechnologyType')
     capexTechCol = newTechsCE[0].index('CAPEX(2012$/MW)')
     hrTechCol, fomTechCol = newTechsCE[0].index('HR(Btu/kWh)'), newTechsCE[0].index('FOM(2012$/MW/yr)')
+
     for row in newTechsCE[1:]:
         if row[coolTechCol] != 'NA' and row[coolTechCol] != 'once through':
             tech, cool = row[techTechCol], row[coolTechCol]
@@ -141,3 +149,20 @@ def modCostsForCoolingTechs(newPlantDataDir, newTechsCE):
             row[capexTechCol] += float(costRow[capCoolCol]) * 1000  # convert cost from $/kW to $/MW
             row[fomTechCol] += float(costRow[fomCoolCol]) / float(costRow[capacCoolCol])  # go from $/yr to $/MW/yr
             row[hrTechCol] *= (1 + float(costRow[hrPenCoolCol]))
+
+    # add column with standard cooling design temperature for each tech
+    newTechsCE[0] = newTechsCE[0] + ['coolingDesignT']
+
+    for row in newTechsCE[1:]:
+        tech, cool = row[techTechCol], row[coolTechCol]
+        coolingRow = [row for row in coolingCosts if row[coolCoolCol] == cool and row[techCoolCol] == tech]
+
+        if len(coolingRow) > 0:
+            coolingRow = coolingRow[0]
+            row.append(coolingRow[coolDesignTcol])
+        else:
+            row.append('NA')
+
+
+
+

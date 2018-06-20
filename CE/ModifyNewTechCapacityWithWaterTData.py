@@ -8,7 +8,7 @@ import os, csv, copy
 from AuxFuncs import *
 from GAMSAuxFuncs import createTechSymbol
 from AssignCellsToIPMZones import mapCellToIPMZone
-from ModifyGeneratorCapacityWithWaterTData import loadMetData
+from ModifyGeneratorCapacityWithWaterTData import loadWaterAndMetData, createBaseFilenameToReadOrWrite
 from CurtailmentRegressions import (calcCurtailmentForGenOrTech, loadRegCoeffs, getKeyCurtailParamsNewTechs,
                                     getCoeffsForGenOrTech)
 from AssignCellsToStates import getStateOfPt
@@ -20,45 +20,57 @@ import pandas as pd
 ####### MASTER FUNCTION ########################################################
 ################################################################################
 # Returns dict of (plant+cooltype,cell):hrly tech curtailments
-def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, cellNewTechCriteria,
-                                         ptCurtailed, ptCurtailedRegs, ptCurtailedAll, fipsToZones, fipsToPolys,
-                                         incCurtailments, incRegs, rbmOutputDir, locPrecision, statePolys,
-                                         dataRoot, coolDesignT, envRegMaxT, resultsDir):
+def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam, curtailparam, resultsDir):
+
     # Isolate water Ts to year of analysis
     eligibleCellWaterTsCurrYear = getWaterTsInCurrYear(currYear, eligibleCellWaterTs)
-    cellWaterTsForNewTechs = selectCells(eligibleCellWaterTsCurrYear, cellNewTechCriteria,
-                                         fipsToZones, fipsToPolys)
+    cellWaterTsForNewTechs = selectCells(eligibleCellWaterTsCurrYear, genparam.cellNewTechCriteria,
+                                         genparam.fipsToZones, genparam.fipsToPolys)
     # Do curtailments
     (hrlyCurtailmentsAllTechsInTgtYr, hrlyTechCurtailmentsList) = (dict(), [])
-    regCoeffs = loadRegCoeffs(dataRoot, 'capacity.json')  # dict of cooling type: reg coeffs
+    regCoeffs = loadRegCoeffs(genparam.dataRoot, 'capacity.json')  # dict of cooling type: reg coeffs
 
-    for techRow in newTechsCE[1:]:
-        (plantType, hr, fuelAndCoalType, coolType, fgdType) = getKeyCurtailParamsNewTechs(newTechsCE, techRow)
-        for cell in cellWaterTsForNewTechs:
-            cellLat, cellLong = float(cell.split('_')[0]), float(cell.split('_')[1])
-            state = getStateOfPt(statePolys, cellLat, cellLong)  # need for regression
-            metAndWaterData = loadMetAndAddWaterData(cellLat, cellLong, rbmOutputDir,
-                                                     locPrecision, currYear, cellWaterTsForNewTechs[cell], resultsDir)
-            coeffs = getCoeffsForGenOrTech(plantType, hr, fuelAndCoalType, coolType,
-                                           fgdType, ptCurtailed, regCoeffs, coolDesignT)
-            if (coeffs is not None) and (plantType in ptCurtailedRegs):  # skip gens that aren't curtailed
-                hrlyCurtailmentsGen = calcCurtailmentForGenOrTech(plantType, hr, fuelAndCoalType,
-                                                                  coolType, fgdType, state, ptCurtailed,
-                                                                  ptCurtailedRegs, metAndWaterData,
-                                                                  incCurtailments, incRegs, envRegMaxT, coolDesignT,
-                                                                  coeffs)
+    # read full meteo data for current year (full water data is already loaded)
+    meteodata = read_netcdf_full(currYear, curtailparam)
+
+    for cell in cellWaterTsForNewTechs:
+        t0 = time.time()
+        print(cell)
+
+        cellLat, cellLong = float(cell.split('_')[0]), float(cell.split('_')[1])
+        state = getStateOfPt(genparam.statePolys, cellLat, cellLong)  # need for regression
+
+        print('  Got state. ' + str_elapsedtime(t0))
+
+        metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam, metdatatot=meteodata,
+                                              waterDatatot=cellWaterTsForNewTechs)
+
+        print('  Got met data. ' + str_elapsedtime(t0))
+
+        for techRow in newTechsCE[1:]:
+            (plantType, hr, fuelAndCoalType, coolType,
+             fgdType, cap, coolDesignT) = getKeyCurtailParamsNewTechs(newTechsCE, techRow)
+
+            print('  Starting computation for plant ' + plantType)
+
+            coeffs = getCoeffsForGenOrTech(plantType, coolType, genparam.ptCurtailed, regCoeffs, coolDesignT)
+
+            if (coeffs is not None) and (plantType in genparam.ptCurtailedRegs):  # skip gens that aren't curtailed
+
+                hrlyCurtailmentsGen = calcCurtailmentForGenOrTech(plantType, fuelAndCoalType, coolType, state, cap,
+                                                                  coolDesignT, metAndWaterData, coeffs, genparam,
+                                                                  curtailparam)
+
+                print('  computed curtailment. ' + str_elapsedtime(t0))
                 hrlyCurtailmentsAllTechsInTgtYr[
-                    (createTechSymbol(techRow, newTechsCE[0], ptCurtailedAll),
+                    (createTechSymbol(techRow, newTechsCE[0], genparam.ptCurtailedAll),
                      cell)] = hrlyCurtailmentsGen
                 hrlyTechCurtailmentsList.append(
-                    [createTechSymbol(techRow, newTechsCE[0], ptCurtailedAll), cell]
-                    + hrlyCurtailmentsGen)
-    return (hrlyCurtailmentsAllTechsInTgtYr, hrlyTechCurtailmentsList)
+                    [createTechSymbol(techRow, newTechsCE[0], genparam.ptCurtailedAll), cell]
+                    + list(hrlyCurtailmentsGen))
 
+    return hrlyCurtailmentsAllTechsInTgtYr, hrlyTechCurtailmentsList
 
-################################################################################
-################################################################################
-################################################################################
 
 ################################################################################
 ####### ISOLATE AVG WATER TS FOR CURRENT YEAR FOR EACH CELL ####################
@@ -68,7 +80,7 @@ def getWaterTsInCurrYear(currYear, eligibleCellWaterTs):
     eligibleCellWaterTsCurrYear = dict()
     for cell in eligibleCellWaterTs:
         cellWaterTs = eligibleCellWaterTs[cell]
-        dateCol = cellWaterTs[0].index('Datetime')
+        dateCol = cellWaterTs[0].index('date')
         eligibleCellWaterTsCurrYear[cell] = [cellWaterTs[0]] + [row for row in
                                                                 cellWaterTs[1:] if str(currYear) in row[dateCol]]
     return eligibleCellWaterTsCurrYear
@@ -87,6 +99,10 @@ def selectCells(eligibleCellWaterTsCurrYear, cellNewTechCriteria, fipsToZones, f
     elif cellNewTechCriteria == 'maxWaterT':
         cellsPerZone = getCellsInEachZone(eligibleCellWaterTsCurrYear, fipsToZones, fipsToPolys)
         cellWaterTsForNewTechs = placeTechInMaxWaterTCell(eligibleCellWaterTsCurrYear, cellsPerZone)
+    else:
+        print('Parameter \'cellWaterTsForNewTechs\' must be either \'all\' or \'maxWaterT\'.... Ending simulation!')
+        sys.exit()
+
     return cellWaterTsForNewTechs
 
 

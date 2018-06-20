@@ -329,14 +329,14 @@ class Generalparameters:
             self.states = ['Tennessee']
             self.statesAbbrev = ['TN']
             self.ipmZones = ['S_C_TVA']
-        elif self.analysisArea == 'test':
-            self.states = ['North Carolina', 'South Carolina', 'Georgia', 'Mississippi', 'Alabama']
-            self.statesAbbrev = ['NC', 'SC', 'GA', 'MS', 'AL']
-            self.ipmZones = ['S_SOU', 'S_VACA']
         elif self.analysisArea == 'TVA':
             self.states = ['North Carolina', 'Georgia', 'Mississippi', 'Alabama', 'Kentucky', 'Tennessee']
             self.statesAbbrev = ['NC', 'GA', 'MS', 'AL', 'KY', 'TN']
             self.ipmZones = ['S_C_TVA']
+        elif self.analysisArea == 'test':
+            self.states = ['North Carolina', 'South Carolina', 'Georgia', 'Mississippi', 'Alabama']
+            self.statesAbbrev = ['NC', 'SC', 'GA', 'MS', 'AL']
+            self.ipmZones = ['S_SOU', 'S_VACA']
         else:
             print('------------------------------------------------------------------------------------------')
             print('ERROR!!!')

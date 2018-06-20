@@ -28,13 +28,13 @@ def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desir
     solarDir = os.path.join(dataRoot, 'NRELSolarPVData', 'SERC')
 
     if len(windUnits) > 1:  # have wind in zone
-        (windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac) = getWindCFs(windUnits, windDir,
-                                                                           startWindCapacForCFs, desiredTz,
-                                                                           windGenDataYr,
-                                                                           fipsToZones, fipsToPolys, currZone)
+        (windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac) = getWindCFs(windUnits, windDir, startWindCapacForCFs,
+                                                                           desiredTz, windGenDataYr, fipsToZones,
+                                                                           fipsToPolys, currZone)
         windCfsDtHr, windCfsDtSubhr = rotate(windCfsDtHr), rotate(windCfsDtSubhr)
     else:
         windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac = None, None, None, None
+
     if len(solarUnits) > 1:
         (solarCFs, solarCfsDtHr, solarCfsDtSubhr, solarFilenameAndCapac) = getSolarCFs(solarUnits, solarDir,
                                                                                        startSolarCapacForCFs, desiredTz,
@@ -49,18 +49,20 @@ def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desir
 
 ##### WIND CFS #####
 # All CFs output in EST
-def getWindCFs(windUnits, windDir, startWindCapacForCFs,
-               desiredTz, windGenDataYr, fipsToZones, fipsToPolys, currZone):
+def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataYr, fipsToZones, fipsToPolys, currZone):
+
     # Get total wind capacity by zone
     capacCol = windUnits[0].index('Capacity (MW)')
     windCapacInZone = sum([float(row[capacCol]) for row in windUnits[1:]])
+
     # Get wind plants per state
-    (ewdIdAndCapac, ewdMetadata) = getBestWindIdsInZone(windDir, windCapacInZone,
-                                                        startWindCapacForCFs, fipsToZones, fipsToPolys, currZone)
+    (ewdIdAndCapac, ewdMetadata) = getBestWindIdsInZone(windDir, windCapacInZone, startWindCapacForCFs,
+                                                        fipsToZones, fipsToPolys, currZone)
     # Import CFs for each wind plant
     allSiteCfsHourly, allSiteCfsSubhourly, avgFleetCfHr = [], [], []
     idCol = ewdIdAndCapac[0].index('Id')
     datasetCapacCol = ewdIdAndCapac[0].index('DatasetCapacity')
+
     for site in ewdIdAndCapac[1:]:
         (siteId, datasetCapac) = (site[idCol], site[datasetCapacCol])
         if 'NoMoreSites' in siteId:
@@ -82,12 +84,17 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs,
                 else:
                     avgFleetCfHr, avgFleetCfSubhr = calcCapacWtdFleetCf(ewdIdAndCapac,
                                                                         allSiteCfsHourly, allSiteCfsSubhourly)
+
             siteCfsHourly, siteCfsSubhourly = copy.deepcopy(avgFleetCfHr), copy.deepcopy(avgFleetCfSubhr)
+
         else:
             siteCfsHourly, siteCfsSubhourly = getWindSiteCfs(windDir, siteId, datasetCapac, desiredTz, windGenDataYr)
+
         addSiteCfsToAggList(siteCfsHourly, siteCfsSubhourly, allSiteCfsHourly, allSiteCfsSubhourly, siteId)
+
     allSiteCfsHourOfYear = [['HourOfYear'] + [val for val in range(1, 8761)]] + copy.deepcopy(allSiteCfsHourly[1:])
-    return (allSiteCfsHourOfYear, allSiteCfsHourly, allSiteCfsSubhourly, ewdIdAndCapac)
+
+    return allSiteCfsHourOfYear, allSiteCfsHourly, allSiteCfsSubhourly, ewdIdAndCapac
 
 
 def addSiteCfsToAggList(siteCfsHourly, siteCfsSubhourly, allSiteCfsHourly, allSiteCfsSubhourly, siteId):
@@ -109,22 +116,35 @@ def getBestWindIdsInZone(windDir, windCapacInZone, startWindCapacForCFs, fipsToZ
     ewdCfCol = metadata[0].index('capacity_factor')
     ewdCapacCol = metadata[0].index('capacity')
     ewdSiteNumberCol = metadata[0].index('site_id')
-    idAndCapacs = getWindOrSolarIdsInZonesDecreasingCF(metadata,
-                                                       windCapacInZone, ewdCfCol, ewdCapacCol, ewdSiteNumberCol,
-                                                       startWindCapacForCFs, fipsToZones, fipsToPolys, currZone, 'Wind')
-    return (idAndCapacs, metadata)
+
+    idAndCapacs = getWindOrSolarIdsInZonesDecreasingCF(metadata, windCapacInZone, ewdCfCol, ewdCapacCol,
+                                                       ewdSiteNumberCol, startWindCapacForCFs, fipsToZones,
+                                                       fipsToPolys, currZone, 'Wind')
+    return idAndCapacs, metadata
 
 
-# Assumes 70 and 12 MW capacities for wind and solar, respectively, rather than
-# using capacities of plants attached to them ind atabase. Do this because
-# wind capacity in WIND database is unrealistically small.
-def getWindOrSolarIdsInZonesDecreasingCF(metadata, capacInZone, cfCol, capacCol,
-                                         siteNumberOrFileCol, startRECapacForCFs, fipsToZones, fipsToPolys, currZone,
-                                         windOrSolar):
+def getWindOrSolarIdsInZonesDecreasingCF(metadata, capacInZone, cfCol, capacCol, siteNumberOrFileCol,
+                                         startRECapacForCFs, fipsToZones, fipsToPolys, currZone, windOrSolar):
+    """
+
+    Assumes 70 and 12 MW capacities for wind and solar, respectively, rather than using capacities of plants
+    attached to them wind database. Do this because wind capacity in WIND database is unrealistically small.
+
+    :param metadata:
+    :param capacInZone:
+    :param cfCol:
+    :param capacCol:
+    :param siteNumberOrFileCol:
+    :param startRECapacForCFs:
+    :param fipsToZones:
+    :param fipsToPolys:
+    :param currZone:
+    :param windOrSolar:
+    :return:
+    """
     idAndCapacs = [['Id', 'DatasetCapacity', 'FleetCapacity']]
-    (cfs, capacs, siteNumbers) = getPlantInfoInZone(metadata, startRECapacForCFs,
-                                                    cfCol, capacCol, siteNumberOrFileCol, fipsToZones, fipsToPolys,
-                                                    currZone)
+    (cfs, capacs, siteNumbers) = getPlantInfoInZone(metadata, startRECapacForCFs, cfCol, capacCol, siteNumberOrFileCol,
+                                                    fipsToZones, fipsToPolys, currZone)
     currZoneCapac = 0
     while currZoneCapac < capacInZone:
         if len(cfs) == 0:
@@ -149,17 +169,37 @@ def getWindOrSolarIdsInZonesDecreasingCF(metadata, capacInZone, cfCol, capacCol,
             cfs.pop(maxCfIdx)
             capacs.pop(maxCfIdx)
             siteNumbers.pop(maxCfIdx)
+
     return idAndCapacs
 
 
-# Match by zone
-def getPlantInfoInZone(metadata, startRECapacForCFs, cfCol, capacCol, siteNumberOrFileCol,
-                       fipsToZones, fipsToPolys, currZone, *args):
-    if 'longitude' in metadata[0]:  # wind has lat/long already given
+def getPlantInfoInZone(metadata, startRECapacForCFs, cfCol, capacCol, siteNumberOrFileCol, fipsToZones, fipsToPolys,
+                       currZone, *args):
+    """
+
+    Match by zone
+
+    :param metadata:
+    :param startRECapacForCFs:
+    :param cfCol:
+    :param capacCol:
+    :param siteNumberOrFileCol:
+    :param fipsToZones:
+    :param fipsToPolys:
+    :param currZone:
+    :param args:
+    :return:
+    """
+
+    if 'longitude' in metadata[0]:
+        # wind has lat/long already given
+
         latCol, lonCol = metadata[0].index('latitude'), metadata[0].index('longitude')
         plantsInRegionOrZone = [row for row in metadata[1:] if locInZone(float(row[latCol]), float(row[lonCol]),
                                                                          currZone, fipsToZones, fipsToPolys)]
-    else:  # solar lat/lon is in filename
+    else:
+        # solar lat/lon is in filename
+
         nameCol = metadata[0].index('File')
         plantsInRegionOrZone = [row for row in metadata[1:] if locInZone(float(getCoordsFromFilename(row[nameCol])[0]),
                                                                          float(getCoordsFromFilename(row[nameCol])[1]),
@@ -167,7 +207,8 @@ def getPlantInfoInZone(metadata, startRECapacForCFs, cfCol, capacCol, siteNumber
     cfs = [float(row[cfCol]) for row in plantsInRegionOrZone]
     capacs = [float(row[capacCol]) for row in plantsInRegionOrZone]
     siteNumbers = [row[siteNumberOrFileCol] for row in plantsInRegionOrZone]
-    return (cfs, capacs, siteNumbers)
+
+    return cfs, capacs, siteNumbers
 
 
 def calcCapacWtdFleetCf(idAndCapac, siteCfsHr, siteCfsSubhr):
@@ -203,35 +244,52 @@ def calcCapacWtdFleetCfHrOrSubhr(idToFleetCapac, siteCfs):
     return capacWtdCfs
 
 
-# Inputs: dir w/ wind data, site ID to get gen data for, wind site capac,
-# desired timezone, year for wind gen data
-# Outputs: 2 2d lists, both have first row = datetime. 1 2d list = hourly
-# CFs, 2nd 2d list = subhourly CFs. Also row labels
 def getWindSiteCfs(windDir, siteId, siteCapac, desiredTz, windGenDataYr):
+    """
+
+    :param windDir: dir w/ wind data
+    :param siteId: site ID to get gen data for
+    :param siteCapac: wind site capac
+    :param desiredTz: desired timezone
+    :param windGenDataYr: year for wind gen data
+    :return: 2 2d lists, both have first row = datetime. 1 2d list = hourly CFs, 2nd 2d list = subhourly CFs.
+             Also row labels
+    """
     hourlyFile = 'powerhourly_' + siteId + '.csv'
     hourlyGen = readCSVto2dList(os.path.join(windDir, 'hourlyPowerSERC', hourlyFile))
+
     subhourlyFile = 'powersubhourly_' + siteId + '.csv'
     subhourlyGen = readCSVto2dList(os.path.join(windDir, 'subhourlyPowerSERC', subhourlyFile))
+
     datetimeAndHourlyGen = convertTimeToDatetimeInTgtTz(hourlyGen, 'wind', siteId, desiredTz, 'UTC')
     datetimeAndSubhourlyGen = convertTimeToDatetimeInTgtTz(subhourlyGen, 'wind', siteId, desiredTz, 'UTC')
+
     datetimeAndHourlyGenInYr = [datetimeAndHourlyGen[0]] + [row for row in datetimeAndHourlyGen[1:]
                                                             if row[0].year == windGenDataYr]
     datetimeAndSubhourlyGenInYr = [datetimeAndSubhourlyGen[0]] + [row for row in datetimeAndSubhourlyGen[1:]
                                                                   if row[0].year == windGenDataYr]
+
     hourlyCfs = convertToCfs(datetimeAndHourlyGenInYr, siteCapac)
     subhourlyCfs = convertToCfs(datetimeAndSubhourlyGenInYr, siteCapac)
+
     return hourlyCfs, subhourlyCfs
 
 
-# Converts datetimes to target timezone
-# Inputs: gen data (2d list w/ datetime in col 1 and gen data in col 2),
-# whether processing wind or solar gen data, and site ID or filename
-# Outputs: 2d list w/ gen data (datetime in col 1, gen data in col 2)
 def convertTimeToDatetimeInTgtTz(genData, windOrSolar, siteOrFilename, tgtTz, siteTz):
+    """Converts datetimes to target timezone
+
+    :param genData: gen data (2d list w/ datetime in col 1 and gen data in col 2)
+    :param windOrSolar: (string) whether processing wind or solar gen data
+    :param siteOrFilename: site ID or filename
+    :param tgtTz:
+    :param siteTz:
+    :return: 2d list w/ gen data (datetime in col 1, gen data in col 2)
+    """
     datetimeAndGen = [['datetime' + tgtTz, 'power(MW)' + siteOrFilename]]
     tzOffsetDict = {'UTCtoCST': -6, 'CSTtoCST': 0, 'ESTtoCST': -1, 'CSTtoEST': 1, 'UTCtoEST': -5,
                     'ESTtoEST': 0}
     timezoneOffset = tzOffsetDict[siteTz + 'to' + tgtTz]
+
     if windOrSolar == 'wind':
         dateAndTimeCol = genData[0].index('Datetime')
         genCol = genData[0].index(siteOrFilename)

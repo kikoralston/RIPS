@@ -14,7 +14,7 @@ def calculateHourlyCapacsWithCurtailments(genFleet, hrlyCurtailmentsAllGensInTgt
 
     :param genFleet: 2d list with Generation Fleet data matrix
     :param hrlyCurtailmentsAllGensInTgtYr: dict mapping each gen to 2d list of datetime for year of run to hourly net
-                                           capacity curtailments (MW)
+                                           capacity curtailments (fraction of total capacity)
     :param currYear: integer representing year being simulated
     :return: genHourlyCapacs: dictionary of gen symbol: 1d list of hourly capacity for year
              genHourlyCapacsList: 2d list with hourly capacity for all generators. first element of each row is
@@ -29,7 +29,9 @@ def calculateHourlyCapacsWithCurtailments(genFleet, hrlyCurtailmentsAllGensInTgt
         lenCurtailments = 8760
 
     for row in genFleet[1:]:
+
         genSymbol = createGenSymbol(row, genFleet[0])
+
         if row[fuelTypeCol] == 'Wind' or row[fuelTypeCol] == 'Solar':
             hourlyCapacs = [float(row[capacCol])] * lenCurtailments
         elif genSymbol in hrlyCurtailmentsAllGensInTgtYr:
@@ -47,7 +49,7 @@ def calculateHourlyCapacsWithCurtailments(genFleet, hrlyCurtailmentsAllGensInTgt
 def subtractCurtailmentsFromCapac(hrlyCurtailments, capac, genSymbol):
     """Computes net available capacity (in MW) of curtailed generator
 
-    :param hrlyCurtailments: list with hourly curtailments for generator in current year(fraction of total capacity)
+    :param hrlyCurtailments: list with hourly curtailments for generator in current year (fraction of total capacity)
     :param capac: capacity with generator (MW)
     :param genSymbol: string with generator symbol (ORIS+UNIT)
     :return: list of Hourly curtailments in MW

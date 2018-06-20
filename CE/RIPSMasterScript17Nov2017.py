@@ -1,7 +1,8 @@
 # Michael Craig, 31 May 2016
 # Run capacity expansion and dispatch models w/ climate impacts.
 
-import os, csv, operator, copy, time, random
+import os, sys
+import csv, operator, copy, time, random
 import numpy as np
 import datetime as dt
 from gams import *
@@ -49,184 +50,12 @@ from ModifyNewTechCapacityWithWaterTData import determineHrlyCurtailmentsForNewT
 from Parameters import *
 
 
-################################################################################
-###### UNIVERSAL PARAMETERS ####################################################
-################################################################################
-def setKeyParameters():
-    # KEY PARAMETERS
-
-    # path to folder where data is located. Script will assume a specific folder tree structure
-    # to find different files.
-    dataRoot = '/Volumes/BFPROD/Data'
-
-    # whether running on XSEDE supercomputer (affects sys_dir in GAMS call)
-    xsedeRun = False
-
-    runCE, runUC = True, False
-    runFirstUCYear = False
-    # NOTE: if run every 5 years, leap year is in curtailment data.
-    (startYear, endYear, yearStepCE) = (2015, 2030, 5)
-    firstUCYear = 2015
-    daysPerSeason = 10
-    daysForUC = [val for val in range(1, 2)]  # start @ 1, go to 1 past end day (e.g., 366 for full year)
-    analysisArea = 'TVA'  # coreSERC, allSERC, onlyTN, test, TVA
-    # KEY CURTAILMENT PARAMETERS
-    incCurtailments, incRegs = True, True  # whether to model curtailments,whether to model env regs on water T
-    coolDesignT = 100  # design temperature of cooling techs
-
-    # Plants (PTs) curtailed via regression (ptCurtailed) and via enviro regulations (ptCurtailedRegs)
-    ptCurtailed = {'Coal Steam', 'Combined Cycle'}
-    ptCurtailedRegs = {'Coal Steam', 'Coal Steam CCS', 'Combined Cycle', 'Combined Cycle CCS', 'Nuclear'}
-    ptCurtailedAll = ptCurtailed | ptCurtailedRegs
-
-    # Determines which cells new plants can be sited in; can be all all cells or those w/ gens already
-    cellsEligibleForNewPlants = 'withGens'  # 'all' (all cells) or 'withGens' (only cells already with gen inside)
-    # Of those cells given above parameter, whether input all of them or just the one w/ max wtr T per zone.
-    cellNewTechCriteria = 'all'  # 'all' or 'maxWaterT' (maxWaterT: only include cell w/ max water T in CE.)
-    # GENERAL PARAMETERS
-    compressFleet = True
-    co2CapScenario = 'none'
-    scenario = 'normal'
-    co2CapEndYr, co2CapEnd = getCo2Cap(co2CapScenario)
-    fuelPricesTimeSeries = importFuelPrices(dataRoot, scenario)
-    # RESULTS DIRECTORY
-    resultsDir = '/Users/kiko/Documents/CE'
-    folderName = ('Area' + analysisArea + 'Cells' + cellNewTechCriteria +
-                  ('Curtail' if incCurtailments == True else 'NoCurtail') +
-                  ('EnvRegs' if incRegs == True else 'NoRegs') +
-                  'C' + co2CapScenario + 'S' + scenario[:3])
-    resultsDir = os.path.join(resultsDir, folderName)
-    if not os.path.exists(resultsDir): os.makedirs(resultsDir)
-    # THERMAL CURTAILMENT PARAMETERS
-    processRBMData = False  # set to True if first time improting set of RBM data
-    # RENEWABLE CAPACITY FACTOR PARAMETERS
-    tzAnalysis = 'EST'
-    projectName = 'rips'
-    windGenDataYr = 2009  # picked somewhat arbitrarily - average CF of all years in WIND data
-    # CAPACITY EXPANSION PARAMETERS
-    # capacExpFilename = 'CERIPS24July2017.gms'
-    capacExpFilename = 'CERIPS24July2017PS.gms'
-    maxAddedZonalCapacPerTech = 10000
-    incITC = True
-    retirementCFCutoff = .3  # retire units w/ CF lower than given value
-    ptEligRetCF = ['Coal Steam']
-    selectCurtailDays = True
-    planningReserve = 0.15  # fraction of peak demand
-    discountRate = 0.07  # fraction
-    allowCoalWithoutCCS, onlyNSPSUnits, permitOncethru = True, False, True
-    # UNIT COMMITMENT PARAMETERS
-    ucFilename = 'UCRIPS18April2017.gms'
-    calculateCO2Price = True
-    (daysOpt, daysLA) = (1, 1)
-    ocAdderMin, ocAdderMax = 0, 0.05  # $/MWh
-    # PUMPED HYDRO PARAMETERS
-    phEff, phMaxSoc, phInitSoc = .81, 5, .5  # max soc as multiple of capacity; init SOC as fraction of max soc
-    # CONVERSION PARAMETERS
-    scaleMWtoGW = 1000
-    scaleDollarsToThousands = 1000
-    scaleLbToShortTon = 2000
-    # TEMPORARY PARAMETERS
-    annualDemandGrowth = 0.02  # fraction per year
-    # AREA OF ANALYSIS
-    if analysisArea == 'coreSERC':
-        states = ['North Carolina', 'South Carolina', 'Georgia', 'Mississippi', 'Alabama',
-                  'Kentucky', 'Tennessee']
-        statesAbbrev = ['NC', 'SC', 'GA', 'MS', 'AL', 'KY', 'TN']
-        ipmZones = ['S_SOU', 'S_VACA', 'S_C_KY', 'S_C_TVA']
-    elif analysisArea == 'allSERC':
-        states = ['North Carolina', 'South Carolina', 'Georgia', 'Mississippi', 'Alabama',
-                  'Kentucky', 'Tennessee', 'Missouri', 'Virginia', 'Illinois', 'Louisiana']
-        statesAbbrev = ['NC', 'SC', 'GA', 'MS', 'AL', 'KY', 'TN', 'MO', 'VA', 'IL', 'LA']
-        ipmZones = ['S_SOU', 'S_VACA', 'S_C_KY', 'S_C_TVA', 'S_D_WOTA',
-                    'S_D_N_AR', 'S_D_AMSO', 'S_D_REST']
-    elif analysisArea == 'onlyTN':
-        (states, statesAbbrev) = (['Tennessee'], ['TN'])
-        ipmZones = ['S_C_TVA']
-    elif analysisArea == 'test':
-        states = ['North Carolina', 'South Carolina', 'Georgia', 'Mississippi', 'Alabama']
-        statesAbbrev = ['NC', 'SC', 'GA', 'MS', 'AL']
-        ipmZones = ['S_SOU', 'S_VACA']
-    elif analysisArea == 'TVA':
-        states = ['North Carolina', 'Georgia', 'Mississippi', 'Alabama', 'Kentucky', 'Tennessee']
-        statesAbbrev = ['NC', 'GA', 'MS', 'AL', 'KY', 'TN']
-        ipmZones = ['S_C_TVA']
-    fipsToZones, fipsToPolys = getIPMPolys(dataRoot, ipmZones)  # get IPM polygons
-    statePolys = getStatePolys(dataRoot, states)  # get state polygons
-    # CREATE LIST W/ IDXS THAT PARALLEL ZONES - NEED TO PRESERVE ORDER SO DON'T USE A DICT
-    ipmZoneNums = [idx for idx in range(1, len(ipmZones) + 1)]
-    write2dListToCSV([['Zone', 'ZoneNum']] + rotate([ipmZones, ipmZoneNums]),
-                     os.path.join(resultsDir, 'zoneNamesToNumbers.csv'))
-    # IMPORT TRANSMISSION SYSTEM DATA
-    lineList, lineCapacs = setLines(dataRoot)
-    # OLD VARIABLES
-    testModel = False  # use dummy test system; not currently working
-    return (dataRoot, xsedeRun, runCE, runUC, resultsDir, startYear, endYear, yearStepCE, daysPerSeason,
-            testModel, cellsEligibleForNewPlants, compressFleet, co2CapEndYr, co2CapEnd,
-            fuelPricesTimeSeries, processRBMData, tzAnalysis, projectName, windGenDataYr, capacExpFilename,
-            retirementCFCutoff, ptEligRetCF, daysPerSeason, selectCurtailDays, planningReserve,
-            discountRate, allowCoalWithoutCCS, onlyNSPSUnits, ucFilename, calculateCO2Price,
-            daysOpt, daysLA, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon, annualDemandGrowth,
-            states, statesAbbrev, ipmZones, ocAdderMin, ocAdderMax, maxAddedZonalCapacPerTech,
-            lineList, lineCapacs, ptCurtailed, ptCurtailedRegs, ptCurtailedAll, cellNewTechCriteria, firstUCYear,
-            scenario, incITC, ipmZoneNums, fipsToZones, fipsToPolys, statePolys, permitOncethru, incCurtailments,
-            incRegs, phEff, phMaxSoc, phInitSoc, runFirstUCYear, coolDesignT)
-
-
-def setThermalCurtailmentParameters():
-    # Env reg parameters: dict of state : max water T (deg C)
-    envRegMaxT = {'Alabama': 32, 'Georgia': 32, 'Mississippi': 32, 'South Carolina': 32.2,
-                  'North Carolina': 32, 'Tennessee': 30.5, 'Kentucky': 31.7}
-    # RBM processing parameters
-    outputHeaders = ['Year', 'Month', 'Day', 'Streamflow(cfs)', 'StreamT(degC)', 'HeadwaterT(degC)', 'AirT(degC)']
-    locPrecision = 4
-    numCellsToProcess = 4
-    tempAndSpatFilename = 'bcc-csm1-1-m_rcp45_r1i1p1'
-    nsegFilename = 'Tennessee.nseg_nday'
-    # Water T directories
-    rbmRootDir = '/Volumes/BFPROD/Data/DatafromUW'
-    rbmDataDir = os.path.join(rbmRootDir, 'RBMRawWaterTData10Aug2016')
-    rbmOutputDir = os.path.join(rbmRootDir, 'RBMProcessedWaterT25Aug2016', tempAndSpatFilename)
-    return (outputHeaders, locPrecision, tempAndSpatFilename, nsegFilename,
-            rbmRootDir, rbmDataDir, rbmOutputDir, numCellsToProcess, envRegMaxT)
-
-
-def defineReserveParameters():
-    # Requirement parameters - based on WWSIS Phase 2
-    regLoadFrac = .01  # frac of hourly load in reg up & down
-    contLoadFrac = .03  # frac of hourly load in contingency
-    regErrorPercentile = 95  # percentile of 10-m wind & 5-m solar forecast errors used in reg reserves
-    flexErrorPercentile = 70  # percentile of hourly wind & solar forecast errors used in reg reserves
-    # Cost coeff - from Denholm et al. 2013, val of E sto in grid apps
-    regUpCostCoeffs = {'Combined Cycle': 6, 'Combined Cycle CCS': 6, 'O/G Steam': 4,
-                       'Coal Steam': 10, 'Coal Steam CCS': 10}  # $/MWh
-    # Timeframes
-    regReserveMinutes = 5  # reg res must be provided w/in 5 mins
-    flexReserveMinutes = 10  # spin reserves must be provided w/in 10 minutes
-    contingencyReserveMinutes = 30  # contingency res must be provided w/in 30 minutes
-    minutesPerHour = 60
-    rampRateToRegReserveScalar = regReserveMinutes / minutesPerHour  # ramp rate in MW/hr
-    rampRateToFlexReserveScalar = flexReserveMinutes / minutesPerHour  # ramp rate in MW/hr
-    rampRateToContReserveScalar = contingencyReserveMinutes / minutesPerHour
-    return (regLoadFrac, contLoadFrac, regErrorPercentile, flexErrorPercentile,
-            regUpCostCoeffs, rampRateToRegReserveScalar, rampRateToFlexReserveScalar,
-            rampRateToContReserveScalar)
-
-
-def importFuelPrices(dataRoot, scenario):
-    fuelPriceDir = os.path.join(dataRoot, 'FuelPricesCapacityExpansion')
-
-    if scenario == 'ng':
-        fuelFileName = 'FuelPriceTimeSeries2Aug2016LowNG.csv'
-    else:
-        fuelFileName = 'FuelPriceTimeSeries2Aug2016.csv'
-
-    return readCSVto2dList(os.path.join(fuelPriceDir, fuelFileName))
-
-
-################################################################################
-###### MASTER FUNCTION #########################################################
-################################################################################
 def masterFunction():
+    """MASTER FUNCTION
+
+    """
+    print()
+    print('Loading parameters and setting up initial data')
     # Load parameters
     genparam = Generalparameters.Generalparameters()
     genparam.load(fname='./generalparameters.txt')
@@ -236,20 +65,23 @@ def masterFunction():
 
     genFleet = getInitialFleetAndDemand(genparam, reserveparam)
 
-    print('Set up initial data')
-
     if genparam.processRBMData: processRBMDataToUsableFormat()
 
     (capacExpModelsEachYear, capacExpBuilds, capacExpGenByGens, capacExpRetiredUnitsByCE,
      capacExpRetiredUnitsByAge) = ([], [['TechnologyType']], [['ORIS+UnitID']], [], [])
 
+    t_start = time.time()
     # begin loop
     for currYear in range(genparam.startYear, genparam.endYear, genparam.yearStepCE):
+
+        t_year = time.time()
+        print('\n----------------------------------------------------------------\n')
+        print('Starting loop for year {0:4d}\n'.format(currYear))
+
         currCo2Cap = interpolateCO2Cap(currYear, genparam.co2CapEndYr, genparam.co2CapEnd) * 1E3
 
-        print('Curr CO2 cap: {:,} million tons'.format(currCo2Cap/1e6))
-        zonalDemandProfile, zonalTempDfs = forecastZonalDemandWithReg(currYear, genparam.dataRoot,
-                                                                      genparam.ipmZones, genparam.resultsDir)
+        print('CO2 cap in year {1:4d}: {0:,.3f} million tons'.format(currCo2Cap/1e6, currYear))
+        zonalDemandProfile, zonalTempDfs = forecastZonalDemandWithReg(currYear, genparam)
 
         if currYear > genparam.startYear and genparam.runCE:
             if currYear == genparam.startYear + genparam.yearStepCE:
@@ -284,22 +116,47 @@ def masterFunction():
                                                                                copy.deepcopy(regUpCostCoeffs), xsedeRun,
                                                                                runCE, scenario, ucFilename, ipmZones,
                                                                                incCurtailments)
+        print()
+        print('Elapsed Time: ' + str_elapsedtime(t_year))
+
+        print('\n----------------------------------------------------------------')
+
+    print()
+    print('************ Total Elapsed Time: ' + str_elapsedtime(t_start) + '************')
 
 
-################################################################################
-####### SET UP INITIAL FLEET AND DEMAND ########################################
-################################################################################
 def getInitialFleetAndDemand(genparam, reserveparam):
+    """SET UP INITIAL FLEET
 
-    genFleet = setupGeneratorFleet(genparam.startYear, genparam, reserveparam)
+    Reads folders containing data of existing power plant data and compiles 2d list with generator fleet data. If the
+    genparam.analysisArea == 'test', it reads a file 'genFleetInitial.csv' from genparam.dataRoot.
 
-    aggregatePlantTypeToORIS(genFleet, 'Hydro')
-    aggregatePlantTypeToORIS(genFleet, 'Pumped Storage')
-    # Add placeholder columns for additions & retirements by CE
-    ceHeaders = ['YearAddedCE', 'YearRetiredByCE', 'YearRetiredByAge']
-    genFleet[0].extend(ceHeaders)
-    for row in genFleet[1:]: row.extend([''] * len(ceHeaders))
+    :param genparam: object of class Generalparameters
+    :param reserveparam: object of class Reserveparameters
+    :return: 2d list with initial generator fleet data
+    """
+
+    if genparam.analysisArea == 'test':
+        fileNameWithDir = os.path.join(genparam.dataRoot, 'genFleetInitial.csv')
+
+        if os.path.isfile(fileNameWithDir):
+            genFleet = readCSVto2dList(fileNameWithDir=fileNameWithDir)
+        else:
+            print('Error! analysisArea is set to \'test\'. There must be a file \'genFleetInitial.csv\' at the ' +
+                  'root of the data folder')
+            sys.exit()
+    else:
+        genFleet = setupGeneratorFleet(genparam.startYear, genparam, reserveparam)
+
+        aggregatePlantTypeToORIS(genFleet, 'Hydro')
+        aggregatePlantTypeToORIS(genFleet, 'Pumped Storage')
+        # Add placeholder columns for additions & retirements by CE
+        ceHeaders = ['YearAddedCE', 'YearRetiredByCE', 'YearRetiredByAge']
+        genFleet[0].extend(ceHeaders)
+        for row in genFleet[1:]: row.extend([''] * len(ceHeaders))
+
     write2dListToCSV(genFleet, os.path.join(genparam.resultsDir, 'genFleetInitial.csv'))
+
     return genFleet
 
 
@@ -335,6 +192,7 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
     write2dListToCSV([[currCo2Cap]], os.path.join(resultsDir, 'co2CapCE' + str(currYear) + '.csv'))
 
     newTechsCE = getNewTechs(currYear, genparam, reserveparam)
+
     updateFuelPrices(genFleet, newTechsCE, currYear, genparam.fuelPricesTimeSeries)
 
     write2dListToCSV(newTechsCE, os.path.join(resultsDir, 'newTechsCE' + str(currYear) + '.csv'))
@@ -357,12 +215,16 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
     write2dListToCSV(genFleetForCE, os.path.join(resultsDir, 'genFleetForCE' + str(currYear) + '.csv'))
     (startWindCapacForCFs, startSolarCapacForCFs) = (0, 0)
     writeDictToCSV(zonalDemandProfile, os.path.join(resultsDir, 'demandFullYrZonalCE' + str(currYear) + '.csv'))
+
     zoneCol = genFleetForCE[0].index('Region Name')
     zonalHourlyWindGen, zonalHourlySolarGen = dict(), dict()
     zonalNewWindCFs, zonalNewSolarCFs, zonalNetDemand = dict(), dict(), dict()
 
+    print('Computing CFs for Renewables...')
     for zone in genparam.ipmZones:
         print('Zone ', zone)
+
+        start_time = time.time()
         # Check 5/18/17: next 2 lines are working properly!
         zonalGenFleet = [genFleetForCE[0]] + [row for row in genFleetForCE if row[zoneCol] == zone]
         zoneDemand = zonalDemandProfile[zone]
@@ -370,7 +232,9 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
          solarFilenameAndCapac) = getRenewableCFs(zonalGenFleet, startWindCapacForCFs, startSolarCapacForCFs,
                                                   genparam.tzAnalysis, genparam.dataRoot, genparam.windGenDataYr,
                                                   zone, genparam.fipsToZones, genparam.fipsToPolys)
-        print('Got RE CFs')
+        print('Got RE CFs. Elapsed time: ' + str_elapsedtime(start_time))
+
+        start_time = time.time()
         if windCFs is not None:
             write2dListToCSV(windCFs, os.path.join(resultsDir, 'windCFsFullYrCE' + zone + str(currYear) + '.csv'))
             write2dListToCSV(windCfsDtHr, os.path.join(resultsDir, 'windCFsDtFullYrCE' + zone + str(currYear) + '.csv'))
@@ -384,12 +248,14 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
             # write2dListToCSV(solarCfsDtSubhr,os.path.join(resultsDir,'solarCFsDtSubhrFullYrCE' + zone + str(currYear) + '.csv'))
             write2dListToCSV(solarFilenameAndCapac,
                              os.path.join(resultsDir, 'solarIdAndCapacCE' + zone + str(currYear) + '.csv'))
+
         (newWindCFs, newWindCFsSubhr, newSolarCFs, newSolarCFsSubhr, newWindCfsDtHr, newWindCfsDtSubhr,
          newWindIdAndCapac, newSolarCfsDtHr, newSolarCfsDtSubhr, newSolarFilenameAndCapac,
          addedWindCapac, addedSolarCapac) = getNewWindAndSolarCFs(zonalGenFleet, currYear, 'CE', genparam.tzAnalysis,
                                                                   genparam.dataRoot, resultsDir, genparam.windGenDataYr,
                                                                   zone, genparam.fipsToZones, genparam.fipsToPolys)
-        print('Got new RE CFs')
+        print('Got new RE CFs. Elapsed time: ' + str_elapsedtime(start_time))
+
         write2dListToCSV(newWindIdAndCapac,
                          os.path.join(resultsDir, 'windNewIdAndCapacCE' + zone + str(currYear) + '.csv'))
         write2dListToCSV(newSolarFilenameAndCapac,
@@ -407,16 +273,21 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
     writeDictToCSV(zonalNewSolarCFs, os.path.join(resultsDir, 'solarNewCFsFullYrCE' + str(currYear) + '.csv'))
     writeDictToCSV(zonalNetDemand, os.path.join(resultsDir, 'demandNetFullYrCE' + str(currYear) + '.csv'))
 
+    start_time = time.time()
+    print('Computing hourly curtailments for existing generators... ', flush=True)
     # existing gens only!
     hrlyCurtailmentsAllGensInTgtYr = importHourlyThermalCurtailments(genFleetForCE, currYear, 'CE', resultsDir,
                                                                      genparam, curtailparam)
+    print('Done! Elapsed time: ' + str_elapsedtime(start_time))
 
+    start_time = time.time()
+    print('Selecting subset of hours for CE model... ', flush=True)
     (demandCE, hoursForCE, repHrsBySeason, specialHrs, regHrsBySeason, demandCEZonal,
      hourlyWindGenCEZonal, hourlySolarGenCEZonal, peakDemandHourZonal, planningReserveZonal,
      repAndSpeHoursDict) = selectWeeksForExpansion(zonalDemandProfile, zonalNetDemand, zonalHourlyWindGen,
-                                                   zonalHourlySolarGen, daysPerSeason, selectCurtailDays,
-                                                   hrlyCurtailmentsAllGensInTgtYr, currYear, resultsDir,
-                                                   planningReserve)
+                                                   zonalHourlySolarGen, genparam.daysPerSeason,
+                                                   genparam.selectCurtailDays, hrlyCurtailmentsAllGensInTgtYr,
+                                                   currYear, resultsDir, genparam.planningReserve)
 
     write2dListToCSV([hoursForCE], os.path.join(resultsDir, 'hoursCE' + str(currYear) + '.csv'))
     write2dListToCSV([demandCE], os.path.join(resultsDir, 'demandCE' + str(currYear) + '.csv'))
@@ -434,37 +305,47 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
 
     writeDictToCSV(newWindCFsCEZonal, os.path.join(resultsDir, 'windNewCFsZonalCE' + str(currYear) + '.csv'))
     writeDictToCSV(newSolarCFsCEZonal, os.path.join(resultsDir, 'solarNewCFsZonalCE' + str(currYear) + '.csv'))
+
+    print('Done! Elapsed time: ' + str_elapsedtime(start_time))
+
+    start_time = time.time()
+    print('Importing hydro generation data... ', flush=True)
     # Import hydropower generation potential (dict of season:ORIS ID: potential gen)
-    hydroPotPerSeason = getHydroEPotential(genFleetForCE, zonalDemandProfile, repAndSpeHoursDict, currYear, dataRoot)
+    hydroPotPerSeason = getHydroEPotential(genFleetForCE, zonalDemandProfile, repAndSpeHoursDict, currYear,
+                                           genparam.dataRoot)
 
     for season in hydroPotPerSeason:
         writeDictToCSV(hydroPotPerSeason[season],
                        os.path.join(resultsDir, 'hydroPot' + season + 'CE' + str(currYear) + '.csv'))
+    print('Done! Elapsed time: ' + str_elapsedtime(start_time))
 
-    # Handle curtailments
     hourlyCapacsCE, hourlyCapacsCEList = getHourlyNonRECapacsForCE(genFleetForCE, hrlyCurtailmentsAllGensInTgtYr,
                                                                    hoursForCE, currYear)
     write2dListToCSV(hourlyCapacsCEList, os.path.join(resultsDir, 'curtailedHourlyCapacsCE' + str(currYear) + '.csv'))
 
-    eligibleCellWaterTs = loadEligibleCellWaterTs(cellsEligibleForNewPlants, genFleet, rbmOutputDir,
-                                                  locPrecision, ipmZones, fipsToZones, fipsToPolys)
+    start_time = time.time()
+    print('Computing hourly curtailments for new generators...', flush=True)
+    eligibleCellWaterTs = loadEligibleCellWaterTs(genparam.cellsEligibleForNewPlants, genFleet,
+                                                  curtailparam.rbmOutputDir, curtailparam.locPrecision,
+                                                  genparam.ipmZones, genparam.fipsToZones, genparam.fipsToPolys,
+                                                  currYear)
+    print('  Got eligible cells: ' + str_elapsedtime(start_time))
 
     # hrlyCurtailmentsAllTechsInTgtYr is a dict of (tech,cell):[hourlycapac]
     hrlyCurtailmentsAllTechsInTgtYr, hrlyTechCurtailmentsList = \
-        determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, cellNewTechCriteria,
-                                             ptCurtailed, ptCurtailedRegs, ptCurtailedAll, fipsToZones, fipsToPolys,
-                                             incCurtailments, incRegs, rbmOutputDir, locPrecision, statePolys,
-                                             dataRoot, coolDesignT, envRegMaxT, resultsDir)
+        determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam, curtailparam,
+                                             resultsDir)
+
     write2dListToCSV(hrlyTechCurtailmentsList, os.path.join(resultsDir, 'curtailmentsTechHourly' +
                                                             str(currYear) + '.csv'))
     (hourlyCurtailedTechCapacsCE, curtailedTechHourlyCapacsCEList,
-     curtailedTechHourlyCapacsList) = getHourlyCurtailedTechCapacsForCE(newTechsCE,
-                                                                        hrlyCurtailmentsAllTechsInTgtYr, hoursForCE,
-                                                                        currYear, ptCurtailedAll)
+     curtailedTechHourlyCapacsList) = getHourlyCurtailedTechCapacsForCE(newTechsCE, hrlyCurtailmentsAllTechsInTgtYr,
+                                                                        hoursForCE, currYear, genparam.ptCurtailedAll)
     write2dListToCSV(curtailedTechHourlyCapacsList,
                      os.path.join(resultsDir, 'curtailedTechHourlyCapacs' + str(currYear) + '.csv'))
     write2dListToCSV(curtailedTechHourlyCapacsCEList,
                      os.path.join(resultsDir, 'curtailedTechHourlyCapacsCE' + str(currYear) + '.csv'))
+    print('Done! Elapsed time: ' + str_elapsedtime(start_time))
 
     print('Got hourly generation profiles with curtailments for existing and new techs')
     # Extract set of cells for techs & assign to zones
@@ -472,7 +353,7 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
 
     for (tech, cell) in hrlyCurtailmentsAllTechsInTgtYr: cellsForNewTechs.add(cell)
 
-    cellsToZones = assignCellsToIPMZones(cellsForNewTechs, fipsToZones, fipsToPolys)
+    cellsToZones = assignCellsToIPMZones(cellsForNewTechs, genparam.fipsToZones, genparam.fipsToPolys)
     writeDictToCSV(cellsToZones, os.path.join(resultsDir, 'cellsToZonesCE' + str(currYear) + '.csv'))
 
     # Run CE
@@ -481,24 +362,26 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
     (capacExpModel, ms, ss, curtailedTechs, renewTechs, notCurtailedTechs,
      pumpedHydroSymbs) = callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapacsCE,
                                                hourlyWindGenCEZonal, hourlySolarGenCEZonal, demandCEZonal, newTechsCE,
-                                               planningReserveZonal, discountRate, hoursForCE, newWindCFsCEZonal,
-                                               newSolarCFsCEZonal, scaleMWtoGW, scaleDollarsToThousands, currCo2Cap,
-                                               capacExpFilename, seasonDemandWeights, repHrsBySeason, specialHrs,
-                                               peakDemandHourZonal, scaleLbToShortTon, dataRoot,
-                                               maxAddedZonalCapacPerTech, xsedeRun, ipmZones, lineList, lineCapacs,
-                                               cellsToZones, ipmZoneNums, ptCurtailedAll,
-                                               hydroPotPerSeason, phEff, phMaxSoc, phInitSoc)
+                                               planningReserveZonal, genparam.discountRate, hoursForCE,
+                                               newWindCFsCEZonal, newSolarCFsCEZonal, genparam.scaleMWtoGW,
+                                               genparam.scaleDollarsToThousands, currCo2Cap, genparam.capacExpFilename,
+                                               seasonDemandWeights, repHrsBySeason, specialHrs,
+                                               peakDemandHourZonal, genparam.scaleLbToShortTon, genparam.dataRoot,
+                                               genparam.maxAddedZonalCapacPerTech, genparam.xsedeRun, genparam.ipmZones,
+                                               genparam.lineList, genparam.lineCapacs, cellsToZones,
+                                               genparam.ipmZoneNums, genparam.ptCurtailedAll, hydroPotPerSeason,
+                                               genparam.phEff, genparam.phMaxSoc, genparam.phInitSoc)
 
     write2dListToCSV([['ms', 'ss'], [ms, ss]], os.path.join(resultsDir, 'msAndSsCE' + str(currYear) + '.csv'))
-    print('Time (secs) for CE year ' + str(currYear) + ': ' + str(time.time() - t0))
+    print('Time (secs) for CE year {0:4d}: {1:.2f}'.format(currYear, (time.time() - t0)))
 
     # Write and Save resulting data
     (genByPlant, genByCTechAndCell, genByRETechAndZone, genByNCTechAndZone, sysResults,
      co2EmAndCostResults, flowByLine, chargeByPH, socByPH) = saveCapacExpOperationalData(capacExpModel,
                                                                                          genFleetForCE, curtailedTechs,
                                                                                          renewTechs, notCurtailedTechs,
-                                                                                         cellsForNewTechs, ipmZoneNums,
-                                                                                         hoursForCE, lineList,
+                                                                                         cellsForNewTechs, genparam.ipmZoneNums,
+                                                                                         hoursForCE, genparam.lineList,
                                                                                          pumpedHydroSymbs)
     write2dListToCSV(genByPlant, os.path.join(resultsDir, 'genByPlantCE' + str(currYear) + '.csv'))
     write2dListToCSV(genByCTechAndCell, os.path.join(resultsDir, 'genByCurtTechCE' + str(currYear) + '.csv'))
@@ -513,23 +396,25 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
     newCurtTech, newRETech, newNotCurtTech = saveCapacExpBuilds(capacExpBuilds, capacExpModel, currYear)
 
     genFleet = addNewGensToFleet(genFleet, newCurtTech, newRETech, newNotCurtTech, newTechsCE,
-                                 currYear, ipmZones, ipmZoneNums, ocAdderMin, ocAdderMax, cellsToZones,
-                                 ptCurtailedAll, statePolys)
-    genFleet = selectAndMarkUnitsRetiredByCE(genFleet, genFleetForCE, retirementCFCutoff, capacExpModel, currYear,
-                                             capacExpGenByGens, capacExpRetiredUnitsByCE, scaleMWtoGW, hoursForCE,
-                                             planningReserveZonal, endYear, capacExpRetiredUnitsByAge, demandCEZonal,
-                                             hourlyWindGenCEZonal, hourlySolarGenCEZonal, newWindCFsCEZonal,
-                                             newSolarCFsCEZonal, ptEligRetCF)
+                                 currYear, genparam.ipmZones, genparam.ipmZoneNums, genparam.ocAdderMin,
+                                 genparam.ocAdderMax, cellsToZones,
+                                 genparam.ptCurtailedAll, genparam.statePolys)
+    genFleet = selectAndMarkUnitsRetiredByCE(genFleet, genFleetForCE, genparam.retirementCFCutoff, capacExpModel,
+                                             currYear, capacExpGenByGens, capacExpRetiredUnitsByCE,
+                                             genparam.scaleMWtoGW, hoursForCE,
+                                             planningReserveZonal, genparam.endYear, capacExpRetiredUnitsByAge,
+                                             demandCEZonal, hourlyWindGenCEZonal, hourlySolarGenCEZonal,
+                                             newWindCFsCEZonal, newSolarCFsCEZonal, genparam.ptEligRetCF)
 
     # removes all retired units; [] is dummy list b/c not adding ret age units to list
-    genFleetNoRetiredUnits = createFleetForCurrentCELoop(genFleet, currYear, [], dataRoot, scenario)
+    genFleetNoRetiredUnits = createFleetForCurrentCELoop(genFleet, currYear, [], genparam.dataRoot, genparam.scenario)
 
     writeCEInfoToCSVs(capacExpBuilds, capacExpGenByGens, capacExpRetiredUnitsByCE,
                       capacExpRetiredUnitsByAge, resultsDir, currYear)
     write2dListToCSV(genFleet, os.path.join(resultsDir, 'genFleetAfterCE' + str(currYear) + '.csv'))
 
     # Write gen fleet for UC to special folder for ease of transfer
-    ceUCDir = os.path.join(resultsDirOrig, 'CEtoUC')
+    ceUCDir = os.path.join(genparam.dataRoot, 'CEtoUC')
 
     if not os.path.exists(ceUCDir): os.makedirs(ceUCDir)
     write2dListToCSV(genFleetNoRetiredUnits, os.path.join(ceUCDir, 'genFleetCEtoUC' + str(currYear) + '.csv'))
@@ -559,13 +444,13 @@ def importHourlyThermalCurtailments(genFleet, currYear, modelName, resultsDir, g
 
 
 ########### CALL CAPACITY EXPANSION ############################################
-def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapacsCE,
-                          hourlyWindGenCEZonal, hourlySolarGenCEZonal, demandCEZonal, newTechsCE, planningReserveZonal,
-                          discountRate, hoursForCE, newWindCFsCEZonal, newSolarCFsCEZonal, scaleMWtoGW,
-                          scaleDollarsToThousands, currCo2Cap, capacExpFilename, seasonDemandWeights, repHrsBySeason,
-                          specialHrs, peakDemandHourZonal, scaleLbToShortTon, dataRoot, maxAddedZonalCapacPerTech,
-                          xsedeRun, ipmZones, lineList, lineCapacs, cellsToZones, ipmZoneNums, ptCurtailedAll,
-                          hydroPotPerSeason, phEff, phMaxSoc, phInitSoc):
+def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapacsCE, hourlyWindGenCEZonal,
+                          hourlySolarGenCEZonal, demandCEZonal, newTechsCE, planningReserveZonal, discountRate,
+                          hoursForCE, newWindCFsCEZonal, newSolarCFsCEZonal, scaleMWtoGW, scaleDollarsToThousands,
+                          currCo2Cap, capacExpFilename, seasonDemandWeights, repHrsBySeason, specialHrs,
+                          peakDemandHourZonal, scaleLbToShortTon, dataRoot, maxAddedZonalCapacPerTech, xsedeRun,
+                          ipmZones, lineList, lineCapacs, cellsToZones, ipmZoneNums, ptCurtailedAll, hydroPotPerSeason,
+                          phEff, phMaxSoc, phInitSoc):
     currDir = os.getcwd()
 
     gamsFileDir = os.path.join(dataRoot, 'GAMS')
@@ -581,51 +466,66 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
     (genSet, genSymbols, hourSet, hourSymbols, techSet, techSymbols, techCurtailedSet, techCurtailedSymbols,
      renewTechSet, renewTechSymbols, techNotCurtailedSymbols, hydroGenSet, hydroGenSymbols, zoneSet, zoneSymbols,
      lineSet, cellSet, peakHourSet, peakHrSymbols, pumpHydroGenSet,
-     pumpHydroGenSymbols) = addSetsToDatabaseCE(db, genFleetForCE,
-                                                hoursForCE, newTechsCE, repHrsBySeason, specialHrs, peakDemandHourZonal,
-                                                ipmZoneNums,
-                                                lineList, cellsToZones, ptCurtailedAll)
+     pumpHydroGenSymbols) = addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeason, specialHrs,
+                                                peakDemandHourZonal, ipmZoneNums, lineList, cellsToZones,
+                                                ptCurtailedAll)
     addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySolarGenCEZonal, demandCEZonal,
                               newTechsCE, genFleetForCE, genSet, genSymbols, hydroGenSet, hydroGenSymbols, hourSet,
-                              hourSymbols, techSet,
-                              techSymbols, techCurtailedSet, techCurtailedSymbols, renewTechSet, renewTechSymbols,
-                              planningReserveZonal,
-                              discountRate, newWindCFsCEZonal, newSolarCFsCEZonal, scaleMWtoGW, scaleDollarsToThousands,
-                              currCo2Cap, seasonDemandWeights, hourlyCurtailedTechCapacsCE, scaleLbToShortTon,
-                              maxAddedZonalCapacPerTech,
-                              zoneSet, zoneSymbols, lineSet, ipmZones, ipmZoneNums, lineList, lineCapacs, cellsToZones,
-                              cellSet, peakDemandHourZonal, peakHourSet, peakHrSymbols, hydroPotPerSeason,
-                              ptCurtailedAll,
-                              pumpHydroGenSet, pumpHydroGenSymbols, phEff, phMaxSoc, phInitSoc)
+                              hourSymbols, techSet, techSymbols, techCurtailedSet, techCurtailedSymbols, renewTechSet,
+                              renewTechSymbols, planningReserveZonal, discountRate, newWindCFsCEZonal,
+                              newSolarCFsCEZonal, scaleMWtoGW, scaleDollarsToThousands, currCo2Cap,
+                              seasonDemandWeights, hourlyCurtailedTechCapacsCE, scaleLbToShortTon,
+                              maxAddedZonalCapacPerTech, zoneSet, zoneSymbols, lineSet, ipmZones, ipmZoneNums,
+                              lineList, lineCapacs, cellsToZones, cellSet, peakDemandHourZonal, peakHourSet,
+                              peakHrSymbols, hydroPotPerSeason, ptCurtailedAll, pumpHydroGenSet, pumpHydroGenSymbols,
+                              phEff, phMaxSoc, phInitSoc)
     # Load GAMS model
     capacExpFile = capacExpFilename
     capacExpModel = ws.add_job_from_file(capacExpFile)
     # Run GAMS model
     opt = GamsOptions(ws)
     opt.defines['gdxincname'] = db.name
-    capacExpModel.run(opt, databases=db)
-    ms = capacExpModel.out_db['pModelstat'].find_record().value
-    ss = capacExpModel.out_db['pSolvestat'].find_record().value
-    if int(ms) != 8 or int(ms) != 1 or int(ss) != 1:
-        print('Modelstat & solvestat:', ms, ' & ', ss,
-              '(should be 8 (integer solution model found) or 1 (optimal solution found) & 1)')
+    capacExpModel.run(opt, databases=db, output=sys.stdout)
+    ms = int(capacExpModel.out_db['pModelstat'].find_record().value)
+    ss = int(capacExpModel.out_db['pSolvestat'].find_record().value)
+
+    # print status of solution
+    print('End of CE Model!')
+
+    ms_description = list(dict(ModelStat.__dict__).keys())[list(dict(ModelStat.__dict__).values()).index(ms)]
+    ss_description = list(dict(SolveStat.__dict__).keys())[list(dict(SolveStat.__dict__).values()).index(ss)]
+
+    print()
+    print('Model Status:  {0:4d} ({1})'.format(ms, ms_description))
+    print('Solver Status: {0:4d} ({1})'.format(ss, ss_description))
+    print()
+
     return capacExpModel, ms, ss, techCurtailedSymbols, renewTechSymbols, techNotCurtailedSymbols, pumpHydroGenSymbols
 
 
 ################################### ADD SETS
-def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeason, specialHrs,
-                        peakDemandHourZonal, ipmZoneNums, lineList, cellsToZones, ptCurtailedAll):
+def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeason, specialHrs, peakDemandHourZonal,
+                        ipmZoneNums, lineList, cellsToZones, ptCurtailedAll):
+
     (genSet, genSymbols, hydroGenSet, hydroGenSymbols, pumpHydroGenSet,
      pumpHydroGenSymbols) = addGeneratorSets(db, genFleetForCE)
+
     (hourSet, hourSymbols) = addHourSet(db, hoursForCE)
+
     addHourSeasonSubsets(db, repHrsBySeason)
+
     addHourSpecialSubset(db, specialHrs)
+
     peakHourSet, peakHrSymbols = addPeakHourSubset(db, peakDemandHourZonal)
+
     (techSet, techSymbols, techCurtailedSet, techCurtailedSymbols, renewTechSet, renewTechSymbols,
      techNotCurtailedSet, techNotCurtailedSymbols) = addNewTechsSets(db, newTechsCE, ptCurtailedAll)
+
     zoneSet, zoneSymbols = addZoneSets(db, ipmZoneNums)  # create string for set IDs
+
     lineSet = addLineSets(db, lineList)
     cellSet = addCellSet(db, cellsToZones)
+
     return (genSet, genSymbols, hourSet, hourSymbols, techSet, techSymbols, techCurtailedSet,
             techCurtailedSymbols, renewTechSet, renewTechSymbols, techNotCurtailedSymbols,
             hydroGenSet, hydroGenSymbols, zoneSet, zoneSymbols, lineSet, cellSet, peakHourSet,
@@ -819,7 +719,7 @@ def callUnitCommitment(fleetUC, ucFilename, hourlyCapacsUC, hourlyWindGenUC,
     ucModel = wsUC.add_job_from_file(ucFilename)
     optUC = GamsOptions(wsUC)
     optUC.defines['gdxincname'] = dbUC.name
-    ucModel.run(optUC, databases=dbUC)
+    ucModel.run(optUC, databases=dbUC, output=sys.stdout)
     ms, ss = ucModel.out_db['pModelstat'].find_record().value, ucModel.out_db['pSolvestat'].find_record().value
     if int(ms) != 8 or int(ss) != 1: print('Modelstat & solvestat:', ms, ' & ', ss, ' (should be 8 and 1)')
     return ucModel, ms, ss

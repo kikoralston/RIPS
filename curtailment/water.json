@@ -2,19 +2,96 @@
    "Coal Steam": {
       "once through": {
          "10": {
-            "intercept":  8.14,
-            "airF":  0.09,
-            "waterF":  -0.159
+            "intercept":  -624000,
+            "airF":  -9150,
+            "waterF":  16100,
+            "ubound":  120000,
+            "lbound":  55000
          },
          "20": {
-            "intercept":  8.42,
-            "airF":  0.0991,
-            "waterF":  -0.179
+            "intercept":  -331000,
+            "airF":  -5110,
+            "waterF":  9210,
+            "ubound":  100000,
+            "lbound":  26000
          },
          "30": {
-            "intercept":  5.72,
-            "airF":  0.071,
-            "waterF":  -0.128
+            "intercept":  -126000,
+            "airF":  -2410,
+            "waterF":  4340,
+            "ubound":  72000,
+            "lbound":  21000
+         }
+      },
+      "recirculating": {
+         "90-70": {
+            "intercept":  187,
+            "airF":  7.46,
+            "rh":  -1.02,
+            "ubound":  1050,
+            "lbound":  320
+         },
+         "95-75": {
+            "intercept":  284,
+            "airF":  6.03,
+            "rh":  -0.876,
+            "ubound":  935,
+            "lbound":  645
+         },
+         "100-80": {
+            "intercept":  357,
+            "airF":  4.92,
+            "rh":  -0.763,
+            "ubound":  905,
+            "lbound":  650
+         }
+      }
+   },
+   "Natural Gas": {
+      "once through": {
+         "10": {
+            "intercept":  -154000,
+            "airF":  -2170,
+            "waterF":  3860,
+            "ubound":  26000,
+            "lbound":  10400
+         },
+         "20": {
+            "intercept":  -90200,
+            "airF":  -1350,
+            "waterF":  2420,
+            "ubound":  23000,
+            "lbound":  5000
+         },
+         "30": {
+            "intercept":  -34800,
+            "airF":  -614,
+            "waterF":  1110,
+            "ubound":  15000,
+            "lbound":  4000
+         }
+      },
+      "recirculating": {
+         "90-70": {
+            "intercept":  5.36,
+            "airF":  3.99,
+            "rh":  -0.48,
+            "ubound":  475,
+            "lbound":  260
+         },
+         "95-75": {
+            "intercept":  62.3,
+            "airF":  3.17,
+            "rh":  -0.446,
+            "ubound":  400,
+            "lbound":  360
+         },
+         "100-80": {
+            "intercept":  98.7,
+            "airF":  2.62,
+            "rh":  -0.39,
+            "ubound":  380,
+            "lbound":  260
          }
       }
    }

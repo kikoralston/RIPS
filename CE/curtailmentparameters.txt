@@ -15,6 +15,6 @@ numCellsToProcess = 999
 tempAndSpatFilename = bcc-csm1-1-m_rcp45_r1i1p1
 nsegFilename = Tennessee.nseg_nday
 # ----- Water T directories ------
-rbmRootDir = /Volumes/KIKO64/Data/DatafromUW/
+rbmRootDir = /Users/kiko/Documents/CE/Data/DatafromUW/
 rbmDataDir = RBMRawWaterTData10Aug2016   # name of sub folder inside rbmRootDir
 rbmOutputDir = RBMProcessedWaterT25Aug2016    # name of subfolder inside rbmRootDir 

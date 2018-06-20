@@ -7,13 +7,9 @@
 
 import csv, os, copy, operator, random
 from AuxFuncs import *
+from CurtailmentRegressions import getCoolType
 
 
-################################################################################
-#
-#
-# IN:
-# OUT:
 def setupGeneratorFleet(currYear, genparam, reserveparam):
     """Imports fleet data
 
@@ -56,23 +52,58 @@ def setupGeneratorFleet(currYear, genparam, reserveparam):
     addRandomOpCostAdder(baseGenFleet, genparam.ocAdderMin, genparam.ocAdderMax)
     # Add reg offer costs and reg offer eligibility
     addRegResOfferAndElig(baseGenFleet, reserveparam.regUpCostCoeffs)
+
+    # add standard coolDesignT using same source as new plants
+    newPlantDataDir = os.path.join(genparam.dataRoot, 'NewPlantData', 'ATB')
+    coolingCosts = readCSVto2dList(os.path.join(newPlantDataDir, 'CoolingTechCostData_IECM_2017.csv'))
+
+    coolCoolCol, techCoolCol = coolingCosts[0].index('Cooling Tech'), coolingCosts[0].index('TechnologyType')
+    coolDesignTcol = coolingCosts[0].index('coolingDesignT')
+
+    coolTechCol, plantTypeCol = baseGenFleet[0].index('Cooling Tech'), baseGenFleet[0].index('PlantType')
+
+    # add column with standard cooling design temperature for each tech
+    baseGenFleet[0] = baseGenFleet[0] + ['coolingDesignT']
+
+    for row in baseGenFleet[1:]:
+        tech, cool = row[plantTypeCol], row[coolTechCol]
+
+        # change description of cooling type to the one compatible with new techs and regressions
+        cool = getCoolType(cool)
+
+        # finds row in data base of new techs that matches tech and cool
+        coolingRow = [rr for rr in coolingCosts if rr[coolCoolCol] == cool and rr[techCoolCol] == tech]
+
+        if len(coolingRow) > 0:
+            coolingRow = coolingRow[0]
+            row.append(coolingRow[coolDesignTcol])
+        else:
+            row.append('NA')
+
     return baseGenFleet
 
 
-################################################################################
-# ADD COOLING TECHNOLOGY AND SOURCE TO FLEET
-# Imports cooling map and data from EIA 860, then adds them generator fleet
-# IN: generator fleet (2d list), states for analysis (1d list)
 def addCoolingTechnologyAndSource(baseGenFleet, statesForAnalysis, dataRoot):
+    """ADD COOLING TECHNOLOGY AND SOURCE TO FLEET
+
+    Imports cooling map and data from EIA 860, then adds them generator fleet
+
+    :param baseGenFleet: generator fleet (2d list)
+    :param statesForAnalysis: states for analysis (1d list)
+    :param dataRoot: (string) path to root of data folder
+    """
     [assocData, equipData] = get860Data(statesForAnalysis, dataRoot)
     unitsToCoolingIDMap = mapUnitsToCoolingID(assocData, baseGenFleet, equipData)
     addCoolingInfoToFleet(baseGenFleet, equipData, unitsToCoolingIDMap)
 
 
-# Adds cooling technology and source to fleet
-# IN: generator fleet (2d list), cooling equipment data (EIA 860) (2d list), map
-# of generator ID to cooling ID (dictionary).
 def addCoolingInfoToFleet(baseGenFleet, equipData, unitsToCoolingIDMap):
+    """Adds cooling technology and source to fleet
+
+    :param baseGenFleet: generator fleet (2d list)
+    :param equipData: cooling equipment data (EIA 860) (2d list)
+    :param unitsToCoolingIDMap: map of generator ID to cooling ID (dictionary)
+    """
     coolingHeaders = ['Cooling Tech', 'Cooling Source']
     baseGenFleet[0].extend(coolingHeaders)
     fleetHeadersMap = mapHeadersToCols(baseGenFleet)
@@ -88,13 +119,16 @@ def addCoolingInfoToFleet(baseGenFleet, equipData, unitsToCoolingIDMap):
             [coolingTech, coolingSource] = (coolingID, coolingID)
         baseGenFleet[idx].extend([coolingTech, coolingSource])
 
-    # Gets cooling tech for given ORIS and cooling ID. Works for generators in NEEDS
 
-
-# that have a corresponding unit in EIA860.
-# IN: cooling tech data (2d list), oris ID (str), cooling ID (str)
-# OUT: cooling technology and source for input generator
 def getCoolingTechAndSource(equipData, orisID, coolingID):
+    """Gets cooling tech for given ORIS and cooling ID. Works for generators in NEEDS that have a corresponding
+    unit in EIA860.
+
+    :param equipData: cooling tech data (2d list)
+    :param orisID: oris ID (str)
+    :param coolingID: cooling ID (str)
+    :return: cooling technology and source for input generator
+    """
     equipHeadersMap = mapHeadersToCols(equipData)
     equipORISCol = equipHeadersMap['Plant Code']
     equipCoolingIDCol = equipHeadersMap['Cooling ID']
@@ -114,9 +148,11 @@ def getCoolingTechAndSource(equipData, orisID, coolingID):
     return [coolingTech, coolingSource]
 
 
-# Maps 2-letter codes to comprehensible cooling techs
-# OUT: map of cooling tech abbrev to full name (dictionary)
 def getCoolingTechMap():
+    """Maps 2-letter codes to comprehensible cooling techs
+
+    :return: map of cooling tech abbrev to full name (dictionary)
+    """
     coolingTechMap = {'DC': 'dry cooling', 'OC': 'once through with pond',
                       'ON': 'once through no pond', 'RC': 'recirculating with pond or canal',
                       'RF': 'recirculating with tower', 'RI': 'recirculating with tower',
@@ -127,11 +163,14 @@ def getCoolingTechMap():
     return coolingTechMap
 
 
-# Maps NEEDS generator IDs to EIA860 cooling IDs
-# IN: cooling association data from EIA860 (2d list), base generator fleet from
-# NEEDS (2d list)
-# OUT: map of NEEDS generators to EIA860 cooling ID or 'NoMatch' (dictionary)
 def mapUnitsToCoolingID(assocData, baseGenFleet, equipData):
+    """Maps NEEDS generator IDs to EIA860 cooling IDs
+
+    :param assocData: cooling association data from EIA860 (2d list)
+    :param baseGenFleet: base generator fleet from NEEDS (2d list)
+    :param equipData: map of NEEDS generators to EIA860 cooling ID or 'NoMatch' (dictionary)
+    :return:
+    """
     assocHeadersMap = mapHeadersToCols(assocData)
     fleetHeadersMap = mapHeadersToCols(baseGenFleet)
     assocORISCol = assocHeadersMap['Plant Code']
@@ -193,9 +232,14 @@ def mapUnitsToCoolingID(assocData, baseGenFleet, equipData):
     return mapBaseGensToCoolingID
 
 
-# Check if cooling tech associated with cooling ID for ORIS ID match is retired.
-# Returns true if unit is retired.
 def getRetirementStatusOfAssocRow(assocRow, assocData, equipData):
+    """Check if cooling tech associated with cooling ID for ORIS ID match is retired. Returns true if unit is retired.
+
+    :param assocRow:
+    :param assocData:
+    :param equipData:
+    :return:
+    """
     assocHeadersMap = mapHeadersToCols(assocData)
     assocOrisIDCol = assocHeadersMap['Plant Code']
     assocCoolingIDCol = assocHeadersMap['Cooling ID']
@@ -212,11 +256,13 @@ def getRetirementStatusOfAssocRow(assocRow, assocData, equipData):
     return retiredStatus == 'RE'
 
 
-# Imports EIA860 cooling equipment and association data, and isolates
-# equipment data to units in states of analysis
-# IN: states for analysis (1d list)
-# OUT: EIA860 cooling IDs and technologies (2d lists)
 def get860Data(statesForAnalysis, dataRoot):
+    """Imports EIA860 cooling equipment and association data, and isolates equipment data to units in states of analysis
+
+    :param statesForAnalysis: states for analysis (1d list)
+    :param dataRoot:
+    :return: EIA860 cooling IDs and technologies (2d lists)
+    """
     [assocData, equipData] = import860data(dataRoot)
     # First row is useless data in both lists - remove it
     assocData.pop(0)
@@ -227,10 +273,12 @@ def get860Data(statesForAnalysis, dataRoot):
     return [assocData, equipData]
 
 
-# Imports 860 equipment and association data
-# OUT: EIA860 cooling assocation and equipment data (2d lists)
 def import860data(dataRoot):
+    """Imports 860 equipment and association data
 
+    :param dataRoot:
+    :return: EIA860 cooling assocation and equipment data (2d lists)
+    """
     dir860 = os.path.join(dataRoot, 'EIA8602014')
 
     assocName = '6_1_EnviroAssoc_Y2014_cooling.csv'
@@ -240,14 +288,15 @@ def import860data(dataRoot):
     return [assocData, equipData]
 
 
-################################################################################
-
-################################################################################
-# ADD EMISSION RATES FROM EGRID TO GENERATOR FLEET
-# Adds eGRID emissions rates to generator fleet
-# IN: generator fleet (2d list), states for analysis (1d list)
 def addEmissionsRates(baseGenFleet, statesForAnalysis, dataRoot):
+    """ADD EMISSION RATES FROM EGRID TO GENERATOR FLEET
 
+    Adds eGRID emissions rates to generator fleet
+
+    :param baseGenFleet: generator fleet (2d list)
+    :param statesForAnalysis: states for analysis (1d list)
+    :param dataRoot:
+    """
     (egridBoiler, egridPlant) = importeGridData(statesForAnalysis, dataRoot)
     emsHeadersToAdd = ["NOxEmRate(lb/MMBtu)", "SO2EmRate(lb/MMBtu)",
                        "CO2EmRate(lb/MMBtu)"]

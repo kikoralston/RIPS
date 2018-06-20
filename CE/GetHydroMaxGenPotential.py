@@ -13,7 +13,7 @@ from DemandFuncsCE import getHoursInMonths
 #where seasons are labled by name and special hours are 'special'), curr year, and run location.
 #Outputs: dict of season:genSymbol:generation potential
 def getHydroEPotential(fleet,demandZonal,repAndSpeHoursDict,currYear,dataRoot):
-    hydroPotentials = importHydroPotentialGen(currYear,dataRoot)
+    hydroPotentials = importHydroPotentialGen(currYear, dataRoot)
     hydroPotPerSeason = dict()
     plantCol,orisCol = fleet[0].index('PlantType'),fleet[0].index('ORIS Plant Code')
     zoneCol = fleet[0].index('Region Name')

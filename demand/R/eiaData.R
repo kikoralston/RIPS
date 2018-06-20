@@ -3,6 +3,7 @@ library(reshape2)
 library(ggplot2)
 library(grid)
 library(gridExtra)
+library(RCurl)  # used to make http requests
 
 library(plyr)
 library(dplyr)
@@ -29,6 +30,16 @@ getApiCall <- function(seriesId) {
                      eia.api.key,"&","series_id=", seriesId)
   
   return(api.call)
+}
+
+getDataEia <- function(seriesId) {
+  
+  ur.eia <- getApiCall(seriesId)
+  
+  response.eia <- fromJSON(getURL(url=ur.eia))
+  
+  return(response.eia)
+  
 }
 
 # -------------------- FUNCTIONS TO READ HISTORICAL DATA --------------------

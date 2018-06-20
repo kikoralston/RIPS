@@ -19,10 +19,14 @@ def getNewWindAndSolarCFs(genFleet, currYear, modelName, tzAnalysis, dataRoot, r
                           windGenDataYr, currZone, fipsToZones, fipsToPolys):
     windCapacInCurrFleet = getPlantTypeCapacInFleet(genFleet, 'Wind')
     solarCapacInCurrFleet = getPlantTypeCapacInFleet(genFleet, 'Solar PV')
+
     (additionalWind, additionalSolar) = (5, 5)  # 3000, 3000
+
     totalWindCapac = windCapacInCurrFleet + additionalWind
     totalSolarCapac = solarCapacInCurrFleet + additionalSolar
+
     genFleetWithNewRE = addNewREToFleet(genFleet, totalWindCapac, totalSolarCapac, currZone)
+
     (windCFs, windCfsDtHr, windCfsDtSubhr, windIdAndCapac, solarCFs, solarCfsDtHr, solarCfsDtSubhr,
      solarFilenameAndCapac) = getRenewableCFs(genFleetWithNewRE, windCapacInCurrFleet,
                                               solarCapacInCurrFleet, tzAnalysis, dataRoot, windGenDataYr,

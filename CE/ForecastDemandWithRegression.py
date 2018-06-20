@@ -3,24 +3,56 @@
 # Script forecasts demand using regressions devleoped by Francisco
 
 import os
+import sys
 import pandas as pd
-import numpy as np
-from TempTransformation import *
 from AuxFuncs import *
+from TempTransformation import *
 
 
-# Forecast demand for given year using regression put together by Francisco.
-# Outputs: 1d list of hourly load in MW, pandas DF w/ hourly temperatures & rh in year
-#### NOTE: NEED TO MODIFY THIS ONCE GET ZONAL DATA FROM FRANCISCO!!!
-def forecastZonalDemandWithReg(yr, dataRoot, ipmZones, resultsDir):
+def forecastZonalDemandWithReg(yr, genparam):
+    """ Forecast demand for given year using regression put together by Francisco
+
+    This function runs the previously fitted regressions to estimated future hourly load at each zone. If the
+    analysis area is 'test', then it uses user defined values of demand given in a file 'demand.csv' at the
+    root of the data folder.
+
+    :param yr: (integer) Current year of analysis
+    :param genparam: object of class Generalparameters
+    :return: zonalDemand: dictionary with hourly load data for each zone in current year
+             zonalTempDfs: dictionary with data frames with meteo and load data for each zone in current year
+    """
     zonalDemand, zonalTempDfs = dict(), dict()
-    for zone in ipmZones:
-        data, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, holidays = loadRegData(dataRoot)
-        dataYr = isolateYrData(data, yr)
-        addTimeDummies(dataYr, str(yr), holidays)
-        predictDemand(dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, yr)
-        dataYr.to_csv(os.path.join(resultsDir, 'demandAndMetDf' + zone + str(yr) + '.csv'))
-        zonalDemand[zone], zonalTempDfs[zone] = list(dataYr['load(MW)'].values), dataYr
+
+    if genparam.analysisArea == 'test':
+        # if analysisArea == 'test', assumes that there is a file 'demand.csv' at dataRoot, with hourly demand
+        # for current year for each zone. the csv file must have one column for each zone
+        # (first row has headers with zone names)
+
+        fileNameWithDir = os.path.join(genparam.dataRoot, 'demand.csv')
+
+        if os.path.isfile(fileNameWithDir):
+            a = pd.read_csv(fileNameWithDir)
+            # filter current year
+            y = [int(date) == int(yr) for date in a['date']]
+            a = a[y]
+            a = a.reset_index(drop=True)
+            del a['date']
+
+            zonalDemand = a.to_dict(orient='list')
+        else:
+            print('Error! analysisArea is set to \'test\'. There must be a file \'demand.csv\' at the ' +
+                  'root of the data folder')
+            sys.exit()
+
+    else:
+        for zone in genparam.ipmZones:
+            data, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, holidays = loadRegData(genparam.dataRoot)
+            dataYr = isolateYrData(data, yr)
+            addTimeDummies(dataYr, str(yr), holidays)
+            predictDemand(dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, yr)
+            dataYr.to_csv(os.path.join(genparam.resultsDir, 'demandAndMetDf' + zone + str(yr) + '.csv'))
+            zonalDemand[zone], zonalTempDfs[zone] = list(dataYr['load(MW)'].values), dataYr
+
     return zonalDemand, zonalTempDfs
 
 

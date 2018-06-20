@@ -77,3 +77,10 @@ Icon?
 # Python cache #
 ########################
 *.pyc
+
+# parameter files for CE model
+########################
+curtailmentparameters.txt
+generalparameters.txt
+reserveparameters.txt
+

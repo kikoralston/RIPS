@@ -3,7 +3,7 @@
 # Define several auxiliary functions that are used by a range of scripts.
 
 import csv
-
+import time
 
 ################ READ AND WRITE CSV LISTS
 # Read CSV to 2d list
@@ -68,3 +68,13 @@ def rotate(list2d):
         list2drotated.append([row[col] for row in list2d])
     return list2drotated
 ################
+
+
+def str_elapsedtime(start_time):
+
+    delta = time.time() - start_time
+    m = int(delta / 60)
+    s = int(delta % 60)
+    str_out = '{0:d}m:{1:02d}s'.format(m, s)
+
+    return str_out

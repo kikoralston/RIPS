@@ -67,9 +67,9 @@ fill=gray!20
 % 5th rows
 &  \node [data] (demand) {\mltext{Electricity}{Demand}}; & & \node [data] (curtail) {\mltext{Generator}{curtailments}};\\
 % 6th rows
-&  \node [preprocess] (demandmodel) {\mltext{Electricity}{Demand Model}}; & & \node [preprocess] (curtailregression) {\mltext{Generator Curtailments}{Regressions}}; & \node [data] (curtailregressionparam) {\mltext{Generator Curtailments}{Regressions Parameters}};\\
+&  & & \node [preprocess] (curtailregression) {\mltext{Generator Curtailments}{Regressions}}; & \node [data] (curtailregressionparam) {\mltext{Generator Curtailments}{Regressions Parameters}};\\
 % 7th rows
-\node [data] (demandmodelparam) {\mltext{Electricity Demand}{Model Parameters}}; &  & & \node [data] (waterdata) {\mltext{Stream Temp}{and Flows}};\\
+\node [data] (demandmodelparam) {\mltext{Electricity Demand}{Model Parameters}}; & \node [preprocess] (demandmodel) {\mltext{Electricity}{Demand Model}};  & & \node [data] (waterdata) {\mltext{Stream Temp}{and Flows}};\\
 % 8th rows
 & & & \node [preprocess] (uw) {\mltext{RBM \& }{VICS}};\\
 % 9th rows
@@ -94,12 +94,13 @@ fill=gray!20
 					(curtailregression) edge (curtail)
 					(uw) edge (waterdata)
 					(waterdata) edge (curtailregression)
-					(curtailregressionparam) edge (curtailregression);					
+					(curtailregressionparam) edge (curtailregression)
+					(demandmodelparam) edge (demandmodel);
 					
 \draw[->,-triangle 45, thick]	(gcms.west) -| (demandmodel.south);
 \draw[->,-triangle 45, thick]	(gcms.north) |- (curtailregression.west);
 \draw[->,-triangle 45, thick]	(gcms.east) -| (uw.south);
-\draw[->,-triangle 45, thick]	(demandmodelparam.north) |- (demandmodel.west);
+
 
 % rectangle of our model
 \draw[very thick, dashed]     ($(initial fleet.north west)+(-0.5,2.7)$) rectangle ($(curtailregression.south east)+(2.5,-0.25)$);

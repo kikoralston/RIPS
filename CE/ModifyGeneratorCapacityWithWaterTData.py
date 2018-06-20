@@ -14,6 +14,7 @@ import os, csv, copy
 import numpy as np
 import pandas as pd
 import datetime as dt
+import netCDF4 as nc
 import time
 from AuxFuncs import *
 from GAMSAuxFuncs import *
@@ -51,9 +52,11 @@ def determineHrlyCurtailmentsForExistingGens(genFleet, currYear, modelName, genp
     """
     (genToCellLatLongsDict, cellLatLongToGenDict,
      genToCellLatLongsList) = getGenToCellAndCellToGenDictionaries(genFleet)
+
     hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList = \
-        calculateGeneratorCurtailments(cellLatLongToGenDict, currYear, genFleet, modelName, genparam,
-                                       curtailparam, resultsDir)
+        calculateGeneratorCurtailments(cellLatLongToGenDict, currYear, genFleet, modelName, genparam, curtailparam,
+                                       resultsDir)
+
     return hrlyCurtailmentsAllGensInTgtYr, genToCellLatLongsList, hrlyCurtailmentsList
 
 
@@ -259,9 +262,8 @@ def readCellTemperatureData(cellInfo, numTotalSegments, curtailparam):
             # Save entire line of segment data
             allSegmentData[totalSegmentNum].append(tLineData)
 
-            # Save data of segment into nested dictionary - total segment number: date : (waterT, airT, flow)
+            # Save data of segment into nested dictionary - total segment number: date : (waterT, flow)
             waterTAllSegments[totalSegmentNum][createDateLabel(year, month, day)] = (tDataDict['streamT'],
-                                                                                     tDataDict['airT'],
                                                                                      tDataDict['flow'])
 
     f.close()
@@ -399,7 +401,7 @@ def averageAndSaveWaterTOverAllSegmentsInCells(waterTAllSegments, outputDirs, lo
 
         # convert to PD Data Frame
         waterTAvgInCell = pd.DataFrame.from_dict(waterTAvgInCell, orient='index')
-        waterTAvgInCell.rename({0: 'waterT', 1: 'AirT', 2: 'flow'}, inplace=True, axis='columns')
+        waterTAvgInCell.rename({0: 'waterT', 1: 'flow'}, inplace=True, axis='columns')
         waterTAvgInCell.index.name = 'date'
         waterTAvgInCell.reset_index(inplace=True)
         waterTAvgInCell['date'] = pd.to_datetime(waterTAvgInCell['date'])
@@ -501,35 +503,65 @@ def find125GridMaurerLatLong(lat, lon):
     return lat_grid, lon_grid
 
 
-################################################################################
-################################################################################
-def loadWaterAndMetData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailmentYear,
-                        cellFoldername, resultsDir):
+def loadWaterAndMetData(curtailmentYear, cellLat, cellLong, genparam, curtailparam, metdatatot=None, waterDatatot=None):
     """LOAD WATER AND MET DATA BY CELL ON HOURLY BASIS
 
     Read text files with data for met (air T and rh) and water T data for one specific cell. The data files were
     created by the pre-processing function 'processRBMDataIntoIndividualCellFiles' and saved in a folder 'rbmOutputDir'.
 
-    :param cellLat: latitude of grid cell
-    :param cellLong: longitude of grid cell
-    :param rbmOutputDir: string with folder of pre-processed RBM (Stream temperature, Stream flow, etc...) data. This
-                         pre-processed data is created by the function 'processRBMDataIntoIndividualCellFiles'
-    :param locPrecision: integer with number of decimal digits in latitude and longitude
     :param curtailmentYear: integer with year that curtailment is being simulated
-    :param cellFoldername:
-    :param resultsDir: string with folder of output data of CE model
+    :param cellLat:
+    :param cellLong:
+    :param genparam:
+    :param curtailparam:
+    :param metdatatot:
+    :param waterDatatot:
     :return: panda data frame
     """
-    # Load pandas DF w/ air T and rh and datetime just for current year
-    metData = loadMetData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailmentYear)
-    # Load cell's avg water T data (2d list of Y-M-D, water T (vertical))
-    hourlyWaterT = loadWaterData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailmentYear, cellFoldername)
-    assert (len(hourlyWaterT) == metData.shape[0])
-    metData['waterC'] = pd.Series(hourlyWaterT)
-    metData['waterF'] = metData.loc[:, 'waterC'] * 9 / 5 + 32
-    metData['airF'] = metData.loc[:, 'tC'] * 9 / 5 + 32
-    metData.to_csv(os.path.join(resultsDir, 'metAndWater' + str(cellLat) + '_' + str(cellLong) + '.csv'))
-    return metData
+
+    cellFoldername = createBaseFilenameToReadOrWrite(curtailparam.locPrecision, cellLat, cellLong)
+
+    if metdatatot is None:
+        # if no object with pre loaded meteo data is given, read netcdf file
+
+        # Load netcdf files w/ air T, rh, air pressure and datetime just for current year
+        if genparam.analysisArea == 'test':
+            # for now read with dara from some random
+            metData = read_netcdf(34.3125, -86.6875, curtailmentYear, curtailparam)
+        else:
+            metData = read_netcdf(cellLat, cellLong, curtailmentYear, curtailparam)
+    else:
+        # get cell data from pre loaded meteo data
+        metData = read_dict_necdf(cellLat, cellLong, metdatatot)
+
+    if waterDatatot is None:
+        # load csv files with water temp and stream flows and filter current year
+        cellFolder = os.path.join(curtailparam.rbmOutputDir, cellFoldername)
+        averageTFilename = cellFoldername + 'Average.csv'
+        waterData = pd.read_csv(filepath_or_buffer=os.path.join(cellFolder, averageTFilename))
+        waterData = waterData[['date', 'waterT', 'flow']]
+
+        # filter current year
+        y = [int(date[0:4]) == int(curtailmentYear) for date in waterData['date']]
+        waterData = waterData[y]
+        waterData = waterData.reset_index(drop=True)
+    else:
+        waterData = copy.deepcopy(waterDatatot[cellFoldername])
+        # convert from 2d list to pandas DF
+        headers = waterData.pop(0)
+        waterData = pd.DataFrame(waterData, columns=headers)
+
+    # expand water data to hourly
+    waterData = expand_df_hourly(waterData)
+
+    # merge water and meteo data for this cell
+    totalData = waterData.merge(metData, on='date')
+
+    # create Farenheit
+    totalData['waterF'] = totalData.loc[:, 'waterT'] * 9 / 5 + 32
+    totalData['airF'] = totalData.loc[:, 'airT'] * 9 / 5 + 32
+
+    return totalData
 
 
 def calculateGeneratorCurtailments(cellLatLongToGenDict, curtailmentYear, genFleet, modelName, genparam,
@@ -550,83 +582,42 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, curtailmentYear, genFle
     :param resultsDir:
     :return:
     """
-    hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList = dict(), list()
-    regCoeffs = loadRegCoeffs(genparam.dataRoot, 'capacity.json')  # dict of planttype:coolingtype:cooldesignT:param:coeffs
+
     allCellFolders = os.listdir(curtailparam.rbmOutputDir)
+    hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList = dict(), list()
+
+    # dict of planttype:coolingtype:cooldesignT:param:coeffs
+    regCoeffs = loadRegCoeffs(genparam.dataRoot, 'capacity.json')
 
     # this maps gen lat/lon to gen IDs; cell data may not exist
     for (cellLat, cellLong) in cellLatLongToGenDict:
         cellFoldername = createBaseFilenameToReadOrWrite(curtailparam.locPrecision, cellLat, cellLong)
+
         if cellFoldername in allCellFolders:
-            metAndWaterData = loadWaterAndMetData(cellLat, cellLong, curtailparam.rbmOutputDir,
-                                                  curtailparam.locPrecision, curtailmentYear, cellFoldername,
-                                                  resultsDir)
+            metAndWaterData = loadWaterAndMetData(curtailmentYear, cellLat, cellLong, genparam, curtailparam)
             gensInCell = cellLatLongToGenDict[(cellLat, cellLong)]  # list of ORIS-UNITID in cell
+
             for gen in gensInCell:
-                (plantType, hr, fuelAndCoalType, coolType, fgdType, state, capac) = getKeyCurtailParams(gen, genFleet)
-                coeffs = getCoeffsForGenOrTech(plantType, coolType, genparam.ptCurtailed, regCoeffs,
-                                               genparam.coolDesignT)
+                (plantType, hr, fuelAndCoalType, coolType,
+                 fgdType, state, capac, coolDesignT) = getKeyCurtailParams(gen, genFleet)
+
+                coeffs = getCoeffsForGenOrTech(plantType, coolType, genparam.ptCurtailed, regCoeffs, coolDesignT)
+
                 if (coeffs is not None) and (plantType in genparam.ptCurtailedRegs):  # skip gens that aren't curtailed
-                    hrlyCurtailmentsGen = calcCurtailmentForGenOrTech(plantType, hr, fuelAndCoalType, coolType, fgdType,
-                                                                      state, capac, metAndWaterData, coeffs,
+                    hrlyCurtailmentsGen = calcCurtailmentForGenOrTech(plantType, fuelAndCoalType, coolType, state,
+                                                                      capac, coolDesignT, metAndWaterData, coeffs,
                                                                       genparam, curtailparam)
+
+                    # add result to dictionary
                     hrlyCurtailmentsAllGensInTgtYr[gen] = hrlyCurtailmentsGen
-                    hrlyCurtailmentsList.append([gen] + hrlyCurtailmentsGen)
+
+                    # concatenate lists and add to the master list
+                    hrlyCurtailmentsList.append([gen] + list(hrlyCurtailmentsGen))
+
         else:
             print('Cell not in folders!:', cellFoldername)
+
     return hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList
-
-
-def loadMetData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailmentYear):
-    """LOAD WATER T AND METEOROLOGICAL VARIABLES
-
-    This should load cell-specific met data, but don't have that currently, so just load regional data.
-
-    :param cellLat:
-    :param cellLong:
-    :param rbmOutputDir:
-    :param locPrecision:
-    :param curtailmentYear:
-    :return:
-    """
-    metData = pd.read_csv('/Users/kiko/Documents/CE/AreaTVACellsallCurtailEnvRegsCnoneSnor//' +
-                          'demandAndMetDfS_C_TVA' + str(curtailmentYear) + '.csv')
-    return metData
-
-
-def loadWaterData(cellLat, cellLong, rbmOutputDir, locPrecision, curtailmentYear, cellFoldername):
-    """LOAD WATER TEMPERATURE DATA
-
-    This function reads file with water data simulated by RBM and returns a list with the data
-
-    :param cellLat:
-    :param cellLong:
-    :param rbmOutputDir:
-    :param locPrecision:
-    :param curtailmentYear:
-    :param cellFoldername:
-    :return:
-    """
-    cellTemperature = loadCellAvgWaterT(cellLat, cellLong, rbmOutputDir, locPrecision, cellFoldername)
-    waterTInCurtailYear = getCellWaterTsInCurtailYear(cellTemperature, curtailmentYear)
-    hourlyWaterT = list(np.array([[val] * 24 for val in waterTInCurtailYear]).flatten())
-    return hourlyWaterT
-
-
-def loadCellAvgWaterT(cellLat, cellLong, rbmOutputDir, locPrecision, cellFoldername):
-    """
-
-    :param cellLat: latitide of grid cell
-    :param cellLong:  longitude of grid cell
-    :param rbmOutputDir: string with path to folder with processed RBM data
-    :param locPrecision:  integer with number of decimal digits in logintude and latitude values
-    :param cellFoldername:
-    :return:
-    """
-    cellFolder = os.path.join(rbmOutputDir, cellFoldername)
-    averageTFilename = createAverageTFilename(locPrecision, cellLat, cellLong)
-    cellTemperature = readCSVto2dList(os.path.join(cellFolder, averageTFilename))
-    return cellTemperature
 
 
 def getCellLatAndLongFromFolderName(dummyFolder):
@@ -639,21 +630,182 @@ def getCellLatAndLongFromFolderName(dummyFolder):
     return (float(dummyFolder[:dividerIdx]), float(dummyFolder[dividerIdx + 1:]))
 
 
-def getCellWaterTsInCurtailYear(cellTemperature, curtailmentYear):
-    """ISOLATE DATA FOR YEAR OF ANALYSIS
+def expand_df_hourly(df):
+    """utility function to expand a daily data frame to hourly
 
-    Return 2 1d lists of dates and water Ts in year of analysis. Daily basis.
-
-    :param cellTemperature:
-    :param curtailmentYear: year being analyzed (integer)
-    :return: 2 1d lists of dates and water Ts in year of analysis. Daily basis.
+    :param df: daily data frame (check names of columns)
+    :return: data frame
     """
-    (dateCol, waterTCol) = (cellTemperature[0].index('Datetime'), cellTemperature[0].index('AverageWaterT(degC)'))
-    rowsInCurtailmentYear = [row for row in cellTemperature[1:]
-                             if int(getElementsOfDate(row[dateCol])[0]) == curtailmentYear]  # skip header row
-    datesInCurtailmentYear = [row[dateCol] for row in rowsInCurtailmentYear]
-    temperaturesInCurtailmentYear = [float(row[waterTCol]) for row in rowsInCurtailmentYear]
-    return temperaturesInCurtailmentYear
+    a = pd.to_datetime(df['date'], format='%Y-%m-%d')
+    start_day, end_day = min(a), max(a)
+    end_day = end_day + dt.timedelta(hours=23)
+
+    date2 = pd.date_range(start_day, end_day, freq='h')
+    daystr = date2.strftime('%Y-%m-%d')
+
+    df2 = pd.DataFrame(data={'date_hour': date2, 'date': daystr})
+
+    df2 = df2.merge(df, on='date', how='left')
+
+    del df2['date']
+    df2 = df2.rename(columns={'date_hour': 'date'})
+
+    return df2
+
+
+def read_netcdf_full(currYear, curtailparam):
+    """Reads NETCDF file with meteo data for current year
+
+    :param currYear: (integer) current year
+    :param curtailparam: object of class Curtailmentparameters
+    :return: dictionary with arrays of data {'var name': array}
+    """
+    if os.path.isfile(os.path.join(curtailparam.rbmDataDir, 'forcing_maca_bcc-csm1-1-m_{0:4d}.nc'.format(currYear))):
+
+        dataset = nc.Dataset(os.path.join(curtailparam.rbmDataDir,
+                                          'forcing_maca_bcc-csm1-1-m_{0:4d}.nc'.format(currYear)))
+
+        # Extract data from NetCDF file
+        lats = dataset.variables['lat'][:]
+        lons = dataset.variables['lon'][:]
+        temp = dataset.variables['temp'][:]
+        air_pressure = dataset.variables['air_pressure'][:]
+        rel_humid = dataset.variables['rel_humid'][:]
+
+        # create array with hourly time stamps for year
+        start = dt.datetime(currYear, 1, 1)
+        end = dt.datetime(currYear, 12, 31, 23, 00, 00)
+        date_array = pd.date_range(start=start, end=end, freq='H')
+
+        dict_out = {'date': date_array, 'lat': lats, 'lon': lons, 'airT': temp, 'P': air_pressure, 'rh': rel_humid}
+    else:
+        print('No METEO data (NETCDF files) on folder {0:} for year {1:4d}!'.format(curtailparam.rbmDataDir, currYear))
+        dict_out = None
+
+    return dict_out
+
+
+def read_netcdf(cellLat, cellLon, currYear, curtailparam):
+    """Reads NETCDF file with meteo data for current year and gets data for specified cell
+
+    :param cellLat: (numeric) latitude of cell
+    :param cellLon:  (numeric) longitude of cell
+    :param currYear: (integer) current year
+    :param curtailparam: object of class Curtailmentparameters
+    :return: pandas data frame with hourly meteo data
+    """
+    if os.path.isfile(os.path.join(curtailparam.rbmDataDir, 'forcing_maca_bcc-csm1-1-m_{0:4d}.nc'.format(currYear))):
+
+        dict_out = read_netcdf_full(currYear, curtailparam)
+
+        lats = dict_out['lat']
+        lons = dict_out['lon']
+        temp = dict_out['airT']
+        air_pressure = dict_out['P']
+        rel_humid = dict_out['rh']
+
+        ix = np.argwhere(lats == cellLat).flatten()[0]
+        iy = np.argwhere(lons == cellLon).flatten()[0]
+
+        # create array with hourly time stamps for year
+        start = dt.datetime(currYear, 1, 1)
+        end = dt.datetime(currYear, 12, 31, 23, 00, 00)
+        date_array = pd.date_range(start=start, end=end, freq='H')
+
+        df_out = pd.DataFrame({'date': date_array, 'airT': temp[:, ix, iy], 'P': air_pressure[:, ix, iy],
+                               'rh': rel_humid[:, ix, iy]},
+                              columns=['date', 'airT', 'rh', 'P'])
+    else:
+        print('No METEO data (NETCDF files) on folder {0:} for year {1:4d}!'.format(curtailparam.rbmDataDir, currYear))
+        df_out = None
+
+    return df_out
+
+
+def read_dict_necdf(cellLat, cellLon, meteoData):
+    """Get meteorological data for cell stored in a dictionary that loaded this data from the netcdf file
+
+    see function 'read_netcdf_full'
+
+    :param cellLat: (numeric) latitude of cell
+    :param cellLon: (numeric) longitude of cell
+    :param meteoData: (dictionary) dictionary with complete meteo data from the netcdf file
+    :return: pandas data frame with hourly meteo data
+    """
+
+    lats = meteoData['lat']
+    lons = meteoData['lon']
+    temp = meteoData['airT']
+    air_pressure = meteoData['P']
+    rel_humid = meteoData['rh']
+    date_array = meteoData['date']
+
+    ix = np.argwhere(lats == cellLat).flatten()[0]
+    iy = np.argwhere(lons == cellLon).flatten()[0]
+
+    df_out = pd.DataFrame({'date': date_array, 'airT': temp[:, ix, iy], 'P': air_pressure[:, ix, iy],
+                           'rh': rel_humid[:, ix, iy]},
+                          columns=['date', 'airT', 'rh', 'P'])
+
+    return df_out
+
+
+def read_bulk_water_meteo(currYear, curtailparam):
+
+    t0 = time.time()
+
+    dataset = nc.Dataset(os.path.join(curtailparam.rbmDataDir, 'forcing_maca_bcc-csm1-1-m_{0:4d}.nc'.format(currYear)))
+
+    # Extract data from NetCDF file
+    lats = dataset.variables['lat'][:]
+    lons = dataset.variables['lon'][:]
+    temp = dataset.variables['temp'][:]
+    air_pressure = dataset.variables['air_pressure'][:]
+    rel_humid = dataset.variables['rel_humid'][:]
+
+    # create array with hourly time stamps for year
+    start = dt.datetime(currYear, 1, 1)
+    end = dt.datetime(currYear, 12, 31, 23, 00, 00)
+    date_array = pd.date_range(start=start, end=end, freq='H')
+
+    waterT = np.zeros(temp.shape)
+    flow = np.zeros(temp.shape)
+
+    i = 1
+    for la in lats:
+        for lo in lons:
+            cellFoldername = createBaseFilenameToReadOrWrite(curtailparam.locPrecision, la, lo)
+
+            ix = np.argwhere(lats == la).flatten()[0]
+            iy = np.argwhere(lons == lo).flatten()[0]
+
+            cellFolder = os.path.join(curtailparam.rbmOutputDir, cellFoldername)
+            averageTFilename = cellFoldername + 'Average.csv'
+
+            if os.path.isfile(os.path.join(cellFolder, averageTFilename)):
+
+                print('{0:d}. Reading {1}'.format(i, cellFoldername))
+
+                waterData = pd.read_csv(filepath_or_buffer=os.path.join(cellFolder, averageTFilename))
+                waterData = waterData[['date', 'waterT', 'flow']]
+
+                # filter current year
+                y = [int(date[0:4]) == int(currYear) for date in waterData['date']]
+                waterData = waterData[y]
+                waterData = waterData.reset_index(drop=True)
+
+                waterData = expand_df_hourly(waterData)
+
+                waterT[:, ix, iy] = np.array(waterData['waterT'])
+                flow[:, ix, iy] = np.array(waterData['flow'])
+
+                i = i + 1
+
+    # convert to masked arrays
+    waterT = np.ma.array(waterT, mask=temp.mask)
+    flow = np.ma.array(flow, mask=temp.mask)
+
+    print(str_elapsedtime(t0))
 
 
 # Looking up gen by gen lat/lon. May not be cell @ corresponding location.

@@ -198,7 +198,7 @@ plot.supply.curve <- function(utility.data) {
                           shape=PLFUELCT,
                           colour=PLFUELCT),
                       stroke = 1.1)
-  g <- g + theme_bw() 
+  g <- g + theme_bw(base_size = 10) 
   g <- g + scale_color_manual(values = colour.pallete)
   g <- g + scale_shape_manual(values = shape.pallete)
   g <- g + theme(legend.position=c(0.05,0.95), legend.justification=c(0, 1))

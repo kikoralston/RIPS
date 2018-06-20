@@ -227,9 +227,8 @@ plot.temp.load <- function(reg.model,
                                                  x = temp, 
                                                  y = y.2/1e3))
   g <- ggplot()
-  g <- g + geom_point(data=data.set, aes(x=temp, y=load/1e3),
-                      col = rgb(211, 211, 211, 20,
-                                maxColorValue = 255), size=0.4)
+  g <- g + geom_point(data=data.set, aes(x=temp, y=load/1e3, shape='Historical'),
+                      size=0.4, colour='gray', alpha=0.3)
   g <- g + theme_bw() + 
     xlab(expression(paste("Temperature (", degree, "C)")))
   
@@ -239,14 +238,22 @@ plot.temp.load <- function(reg.model,
     g <- g + ylab("load (GW)")
   }
     
-  g <- g + geom_line(data = df.plot.out1, aes(x=x, y=y, colour = model))
-  g <- g + guides(colour=FALSE)
+  g <- g + geom_line(data = df.plot.out1, aes(x=x, y=y, colour = 'Model'))
+  #g <- g + guides(colour=FALSE)
   g <- g + theme()
+  g <- g + scale_color_manual(values=c('Model'=rgb(255, 0, 0, maxColorValue = 255)))
+  g <- g + scale_shape_manual(values=c('Historical'=16))
   #panel.border=element_blank(),
   #axis.line=element_line()
   #g <- g + geom_point(data = df.plot.out1, aes(x=x, y=y, colour = model)) 
-  #g <- g + guides(colour=guide_legend(title=NULL))
-  #g <- g + theme(legend.position=c(0.98,0.98), legend.justification=c(1,0))
+  g <- g + guides(colour=guide_legend(title=NULL), 
+                  shape=guide_legend(title=NULL,
+                                     override.aes = list(size=1.3,
+                                                         alpha=1)))
+  g <- g + theme(legend.position=c(0.02,0.02), 
+                 legend.justification=c(0,0),
+                 legend.box = 'horizontal',
+                 legend.direction = 'horizontal')
   
   if (add.marg.hist) {
     
