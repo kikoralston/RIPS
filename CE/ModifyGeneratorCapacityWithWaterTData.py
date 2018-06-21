@@ -750,6 +750,83 @@ def read_dict_necdf(cellLat, cellLon, meteoData):
     return df_out
 
 
+def convert_2dList_netcdf(listcurtail, curtailparam, fnameout='~/test.nc'):
+    """
+    This function converts a 2d list with new generator curtailments to a netcdf file
+
+
+    :param listcurtail: 2d list with curtailment data
+    :param curtailparam: object of class curtailmentparameters
+    :return: nothing
+    """
+
+    prec = curtailparam.locPrecision
+
+    # read netcdf file with meteo data to get spatial limits
+    dataset = nc.Dataset(os.path.join(curtailparam.rbmDataDir, 'forcing_maca_bcc-csm1-1-m_{0:4d}.nc'.format(currYear)))
+    time = dataset.variables['time'][:]
+    lats = dataset.variables['lat'][:]
+    lons = dataset.variables['lon'][:]
+    temp = dataset.variables['temp'][:]
+
+    # initialize new netcdf file
+
+    datasetout = nc.Dataset(os.path.expanduser(fnameout), 'w')
+
+    latdim = datasetout.createDimension('lat', len(lats))
+    londim = datasetout.createDimension('lon', len(lons))
+    timedim = datasetout.createDimension('time', len(time))
+
+    # Create coordinate variables for 4-dimensions
+    timevar = datasetout.createVariable('time', np.int32, ('time',))
+    latsvar = datasetout.createVariable('latitude', np.float32, ('lat',))
+    lonsvar = datasetout.createVariable('longitude', np.float32, ('lon',))
+
+    timevar[:] = time
+    latsvar[:] = lats
+    lonsvar[:] = lons
+
+    # get set of curtailed techs
+    curtailed_techs_all = [l[0].split(',')[0].strip('(').strip("'") for l in listcurtail]
+    curtailed_techs = list(set(curtailed_techs_all))
+
+    # loop through curtailed techs and extract all spatial results for each
+    for tech in curtailed_techs:
+
+        print('Saving spatial data of plant {} to netcdf file...'.format(tech))
+
+        idx = [i for i, y in enumerate(curtailed_techs_all) if y == tech]
+
+        curt_data_tech = [listcurtail[i] for i in idx]
+        list_keys = [row[0] for row in curt_data_tech]
+
+        arr_data = np.zeros(temp.shape)
+
+        for la in lats:
+            for lo in lons:
+
+                ix = np.argwhere(lats == la).flatten()[0]
+                iy = np.argwhere(lons == lo).flatten()[0]
+
+                label_tech = "('{0}', '{1:.{3}f}_{2:.{3}f}')".format(tech, la, lo, prec)
+
+                if label_tech in list_keys:
+                    idx_tech = list_keys.index(label_tech)
+
+                    # convert to number and to numpy array and store into 3d array
+                    z = np.array([float(zz) for zz in curt_data_tech[idx_tech][1:]])
+                    arr_data[:, ix, iy] = z
+
+        # convert to masked array
+        arr_data = np.ma.array(arr_data, mask=temp.mask)
+
+        data_netcdf = datasetout.createVariable(tech, np.float32, ('time', 'lat', 'lon'))
+
+        data_netcdf[:] = arr_data
+
+    datasetout.close()
+
+
 def read_bulk_water_meteo(currYear, curtailparam):
 
     t0 = time.time()

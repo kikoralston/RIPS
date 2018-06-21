@@ -80,7 +80,7 @@
          }
       }
    },
-   "Natural Gas": {
+   "Combined Cycle": {
       "once through": {
          "10": {
             "intercept":  8.03,

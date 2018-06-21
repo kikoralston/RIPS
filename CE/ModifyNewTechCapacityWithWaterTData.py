@@ -8,7 +8,7 @@ import os, csv, copy
 from AuxFuncs import *
 from GAMSAuxFuncs import createTechSymbol
 from AssignCellsToIPMZones import mapCellToIPMZone
-from ModifyGeneratorCapacityWithWaterTData import loadWaterAndMetData, createBaseFilenameToReadOrWrite
+from ModifyGeneratorCapacityWithWaterTData import loadWaterAndMetData, read_netcdf_full
 from CurtailmentRegressions import (calcCurtailmentForGenOrTech, loadRegCoeffs, getKeyCurtailParamsNewTechs,
                                     getCoeffsForGenOrTech)
 from AssignCellsToStates import getStateOfPt
