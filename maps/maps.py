@@ -335,8 +335,8 @@ def process_netcdf(cellLat, cellLon):
 #              'Check data sources'.format(len(time), year, len(date_array)))
 
 
-def curtailment_map():
-    dataset = nc.Dataset(os.path.expanduser('~/Documents/CE/test.nc'))
+def curtailment_map(pathin, pathout):
+    dataset = nc.Dataset(os.path.expanduser(pathin))
 
     # Extract data from NetCDF file
     lats = dataset.variables['latitude'][:]
@@ -401,10 +401,10 @@ def curtailment_map():
 
         cbar = plt.colorbar(im1, orientation='horizontal')
 
-        plt.savefig(os.path.expanduser('~/Documents/maps/example{0:4d}.png'.format(i)), bbox_inches='tight')
+        plt.savefig(os.path.join(os.path.expanduser(pathout), 'example{0:4d}.png'.format(i)), bbox_inches='tight')
         plt.close(fig)
         print('Done!')
 
-    gif_name = os.path.expanduser('~/Documents/maps/outputName')
+    gif_name = os.path.join(os.path.expanduser(pathout), 'outputName')
     os.system('convert -delay 45 -loop 0 ./maps/*.png {}.gif'.format(gif_name))
 
