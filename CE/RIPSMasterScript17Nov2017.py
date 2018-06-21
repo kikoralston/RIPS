@@ -5,7 +5,12 @@ import os, sys
 import csv, operator, copy, time, random
 import numpy as np
 import datetime as dt
-from gams import *
+
+try:
+    from gams import *
+except ImportError:
+    print('gams module not found! GAMS functions will not work.')
+
 from AuxFuncs import *
 from GAMSAuxFuncs import *
 from SetupGeneratorFleet import setupGeneratorFleet, aggregatePlantTypeToORIS
