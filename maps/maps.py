@@ -335,4 +335,76 @@ def process_netcdf(cellLat, cellLon):
 #              'Check data sources'.format(len(time), year, len(date_array)))
 
 
+def curtailment_map():
+    dataset = nc.Dataset(os.path.expanduser('~/Documents/CE/test.nc'))
+
+    # Extract data from NetCDF file
+    lats = dataset.variables['latitude'][:]
+    lons = dataset.variables['longitude'][:]
+    time = dataset.variables['time'][:]
+    values = dataset.variables['Coal Steam+OT'][:]
+
+    # ll_lat = 24
+    # ll_lon = -125
+    # ur_lat = 50
+    # ur_lon = -60
+
+    ll_lat = 29.65
+    ll_lon = -94.143
+    ur_lat = 38.77
+    ur_lon = -76.56
+
+    year = 2020
+
+    start = dt.datetime(year, 1, 1)
+    end = dt.datetime(year, 12, 31, 23, 00, 00)
+    date_array = pd.date_range(start=start, end=end, freq='H')
+
+    for i, t in enumerate(date_array[0:744]):
+        print('Creating plot for hour {0:d}'.format(i))
+
+        cap = ma.array(values[i, :, :])
+
+        # get mask
+        mm = cap.mask
+
+        masklon = (lons > ll_lon) & (lons < ur_lon)
+        masklat = (lats > ll_lat) & (lats < ur_lat)
+
+        m = Basemap(llcrnrlon=ll_lon, llcrnrlat=ll_lat, urcrnrlon=ur_lon, urcrnrlat=ur_lat,
+                    resolution='i', area_thresh=2500.)
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        draw_map_background(m, ax)
+
+        xx, yy = np.meshgrid(lons, lats)
+
+        bins = np.array([0, 65, 130, 195, 260, 325, 390, 455, 520, 585, 650])
+
+        cap = np.digitize(cap, bins)
+        cap = np.ma.array(cap, mask=mm)
+
+        # mask values outside the plotting box
+        x = np.outer(masklat, masklon)
+        cap[~x] = ma.masked
+
+        my_cmap = discrete_cmap(10, base_cmap=plt.get_cmap('RdBu'))
+
+        my_cmap.set_bad(color='white', alpha=0)
+
+        label_date = '{0:04d}/{1:02d}/{2:02d} {3:02d}:{4:02d}'.format(t.year, t.month, t.day, t.hour, 0)
+
+        ax.text(ll_lon, ll_lat, label_date, fontsize=10, fontweight='bold', ha='left', va='bottom', color='k')
+
+        im1 = m.pcolormesh(xx, yy, cap, vmin=1, vmax=11, latlon=True, cmap=my_cmap)
+
+        cbar = plt.colorbar(im1, orientation='horizontal')
+
+        plt.savefig(os.path.expanduser('~/Documents/maps/example{0:4d}.png'.format(i)), bbox_inches='tight')
+        plt.close(fig)
+        print('Done!')
+
+    gif_name = os.path.expanduser('~/Documents/maps/outputName')
+    os.system('convert -delay 45 -loop 0 ./maps/*.png {}.gif'.format(gif_name))
 
