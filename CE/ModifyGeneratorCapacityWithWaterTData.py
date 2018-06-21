@@ -750,20 +750,22 @@ def read_dict_necdf(cellLat, cellLon, meteoData):
     return df_out
 
 
-def convert_2dList_netcdf(listcurtail, curtailparam, fnameout='~/test.nc'):
+def convert_2dList_netcdf(listcurtail, curtailparam, fnameuw, fnameout='~/test.nc', ):
     """
     This function converts a 2d list with new generator curtailments to a netcdf file
 
 
     :param listcurtail: 2d list with curtailment data
     :param curtailparam: object of class curtailmentparameters
+    :param fnameuw: (string) name of netcdf file with original meteo data from UW (no path)
+    :param fnameout: (string) name of resulting netcdf file that will be created (full path)
     :return: nothing
     """
 
     prec = curtailparam.locPrecision
 
-    # read netcdf file with meteo data to get spatial limits
-    dataset = nc.Dataset(os.path.join(curtailparam.rbmDataDir, 'forcing_maca_bcc-csm1-1-m_{0:4d}.nc'.format(currYear)))
+    # read netcdf file with meteo data form UW to get spatial limits
+    dataset = nc.Dataset(os.path.join(curtailparam.rbmDataDir, fnameuw))
     time = dataset.variables['time'][:]
     lats = dataset.variables['lat'][:]
     lons = dataset.variables['lon'][:]
