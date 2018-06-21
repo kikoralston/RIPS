@@ -140,12 +140,17 @@ def getHourCo2Ems(hourNetDemand,cumCapacs,sortedCostCapacEms):
     return hourCo2Ems
 ################################################################################
 ################################################################################
-################################################################################
 
 ################################################################################
 ########### CALCULATE CO2 PRICE TO COMPLY WITH CO2 LIMIT USING GAMS ############
 ################################################################################
-from gams import *
+
+
+try:
+    from gams import *
+except ImportError:
+    print('gams module not found! GAMS functions will not work.')
+
 from GAMSAddParamToDatabaseFuncs import *
 from GAMSAddSetToDatabaseFuncs import *
 from GAMSAuxFuncs import *
