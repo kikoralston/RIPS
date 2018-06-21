@@ -789,7 +789,7 @@ def convert_2dList_netcdf(listcurtail, curtailparam, fnameuw, fnameout='~/test.n
     lonsvar[:] = lons
 
     # get set of curtailed techs
-    curtailed_techs_all = [l[0].split(',')[0].strip('(').strip("'") for l in listcurtail]
+    curtailed_techs_all = [l[0][0] for l in listcurtail]
     curtailed_techs = list(set(curtailed_techs_all))
 
     # loop through curtailed techs and extract all spatial results for each
@@ -810,7 +810,8 @@ def convert_2dList_netcdf(listcurtail, curtailparam, fnameuw, fnameout='~/test.n
                 ix = np.argwhere(lats == la).flatten()[0]
                 iy = np.argwhere(lons == lo).flatten()[0]
 
-                label_tech = "('{0}', '{1:.{3}f}_{2:.{3}f}')".format(tech, la, lo, prec)
+                # tuple
+                label_tech = (tech, "{0:.{2}f}_{1:.{2}f}".format(la, lo, prec))
 
                 if label_tech in list_keys:
                     idx_tech = list_keys.index(label_tech)
