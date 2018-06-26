@@ -371,7 +371,7 @@ def curtailment_map(pathin, pathout):
         print('Creating plot for {0:04d}/{1:02d}/{2:02d}'.format(d.year, d.month, d.day))
 
         # get all hours for day d and compute daily mean for each cell
-        irows = np.where(date_array.strftime('%Y-%m-%d') == array_days[0].strftime('%Y-%m-%d'))[0]
+        irows = np.where(date_array.strftime('%Y-%m-%d') == d.strftime('%Y-%m-%d'))[0]
         cap = values.data[irows, :, :]
         cap = np.mean(cap, axis=0)
         cap = ma.array(cap, mask=values.mask[0, :, :])
