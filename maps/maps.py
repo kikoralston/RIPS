@@ -336,6 +336,9 @@ def process_netcdf(cellLat, cellLon):
 
 
 def curtailment_map(pathin, pathout):
+    #pathin='/Users/kiko/Documents/CE/test.nc'
+    #pathout='/Users/kiko/Documents/maps/'
+
     dataset = nc.Dataset(os.path.expanduser(pathin))
 
     # Extract data from NetCDF file
@@ -360,10 +363,18 @@ def curtailment_map(pathin, pathout):
     end = dt.datetime(year, 12, 31, 23, 00, 00)
     date_array = pd.date_range(start=start, end=end, freq='H')
 
-    for i, t in enumerate(date_array[0:744]):
-        print('Creating plot for hour {0:d}'.format(i))
+    start = dt.datetime(year, 1, 1)
+    end = dt.datetime(year, 12, 31)
+    array_days = pd.date_range(start=start, end=end, freq='D')
 
-        cap = ma.array(values[i, :, :])
+    for i, d in enumerate(array_days):
+        print('Creating plot for {0:04d}/{1:02d}/{2:02d}'.format(d.year, d.month, d.day))
+
+        # get all hours for day d and compute daily mean for each cell
+        irows = np.where(date_array.strftime('%Y-%m-%d') == array_days[0].strftime('%Y-%m-%d'))[0]
+        cap = values.data[irows, :, :]
+        cap = np.mean(cap, axis=0)
+        cap = ma.array(cap, mask=values.mask[0, :, :])
 
         # get mask
         mm = cap.mask
@@ -393,7 +404,7 @@ def curtailment_map(pathin, pathout):
 
         my_cmap.set_bad(color='white', alpha=0)
 
-        label_date = '{0:04d}/{1:02d}/{2:02d} {3:02d}:{4:02d}'.format(t.year, t.month, t.day, t.hour, 0)
+        label_date = '{0:04d}/{1:02d}/{2:02d}'.format(d.year, d.month, d.day)
 
         ax.text(ll_lon, ll_lat, label_date, fontsize=10, fontweight='bold', ha='left', va='bottom', color='k')
 
@@ -406,5 +417,5 @@ def curtailment_map(pathin, pathout):
         print('Done!')
 
     gif_name = os.path.join(os.path.expanduser(pathout), 'outputName')
-    os.system('convert -delay 45 -loop 0 ./maps/*.png {}.gif'.format(gif_name))
+    os.system('convert -delay 45 -loop 0 {0}/*.png {1}.gif'.format(pathout, gif_name))
 
