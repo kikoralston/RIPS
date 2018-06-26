@@ -328,14 +328,16 @@ def process_netcdf(cellLat, cellLon):
 
     print('Elapsed time: {0:10d} s'.format(int(time.time() - t1)))
 
-#    time = dataset.variables['time'][:]
-#
-#    if len(time) != len(date_array):
-#        print('Netcdf files have data for {0:4d} hours, but year {1:4d} has {2:4d} hours. '
-#              'Check data sources'.format(len(time), year, len(date_array)))
 
+def curtailment_map(pathin, pathout, max_cap=650, plantType='Coal Steam+OT', year=2020):
+    """Creates gif with animation of simulated curtailments for a plantType
 
-def curtailment_map(pathin, pathout):
+    :param pathin:
+    :param pathout:
+    :param max_cap:
+    :param plantType:
+    :param year:
+    """
     #pathin='/Users/kiko/Documents/CE/test.nc'
     #pathout='/Users/kiko/Documents/maps/'
 
@@ -345,7 +347,7 @@ def curtailment_map(pathin, pathout):
     lats = dataset.variables['latitude'][:]
     lons = dataset.variables['longitude'][:]
     time = dataset.variables['time'][:]
-    values = dataset.variables['Coal Steam+OT'][:]
+    values = dataset.variables[plantType][:]
 
     # ll_lat = 24
     # ll_lon = -125
@@ -357,8 +359,6 @@ def curtailment_map(pathin, pathout):
     ur_lat = 38.77
     ur_lon = -76.56
 
-    year = 2020
-
     start = dt.datetime(year, 1, 1)
     end = dt.datetime(year, 12, 31, 23, 00, 00)
     date_array = pd.date_range(start=start, end=end, freq='H')
@@ -368,7 +368,7 @@ def curtailment_map(pathin, pathout):
     array_days = pd.date_range(start=start, end=end, freq='D')
 
     for i, d in enumerate(array_days):
-        print('Creating plot for {0:04d}/{1:02d}/{2:02d}'.format(d.year, d.month, d.day))
+        print('Creating plot for {0:04d}/{1:02d}/{2:02d}... '.format(d.year, d.month, d.day), end='')
 
         # get all hours for day d and compute daily mean for each cell
         irows = np.where(date_array.strftime('%Y-%m-%d') == d.strftime('%Y-%m-%d'))[0]
@@ -391,7 +391,7 @@ def curtailment_map(pathin, pathout):
 
         xx, yy = np.meshgrid(lons, lats)
 
-        bins = np.array([0, 65, 130, 195, 260, 325, 390, 455, 520, 585, 650])
+        bins = np.arange(0, max_cap+1, step=max_cap/10)
 
         cap = np.digitize(cap, bins)
         cap = np.ma.array(cap, mask=mm)
@@ -406,16 +406,27 @@ def curtailment_map(pathin, pathout):
 
         label_date = '{0:04d}/{1:02d}/{2:02d}'.format(d.year, d.month, d.day)
 
-        ax.text(ll_lon, ll_lat, label_date, fontsize=10, fontweight='bold', ha='left', va='bottom', color='k')
+        ax.text(ll_lon, ur_lat, label_date, fontsize=10, fontweight='bold', ha='left', va='top', color='k')
 
         im1 = m.pcolormesh(xx, yy, cap, vmin=1, vmax=11, latlon=True, cmap=my_cmap)
 
         cbar = plt.colorbar(im1, orientation='horizontal')
 
-        plt.savefig(os.path.join(os.path.expanduser(pathout), 'example{0:4d}.png'.format(i)), bbox_inches='tight')
+        cbar.ax.get_xaxis().set_ticks([])
+        cbar.ax.text(0.5, 1.1, 'Available Capacity (MW) - {}'.format(plantType), ha='center', va='bottom')
+        for j, lab in enumerate(bins):
+            cbar.ax.text(j/10, -0.1, '{0:.0f}'.format(lab), ha='center', va='top')
+
+        plt.savefig(os.path.join(os.path.expanduser(pathout), 'example{0:04d}.png'.format(i)), bbox_inches='tight')
         plt.close(fig)
         print('Done!')
 
     gif_name = os.path.join(os.path.expanduser(pathout), 'outputName')
     os.system('convert -delay 45 -loop 0 {0}/*.png {1}.gif'.format(pathout, gif_name))
 
+
+#    time = dataset.variables['time'][:]
+#
+#    if len(time) != len(date_array):
+#        print('Netcdf files have data for {0:4d} hours, but year {1:4d} has {2:4d} hours. '
+#              'Check data sources'.format(len(time), year, len(date_array)))
