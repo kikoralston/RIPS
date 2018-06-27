@@ -10,6 +10,7 @@ class Curtailmentparameters:
     def __init__(self):
         # Env reg parameters: dict of state : max water T (deg C)
         self.envRegMaxT = dict()
+        self.maxFracFlow = dict()
         # RBM processing parameters
         self.outputHeaders = []
         self.locPrecision = 0
@@ -27,7 +28,9 @@ class Curtailmentparameters:
 
         strout = strout + '# ----- Environ regul parameters ----------\n'
         strout = strout + '# python dictionay format (with quotes and curly braces) state : max water T (deg C)\n'
-        strout = strout + 'envRegMaxT = {}\n'.format(self.envRegMaxT)
+        strout = strout + 'envRegMaxT = {}\n'.format(self.dict2string(self.envRegMaxT))
+        strout = strout + 'python dictionary format (without quotes and curly braces) month : max fractions\n'
+        strout = strout + 'maxFracFlow = {}\n'.format(self.dict2string(self.maxFracFlow))
 
         strout = strout + '# ----- RBM processing parameters ----\n'
         strout = strout + 'outputHeaders = {}\n'.format(self.outputHeaders)
@@ -58,6 +61,14 @@ class Curtailmentparameters:
 
         return b
 
+    @staticmethod
+    def dict2string(d):
+
+        a = str(d)
+        b = ((a.replace('{', '')).replace('}', '')).replace('\'', '')
+
+        return b
+
     def load(self, fname):
         """
         Reads curtailment parameter file and allocates to object
@@ -82,20 +93,21 @@ class Curtailmentparameters:
                         #print('{0:3d} : {1}'.format(i, row))
                         i = i + 1
 
-        # Env reg parameters: dict of state : max water T (deg C)
-
+        # Env regulations parameters: dict of state : max water T (deg C)
         self.envRegMaxT = self.string2dict(data[0][1])    # dict
+        self.maxFracFlow = self.string2dict(data[1][1])  # dict
+
         # RBM processing parameters
-        self.outputHeaders = list(map(str.strip, data[1][1].split(',')))  # list
-        self.locPrecision = lev(data[2][1])
-        self.numCellsToProcess = lev(data[3][1])
-        self.tempAndSpatFilename = data[4][1]
-        self.nsegFilename = data[5][1]
+        self.outputHeaders = list(map(str.strip, data[2][1].split(',')))  # list
+        self.locPrecision = lev(data[3][1])
+        self.numCellsToProcess = lev(data[4][1])
+        self.tempAndSpatFilename = data[5][1]
+        self.nsegFilename = data[6][1]
         # Water T directories
-        self.rbmRootDir = data[6][1]
-        self.rbmDataDir = data[7][1]
+        self.rbmRootDir = data[7][1]
+        self.rbmDataDir = data[8][1]
         self.rbmDataDir = os.path.join(self.rbmRootDir, self.rbmDataDir)
-        self.rbmOutputDir = data[8][1]
+        self.rbmOutputDir = data[9][1]
         self.rbmOutputDir = os.path.join(self.rbmRootDir, self.rbmOutputDir, self.tempAndSpatFilename)
 
     def writefile(self, fname):

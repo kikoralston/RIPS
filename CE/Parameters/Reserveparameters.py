@@ -38,7 +38,7 @@ class Reserveparameters:
                           'used in reg reserves\n'.format(self.flexErrorPercentile)
         strout = strout + '# ---- Cost coeff (from Denholm et al. 2013, val of E sto in grid apps) ----\n'
 
-        strout = strout + 'regUpCostCoeffs = {} # $/MWh\n'.format(self.regUpCostCoeffs)
+        strout = strout + 'regUpCostCoeffs = {} # $/MWh\n'.format(self.dict2string(self.regUpCostCoeffs))
         strout = strout + '# ---- Timeframes -----\n'
         strout = strout + 'regReserveMinutes = {}  # reg res must be provided w/in 5 mins\n'.format(self.regReserveMinutes)
         strout = strout + 'flexReserveMinutes = {}  # spin reserves must be provided w/in 10 minutes\n'.format(self.flexReserveMinutes)
@@ -59,6 +59,14 @@ class Reserveparameters:
             v = float(c[1].strip())  # value
 
             b.update({k: v})
+
+        return b
+
+    @staticmethod
+    def dict2string(d):
+
+        a = str(d)
+        b = ((a.replace('{', '')).replace('}', '')).replace('\'', '')
 
         return b
 

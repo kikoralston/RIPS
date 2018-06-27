@@ -10,13 +10,24 @@ from AuxFuncs import *
 from AssignCellsToIPMZones import locInZone
 
 
-################################################################################
-####### GET RENEWABLE CAPACITY FACTORS #########################################
-################################################################################
-# Function takes in generator fleet that has already been isolated to a single zone
-# and maps data to CFs for RE sites in same zone.
 def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desiredTz,
                     dataRoot, windGenDataYr, currZone, fipsToZones, fipsToPolys):
+    """GET RENEWABLE CAPACITY FACTORS
+
+    Function takes in generator fleet that has already been isolated to a single zone and maps data to CFs for
+    RE sites in same zone.
+
+    :param genFleet:
+    :param startWindCapacForCFs:
+    :param startSolarCapacForCFs:
+    :param desiredTz:
+    :param dataRoot:
+    :param windGenDataYr:
+    :param currZone:
+    :param fipsToZones:
+    :param fipsToPolys:
+    :return:
+    """
     # Isolate wind & solar units
     plantTypeCol = genFleet[0].index('PlantType')
     windUnits = [genFleet[0]] + [row for row in genFleet if row[plantTypeCol] == 'Wind']
@@ -47,10 +58,21 @@ def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desir
             solarCFs, solarCfsDtHr, solarCfsDtSubhr, solarFilenameAndCapac)
 
 
-##### WIND CFS #####
-# All CFs output in EST
 def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataYr, fipsToZones, fipsToPolys, currZone):
+    """GET WIND Capacity FACTORS
 
+    All CFs output in EST
+
+    :param windUnits:
+    :param windDir:
+    :param startWindCapacForCFs:
+    :param desiredTz:
+    :param windGenDataYr:
+    :param fipsToZones:
+    :param fipsToPolys:
+    :param currZone:
+    :return:
+    """
     # Get total wind capacity by zone
     capacCol = windUnits[0].index('Capacity (MW)')
     windCapacInZone = sum([float(row[capacCol]) for row in windUnits[1:]])

@@ -96,7 +96,7 @@ def calculateGeneratorDischargeFlow(coeffs, metAndWaterData, capacs, streamAvail
     :param coeffs: dictionary with regression coefficients for this power plant
     :param metAndWaterData: pandas data frame with meteo and water data for each period
     :param capacs: list of numpy arrays with capacity levels in MW for each period
-    :param streamAvailFrac: Maximum share of stream flow that can be used by power plant
+    :param streamAvailFrac: Max share of stream flow that can be used by power plant (1d numpy array length n_hours)
     :return: 2-d numpy array with water discharge in (gal) for each capacity level (num_per vs num_capacs)
     """
 
@@ -150,8 +150,8 @@ def calcCurtailmentForGenOrTech(plantType, fuelAndCoalType, coolType, state, cap
     hourlyCurtailments = runCurtailRegression(metAndWaterData, coeffs, genparam.incCurtailments, plantType,
                                               coolType, genparam.ptCurtailed)
 
-    # NEED TO CHECK THIS!!!!
-    streamAvailFrac = 0.3
+    # create numpy array with max share of stream flow available in each hour
+    streamAvailFrac = np.array([curtailparam.maxFracFlow[str(d.month)] for d in metAndWaterData['date']])
 
     if state in curtailparam.envRegMaxT.keys():
         # get regulatory threshold for state where plant is located

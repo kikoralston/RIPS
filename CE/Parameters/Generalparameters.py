@@ -127,10 +127,9 @@ class Generalparameters:
         outstr = outstr + 'incRegs = {} \t # whether to model curtailments,whether to model env regs on ' \
                           'water T\n'.format(self.incRegs)
         outstr = outstr + 'coolDesignT = {} \t # design temperature of cooling techs\n'.format(self.coolDesignT)
-        outstr = outstr + '# PTs curtailed via regression (ptCurtailed) and via enviro regulations (ptCurtailedRegs)' \
-                          '. Must be written literally as a Python set (with quotes and brackets)\n'
-        outstr = outstr + 'ptCurtailed = {}\n'.format(self.ptCurtailed)
-        outstr = outstr + 'ptCurtailedRegs = {}\n'.format(self.ptCurtailedRegs)
+        outstr = outstr + '# PTs curtailed via regression (ptCurtailed) and via enviro regulations (ptCurtailedRegs)\n'
+        outstr = outstr + 'ptCurtailed = {}\n'.format(self.list2string(list(self.ptCurtailed)))
+        outstr = outstr + 'ptCurtailedRegs = {}\n'.format(self.list2string(list(self.ptCurtailedRegs)))
         outstr = outstr + '# Determines which cells new plants can be sited in; can be all all cells or those w/ ' \
                           'gens already\n'
         outstr = outstr + 'cellsEligibleForNewPlants = {} \t # \'all\' (all cells) or \'withGens\' (only cells ' \
@@ -159,7 +158,7 @@ class Generalparameters:
         outstr = outstr + 'incITC = {}\n'.format(self.incITC)
         outstr = outstr + 'retirementCFCutoff = {} \t # retire units w/ CF lower than given ' \
                           'value\n'.format(self.retirementCFCutoff)
-        outstr = outstr + 'ptEligRetCF = {}\n'.format(self.ptEligRetCF)
+        outstr = outstr + 'ptEligRetCF = {}\n'.format(self.list2string(self.ptEligRetCF))
         outstr = outstr + 'selectCurtailDays = {}\n'.format(self.selectCurtailDays)
         outstr = outstr + 'planningReserve = {} \t # fraction of peak demand\n'.format(self.planningReserve)
         outstr = outstr + 'discountRate = {}\n'.format(self.discountRate)
@@ -197,6 +196,14 @@ class Generalparameters:
             fuelFileName = 'FuelPriceTimeSeries2Aug2016.csv'
 
         return readCSVto2dList(os.path.join(fuelPriceDir, fuelFileName))
+
+    @staticmethod
+    def list2string(ll):
+
+        a = str(ll)
+        b = ((a.replace('[', '')).replace(']', '')).replace('\'', '')
+
+        return b
 
     def load(self, fname):
         """
