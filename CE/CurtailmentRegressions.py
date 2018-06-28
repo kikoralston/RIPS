@@ -47,8 +47,7 @@ def setEnvRegCurtailments(coolType, capac, pt, ppDeltaT, metAndWaterData, maxT, 
 
     capacs = [np.concatenate((np.arange(0, float(capac), 50), np.array([float(capac)]))) for hr in range(len(waterC))]
 
-    if genparam.incCurtailments and genparam.incRegs and (pt in genparam.ptCurtailedRegs) and \
-            (coolType == 'once through'):
+    if genparam.incRegs and (pt in genparam.ptCurtailedRegs) and (coolType == 'once through'):
 
         # read set of regression coefficients on water intensity
         regcoeffs = loadRegCoeffs(dataRoot=genparam.dataRoot, fname='water.json')
