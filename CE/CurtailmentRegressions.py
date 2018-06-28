@@ -150,10 +150,10 @@ def calcCurtailmentForGenOrTech(plantType, fuelAndCoalType, coolType, state, cap
     hourlyCurtailments = runCurtailRegression(metAndWaterData, coeffs, genparam.incCurtailments, plantType,
                                               coolType, genparam.ptCurtailed)
 
-    # create numpy array with max share of stream flow available in each hour
-    streamAvailFrac = np.array([curtailparam.maxFracFlow[str(d.month)] for d in metAndWaterData['date']])
-
     if state in curtailparam.envRegMaxT.keys():
+        # create numpy array with max share of stream flow available in each hour
+        streamAvailFrac = np.array([curtailparam.maxFracFlow[str(d.month)] for d in metAndWaterData['date']])
+
         # get regulatory threshold for state where plant is located
         envRegMaxT = curtailparam.envRegMaxT[state]
         hourlyCurtailmentsRegs = setEnvRegCurtailments(coolType, capac, plantType, coolDesignT, metAndWaterData,

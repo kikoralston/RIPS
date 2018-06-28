@@ -421,10 +421,6 @@ def curtailment_map(pathin, pathout, max_cap=650, plantType='Coal Steam+OT', yea
         plt.close(fig)
         print('Done!')
 
-    gif_name = os.path.join(os.path.expanduser(pathout), 'outputName')
-    os.system('convert -delay 45 -loop 0 {0}/*.png {1}.gif'.format(pathout, gif_name))
-
-
 #    time = dataset.variables['time'][:]
 #
 #    if len(time) != len(date_array):
