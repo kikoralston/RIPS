@@ -10,8 +10,8 @@ def addGeneratorSets(db, genFleet):
 
     Add gen sets & subsets
 
-    :param db:
-    :param genFleet:
+    :param db: gams database object
+    :param genFleet: 2d list ith generator fleet data
     :return:
     """
     genSymbols = isolateGenSymbols(genFleet, '')
@@ -37,11 +37,11 @@ def addGeneratorSets(db, genFleet):
     return genSet, genSymbols, hydroGenSet, hydroGenSymbols, pumpHydroGenSet, pumpHydroGenSymbols
 
 
-def isolateGenSymbols(genFleet,genPlantType):
+def isolateGenSymbols(genFleet, genPlantType):
     """Gen symbols: g1, g2, etc., where # = row in gen fleet
 
-    :param genFleet:
-    :param genPlantType:
+    :param genFleet: 2d list with generator fleet data
+    :param genPlantType: string with PlantType
     :return:
     """
     if genPlantType == '': #all generators
@@ -58,8 +58,8 @@ def addHourSet(db, hours):
 
     Add all hours
 
-    :param db:
-    :param hours:
+    :param db: GAMS database object
+    :param hours: 1d list with hours to be included on set
     :return:
     """
     hourSymbols = [createHourSymbol(hour) for hour in hours]
@@ -73,8 +73,8 @@ def addHourSeasonSubsets(db, repHrsBySeason):
 
     Inputs: GAMS db, dict of (season:rep hrs)
 
-    :param db:
-    :param repHrsBySeason:
+    :param db: GAMS database object
+    :param repHrsBySeason: dict of (season:rep hrs)
     """
     for season in repHrsBySeason:
         seasonHours = repHrsBySeason[season]
@@ -97,8 +97,8 @@ def addHourSpecialSubset(db, specialHrs):
 
     Inputs: GAMS db, 1d list of special hours
 
-    :param db:
-    :param specialHrs:
+    :param db: GAMS database object
+    :param specialHrs: 1d list of special hours
     """
     specialHourSymbols = [createHourSymbol(hour) for hour in specialHrs]
     hourSubsetName = createHourSubsetName('special')
@@ -109,7 +109,7 @@ def addHourSpecialSubset(db, specialHrs):
 def addPeakHourSubset(db, peakDemandHourZonal):
     """Define peak demand hour subset
 
-    :param db:
+    :param db: GAMS database object
     :param peakDemandHourZonal:
     :return:
     """
@@ -127,7 +127,7 @@ def addPeakHourSubset(db, peakDemandHourZonal):
 def addZoneSets(db, ipmZoneNums):
     """ADD ZONE SETS
 
-    :param db:
+    :param db: GAMS database object
     :param ipmZoneNums:
     :return:
     """
@@ -139,7 +139,7 @@ def addZoneSets(db, ipmZoneNums):
 def addLineSets(db, lines):
     """ADD LINE SETS
 
-    :param db:
+    :param db: GAMS database object
     :param lines:
     :return:
     """
@@ -151,7 +151,7 @@ def addLineSets(db, lines):
 def addCellSet(db,cellsToZones):
     """ADD CELLS FOR NEW TECHS SET
 
-    :param db:
+    :param db: GAMS database object
     :param cellsToZones:
     :return:
     """
@@ -165,7 +165,7 @@ def addNewTechsSets(db, newTechsCE, plantTypesCurtailed):
 
     Inputs: GAMS db, new techs (2d list)
 
-    :param db:
+    :param db: GAMS database object
     :param newTechsCE:
     :param plantTypesCurtailed:
     :return:
@@ -224,7 +224,7 @@ def addSet(db, setSymbols, setName, setDescription, setDim):
 
     Adds set to GAMS db
 
-    :param db:
+    :param db: GAMS database object
     :param setSymbols:
     :param setName:
     :param setDescription:

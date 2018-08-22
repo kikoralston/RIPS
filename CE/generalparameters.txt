@@ -11,10 +11,10 @@ runCE = True
 runUC = False
 runFirstUCYear = False
 startYear = 2015
-endYear = 2046
+endYear = 2035
 yearStepCE = 5
 daysPerSeason = 10
-analysisArea = TVA
+analysisArea = coreSERC
 #
 # -------- KEY CURTAILMENT PARAMETERS --------
 #

@@ -14,6 +14,8 @@ import time
 
 sys.path.insert(0, '../CE')
 from ModifyGeneratorCapacityWithWaterTData import getAllGridCellLatLongsInSpatFile, createAverageTFilename
+from Parameters import *
+from AssignCellsToIPMZones import *
 
 
 def discrete_cmap(N, base_cmap=None):
@@ -354,10 +356,10 @@ def curtailment_map(pathin, pathout, max_cap=650, plantType='Coal Steam+OT', yea
     # ur_lat = 50
     # ur_lon = -60
 
-    ll_lat = 29.65
-    ll_lon = -94.143
-    ur_lat = 38.77
-    ur_lon = -76.56
+    ll_lat = 29
+    ll_lon = -92
+    ur_lat = 39
+    ur_lon = -75
 
     start = dt.datetime(year, 1, 1)
     end = dt.datetime(year, 12, 31, 23, 00, 00)
@@ -426,3 +428,62 @@ def curtailment_map(pathin, pathout, max_cap=650, plantType='Coal Steam+OT', yea
 #    if len(time) != len(date_array):
 #        print('Netcdf files have data for {0:4d} hours, but year {1:4d} has {2:4d} hours. '
 #              'Check data sources'.format(len(time), year, len(date_array)))
+
+
+def plot_serc_data():
+
+    genparam = Generalparameters.Generalparameters()
+    genparam.load(fname='./generalparameters.txt')
+
+    curtailparam = Curtailmentparameters.Curtailmentparameters()
+    curtailparam.load(fname='./curtailmentparameters.txt')
+
+    dataset = nc.Dataset('/Users/kiko/Downloads/serc.NorESM1-M.RCP85.stream_T.nc')
+
+    # Extract data from NetCDF file
+    lats = dataset.variables['lat'][:]
+    lons = dataset.variables['lon'][:]
+    values = dataset.variables['T_stream'][0, 0, :, :]
+
+    ll_lat = 29
+    ll_lon = -92
+    ur_lat = 40
+    ur_lon = -75
+
+    cap = values[:, :]
+
+    # get mask
+    mm = cap.mask
+
+    masklon = (lons > ll_lon) & (lons < ur_lon)
+    masklat = (lats > ll_lat) & (lats < ur_lat)
+
+    m = Basemap(llcrnrlon=ll_lon, llcrnrlat=ll_lat, urcrnrlon=ur_lon, urcrnrlat=ur_lat,
+                resolution='i', area_thresh=2500.)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    draw_map_background(m, ax)
+
+    xx, yy = np.meshgrid(lons, lats)
+
+    # mask values outside the plotting box
+    x = np.outer(masklat, masklon)
+    cap[~x] = ma.masked
+
+    t_year = time.time()
+    for i, la in enumerate(lats):
+        for j, lo in enumerate(lons):
+            print('{}_{}'.format(la, lo))
+            if getFIPSOfPt(genparam.fipsToPolys, la, lo) is not None:
+                z = genparam.fipsToZones[getFIPSOfPt(genparam.fipsToPolys, la, lo)]
+                if z not in genparam.ipmZones:
+                    cap[i, j] = ma.masked
+            else:
+                cap[i, j] = ma.masked
+    print('Elapsed Time: ' + str_elapsedtime(t_year))
+
+    im1 = m.pcolormesh(xx, yy, cap)
+
+    plt.savefig('/Users/kiko/Downloads/examplexxx.png', bbox_inches='tight')
+    plt.close(fig)

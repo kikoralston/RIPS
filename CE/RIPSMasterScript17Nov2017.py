@@ -286,6 +286,7 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
     print('Done! Elapsed time: ' + str_elapsedtime(start_time))
 
     start_time = time.time()
+
     print('Selecting subset of hours for CE model... ', flush=True)
     (demandCE, hoursForCE, repHrsBySeason, specialHrs, regHrsBySeason, demandCEZonal,
      hourlyWindGenCEZonal, hourlySolarGenCEZonal, peakDemandHourZonal, planningReserveZonal,
@@ -330,10 +331,8 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
 
     start_time = time.time()
     print('Computing hourly curtailments for new generators...', flush=True)
-    eligibleCellWaterTs = loadEligibleCellWaterTs(genparam.cellsEligibleForNewPlants, genFleet,
-                                                  curtailparam.rbmOutputDir, curtailparam.locPrecision,
-                                                  genparam.ipmZones, genparam.fipsToZones, genparam.fipsToPolys,
-                                                  currYear)
+    eligibleCellWaterTs = loadEligibleCellWaterTs(genFleet, currYear, genparam, curtailparam)
+
     print('  Got eligible cells: ' + str_elapsedtime(start_time))
 
     # hrlyCurtailmentsAllTechsInTgtYr is a dict of (tech,cell):[hourlycapac]
@@ -385,7 +384,8 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
      co2EmAndCostResults, flowByLine, chargeByPH, socByPH) = saveCapacExpOperationalData(capacExpModel,
                                                                                          genFleetForCE, curtailedTechs,
                                                                                          renewTechs, notCurtailedTechs,
-                                                                                         cellsForNewTechs, genparam.ipmZoneNums,
+                                                                                         cellsForNewTechs,
+                                                                                         genparam.ipmZoneNums,
                                                                                          hoursForCE, genparam.lineList,
                                                                                          pumpedHydroSymbs)
     write2dListToCSV(genByPlant, os.path.join(resultsDir, 'genByPlantCE' + str(currYear) + '.csv'))
@@ -467,13 +467,14 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
         ws = GamsWorkspace(working_directory=gamsFileDir)
 
     db = ws.add_database()
+
     # Add sets and parameters to database
     (genSet, genSymbols, hourSet, hourSymbols, techSet, techSymbols, techCurtailedSet, techCurtailedSymbols,
      renewTechSet, renewTechSymbols, techNotCurtailedSymbols, hydroGenSet, hydroGenSymbols, zoneSet, zoneSymbols,
-     lineSet, cellSet, peakHourSet, peakHrSymbols, pumpHydroGenSet,
-     pumpHydroGenSymbols) = addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeason, specialHrs,
-                                                peakDemandHourZonal, ipmZoneNums, lineList, cellsToZones,
-                                                ptCurtailedAll)
+     lineSet, cellSet, peakHourSet, peakHrSymbols, pumpHydroGenSet, pumpHydroGenSymbols) = \
+        addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeason, specialHrs, peakDemandHourZonal,
+                            ipmZoneNums, lineList, cellsToZones, ptCurtailedAll)
+
     addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySolarGenCEZonal, demandCEZonal,
                               newTechsCE, genFleetForCE, genSet, genSymbols, hydroGenSet, hydroGenSymbols, hourSet,
                               hourSymbols, techSet, techSymbols, techCurtailedSet, techCurtailedSymbols, renewTechSet,
@@ -490,7 +491,17 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
     # Run GAMS model
     opt = GamsOptions(ws)
     opt.defines['gdxincname'] = db.name
+
+    # add CPLEX option file
+    file = open(os.path.join(ws.working_directory, "cplex.opt"), "w")
+    file.write("mipdisplay 4\n")
+    file.write("mipinterval 10")
+    file.close()
+    opt.optfile = 1
+
+    # Run GAMS/CPLEX model
     capacExpModel.run(opt, databases=db, output=sys.stdout)
+
     ms = int(capacExpModel.out_db['pModelstat'].find_record().value)
     ss = int(capacExpModel.out_db['pSolvestat'].find_record().value)
 
@@ -538,52 +549,6 @@ def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeaso
 
 
 ################################### ADD PARAMETERS
-def addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySolarGenCEZonal, demandCEZonal,
-                              newTechsCE, genFleetForCE, genSet, genSymbols, hydroGenSet, hydroGenSymbols, hourSet,
-                              hourSymbols, techSet,
-                              techSymbols, techCurtailedSet, techCurtailedSymbols, renewTechSet, renewTechSymbols,
-                              planningReserveZonal,
-                              discountRate, newWindCFsCEZonal, newSolarCFsCEZonal, scaleMWtoGW, scaleDollarsToThousands,
-                              currCo2Cap, seasonDemandWeights, hourlyCurtailedTechCapacsCE, scaleLbToShortTon,
-                              maxAddedZonalCapacPerTech,
-                              zoneSet, zoneSymbols, lineSet, ipmZones, ipmZoneNums, lineList, lineCapacs, cellsToZones,
-                              cellSet, peakDemandHourZonal, peakHourSet, peakHrSymbols, hydroPotPerSeason,
-                              ptCurtailedAll,
-                              pumpHydroGenSet, pumpHydroGenSymbols, phEff, phMaxSoc, phInitSoc):
-    addTechParams(db, newTechsCE, techSet, techSymbols, hourSet, hourSymbols,
-                  scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon, ptCurtailedAll)
-    addEguParams(db, genFleetForCE, genSet, genSymbols, ipmZones, ipmZoneNums, scaleLbToShortTon, scaleMWtoGW)
-    addPumpHydroParams(db, genFleetForCE, phEff, phMaxSoc, phInitSoc, pumpHydroGenSet, pumpHydroGenSymbols, scaleMWtoGW)
-    addDiscountRateParam(db, discountRate)
-    addCppEmissionsCap(db, currCo2Cap)
-    addSeasonDemandWeights(db, seasonDemandWeights)
-    addMaxNumNewBuilds(db, newTechsCE, zoneSet, ipmZones, ipmZoneNums, techSet, maxAddedZonalCapacPerTech,
-                       ptCurtailedAll)
-    # Add hydro max gen per time block
-    addHydroMaxGenPerSeason(db, hydroGenSet, hydroGenSymbols, hydroPotPerSeason, scaleMWtoGW)
-    # Add zonal demand, planning margin, and RE generation
-    addDemandParam(db, demandCEZonal, zoneSet, hourSet, hourSymbols, ipmZones, ipmZoneNums, scaleMWtoGW)
-    addPlanningReserveParam(db, planningReserveZonal, ipmZones, ipmZoneNums, zoneSet, zoneSymbols, scaleMWtoGW)
-    addPeakHourToZoneParam(db, peakDemandHourZonal, peakHourSet, peakHrSymbols, ipmZones, ipmZoneNums)
-    addExistingRenewableMaxGenParams(db, zoneSet, ipmZones, ipmZoneNums, hourSet, hourSymbols,
-                                     hourlySolarGenCEZonal, hourlyWindGenCEZonal, scaleMWtoGW)
-    addRenewTechCFParams(db, renewTechSet, renewTechSymbols, zoneSet, hourSet, hourSymbols,
-                         newWindCFsCEZonal, newSolarCFsCEZonal, ipmZones, ipmZoneNums)
-    # Add hourly capacity for curtailed techs
-    addTechCurtailedHourlyCapac(db, hourlyCurtailedTechCapacsCE, cellSet, techCurtailedSet, hourSet, hourSymbols,
-                                scaleMWtoGW)
-    # Add tech heat rate and op cost params that reflect degradation
-    addEguHourlyParams(db, hourlyCapacsCE, genSet, hourSet, hourSymbols, scaleMWtoGW)
-    addEguOpCostParam(db, genFleetForCE, genSet, genSymbols, scaleLbToShortTon, scaleMWtoGW, scaleDollarsToThousands)
-    # Add zone & line parameters
-    addLineCapacs(db, lineCapacs, lineSet, lineList, scaleMWtoGW)
-    addLineSourceAndSink(db, lineSet, lineList, ipmZones, ipmZoneNums)
-    addCellsToZones(db, cellSet, cellsToZones, ipmZones, ipmZoneNums)
-
-
-################################################################################
-####### RUN UNIT COMMITMENT ####################################################
-################################################################################
 def runUnitCommitment(genFleet, demandScaled, startYear, ucYear, fuelPricesTimeSeries,
                       states, statesAbbrev, scaleMWtoGW, scaleDollarsToThousands, currCo2Cap, calculateCO2Price,
                       scaleLbToShortTon, daysForUC, daysOpt, daysLA, tzAnalysis, projectName, dataRoot,
@@ -683,6 +648,50 @@ def runUnitCommitment(genFleet, demandScaled, startYear, ucYear, fuelPricesTimeS
     write2dListToCSV(sysResults, os.path.join(resultsDir, 'systemResultsUC' + str(ucYear) + '.csv'))
     write2dListToCSV(msAndSs, os.path.join(resultsDir, 'msAndSsUC' + str(ucYear) + '.csv'))
     return (ucResultsByDay, genByPlant)
+
+
+################################################################################
+####### RUN UNIT COMMITMENT ####################################################
+################################################################################
+def addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySolarGenCEZonal, demandCEZonal,
+                              newTechsCE, genFleetForCE, genSet, genSymbols, hydroGenSet, hydroGenSymbols, hourSet,
+                              hourSymbols, techSet, techSymbols, techCurtailedSet, techCurtailedSymbols, renewTechSet,
+                              renewTechSymbols, planningReserveZonal, discountRate, newWindCFsCEZonal,
+                              newSolarCFsCEZonal, scaleMWtoGW, scaleDollarsToThousands, currCo2Cap, seasonDemandWeights,
+                              hourlyCurtailedTechCapacsCE, scaleLbToShortTon, maxAddedZonalCapacPerTech, zoneSet,
+                              zoneSymbols, lineSet, ipmZones, ipmZoneNums, lineList, lineCapacs, cellsToZones,
+                              cellSet, peakDemandHourZonal, peakHourSet, peakHrSymbols, hydroPotPerSeason,
+                              ptCurtailedAll, pumpHydroGenSet, pumpHydroGenSymbols, phEff, phMaxSoc, phInitSoc):
+
+    addTechParams(db, newTechsCE, techSet, techSymbols, hourSet, hourSymbols,
+                  scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon, ptCurtailedAll)
+    addEguParams(db, genFleetForCE, genSet, genSymbols, ipmZones, ipmZoneNums, scaleLbToShortTon, scaleMWtoGW)
+    addPumpHydroParams(db, genFleetForCE, phEff, phMaxSoc, phInitSoc, pumpHydroGenSet, pumpHydroGenSymbols, scaleMWtoGW)
+    addDiscountRateParam(db, discountRate)
+    addCppEmissionsCap(db, currCo2Cap)
+    addSeasonDemandWeights(db, seasonDemandWeights)
+    addMaxNumNewBuilds(db, newTechsCE, zoneSet, ipmZones, ipmZoneNums, techSet, maxAddedZonalCapacPerTech,
+                       ptCurtailedAll)
+    # Add hydro max gen per time block
+    addHydroMaxGenPerSeason(db, hydroGenSet, hydroGenSymbols, hydroPotPerSeason, scaleMWtoGW)
+    # Add zonal demand, planning margin, and RE generation
+    addDemandParam(db, demandCEZonal, zoneSet, hourSet, hourSymbols, ipmZones, ipmZoneNums, scaleMWtoGW)
+    addPlanningReserveParam(db, planningReserveZonal, ipmZones, ipmZoneNums, zoneSet, zoneSymbols, scaleMWtoGW)
+    addPeakHourToZoneParam(db, peakDemandHourZonal, peakHourSet, peakHrSymbols, ipmZones, ipmZoneNums)
+    addExistingRenewableMaxGenParams(db, zoneSet, ipmZones, ipmZoneNums, hourSet, hourSymbols,
+                                     hourlySolarGenCEZonal, hourlyWindGenCEZonal, scaleMWtoGW)
+    addRenewTechCFParams(db, renewTechSet, renewTechSymbols, zoneSet, hourSet, hourSymbols,
+                         newWindCFsCEZonal, newSolarCFsCEZonal, ipmZones, ipmZoneNums)
+    # Add hourly capacity for curtailed techs
+    addTechCurtailedHourlyCapac(db, hourlyCurtailedTechCapacsCE, cellSet, techCurtailedSet, hourSet, hourSymbols,
+                                scaleMWtoGW)
+    # Add tech heat rate and op cost params that reflect degradation
+    addEguHourlyParams(db, hourlyCapacsCE, genSet, hourSet, hourSymbols, scaleMWtoGW)
+    addEguOpCostParam(db, genFleetForCE, genSet, genSymbols, scaleLbToShortTon, scaleMWtoGW, scaleDollarsToThousands)
+    # Add zone & line parameters
+    addLineCapacs(db, lineCapacs, lineSet, lineList, scaleMWtoGW)
+    addLineSourceAndSink(db, lineSet, lineList, ipmZones, ipmZoneNums)
+    addCellsToZones(db, cellSet, cellsToZones, ipmZones, ipmZoneNums)
 
 
 ########### TESTING PURPOSES ONLY ####################################

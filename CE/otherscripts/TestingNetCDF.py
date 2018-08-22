@@ -4,7 +4,8 @@
 #Power output is given for 5-minute intervals from 2007 through 2012, including
 #leap year days in 2008 and 2012. Timezone is UTC.
 
-from netCDF4 import Dataset
+import netCDF4 as nc
+import pandas as pd
 import numpy as np
 import datetime as dt
 import os
@@ -29,6 +30,41 @@ def extractCDFData(file):
     lat,lon = data.longitude,data.latitude
     power = data.variables['power'][:]
     return lat,lon,power #float, float, np array
+
+
+def testNetCDF()
+    # testing read of format of NETCDF function sent by Yifan on August 2018
+
+    path_file1 = '/Users/kiko/Downloads/serc.NorESM1-M.RCP85.stream_T.nc'
+    path_file2 = '/Users/kiko/Downloads/serc.NorESM1-M.RCP85.KW.flow.MACA.regulated.nc'
+    path_file3 = '/Users/kiko/Documents/CE/Data/DatafromUW/RBMRawWaterTData10Aug2016/forcing_maca_bcc-csm1-1-m_2020.nc'
+
+    dataset1 = nc.Dataset(path_file1)
+    dataset2 = nc.Dataset(path_file2)
+    dataset3 = nc.Dataset(path_file3)
+
+
+    # Variables to read:
+    #       - 'T_stream'
+    #       - 'streamflow'
+
+    # get reference date of data
+    ref_date = dt.datetime.strptime(dataset1.variables['time'].units.replace('days since', '').strip(), '%Y-%m-%d %H:%M:%S').date()
+    n_days = dataset1.variables['time'].shape[0]
+
+    # create array with dates
+    date_array = pd.date_range(start=ref_date, periods=n_days, freq='D')
+
+    # get indexes of days for year == 'year'
+    year = 2025
+    idx_year = np.where(date_array.year == year)[0]
+
+    # slice data for this year
+    data_values = dataset1.variables['T_stream'][idx_year, :, :, :]
+
+    # for T_stream average data of multiple segments for each day
+    pos_no_seg = dataset1.variables['T_stream'].dimensions.index('no_seg')
+    data_values = np.mean(data_values, axis=pos_no_seg)
 
 
 

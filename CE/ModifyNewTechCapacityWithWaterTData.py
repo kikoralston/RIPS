@@ -35,23 +35,23 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
 
     for cell in cellWaterTsForNewTechs:
         t0 = time.time()
-        print(cell)
+        #print(cell)
 
         cellLat, cellLong = float(cell.split('_')[0]), float(cell.split('_')[1])
         state = getStateOfPt(genparam.statePolys, cellLat, cellLong)  # need for regression
 
-        print('  Got state. ' + str_elapsedtime(t0))
+        #print('  Got state. ' + str_elapsedtime(t0))
 
         metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam, metdatatot=meteodata,
                                               waterDatatot=cellWaterTsForNewTechs)
 
-        print('  Got met data. ' + str_elapsedtime(t0))
+        #print('  Got met data. ' + str_elapsedtime(t0))
 
         for techRow in newTechsCE[1:]:
             (plantType, hr, fuelAndCoalType, coolType,
              fgdType, cap, coolDesignT) = getKeyCurtailParamsNewTechs(newTechsCE, techRow)
 
-            print('  Starting computation for plant ' + plantType)
+            #print('  Starting computation for plant ' + plantType)
 
             coeffs = getCoeffsForGenOrTech(plantType, coolType, genparam.ptCurtailed, regCoeffs, coolDesignT)
 
@@ -61,7 +61,7 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
                                                                   coolDesignT, metAndWaterData, coeffs, genparam,
                                                                   curtailparam)
 
-                print('  computed curtailment. ' + str_elapsedtime(t0))
+                #print('  computed curtailment. ' + str_elapsedtime(t0))
                 hrlyCurtailmentsAllTechsInTgtYr[
                     (createTechSymbol(techRow, newTechsCE[0], genparam.ptCurtailedAll),
                      cell)] = hrlyCurtailmentsGen
