@@ -136,6 +136,7 @@ def addZoneSets(db, ipmZoneNums):
     zoneSet = addSet(db, zoneSymbols, zoneName, zoneDesc, zoneDim)
     return zoneSet, zoneSymbols
 
+
 def addLineSets(db, lines):
     """ADD LINE SETS
 

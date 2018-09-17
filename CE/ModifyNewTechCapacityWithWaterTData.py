@@ -14,6 +14,7 @@ from CurtailmentRegressions import (calcCurtailmentForGenOrTech, loadRegCoeffs, 
 from AssignCellsToStates import getStateOfPt
 import numpy as np
 import pandas as pd
+import progressbar
 
 
 ################################################################################
@@ -31,9 +32,15 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
     regCoeffs = loadRegCoeffs(genparam.dataRoot, 'capacity.json')  # dict of cooling type: reg coeffs
 
     # read full meteo data for current year (full water data is already loaded)
-    meteodata = read_netcdf_full(currYear, curtailparam)
+    fname = curtailparam.basenamemeteo
 
-    for cell in cellWaterTsForNewTechs:
+    # TODO: find a way to combine different GCMs
+    gcm = curtailparam.listgcms[0]
+
+    fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm, currYear))
+    meteodata = read_netcdf_full(currYear, fname, curtailparam)
+
+    for cell in progressbar.progressbar(cellWaterTsForNewTechs):
         t0 = time.time()
         #print(cell)
 
@@ -77,12 +84,13 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
 ################################################################################
 # Returns dict of cell folder name : [[Datetime],[AverageWaterT(degC)]]
 def getWaterTsInCurrYear(currYear, eligibleCellWaterTs):
+
     eligibleCellWaterTsCurrYear = dict()
     for cell in eligibleCellWaterTs:
         cellWaterTs = eligibleCellWaterTs[cell]
         dateCol = cellWaterTs[0].index('date')
         eligibleCellWaterTsCurrYear[cell] = [cellWaterTs[0]] + [row for row in
-                                                                cellWaterTs[1:] if str(currYear) in row[dateCol]]
+                                                                cellWaterTs[1:] if str(currYear) in str(row[dateCol])]
     return eligibleCellWaterTsCurrYear
 
 

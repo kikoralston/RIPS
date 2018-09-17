@@ -8,22 +8,19 @@ August 2018
 UW changed the format of the files with water data to NETCDF. I added a flag 'netcdf' to some functions to read them.
 """
 
-import os, copy
-import netCDF4 as nc
+import os, copy, sys
 import numpy as np
-import datetime as dt
-import pandas as pd
-import pickle as pk
 from AuxFuncs import *
 import pickle as pk
 from AssignCellsToIPMZones import mapCellToIPMZone
-from ModifyGeneratorCapacityWithWaterTData import (getGenToCellAndCellToGenDictionaries,
-                                                   createBaseFilenameToReadOrWrite)
-
+from ModifyGeneratorCapacityWithWaterTData import (getGenToCellAndCellToGenDictionaries, read_waterdata_netcdf,
+                                                   get_all_cells_from_netcdf, order_cells_by_flow,
+                                                   getCellLatAndLongFromFolderName)
+from PreProcessRBM import createBaseFilenameToReadOrWrite
 
 # genparam.cellsEligibleForNewPlants, genFleet, curtailparam.rbmOutputDir, curtailparam.locPrecision, genparam.ipmZones, genparam.fipsToZones, genparam.fipsToPolys, currYear
-
 # cellsEligibleForNewPlants, genFleet, rbmOutputDir, locPrecision, zones, fipsToZones, fipsToPolys, currYear
+
 
 def loadEligibleCellWaterTs(genFleet, currYear, genparam, curtailparam):
     """GET DAILY AVERAGE WATER TS FOR CELLS FOR ALL YEARS
@@ -37,16 +34,15 @@ def loadEligibleCellWaterTs(genFleet, currYear, genparam, curtailparam):
     :param curtailparam:
     :return:
     """
-    allCellFoldersInZone, eligibleCellFolders = setCellFolders(genFleet, genparam, curtailparam)
+    allCellFoldersInZone, eligibleCellFolders = setCellFolders(genFleet, currYear, genparam, curtailparam)
 
     return loadCellWaterTs(eligibleCellFolders, allCellFoldersInZone, curtailparam, currYear)
 
 
 # rbmOutputDir, cellsEligibleForNewPlants, genFleet, locPrecision, zones, fipsToZones, fipsToPolys
-
 # rbmOutputDir, cellsEligibleForNewPlants, genFleet, locPrecision, zones, fipsToZones, fipsToPolys, netcdf=True
 
-def setCellFolders(genFleet, genparam, curtailparam, netcdf=True):
+def setCellFolders(genFleet, currYear, genparam, curtailparam, netcdf=True):
     """Get list of folders with future data for 1 cell each
 
     :param genFleet: 2d list with generator fleet
@@ -55,19 +51,14 @@ def setCellFolders(genFleet, genparam, curtailparam, netcdf=True):
     """
 
     if netcdf:
-        # TODO: fname is the name of the netcdf file with water/meteo data. need to decide how to define it
-        dataset1 = nc.Dataset(os.path.join(curtailparam.rbmDataDir, fname))
 
-        lats = dataset1.variables['lat'][:]
-        lons = dataset1.variables['lon'][:]
-
-        allCellFolders = ['{}_{}'.format(la, lo) for la in lats for lo in lons]
+        allCellFolders = get_all_cells_from_netcdf(curtailparam)
 
         # read file with dictionary mapping cells to IPM zones (this file must be in the VICS/RBM folder)
         with open(os.path.join(curtailparam.rbmRootDir, 'cells2zones.pk'), 'rb') as f:
             cells2zones = pk.load(f)
 
-        allCellFoldersInZone = [c for c in allCellFolders if cells2zones[c] in zones]
+        allCellFoldersInZone = [c for c in allCellFolders if cells2zones[c] in genparam.ipmZones]
     else:
         allCellFolders = [name for name in os.listdir(curtailparam.rbmOutputDir)
                           if os.path.isdir(os.path.join(curtailparam.rbmOutputDir, name))]
@@ -77,14 +68,27 @@ def setCellFolders(genFleet, genparam, curtailparam, netcdf=True):
     if genparam.cellsEligibleForNewPlants == 'all':
         eligibleCellFolders = copy.deepcopy(allCellFoldersInZone)
 
+    elif genparam.cellsEligibleForNewPlants == 'maxflow':
+        best_cells_zone_dict = order_cells_by_flow(genparam, curtailparam, currYear)
+
+        eligibleCellFolders = []
+        for z in best_cells_zone_dict:
+            eligibleCellFolders = eligibleCellFolders + best_cells_zone_dict[z]
+
     elif genparam.cellsEligibleForNewPlants == 'withGens':
         # (genToCellLatLongsDictValues,genToCellLatLongsDict,cellLatLongToGenDict,
         #             genToCellLatLongsList) = getGenToCellAndCellToGenDictionaries(genFleet)
-        (genToCellLatLongsDict,cellLatLongToGenDict,
-                    genToCellLatLongsList) = getGenToCellAndCellToGenDictionaries(genFleet)
+        (genToCellLatLongsDict, cellLatLongToGenDict, genToCellLatLongsList) = \
+            getGenToCellAndCellToGenDictionaries(genFleet)
+
         eligibleCellFolders = []
         for (cellLat, cellLong) in cellLatLongToGenDict:
             eligibleCellFolders.append(createBaseFilenameToReadOrWrite(curtailparam.locPrecision, cellLat, cellLong))
+
+    else:
+        print('Parameter \'cellsEligibleForNewPlants\' must be either \'all\' or \'maxflow\' or \'withGens\'....')
+        print('Ending simulation!')
+        sys.exit()
 
     return allCellFoldersInZone, eligibleCellFolders
 
@@ -119,8 +123,19 @@ def loadCellWaterTs(eligibleCellFolders, allCellFoldersInZone, curtailparam, cur
     eligibleCellWaterTs = dict()
 
     if netcdf:
-        waterT, date, lons, lats = read_waterdata_netcdf(curtailparam.rbmDataDir, 'serc.NorESM1-M.RCP85.stream_T.nc', 'T_stream', currYear)
-        streamflow = read_waterdata_netcdf(curtailparam.rbmDataDir, 'serc.NorESM1-M.RCP85.KW.flow.MACA.regulated.nc', 'streamflow', currYear)[0]
+        # TODO: find a way to combine different GCMs
+        gcm = curtailparam.listgcms[0]
+
+        # reading flow/streamT file. substitute '_' to '.'
+        gcm = gcm.replace('_', '.')
+
+        fname = curtailparam.basenamestreamT
+        fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm))
+        waterT, date, lons, lats = read_waterdata_netcdf(fname, 'T_stream', currYear)
+
+        fname = curtailparam.basenameflow
+        fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm))
+        streamflow = read_waterdata_netcdf(fname, 'streamflow', currYear)[0]
 
         for cellFolder in eligibleCellFolders:
             if cellFolder in allCellFoldersInZone:
@@ -167,89 +182,3 @@ def loadCellWaterTs(eligibleCellFolders, allCellFoldersInZone, curtailparam, cur
                 eligibleCellWaterTs[cellFolder] = cellAvgWaterTCurrYear
 
     return eligibleCellWaterTs
-
-
-def read_waterdata_netcdf(path_data, fname, varname, curryear):
-    """ Reads netcdf file with water data and returns arrays with data, lats and longs
-
-    :param path_data:
-    :param fname:
-    :param varname:
-    :param curryear:
-    :return:
-            data_values: array with data values
-            date: 1d array with dates
-            lons: 1d array with longitude values
-            lats: 1d array with latitude values
-    """
-    dataset1 = nc.Dataset(os.path.join(path_data, fname))
-
-    lats = dataset1.variables['lat'][:]
-    lons = dataset1.variables['lon'][:]
-
-    # Variables to read:
-    #       - 'T_stream'
-    #       - 'streamflow'
-
-    # get reference date of data and number of days of data
-    strdate = dataset1.variables['time'].units.replace('days since', '').strip()
-
-    ref_date = dt.datetime.strptime(strdate, '%Y-%m-%d %H:%M:%S').date()
-    n_days = dataset1.variables['time'].shape[0]
-
-    # create array with dates
-    date_array = pd.date_range(start=ref_date, periods=n_days, freq='D')
-
-    if curryear is not None:
-        # get indexes of days for year == 'curryear'
-
-        year = curryear
-        idx_year = np.where(date_array.year == year)[0]
-
-        # slice data for this year
-        if varname == 'T_stream':
-            data_values = dataset1.variables[varname][idx_year, :, :, :]
-        else:
-            data_values = dataset1.variables[varname][idx_year, :, :]
-    else:
-        data_values = dataset1.variables[varname][:]
-
-    date_array = date_array[idx_year]
-
-    if varname == 'T_stream':
-        # for T_stream average data of multiple segments for each day
-        pos_no_seg = dataset1.variables['T_stream'].dimensions.index('no_seg')
-        data_values = np.mean(data_values, axis=pos_no_seg)
-
-    return data_values, date_array, lons, lats
-
-
-def read_waterdata_cell(path_data, currYear, cellLat, cellLon):
-    """ Reads netcdf file with water data and returns panda data frame for data for given cell
-
-    :param path_data:
-    :param fname:
-    :param varname:
-    :param curryear:
-    :return:
-            data_values: array with data values
-            date: 1d array with dates
-            lons: 1d array with longitude values
-            lats: 1d array with latitude values
-    """
-    waterT, date, lons, lats = read_waterdata_netcdf(path_data, 'serc.NorESM1-M.RCP85.stream_T.nc', 'T_stream',
-                                                     currYear)
-    streamflow = read_waterdata_netcdf(path_data, 'serc.NorESM1-M.RCP85.KW.flow.MACA.regulated.nc', 'streamflow',
-                                       currYear)[0]
-
-    ix = np.argwhere(lats == cellLat).flatten()[0]
-    iy = np.argwhere(lons == cellLon).flatten()[0]
-
-    # get data for cell
-    waterT = waterT.data[:, ix, iy]
-    streamflow = streamflow.data[:, ix, iy]
-
-    df_water = pd.DataFrame(data={'date': date, 'waterT': waterT, 'flow': streamflow})
-
-    return df_water
-

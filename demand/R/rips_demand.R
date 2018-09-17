@@ -551,6 +551,7 @@ write.file.coef.temp <- function(lm.hourly, name.file='temp_coef.csv') {
   idx.coef.temp <- grep('(tc\\.\\d(\\d)?)$', names.coef, perl=TRUE)
   
   coef.temp <- lm.hourly$model$coefficients[idx.coef.temp]
+  coef.temp[is.na(coef.temp)] <- 0
   
   names.bin <- lm.hourly$temp.bins
   

@@ -84,21 +84,26 @@ def addNewREToFleet(genFleet, totalWindCapac, totalSolarCapac, currZone):
 # Inputs: hourly CFs for each RE unit (2d list), unit IDs and capacities (2d list)
 # Outputs: hourly capacity-weighted CFs (1d list)
 def getCapacWtdCF(allCfs, idAndCapacs, tzAnalysis):
-    cfIdCol = allCfs[0].index('datetime' + tzAnalysis)
-    (idAndCapacsIdCol, idAndCapacsCapacCol) = (idAndCapacs[0].index('Id'), idAndCapacs[0].index('FleetCapacity'))
-    allCapacs = [row[idAndCapacsCapacCol] for row in idAndCapacs[1:]]
-    allIds = [row[idAndCapacsIdCol] for row in idAndCapacs[1:]]
-    totalCapac = sum(allCapacs)
-    cfIds = [row[cfIdCol] for row in allCfs]
-    capacWtCfs = [0] * len(allCfs[0][1:])
-    for idx in range(1, len(cfIds)):
-        cfId = cfIds[idx]
-        idAndCapacRow = allIds.index(cfId)
-        fleetCapac = allCapacs[idAndCapacRow]
-        capacWt = fleetCapac / totalCapac
-        cfs = allCfs[idx][1:]
-        cfsWtd = [cf * capacWt for cf in cfs]
-        capacWtCfs = list(map(operator.add, capacWtCfs, cfsWtd))
+
+    capacWtCfs = None
+
+    if allCfs is not None:
+        cfIdCol = allCfs[0].index('datetime' + tzAnalysis)
+        (idAndCapacsIdCol, idAndCapacsCapacCol) = (idAndCapacs[0].index('Id'), idAndCapacs[0].index('FleetCapacity'))
+        allCapacs = [row[idAndCapacsCapacCol] for row in idAndCapacs[1:]]
+        allIds = [row[idAndCapacsIdCol] for row in idAndCapacs[1:]]
+        totalCapac = sum(allCapacs)
+        cfIds = [row[cfIdCol] for row in allCfs]
+        capacWtCfs = [0] * len(allCfs[0][1:])
+        for idx in range(1, len(cfIds)):
+            cfId = cfIds[idx]
+            idAndCapacRow = allIds.index(cfId)
+            fleetCapac = allCapacs[idAndCapacRow]
+            capacWt = fleetCapac / totalCapac
+            cfs = allCfs[idx][1:]
+            cfsWtd = [cf * capacWt for cf in cfs]
+            capacWtCfs = list(map(operator.add, capacWtCfs, cfsWtd))
+
     return capacWtCfs
 
 

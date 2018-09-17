@@ -10,7 +10,7 @@ from TempTransformation import *
 from ModifyGeneratorCapacityWithWaterTData import read_netcdf, find125GridMaurerLatLong
 
 
-def forecastZonalDemandWithReg(yr, genparam):
+def forecastZonalDemandWithReg(yr, genparam, curtailparam):
     """ Forecast demand for given year using regression put together by Francisco
 
     This function runs the previously fitted regressions to estimated future hourly load at each zone. If the
@@ -48,10 +48,10 @@ def forecastZonalDemandWithReg(yr, genparam):
     else:
         for zone in genparam.ipmZones:
 
-            # need to diferentiate this load by zone
-            # TODO: create file mapping each zone to a grid cell in the SERC NETCDF file
             dataRoot = genparam.dataRoot
-            dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, holidays = loadRegData(dataRoot, yr, zone)
+            dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, holidays = loadRegData(dataRoot, yr, zone,
+                                                                                               curtailparam,
+                                                                                               netcdf=True)
 
             addTimeDummies(dataYr, str(yr), holidays)
             predictDemand(dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, yr)
@@ -61,7 +61,7 @@ def forecastZonalDemandWithReg(yr, genparam):
     return zonalDemand, zonalTempDfs
 
 
-def loadRegData(dataRoot, currYear, zone):
+def loadRegData(dataRoot, currYear, zone, curtailparam, netcdf=False):
     """Load all necessary data into pandas DFs exept inercept (just return value)
 
     :param dataRoot:
@@ -71,21 +71,27 @@ def loadRegData(dataRoot, currYear, zone):
     """
     dataDir = os.path.join(dataRoot, 'DemandData')
 
-    # TODO: CHANGE THIS TO READ NETCDF FILES WITH METEO DATA ZONE
-
-    cellLat, cellLon = getCellForZone(dataDir, zone)
-    cellLat, cellLon = find125GridMaurerLatLong(cellLat, cellLon)
-
-    data = read_netcdf(cellLat, cellLon, currYear, curtailparam)
-
-    data = pd.read_table(os.path.join(dataDir, 'meteo_memphis'), names=['precip', 'sh', 'rh', 'tC', 'p'])
+    if netcdf:
+        cellLat, cellLon = getCellForZone(dataDir, zone)
+        cellLat, cellLon = find125GridMaurerLatLong(cellLat, cellLon)
+        data = read_netcdf(cellLat, cellLon, currYear, curtailparam)
+    else:
+        data = pd.read_table(os.path.join(dataDir, 'meteo_memphis'), names=['precip', 'sh', 'rh', 'tC', 'p'])
+        data = isolateYrData(data, currYear)
 
     tempCoefs = pd.read_csv(os.path.join(dataDir, 'temp_coef_{}.csv'.format(zone)))
-    intCoefs = pd.read_csv(os.path.join(dataDir, 'interaction_coef_{}.csv'.format(zone)))
     fixEffHr = pd.read_csv(os.path.join(dataDir, 'fix_eff_hour_{}.csv'.format(zone)))
     fixEffYr = pd.read_csv(os.path.join(dataDir, 'fix_eff_year_{}.csv'.format(zone)))
     intercept = float(readCSVto2dList(os.path.join(dataDir, 'intercept_{}.csv'.format(zone)))[1][0])
+
+    # check if interactions file exists
+    if os.path.isfile(os.path.join(dataDir, 'interaction_coef_{}.csv'.format(zone))):
+        intCoefs = pd.read_csv(os.path.join(dataDir, 'interaction_coef_{}.csv'.format(zone)))
+    else:
+        intCoefs = None
+
     holidays = pd.read_csv(os.path.join(dataDir, 'holiday_nerc.csv'))
+
     return data, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, holidays
 
 
@@ -113,8 +119,8 @@ def isolateYrData(data, yr):
     :return:
     """
     startDt, endDt = '1/1/1950 00:00:00', '12/31/2099 23:00:00'
-    data['dt'] = pd.date_range(start=startDt, end=endDt, freq='H')  # ,tz='US/Central')
-    dataYr = data[data['dt'].dt.year == yr][['dt', 'rh', 'tC']]
+    data['date'] = pd.date_range(start=startDt, end=endDt, freq='H')  # ,tz='US/Central')
+    dataYr = data[data['date'].dt.year == yr][['date', 'rh', 'tC']]
     dataYr.reset_index(inplace=True)
     return dataYr
 
@@ -135,9 +141,9 @@ def addTimeDummies(dataYr, yr, holidays):
     dataYr['season'] = 'Winter'  # use winter - don't need to worry about wrpa-around in yr
     for season in seasons:
         startDt, endDt = pd.to_datetime(seasons[season][0]), pd.to_datetime(seasons[season][1])
-        dataYr.loc[(dataYr['dt'] >= startDt) & (dataYr['dt'] < endDt), 'season'] = season
+        dataYr.loc[(dataYr['date'] >= startDt) & (dataYr['date'] < endDt), 'season'] = season
     # Add hour of day
-    dataYr['hour.of.day'] = dataYr['dt'].dt.hour
+    dataYr['hour.of.day'] = dataYr['date'].dt.hour
 
 
 def addWeekdayOrWeekend(dataYr, holidays):
@@ -147,11 +153,11 @@ def addWeekdayOrWeekend(dataYr, holidays):
     :param dataYr:
     :param holidays:
     """
-    dataYr['dayofweek'] = dataYr['dt'].dt.dayofweek
+    dataYr['dayofweek'] = dataYr['date'].dt.dayofweek
     dataYr['type.day'] = 'weekday'
     dataYr.loc[dataYr['dayofweek'] >= 5, 'type.day'] = 'weekend'
     holidaysDt = pd.to_datetime(holidays['holiday']).dt.date
-    dataYr.loc[dataYr['dt'].dt.date.isin(holidaysDt), 'type.day'] = 'weekend'
+    dataYr.loc[dataYr['date'].dt.date.isin(holidaysDt), 'type.day'] = 'weekend'
 
 
 def predictDemand(dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, yr):
@@ -171,7 +177,12 @@ def predictDemand(dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, yr
     :param yr: current year
     """
     tempVals = getTempVals(dataYr, tempCoefs)
-    interactionVals = getInteractionVals(dataYr, intCoefs)
+
+    if intCoefs is not None:
+        interactionVals = getInteractionVals(dataYr, intCoefs)
+    else:
+        interactionVals = 0
+
     interceptVals = np.repeat(np.array(intercept), dataYr.shape[0])
     fixEffHrVals = getFixEffHrVals(dataYr, fixEffHr)
     fixEffYrVals = getFixEffYrVal(yr, fixEffYr, dataYr)
@@ -186,8 +197,18 @@ def getTempVals(dataYr, tempCoefs):
     :param tempCoefs:
     :return:
     """
-    temps = dataYr['tC']
-    tempBins = createTempComponents(temps)
+
+    if 'tC' in dataYr.columns:
+        temps = dataYr['tC']
+    else:
+        temps = dataYr['airT']
+
+    # parse bins
+    bins = [float(a.split(',')[1].replace(']', '').replace(')', '')) for a in np.array(tempCoefs['bin'])]
+    # remove +infinity (last term)
+    bins = bins[:-1]
+
+    tempBins = createTempComponents(temps, bins)
     return np.dot(tempBins, np.array(tempCoefs['value']))
 
 
@@ -198,7 +219,12 @@ def getInteractionVals(dataYr, intCoefs):
     :param intCoefs:
     :return:
     """
-    temps, rhs = dataYr['tC'], np.array(dataYr['rh'])
+
+    if 'tC' in dataYr.columns:
+        temps, rhs = dataYr['tC'], np.array(dataYr['rh'])
+    else:
+        temps, rhs = dataYr['airT'], np.array(dataYr['rh'])
+
     tempBins = createTempComponents(temps)
     dewPt = convertRelHum2DewPoint(rhs, temps)
     return np.dot(np.multiply(dewPt, tempBins.T).T, np.array(intCoefs['value']))

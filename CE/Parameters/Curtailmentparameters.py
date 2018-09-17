@@ -21,6 +21,11 @@ class Curtailmentparameters:
         self.rbmRootDir = './'
         self.rbmDataDir = './'      # name of sub folder inside rbmRootDir
         self.rbmOutputDir = './'    # name of sub folder inside rbmRootDir
+        # ----- GCMs ---------
+        self.listgcms = list()
+        self.basenamemeteo = 'forcing_maca_hourly_{0}_{1:4d}0101-{1:4d}1231.nc'
+        self.basenamestreamT = 'serc.{}.stream_T.nc'
+        self.basenameflow = 'serc.{}.KW.flow.MACA.regulated.nc'
 
     def __str__(self):
 
@@ -43,6 +48,11 @@ class Curtailmentparameters:
         strout = strout + 'rbmRootDir = {}\n'.format(self.rbmRootDir)
         strout = strout + 'rbmDataDir = {}\n'.format(self.rbmDataDir)
         strout = strout + 'rbmOutputDir = {}\n'.format(self.rbmOutputDir)
+        strout = strout + '# ----- GCMs ---------\n'
+        strout = strout + 'listgcms = {}\n'.format(self.listgcms)
+        strout = strout + 'basenamemeteo = {}\n'.format(self.basenamemeteo)
+        strout = strout + 'basenamestreamT = {}\n'.format(self.basenamestreamT)
+        strout = strout + 'basenameflow = {}\n'.format(self.basenameflow)
 
         return strout
 
@@ -109,6 +119,12 @@ class Curtailmentparameters:
         self.rbmDataDir = os.path.join(self.rbmRootDir, self.rbmDataDir)
         self.rbmOutputDir = data[9][1]
         self.rbmOutputDir = os.path.join(self.rbmRootDir, self.rbmOutputDir, self.tempAndSpatFilename)
+        # ----- GCMs ---------
+        self.listgcms = list(map(str.strip, data[10][1].split(',')))  # list
+        self.basenamemeteo = data[11][1]
+        self.basenamestreamT = data[12][1]
+        self.basenameflow = data[13][1]
+
 
     def writefile(self, fname):
 

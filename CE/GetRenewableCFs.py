@@ -11,7 +11,7 @@ from AssignCellsToIPMZones import locInZone
 
 
 def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desiredTz,
-                    dataRoot, windGenDataYr, currZone, fipsToZones, fipsToPolys):
+                    dataRoot, windGenDataYr, currZone, fipsToZones, fipsToPolys, subHour=False):
     """GET RENEWABLE CAPACITY FACTORS
 
     Function takes in generator fleet that has already been isolated to a single zone and maps data to CFs for
@@ -26,6 +26,7 @@ def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desir
     :param currZone:
     :param fipsToZones:
     :param fipsToPolys:
+    :param subHour: if True reads sub hourly data for Wind Data
     :return:
     """
     # Isolate wind & solar units
@@ -41,12 +42,13 @@ def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desir
     if len(windUnits) > 1:  # have wind in zone
         (windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac) = getWindCFs(windUnits, windDir, startWindCapacForCFs,
                                                                            desiredTz, windGenDataYr, fipsToZones,
-                                                                           fipsToPolys, currZone)
+                                                                           fipsToPolys, currZone, subHour=subHour)
         windCfsDtHr, windCfsDtSubhr = rotate(windCfsDtHr), rotate(windCfsDtSubhr)
     else:
         windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac = None, None, None, None
 
     if len(solarUnits) > 1:
+        # solar data has only sub hour data
         (solarCFs, solarCfsDtHr, solarCfsDtSubhr, solarFilenameAndCapac) = getSolarCFs(solarUnits, solarDir,
                                                                                        startSolarCapacForCFs, desiredTz,
                                                                                        fipsToZones, fipsToPolys,
@@ -54,11 +56,13 @@ def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desir
         solarCfsDtHr, solarCfsDtSubhr = rotate(solarCfsDtHr), rotate(solarCfsDtSubhr)
     else:
         solarCFs, solarCfsDtHr, solarCfsDtSubhr, solarFilenameAndCapac = None, None, None, None
-    return (windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac,
-            solarCFs, solarCfsDtHr, solarCfsDtSubhr, solarFilenameAndCapac)
+
+    return (windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac, solarCFs, solarCfsDtHr, solarCfsDtSubhr,
+            solarFilenameAndCapac)
 
 
-def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataYr, fipsToZones, fipsToPolys, currZone):
+def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataYr, fipsToZones, fipsToPolys, currZone,
+               subHour=False):
     """GET WIND Capacity FACTORS
 
     All CFs output in EST
@@ -71,6 +75,7 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataY
     :param fipsToZones:
     :param fipsToPolys:
     :param currZone:
+    :param subHour: if True reads wind sub hourly data
     :return:
     """
     # Get total wind capacity by zone
@@ -81,7 +86,11 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataY
     (ewdIdAndCapac, ewdMetadata) = getBestWindIdsInZone(windDir, windCapacInZone, startWindCapacForCFs,
                                                         fipsToZones, fipsToPolys, currZone)
     # Import CFs for each wind plant
-    allSiteCfsHourly, allSiteCfsSubhourly, avgFleetCfHr = [], [], []
+    if subHour:
+        allSiteCfsHourly, allSiteCfsSubhourly, avgFleetCfHr = [], [], []
+    else:
+        allSiteCfsHourly, allSiteCfsSubhourly, avgFleetCfHr = [], None, []
+
     idCol = ewdIdAndCapac[0].index('Id')
     datasetCapacCol = ewdIdAndCapac[0].index('DatasetCapacity')
 
@@ -100,17 +109,19 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataY
                                                                                                      windGenDataYr,
                                                                                                      fipsToZones,
                                                                                                      fipsToPolys,
-                                                                                                     currZone)
-                    avgFleetCfHr, avgFleetCfSubhr = calcCapacWtdFleetCf(tempEwdIdAndCapac,
-                                                                        tempAllSiteCfsHourly, tempAllSiteCfsSubhourly)
+                                                                                                     currZone,
+                                                                                                     subHour=subHour)
+                    avgFleetCfHr, avgFleetCfSubhr = calcCapacWtdFleetCf(tempEwdIdAndCapac, tempAllSiteCfsHourly,
+                                                                        tempAllSiteCfsSubhourly)
                 else:
-                    avgFleetCfHr, avgFleetCfSubhr = calcCapacWtdFleetCf(ewdIdAndCapac,
-                                                                        allSiteCfsHourly, allSiteCfsSubhourly)
+                    avgFleetCfHr, avgFleetCfSubhr = calcCapacWtdFleetCf(ewdIdAndCapac, allSiteCfsHourly,
+                                                                        allSiteCfsSubhourly)
 
             siteCfsHourly, siteCfsSubhourly = copy.deepcopy(avgFleetCfHr), copy.deepcopy(avgFleetCfSubhr)
 
         else:
-            siteCfsHourly, siteCfsSubhourly = getWindSiteCfs(windDir, siteId, datasetCapac, desiredTz, windGenDataYr)
+            siteCfsHourly, siteCfsSubhourly = getWindSiteCfs(windDir, siteId, datasetCapac, desiredTz, windGenDataYr,
+                                                             subHour=subHour)
 
         addSiteCfsToAggList(siteCfsHourly, siteCfsSubhourly, allSiteCfsHourly, allSiteCfsSubhourly, siteId)
 
@@ -119,21 +130,28 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataY
     return allSiteCfsHourOfYear, allSiteCfsHourly, allSiteCfsSubhourly, ewdIdAndCapac
 
 
-def addSiteCfsToAggList(siteCfsHourly, siteCfsSubhourly, allSiteCfsHourly, allSiteCfsSubhourly, siteId):
+def addSiteCfsToAggList(siteCfsHourly, siteCfsSubhourly, allSiteCfsHourly, allSiteCfsSubhourly, siteId, subHour=False):
+
     if allSiteCfsHourly == []:
         allSiteCfsHourly.append(siteCfsHourly[0])
         allSiteCfsHourly.append([siteId] + siteCfsHourly[1][1:])  # replace header w/ site ID
-        allSiteCfsSubhourly.append(siteCfsSubhourly[0])
-        allSiteCfsSubhourly.append([siteId] + siteCfsSubhourly[1][1:])
+        if subHour:
+            allSiteCfsSubhourly.append(siteCfsSubhourly[0])
+            allSiteCfsSubhourly.append([siteId] + siteCfsSubhourly[1][1:])
     else:
         allSiteCfsHourly.append([siteId] + siteCfsHourly[1][1:])  # replace header w/ site ID
-        allSiteCfsSubhourly.append([siteId] + siteCfsSubhourly[1][1:])
+        if subHour:
+            allSiteCfsSubhourly.append([siteId] + siteCfsSubhourly[1][1:])
+
     assert (len(siteCfsHourly[0]) == len(allSiteCfsHourly[0]))
-    assert (len(siteCfsSubhourly[1]) == len(allSiteCfsSubhourly[1]))
+
+    if subHour:
+        assert (len(siteCfsSubhourly[1]) == len(allSiteCfsSubhourly[1]))
 
 
 def getBestWindIdsInZone(windDir, windCapacInZone, startWindCapacForCFs, fipsToZones, fipsToPolys, currZone):
     # ewdMetadataFilename = os.path.join(windDir,'eastern_wind_dataset_site_summary.csv')
+
     metadata = readCSVto2dList(os.path.join(windDir, 'toolkit_sites_v7_SERC.csv'))
     ewdCfCol = metadata[0].index('capacity_factor')
     ewdCapacCol = metadata[0].index('capacity')
@@ -175,19 +193,27 @@ def getWindOrSolarIdsInZonesDecreasingCF(metadata, capacInZone, cfCol, capacCol,
             idAndCapacs.append([siteName, fleetCapac, fleetCapac])
             currZoneCapac += fleetCapac
         else:
+
+            # get index of site with max CF
             maxCfIdx = cfs.index(max(cfs))
+
             if cfs[maxCfIdx] > 1E-3:  # some solar sites have 0 CF!
                 if windOrSolar == 'Wind':
                     datasetCapac = 70  # avg wind fleet capac in US (NEEDS v5.15, 860 2015)
                 else:
                     datasetCapac = 12  # avg solar capac in US (NEEDS v5.15, 860 2015)
+
                 # Trim capacity if unit capacity > spare capacity before reach state capac - capac when start saving CFs
                 fleetCapac = min(datasetCapac, capacInZone - currZoneCapac)
-                if currZoneCapac < startRECapacForCFs and currZoneCapac + fleetCapac >= startRECapacForCFs:
+                if currZoneCapac < startRECapacForCFs <= currZoneCapac + fleetCapac:
                     fleetCapac = startRECapacForCFs - currZoneCapac
                 currZoneCapac += fleetCapac
+
                 if currZoneCapac > startRECapacForCFs:
+                    # only start appending to list after it is greater than existing capacity
                     idAndCapacs.append([siteNumbers[maxCfIdx], datasetCapac, fleetCapac])
+
+            # remove from lists
             cfs.pop(maxCfIdx)
             capacs.pop(maxCfIdx)
             siteNumbers.pop(maxCfIdx)
@@ -252,21 +278,25 @@ def getFleetToCapacDict(idAndCapac):
 
 def calcCapacWtdFleetCfHrOrSubhr(idToFleetCapac, siteCfs):
     (totalCapac, totalGen) = (0, [])
-    for row in siteCfs[1:]:
-        (currId, currCfs) = (row[0], row[1:])
-        currCapac = idToFleetCapac[currId]
-        totalCapac += currCapac
-        gens = [val * currCapac for val in currCfs]
-        if totalGen == []:
-            totalGen = copy.copy(gens)
-        else:
-            totalGen = [totalGen[idx] + gens[idx] for idx in range(len(gens))]
-    capacWtdCfs = [copy.deepcopy(siteCfs[0])]
-    capacWtdCfs.append(['AnnualAvgCf'] + [val / totalCapac for val in totalGen])
+    if siteCfs is not None:
+        for row in siteCfs[1:]:
+            (currId, currCfs) = (row[0], row[1:])
+            currCapac = idToFleetCapac[currId]
+            totalCapac += currCapac
+            gens = [val * currCapac for val in currCfs]
+            if totalGen == []:
+                totalGen = copy.copy(gens)
+            else:
+                totalGen = [totalGen[idx] + gens[idx] for idx in range(len(gens))]
+        capacWtdCfs = [copy.deepcopy(siteCfs[0])]
+        capacWtdCfs.append(['AnnualAvgCf'] + [val / totalCapac for val in totalGen])
+    else:
+        capacWtdCfs = None
+
     return capacWtdCfs
 
 
-def getWindSiteCfs(windDir, siteId, siteCapac, desiredTz, windGenDataYr):
+def getWindSiteCfs(windDir, siteId, siteCapac, desiredTz, windGenDataYr, subHour=False):
     """
 
     :param windDir: dir w/ wind data
@@ -274,25 +304,26 @@ def getWindSiteCfs(windDir, siteId, siteCapac, desiredTz, windGenDataYr):
     :param siteCapac: wind site capac
     :param desiredTz: desired timezone
     :param windGenDataYr: year for wind gen data
+    :param subHour: if True reads sub hourly data
     :return: 2 2d lists, both have first row = datetime. 1 2d list = hourly CFs, 2nd 2d list = subhourly CFs.
              Also row labels
     """
     hourlyFile = 'powerhourly_' + siteId + '.csv'
     hourlyGen = readCSVto2dList(os.path.join(windDir, 'hourlyPowerSERC', hourlyFile))
-
-    subhourlyFile = 'powersubhourly_' + siteId + '.csv'
-    subhourlyGen = readCSVto2dList(os.path.join(windDir, 'subhourlyPowerSERC', subhourlyFile))
-
     datetimeAndHourlyGen = convertTimeToDatetimeInTgtTz(hourlyGen, 'wind', siteId, desiredTz, 'UTC')
-    datetimeAndSubhourlyGen = convertTimeToDatetimeInTgtTz(subhourlyGen, 'wind', siteId, desiredTz, 'UTC')
-
     datetimeAndHourlyGenInYr = [datetimeAndHourlyGen[0]] + [row for row in datetimeAndHourlyGen[1:]
                                                             if row[0].year == windGenDataYr]
-    datetimeAndSubhourlyGenInYr = [datetimeAndSubhourlyGen[0]] + [row for row in datetimeAndSubhourlyGen[1:]
-                                                                  if row[0].year == windGenDataYr]
-
     hourlyCfs = convertToCfs(datetimeAndHourlyGenInYr, siteCapac)
-    subhourlyCfs = convertToCfs(datetimeAndSubhourlyGenInYr, siteCapac)
+
+    if subHour:
+        subhourlyFile = 'powersubhourly_' + siteId + '.csv'
+        subhourlyGen = readCSVto2dList(os.path.join(windDir, 'subhourlyPowerSERC', subhourlyFile))
+        datetimeAndSubhourlyGen = convertTimeToDatetimeInTgtTz(subhourlyGen, 'wind', siteId, desiredTz, 'UTC')
+        datetimeAndSubhourlyGenInYr = [datetimeAndSubhourlyGen[0]] + [row for row in datetimeAndSubhourlyGen[1:]
+                                                                      if row[0].year == windGenDataYr]
+        subhourlyCfs = convertToCfs(datetimeAndSubhourlyGenInYr, siteCapac)
+    else:
+        subhourlyCfs = None
 
     return hourlyCfs, subhourlyCfs
 
@@ -388,43 +419,49 @@ def convertToCfs(datetimeAndGen, siteCapac):
 
 ##### SOLAR CFS #####
 # All CFs output in CST
-def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs,
-                desiredTz, fipsToZones, fipsToPolys, currZone):
+def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZones, fipsToPolys, currZone):
     # Get total wind capacity by state
     capacCol = solarUnits[0].index('Capacity (MW)')
     solarCapacInZone = sum([float(row[capacCol]) for row in solarUnits[1:]])
+
     # Get solar plants in NREL dataset per state until capacity met
-    (solarFilenameAndCapac, solarFilenameAndCapacAndTz, solarMetadata) = getBestSolarIdsInStates(
-        solarDir, solarCapacInZone, startSolarCapacForCFs,
-        fipsToZones, fipsToPolys, currZone)
+    (solarFilenameAndCapac, solarFilenameAndCapacAndTz,
+     solarMetadata) = getBestSolarIdsInStates(solarDir, solarCapacInZone, startSolarCapacForCFs,
+                                              fipsToZones, fipsToPolys, currZone)
+
     # Import CFs for each wind plant
     idCol = solarFilenameAndCapacAndTz[0].index('Id')
     datasetCapacCol = solarFilenameAndCapacAndTz[0].index('DatasetCapacity')
     tzCol = solarFilenameAndCapacAndTz[0].index('Timezone')
+
     allSiteCfsHourly, allSiteCfsSubhourly, avgFleetCfHr = [], [], []
+
     for site in solarFilenameAndCapacAndTz[1:]:
         (siteFilename, datasetSiteCapac, siteTz) = (site[idCol], site[datasetCapacCol], site[tzCol])
         if 'NoMoreSites' in siteFilename:
             print('No more solar sites!')
             if avgFleetCfHr == []:
-                # If doing new RE CFs & existing RE > potential RE capac for CFs,
-                # can end up w/ nothing in allSiteCFs. In that case, new RE CFs
-                # should jsut be fleet average CF.
+                # If doing new RE CFs & existing RE > potential RE capac for CFs, can end up w/ nothing in allSiteCFs.
+                # In that case, new RE CFs should jsut be fleet average CF.
                 if allSiteCfsHourly == []:
-                    a, tempAllSiteCfsHr, tempAllSiteCfsSubhr, tempFileAndCapac = getSolarCFs(solarUnits, solarDir,
-                                                                                             0, desiredTz, fipsToZones,
+                    a, tempAllSiteCfsHr, tempAllSiteCfsSubhr, tempFileAndCapac = getSolarCFs(solarUnits, solarDir, 0,
+                                                                                             desiredTz, fipsToZones,
                                                                                              fipsToPolys, currZone)
-                    avgFleetCfHr, avgFleetCfSubhr = calcCapacWtdFleetCf(tempFileAndCapac,
-                                                                        tempAllSiteCfsHr, tempAllSiteCfsSubhr)
+                    avgFleetCfHr, avgFleetCfSubhr = calcCapacWtdFleetCf(tempFileAndCapac, tempAllSiteCfsHr,
+                                                                        tempAllSiteCfsSubhr)
                 else:
-                    avgFleetCfHr, avgFleetCfSubhr = calcCapacWtdFleetCf(solarFilenameAndCapac,
-                                                                        allSiteCfsHourly, allSiteCfsSubhourly)
+                    avgFleetCfHr, avgFleetCfSubhr = calcCapacWtdFleetCf(solarFilenameAndCapac, allSiteCfsHourly,
+                                                                        allSiteCfsSubhourly)
+
             siteCfsHourly, siteCfsSubhourly = copy.deepcopy(avgFleetCfHr), copy.deepcopy(avgFleetCfSubhr)
         else:
             siteCfsHourly, siteCfsSubhourly = getSolarSiteCfs(solarDir, siteFilename, datasetSiteCapac, siteTz,
                                                               desiredTz)
-        addSiteCfsToAggList(siteCfsHourly, siteCfsSubhourly, allSiteCfsHourly, allSiteCfsSubhourly, siteFilename)
+        addSiteCfsToAggList(siteCfsHourly, siteCfsSubhourly, allSiteCfsHourly, allSiteCfsSubhourly, siteFilename,
+                            subHour=True)
+
     allSiteCfsHourOfYear = [['HourOfYear'] + [val for val in range(1, 8761)]] + copy.deepcopy(allSiteCfsHourly[1:])
+
     return (allSiteCfsHourOfYear, allSiteCfsHourly, allSiteCfsSubhourly, solarFilenameAndCapac)
 
 

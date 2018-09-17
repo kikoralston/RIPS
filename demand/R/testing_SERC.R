@@ -47,12 +47,14 @@ for (i in 1:length(companies)) {
   aux <- readFercNew(get.online = FALSE,
                      ferc.zip = ferc.zip,
                      name.util = companies[i])
-  aux$name <- companies[i]
-  
-  if(i==1){
-    data.ferc <- aux
-  } else{
-    data.ferc <- rbind(data.ferc, aux)
+  if (!is.null(aux)) {
+    aux$name <- companies[i]
+    
+    if(i==1){
+      data.ferc <- aux
+    } else{
+      data.ferc <- rbind(data.ferc, aux)
+    }
   }
   
   setTxtProgressBar(pb, i)
@@ -60,7 +62,8 @@ for (i in 1:length(companies)) {
 
 df.summary <- data.ferc %>% group_by(name) %>% 
   summarize(year.ini=min(year(time)), year.end=max(year(time)),
-            n.points=n(), mean.load=mean(load, na.rm = TRUE))
+            n.points=n(), mean.load=mean(load, na.rm = TRUE)) %>% 
+  as.data.frame()
 
 row.names(df.summary) <- NULL
 table.markdown(df = df.summary)
@@ -144,8 +147,8 @@ g1$widths[2:3] <- maxWidth
 g2$widths[2:3] <- maxWidth
 g3$widths[2:3] <- maxWidth
 
-png(paste0(path.plot, 'serc_data.png'), width=11, height=8.5, units='in', 
-    res=300 )
-grid.arrange(g1, g2, g3)
-dev.off()
+#png(paste0(path.plot, 'serc_data.png'), width=11, height=8.5, units='in', 
+#    res=300 )
+#grid.arrange(g1, g2, g3)
+#dev.off()
 

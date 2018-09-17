@@ -63,9 +63,13 @@ def doConversion(paramName, cost, paramDollarYears, targetDollarYear, cpiValues)
 
 ################ ROTATE 2D LIST FROM HORIZ TO VERT OR VICE VERSA
 def rotate(list2d):
-    list2drotated = list()
-    for col in range(len(list2d[0])):
-        list2drotated.append([row[col] for row in list2d])
+    if list2d is not None:
+        list2drotated = list()
+        for col in range(len(list2d[0])):
+            list2drotated.append([row[col] for row in list2d])
+    else:
+        list2drotated = None
+
     return list2drotated
 ################
 

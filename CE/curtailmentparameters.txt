@@ -19,4 +19,9 @@ nsegFilename = Tennessee.nseg_nday
 # ----- Water T directories ------
 rbmRootDir = /Users/kiko/Documents/CE/Data/DatafromUW/
 rbmDataDir = RBMRawWaterTData10Aug2016   # name of sub folder inside rbmRootDir
-rbmOutputDir = RBMProcessedWaterT25Aug2016    # name of subfolder inside rbmRootDir 
+rbmOutputDir = RBMProcessedWaterT25Aug2016    # name of subfolder inside rbmRootDir
+# ----- GCMs ---------
+listgcms = CSIRO-Mk3-6-0_rcp85
+basenamemeteo = forcing_maca_hourly_{0}_{1:4d}0101-{1:4d}1231.nc
+basenamestreamT = serc.{}.stream_T.nc
+basenameflow = serc.{}.KW.flow.MACA.regulated.nc

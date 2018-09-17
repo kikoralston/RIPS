@@ -8,7 +8,7 @@ from AuxFuncs import *
 from GAMSAuxFuncs import *
 from CurtailmentRegressions import (calcCurtailmentForGenOrTech, loadRegCoeffs, getKeyCurtailParams,
                                     getCoeffsForGenOrTech)
-from LoadEligibleCellWaterTs import *
+#from LoadEligibleCellWaterTs import *
 
 
 def processRBMDataIntoIndividualCellFiles(curtailparam):
@@ -324,7 +324,7 @@ def createBaseFilenameToReadOrWrite(locPrecision, inputLat, inputLong):
     This function creates a string with the formatted name of the folder that contains the data
     for the respective grid cell
 
-    :param locPrecision:
+    :param locPrecision: number of decimal digits in lat and long values
     :param inputLat: latitude of grid cell
     :param inputLong: longitude of grid cell
     :return: string with name of folder (e.g. 34.4375_-86.4375)

@@ -11,7 +11,7 @@ runCE = True
 runUC = False
 runFirstUCYear = False
 startYear = 2015
-endYear = 2035
+endYear = 2050
 yearStepCE = 5
 daysPerSeason = 10
 analysisArea = coreSERC
@@ -25,7 +25,7 @@ coolDesignT = 10  # design temperature of cooling techs
 ptCurtailed = Coal Steam, Combined Cycle
 ptCurtailedRegs = Coal Steam, Coal Steam CCS, Combined Cycle, Combined Cycle CCS
 # Determines which cells new plants can be sited in; can be all all cells or those w/ gens already
-cellsEligibleForNewPlants = withGens  # 'all' (all cells) or 'withGens' (only cells with gen inside)
+cellsEligibleForNewPlants = maxflow  # 'all' (all cells) or 'withGens' (only cells with gen inside)
 # Of those cells given above parameter, whether input all of them or just the one w/ max wtr T per zone.
 cellNewTechCriteria = all  # 'all' or 'maxWaterT' (maxWaterT: only include cell w/ max water T in CE.)
 #

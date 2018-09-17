@@ -32,8 +32,12 @@ readListFERC <- function(get.online = TRUE,
   
   if (get.online) ferc.zip <- downloadFERCdata(ferc.zip=ferc.zip)
   
+  # get list of files inside zip
+  listfiles <- unzip(ferc.zip, list=TRUE)
+  # return name of file (just to make sure if it needs a path)
+  respondent.id.file <- grep("Respondent IDs.csv", listfiles$Name, value = TRUE)
+  
   # reads lists with names of utilities and respective codes
-  respondent.id.file <- "form714-database/Respondent IDs.csv"
   list.names <- read.csv(file = unz(ferc.zip, filename = respondent.id.file),
                          stringsAsFactors = FALSE)
   
@@ -64,46 +68,50 @@ readFercNew <- function(get.online = TRUE,
   list.names <- readListFERC(get.online, ferc.zip)
   
   # gets position and code for utility
-  idx.tva <- grep(tolower(name.util), list.names$respondent_name)
+  idx.tva <- grep(tolower(name.util), list.names$respondent_name, fixed = TRUE)
   code.tva <- list.names$respondent_id[idx.tva]
   
-  # reads whole data base
-  name.file <- paste0("form714-database/",
-                      "Part 3 Schedule 2 - Planning Area Hourly Demand.csv")
-  data.ferc <- read.csv(file = unz(ferc.zip, filename =  name.file), 
-                        stringsAsFactors = FALSE)
+  df.ferc.1 <- NULL
   
-  # filters data from TVA
-  data.tva <- data.ferc[data.ferc$respondent_id==code.tva, ]
-  
-  # remove data.ferc and call garbage collector
-  rm(data.ferc)
-  gc()
-  
-  # get demand data from data frame and convert to 1-D vector
-  
-  dates.load <- data.tva[ ,c("plan_date")]
-  ls.hours <- lapply(X = dates.load, 
-                     FUN = {function(x) {
-                       return(seq(from=as.POSIXlt(x, 
-                                                  format="%m/%d/%Y %H:%M:%S",
-                                                  tz="UTC"), 
-                                  by="hour", length.out = 24))}})
-  
-  hours.vector <- ldply(.data=ls.hours, .fun={ function(x){data.frame(time=x)}})
-  
-  a <- as.matrix(data.tva[,8:31])
-  a <- t(a)
-  nr <- dim(a)[1]
-  nc <- dim(a)[2]
-  dim(a) <- nr*nc
-  a <- as.vector(unlist(a))
-  
-  df.ferc.1 <- data.frame(time = hours.vector, load = a)
-  
-  #if (get.online) {
-  #  unlink(ferc.zip)
-  #}
+  if(length(idx.tva)){
+    # reads whole data base
+    listfiles <- unzip(ferc.zip, list=TRUE)
+    name.file <- grep("Part 3 Schedule 2 - Planning Area Hourly Demand.csv", 
+                      listfiles$Name, value = TRUE)
+    data.ferc <- read.csv(file = unz(ferc.zip, filename =  name.file), 
+                          stringsAsFactors = FALSE)
+    
+    # filters data from TVA
+    data.tva <- data.ferc[data.ferc$respondent_id==code.tva, ]
+    
+    # remove data.ferc and call garbage collector
+    rm(data.ferc)
+    gc()
+    
+    # get demand data from data frame and convert to 1-D vector
+    dates.load <- data.tva[ ,c("plan_date")]
+    ls.hours <- lapply(X = dates.load, 
+                       FUN = {function(x) {
+                         return(seq(from=as.POSIXlt(x, 
+                                                    format="%m/%d/%Y %H:%M:%S",
+                                                    tz="UTC"), 
+                                    by="hour", length.out = 24))}})
+    
+    hours.vector <- ldply(.data=ls.hours, .fun={ function(x){data.frame(time=x)}})
+    
+    a <- as.matrix(data.tva[,8:31])
+    a <- t(a)
+    nr <- dim(a)[1]
+    nc <- dim(a)[2]
+    dim(a) <- nr*nc
+    a <- as.vector(unlist(a))
+    
+    df.ferc.1 <- data.frame(time = hours.vector, load = a)
+    
+    #if (get.online) {
+    #  unlink(ferc.zip)
+    #}
+  }
   
   return(df.ferc.1)
 }

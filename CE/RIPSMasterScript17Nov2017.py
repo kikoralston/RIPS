@@ -46,31 +46,36 @@ from WriteUCResults import writeHourlyResultsByPlant, writeHourlyStoResults
 from ReservesWWSIS import calcWWSISReserves
 from SaveCEOperationalResults import saveCapacExpOperationalData
 from LoadCEFleet import loadCEFleet
-from ModifyGeneratorCapacityWithWaterTData import (determineHrlyCurtailmentsForExistingGens,
-                                                   getGenToCellAndCellToGenDictionaries,
-                                                   createBaseFilenameToReadOrWrite, getCellLatAndLongFromFolderName,
-                                                   processRBMDataIntoIndividualCellFiles)
+from ModifyGeneratorCapacityWithWaterTData import determineHrlyCurtailmentsForExistingGens
+from PreProcessRBM import processRBMDataIntoIndividualCellFiles
 from ModifyNewTechCapacityWithWaterTData import determineHrlyCurtailmentsForNewTechs
 
 from Parameters import *
 
+# print('Loading parameters and setting up initial data')
+# Load parameters
+# genparam = Generalparameters.Generalparameters()
+# genparam.load(fname='./generalparameters.txt')
 
-def masterFunction():
+# reserveparam = Reserveparameters.Reserveparameters()
+# reserveparam.load(fname='./reserveparameters.txt')
+
+# curtailparam = Curtailmentparameters.Curtailmentparameters()
+# curtailparam.load(fname='./curtailmentparameters.txt')
+
+
+def masterFunction(genparam, reserveparam, curtailparam):
     """MASTER FUNCTION
 
     """
     print()
-    print('Loading parameters and setting up initial data')
-    # Load parameters
-    genparam = Generalparameters.Generalparameters()
-    genparam.load(fname='./generalparameters.txt')
-
-    reserveparam = Reserveparameters.Reserveparameters()
-    reserveparam.load(fname='./reserveparameters.txt')
 
     genFleet = getInitialFleetAndDemand(genparam, reserveparam)
 
-    if genparam.processRBMData: processRBMDataToUsableFormat()
+    if genparam.processRBMData:
+        print('Processing raw RBM data')
+        processRBMDataIntoIndividualCellFiles(curtailparam=curtailparam)
+        print('Processed RBM data')
 
     (capacExpModelsEachYear, capacExpBuilds, capacExpGenByGens, capacExpRetiredUnitsByCE,
      capacExpRetiredUnitsByAge) = ([], [['TechnologyType']], [['ORIS+UnitID']], [], [])
@@ -86,7 +91,7 @@ def masterFunction():
         currCo2Cap = interpolateCO2Cap(currYear, genparam.co2CapEndYr, genparam.co2CapEnd) * 1E3
 
         print('CO2 cap in year {1:4d}: {0:,.3f} million tons'.format(currCo2Cap/1e6, currYear))
-        zonalDemandProfile, zonalTempDfs = forecastZonalDemandWithReg(currYear, genparam)
+        zonalDemandProfile, zonalTempDfs = forecastZonalDemandWithReg(currYear, genparam, curtailparam)
 
         if currYear > genparam.startYear and genparam.runCE:
             if currYear == genparam.startYear + genparam.yearStepCE:
@@ -97,7 +102,7 @@ def masterFunction():
                                                   capacExpModelsEachYear, capacExpBuilds, capacExpGenByGens,
                                                   capacExpRetiredUnitsByCE, capacExpRetiredUnitsByAge,
                                                   genFleetPriorCE, priorCapacExpModel, priorHoursCE,
-                                                  genparam, reserveparam)
+                                                  genparam, reserveparam, curtailparam)
         if genparam.runUC:
             # Either only runs 2015, or runs in all but 2015
             if ((currYear == firstUCYear and runFirstUCYear is True) or
@@ -165,29 +170,33 @@ def getInitialFleetAndDemand(genparam, reserveparam):
     return genFleet
 
 
-################################################################################
-####### PROCESS RBM WATER AND TEMPERATURE DATA #################################
-################################################################################
-def processRBMDataToUsableFormat():
-    print('Processing raw RBM data')
-    curtailparam = Curtailmentparameters.Curtailmentparameters()
-    curtailparam.load(fname='./curtailmentparameters.txt')
+def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, capacExpModelsEachYear, capacExpBuilds,
+                         capacExpGenByGens, capacExpRetiredUnitsByCE, capacExpRetiredUnitsByAge, genFleetPriorCE,
+                         priorCapacExpModel, priorHoursCE, genparam, reserveparam, curtailparam):
+    """RUN CAPACITY EXPANSION
 
-    processRBMDataIntoIndividualCellFiles(curtailparam=curtailparam)
-    print('Processed RBM data')
+    This function does all the reading and preprocessing before executing optimization
 
-
-################################################################################
-####### RUN CAPACITY EXPANSION #################################################
-################################################################################
-def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
-                         capacExpModelsEachYear, capacExpBuilds, capacExpGenByGens,
-                         capacExpRetiredUnitsByCE, capacExpRetiredUnitsByAge,
-                         genFleetPriorCE, priorCapacExpModel, priorHoursCE,
-                         genparam, reserveparam):
+    :param genFleet:
+    :param zonalDemandProfile:
+    :param currYear:
+    :param currCo2Cap:
+    :param capacExpModelsEachYear:
+    :param capacExpBuilds:
+    :param capacExpGenByGens:
+    :param capacExpRetiredUnitsByCE:
+    :param capacExpRetiredUnitsByAge:
+    :param genFleetPriorCE:
+    :param priorCapacExpModel:
+    :param priorHoursCE:
+    :param genparam:
+    :param reserveparam:
+    :param curtailparam:
+    :return:
+    """
     # get curtailment parameters
-    curtailparam = Curtailmentparameters.Curtailmentparameters()
-    curtailparam.load(fname='./curtailmentparameters.txt')
+    # curtailparam = Curtailmentparameters.Curtailmentparameters()
+    # curtailparam.load(fname='./curtailmentparameters.txt')
 
     resultsDir = os.path.join(genparam.resultsDir, 'CE')
 
@@ -400,10 +409,9 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
     capacExpModelsEachYear.append((currYear, capacExpModel))
     newCurtTech, newRETech, newNotCurtTech = saveCapacExpBuilds(capacExpBuilds, capacExpModel, currYear)
 
-    genFleet = addNewGensToFleet(genFleet, newCurtTech, newRETech, newNotCurtTech, newTechsCE,
-                                 currYear, genparam.ipmZones, genparam.ipmZoneNums, genparam.ocAdderMin,
-                                 genparam.ocAdderMax, cellsToZones,
-                                 genparam.ptCurtailedAll, genparam.statePolys)
+    genFleet = addNewGensToFleet(genFleet, newCurtTech, newRETech, newNotCurtTech, newTechsCE, currYear,
+                                 genparam.ipmZones, genparam.ipmZoneNums, genparam.ocAdderMin, genparam.ocAdderMax,
+                                 cellsToZones, genparam.ptCurtailedAll, genparam.statePolys)
     genFleet = selectAndMarkUnitsRetiredByCE(genFleet, genFleetForCE, genparam.retirementCFCutoff, capacExpModel,
                                              currYear, capacExpGenByGens, capacExpRetiredUnitsByCE,
                                              genparam.scaleMWtoGW, hoursForCE,
@@ -449,6 +457,19 @@ def importHourlyThermalCurtailments(genFleet, currYear, modelName, resultsDir, g
 
 
 ########### CALL CAPACITY EXPANSION ############################################
+
+# genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapacsCE,
+#                                                hourlyWindGenCEZonal, hourlySolarGenCEZonal, demandCEZonal, newTechsCE,
+#                                                planningReserveZonal, genparam.discountRate, hoursForCE,
+#                                                newWindCFsCEZonal, newSolarCFsCEZonal, genparam.scaleMWtoGW,
+#                                                genparam.scaleDollarsToThousands, currCo2Cap, genparam.capacExpFilename,
+#                                                seasonDemandWeights, repHrsBySeason, specialHrs,
+#                                                peakDemandHourZonal, genparam.scaleLbToShortTon, genparam.dataRoot,
+#                                                genparam.maxAddedZonalCapacPerTech, genparam.xsedeRun, genparam.ipmZones,
+#                                                genparam.lineList, genparam.lineCapacs, cellsToZones,
+#                                                genparam.ipmZoneNums, genparam.ptCurtailedAll, hydroPotPerSeason,
+#                                                genparam.phEff, genparam.phMaxSoc, genparam.phInitSoc
+
 def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapacsCE, hourlyWindGenCEZonal,
                           hourlySolarGenCEZonal, demandCEZonal, newTechsCE, planningReserveZonal, discountRate,
                           hoursForCE, newWindCFsCEZonal, newSolarCFsCEZonal, scaleMWtoGW, scaleDollarsToThousands,
