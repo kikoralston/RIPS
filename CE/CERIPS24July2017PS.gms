@@ -137,9 +137,12 @@ Positive variables
          ;
 
 Integer variable
-         vNcurtailed(c,techcurtailed)                            number of newly constructed plants of types that can be curtailed in cell c
          vNrenew(z,techrenew)                                    number of newly constructed renewable plants
          vNnotcurtailed(z,technotcurtailed)                      number of newly constructed plants of types that cant be curtailed in zone z
+         ;
+
+Binary Variable
+         vNcurtailed(c,techcurtailed)                            number of newly constructed plants of types that can be curtailed in cell c
          ;
 
 Equations
@@ -259,9 +262,9 @@ maxzonalbuildrenew(z,techrenew)..                       vNrenew(z,techrenew) =l=
 maxzonalbuildnotcurtailed(z,technotcurtailed)..         vNnotcurtailed(z,technotcurtailed) =l= pNmax(z,technotcurtailed);
 
 *Change upper bound on build variables
-vNcurtailed.up(c,techcurtailed) = 1000;
-vNrenew.up(z,techrenew) = 1000;
-vNnotcurtailed.up(z,technotcurtailed) = 1000;
+*vNcurtailed.up(c,techcurtailed) = 1000;
+*vNrenew.up(z,techrenew) = 1000;
+*vNnotcurtailed.up(z,technotcurtailed) = 1000;
 ***************************************************
 
 ******************GENERATION CONSTRAINTS ON EXISTING UNITS******************
