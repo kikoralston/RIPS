@@ -70,9 +70,9 @@ def locInZone(lat, lon, tgtZone, fipsToZones, fipsToPolys):
     return zone == tgtZone
 
 
-def get_centroid_zone(genparam, zone):
+def get_centroid_zone(fipsToPolys, fipsToZones, zone):
 
-    fips_polys_zone = [genparam.fipsToPolys[p] for p in genparam.fipsToPolys if genparam.fipsToZones[p] == zone]
+    fips_polys_zone = [fipsToPolys[p] for p in fipsToPolys if fipsToZones[p] == zone]
 
     lat_centroid = 0
     lon_centroid = 0

@@ -479,7 +479,14 @@ def getBestSolarIdsInStates(solarDir, solarCapacByState, startSolarCapacForCFs,
     idCol = idAndCapacs[0].index('Id')
     solarIdAndCapacAndTz = [idAndCapacs[0] + ['Timezone']]
     for idAndCapac in idAndCapacs[1:]:
-        solarIdAndCapacAndTz.append(idAndCapac + [timezoneOfSolarSite(idAndCapac[idCol], currZone)])
+        if idAndCapac[idCol] == 'NoMoreSites':
+            print('No More solar sites at zone {}'.format(currZone))
+            (siteLat, siteLong) = get_centroid_zone(fipsToPolys, fipsToZones, currZone)
+            solarFilename = '{0:.4}_{1:.4}'.format(siteLat, siteLong)
+        else:
+            solarFilename = idAndCapac[idCol]
+
+        solarIdAndCapacAndTz.append(idAndCapac + [timezoneOfSolarSite(solarFilename, currZone)])
 
     return (idAndCapacs, solarIdAndCapacAndTz, solarMetadata)
 
@@ -497,11 +504,7 @@ def timezoneOfSolarSite(solarFilename, currZone):
         elif currZone == 'S_SOU':
             line = gaAlBorder
 
-        if solarFilename == 'NoMoreSites':
-            print('No More solar sites at zone {}'.format(currZone))
-            (siteLat, siteLong) = get_centroid_zone(genparam, currZone)
-        else:
-            (siteLat, siteLong) = getCoordsFromFilename(solarFilename)
+        (siteLat, siteLong) = getCoordsFromFilename(solarFilename)
 
         if siteEastOfLine(line, float(siteLat), float(siteLong)):
             tz = 'EST'
