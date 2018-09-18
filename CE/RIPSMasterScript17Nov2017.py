@@ -5,6 +5,7 @@ import os, sys
 import csv, operator, copy, time, random
 import numpy as np
 import datetime as dt
+import multiprocessing
 
 try:
     from gams import *
@@ -513,10 +514,15 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
     opt = GamsOptions(ws)
     opt.defines['gdxincname'] = db.name
 
+
+    # get numbers of available cores - 1
+    n_cores = multiprocessing.cpu_count() - 1
+
     # add CPLEX option file
     file = open(os.path.join(ws.working_directory, "cplex.opt"), "w")
     file.write("mipdisplay 4\n")
-    file.write("mipinterval 10")
+    file.write("mipinterval 10\n")
+    file.write("threads {}\n".format(n_cores))
     file.close()
     opt.optfile = 1
 
