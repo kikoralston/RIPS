@@ -4,6 +4,7 @@
 from shapely.geometry import MultiPoint, Point, Polygon
 import shapefile
 import os
+import numpy as np
 
 
 # Load IPM zone shape file and return a dict mapping FIP # to IPM zone and

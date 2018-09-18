@@ -7,7 +7,7 @@
 import os, copy, datetime
 from statistics import mode
 from AuxFuncs import *
-from AssignCellsToIPMZones import locInZone
+from AssignCellsToIPMZones import locInZone, get_centroid_zone
 
 
 def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desiredTz,
