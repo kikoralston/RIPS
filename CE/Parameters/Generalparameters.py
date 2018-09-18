@@ -20,7 +20,7 @@ class Generalparameters:
 
     def __init__(self):
         self.dataRoot = ''
-        self.xsedeRun = False
+        self.pathSysGams = ''
         self.runCE = True
         self.runUC = False
         self.runFirstUCYear = False
@@ -110,7 +110,7 @@ class Generalparameters:
 
         outstr = '#\n# ------ PARAMETER FILE --------\n#\n# Description:\n#\n# End Description.\n#\n'
         outstr = outstr + 'datadir = {}\n'.format(self.dataRoot)
-        outstr = outstr + 'xsedeRun = {}\n'.format(self.xsedeRun)
+        outstr = outstr + 'pathSysGams = {}\n'.format(self.pathSysGams)
         outstr = outstr + 'runCE = {}\n'.format(self.runCE)
         outstr = outstr + 'runUC = {}\n'.format(self.runUC)
         outstr = outstr + 'runFirstUCYear = {}\n'.format(self.runFirstUCYear)
@@ -232,7 +232,7 @@ class Generalparameters:
         # lev is an abbreviation for ast.literal_eval()
 
         self.dataRoot = data[0][1]
-        self.xsedeRun = lev(data[1][1])
+        self.pathSysGams = data[1][1]
         self.runCE = lev(data[2][1])
         self.runUC = lev(data[3][1])
         self.runFirstUCYear = lev(data[4][1])

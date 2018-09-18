@@ -380,8 +380,8 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
                                                genparam.scaleDollarsToThousands, currCo2Cap, genparam.capacExpFilename,
                                                seasonDemandWeights, repHrsBySeason, specialHrs,
                                                peakDemandHourZonal, genparam.scaleLbToShortTon, genparam.dataRoot,
-                                               genparam.maxAddedZonalCapacPerTech, genparam.xsedeRun, genparam.ipmZones,
-                                               genparam.lineList, genparam.lineCapacs, cellsToZones,
+                                               genparam.maxAddedZonalCapacPerTech, genparam.pathSysGams,
+                                               genparam.ipmZones, genparam.lineList, genparam.lineCapacs, cellsToZones,
                                                genparam.ipmZoneNums, genparam.ptCurtailedAll, hydroPotPerSeason,
                                                genparam.phEff, genparam.phMaxSoc, genparam.phInitSoc)
 
@@ -474,17 +474,17 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
                           hourlySolarGenCEZonal, demandCEZonal, newTechsCE, planningReserveZonal, discountRate,
                           hoursForCE, newWindCFsCEZonal, newSolarCFsCEZonal, scaleMWtoGW, scaleDollarsToThousands,
                           currCo2Cap, capacExpFilename, seasonDemandWeights, repHrsBySeason, specialHrs,
-                          peakDemandHourZonal, scaleLbToShortTon, dataRoot, maxAddedZonalCapacPerTech, xsedeRun,
+                          peakDemandHourZonal, scaleLbToShortTon, dataRoot, maxAddedZonalCapacPerTech, pathSysGams,
                           ipmZones, lineList, lineCapacs, cellsToZones, ipmZoneNums, ptCurtailedAll, hydroPotPerSeason,
                           phEff, phMaxSoc, phInitSoc):
     currDir = os.getcwd()
 
     gamsFileDir = os.path.join(dataRoot, 'GAMS')
-    gamsSysDir = '/Applications/GAMS24.7/sysdir/'
+    gamsSysDir = pathSysGams.strip()
 
-    if not xsedeRun:
+    if not gamsSysDir == '':
         ws = GamsWorkspace(working_directory=gamsFileDir, system_directory=gamsSysDir)
-    elif xsedeRun:
+    else:
         ws = GamsWorkspace(working_directory=gamsFileDir)
 
     db = ws.add_database()

@@ -6,7 +6,7 @@
 # End Description.
 #
 datadir = /Users/kiko/Documents/CE/Data/
-xsedeRun = False
+pathSysGams = /Applications/GAMS24.7/sysdir/
 runCE = True
 runUC = False
 runFirstUCYear = False
