@@ -68,6 +68,23 @@ def locInZone(lat, lon, tgtZone, fipsToZones, fipsToPolys):
         zone = None  # several lat/lons on coast are not included in IPM zones
     return zone == tgtZone
 
+
+def get_centroid_zone(genparam, zone):
+
+    fips_polys_zone = [genparam.fipsToPolys[p] for p in genparam.fipsToPolys if genparam.fipsToZones[p] == zone]
+
+    lat_centroid = 0
+    lon_centroid = 0
+
+    n = len(fips_polys_zone)
+
+    for p in fips_polys_zone:
+        lon_centroid = lon_centroid + p.centroid.coords[0][0]/n
+        lat_centroid = lat_centroid + p.centroid.coords[0][1]/n
+
+    return np.round(lat_centroid, 4), np.round(lon_centroid, 4)
+
+
 # # TEST CODE
 # fipsToZones,fipsToPolys = getIPMPolys('pc','S_C_TVA')
 # b = getFIPSOfPt(fipsToPolys,35.4375,-89.4375)
