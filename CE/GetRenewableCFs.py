@@ -479,7 +479,8 @@ def getBestSolarIdsInStates(solarDir, solarCapacByState, startSolarCapacForCFs,
     idCol = idAndCapacs[0].index('Id')
     solarIdAndCapacAndTz = [idAndCapacs[0] + ['Timezone']]
     for idAndCapac in idAndCapacs[1:]:
-        solarIdAndCapacAndTz.append(idAndCapac + [timezoneOfSolarSite(idAndCapac[idCol], currZone)])
+        if idAndCapac[idCol] != "NoMoreSites":
+            solarIdAndCapacAndTz.append(idAndCapac + [timezoneOfSolarSite(idAndCapac[idCol], currZone)])
     return (idAndCapacs, solarIdAndCapacAndTz, solarMetadata)
 
 

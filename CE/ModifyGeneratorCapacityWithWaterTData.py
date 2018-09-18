@@ -606,6 +606,8 @@ def get_all_cells_from_netcdf(curtailparam):
     # reading flow file. substitute '_' to '.'
     gcm = gcm.replace('_', '.')
 
+    allCellFolders = None
+
     if os.path.isfile(os.path.join(curtailparam.rbmDataDir, fname.format(gcm))):
 
         dataset1 = nc.Dataset(os.path.join(curtailparam.rbmDataDir, fname.format(gcm)))
@@ -617,6 +619,8 @@ def get_all_cells_from_netcdf(curtailparam):
         # compile list of cell grids. Ignore those that are masked.
         allCellFolders = ['{}_{}'.format(la, lo) for (i, la) in enumerate(lats)
                           for (j, lo) in enumerate(lons) if not mask[i, j]]
+    else:
+        print('File {} not found!'.format(os.path.join(curtailparam.rbmDataDir, fname.format(gcm))))
 
     return allCellFolders
 
