@@ -15,6 +15,34 @@ gamsFileDir = os.path.join(currDir,'gams') #GAMS model is in folder named 'gams'
 ws = GamsWorkspace(working_directory=gamsFileDir,system_directory = 'C:\\GAMS\\win64\\24.7')
 ###########################################
 
+
+############################################
+# read gdx output
+
+ws = GamsWorkspace()
+db2 = ws.add_database_from_gdx('/Users/kiko/Documents/_gams_py_gdb1.gdx')
+
+# read data from symbols into Python data structures
+
+# read line flow data and store marginal costs
+
+lines = set([rec.keys[0] for rec in db2['vLineflow']])
+
+dict_marg_costs = {}
+for l in lines:
+    marg_costs = [rec.get_marginal() for rec in db2['vLineflow'] if rec.keys[0] == l]
+    dict_marg_costs[l] = marg_costs
+
+marg_costs_mean = {}
+for l in dict_marg_costs:
+    marg_costs_mean[l] = np.mean(dict_marg_costs[l])
+
+
+
+############################################
+
+
+
 ###########################################
 #SET UP SETS AND PARAMETERS AND ADD TO GAMS WORKSPACE
 db = ws.add_database()

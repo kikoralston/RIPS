@@ -7,7 +7,7 @@
 import os, copy, datetime
 from statistics import mode
 from AuxFuncs import *
-from AssignCellsToIPMZones import locInZone, get_centroid_zone
+from AssignCellsToIPMZones import (locInZone, get_centroid_zone)
 
 
 def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desiredTz,
@@ -482,7 +482,7 @@ def getBestSolarIdsInStates(solarDir, solarCapacByState, startSolarCapacForCFs,
         if idAndCapac[idCol] == 'NoMoreSites':
             print('No More solar sites at zone {}'.format(currZone))
             (siteLat, siteLong) = get_centroid_zone(fipsToPolys, fipsToZones, currZone)
-            solarFilename = '{0:.4}_{1:.4}'.format(siteLat, siteLong)
+            solarFilename = '_{0:f}_{1:f}_'.format(siteLat, siteLong)
         else:
             solarFilename = idAndCapac[idCol]
 
