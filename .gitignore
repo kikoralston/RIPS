@@ -70,6 +70,10 @@ Icon?
 # PowerPoint temporary
 ~$*.ppt*
 
+# R auxiliary files #
+#########################
+.Rhistory
+
 # PyCharm project files #
 #########################
 .idea/

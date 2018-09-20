@@ -6,6 +6,7 @@ import csv, operator, copy, time, random
 import numpy as np
 import datetime as dt
 import multiprocessing as mp
+import shutil
 
 try:
     from gams import *
@@ -388,6 +389,19 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
 
     write2dListToCSV([['ms', 'ss'], [ms, ss]], os.path.join(resultsDir, 'msAndSsCE' + str(currYear) + '.csv'))
     print('Time (secs) for CE year {0:4d}: {1:.2f}'.format(currYear, (time.time() - t0)))
+
+    # copy input and output GDX files to output folder and rename them
+    gamsFileDir = os.path.join(genparam.dataRoot, 'GAMS')
+    try:
+        shutil.copy(os.path.join(gamsFileDir, '/_gams_py_gdb0.gdx'),
+                    os.path.join(resultsDir, 'gdxInYear{}.gdx'.format(currYear)))
+        shutil.copy(os.path.join(gamsFileDir, '/_gams_py_gdb1.gdx'),
+                    os.path.join(resultsDir, 'gdxOutYear{}.gdx'.format(currYear)))
+    except IOError as e:
+        print("Unable to copy file. %s" % e)
+    except:
+        print("Unexpected error:", sys.exc_info())
+
 
     # Write and Save resulting data
     (genByPlant, genByCTechAndCell, genByRETechAndZone, genByNCTechAndZone, sysResults,
