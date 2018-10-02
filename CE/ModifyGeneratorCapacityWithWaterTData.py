@@ -28,15 +28,13 @@ from PreProcessRBM import createBaseFilenameToReadOrWrite
 import progressbar
 
 
-def determineHrlyCurtailmentsForExistingGens(genFleet, currYear, modelName, genparam, curtailparam, resultsDir):
+def determineHrlyCurtailmentsForExistingGens(genFleet, currYear, genparam, curtailparam):
     """Computes times series of hourly curtailments for EXISTING generators
 
     :param genFleet:
     :param currYear:
-    :param modelName:
     :param genparam:
     :param curtailparam:
-    :param resultsDir:
     :return: dictionaryof ORIS+UNITID to 2d vertical list of [datetime,curtailment(mw)],
              list of (ORIS+UNIT,gen lat long, cell lat long), and
              list of hourly curtailments for existing gens.
@@ -45,8 +43,7 @@ def determineHrlyCurtailmentsForExistingGens(genFleet, currYear, modelName, genp
      genToCellLatLongsList) = getGenToCellAndCellToGenDictionaries(genFleet)
 
     hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList = \
-        calculateGeneratorCurtailments(cellLatLongToGenDict, currYear, genFleet, modelName, genparam, curtailparam,
-                                       resultsDir)
+        calculateGeneratorCurtailments(cellLatLongToGenDict, currYear, genFleet, genparam, curtailparam)
 
     return hrlyCurtailmentsAllGensInTgtYr, genToCellLatLongsList, hrlyCurtailmentsList
 
@@ -108,8 +105,8 @@ def loadWaterAndMetData(curtailmentYear, cellLat, cellLong, genparam, curtailpar
     :param cellLong:
     :param genparam:
     :param curtailparam:
-    :param metdatatot:
-    :param waterDatatot:
+    :param metdatatot: dictionary with complete meteo data from the netcdf file (see 'read_netcdf_full')
+    :param waterDatatot: dict of {cell folder name : [[Datetime],[AverageWaterT(degC)], [AirT], [flow]]}
     :param netcdf: (boolean) if true reads water data from NETCDF files (new format from August 2018)
     :return: panda data frame
     """
@@ -163,8 +160,8 @@ def loadWaterAndMetData(curtailmentYear, cellLat, cellLong, genparam, curtailpar
     return totalData
 
 
-def calculateGeneratorCurtailments(cellLatLongToGenDict, curtailmentYear, genFleet, modelName, genparam,
-                                   curtailparam, resultsDir, netcdf=True):
+def calculateGeneratorCurtailments(cellLatLongToGenDict, curtailmentYear, genFleet, genparam, curtailparam,
+                                   netcdf=True, pbar=True):
     """CURTAIL GENERATOR CAPACITY WITH WATER TEMPERATURES
 
     Calculates generator curtailments. If generator isn't curtailed (not right plant type, cell data not avaialble,
@@ -175,11 +172,10 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, curtailmentYear, genFle
     :param cellLatLongToGenDict:
     :param curtailmentYear:
     :param genFleet:
-    :param modelName:
     :param genparam:
     :param curtailparam:
-    :param resultsDir:
-    :param netcdf:
+    :param netcdf: True if data comes in netcdf format
+    :param pbar: True to show progress bar
     :return:
     """
 
@@ -193,8 +189,15 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, curtailmentYear, genFle
     # dict of planttype:coolingtype:cooldesignT:param:coeffs
     regCoeffs = loadRegCoeffs(genparam.dataRoot, 'capacity.json')
 
+    if pbar:
+        ProgressBar = progressbar.NullBar
+    else:
+        ProgressBar = progressbar.ProgressBar
+
+    bar = ProgressBar()
+
     # this maps gen lat/lon to gen IDs; cell data may not exist
-    for (cellLat, cellLong) in progressbar.progressbar(cellLatLongToGenDict):
+    for (cellLat, cellLong) in bar(cellLatLongToGenDict):
     # for (cellLat, cellLong) in cellLatLongToGenDict:
         #print('cell: {}, {}'.format(cellLat, cellLong))
 

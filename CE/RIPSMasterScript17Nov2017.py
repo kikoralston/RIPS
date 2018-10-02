@@ -462,8 +462,8 @@ def importHourlyThermalCurtailments(genFleet, currYear, modelName, resultsDir, g
     :return: dict mapping each gen to 2d list of datetime for year of run to hourly net capacity curtailments (MW)
     """
     (hrlyCurtailmentsAllGensInTgtYr, genToCellLatLongsList,
-     hrlyCurtailmentsList) = determineHrlyCurtailmentsForExistingGens(genFleet, currYear, modelName, genparam,
-                                                                      curtailparam, resultsDir)
+     hrlyCurtailmentsList) = determineHrlyCurtailmentsForExistingGens(genFleet, currYear, genparam, curtailparam)
+
     write2dListToCSV(genToCellLatLongsList, os.path.join(resultsDir,
                                                          'mapGensToCells' + modelName + str(currYear) + '.csv'))
     write2dListToCSV(hrlyCurtailmentsList, os.path.join(resultsDir,

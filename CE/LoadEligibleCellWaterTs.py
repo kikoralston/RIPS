@@ -32,7 +32,7 @@ def loadEligibleCellWaterTs(genFleet, currYear, genparam, curtailparam):
     :param currYear:
     :param genparam:
     :param curtailparam:
-    :return:
+    :return: dict of {cell folder name : [[Datetime],[AverageWaterT(degC)], [AirT], [flow]]}
     """
     allCellFoldersInZone, eligibleCellFolders = setCellFolders(genFleet, currYear, genparam, curtailparam)
 

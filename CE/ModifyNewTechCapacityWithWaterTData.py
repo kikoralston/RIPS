@@ -21,7 +21,8 @@ import progressbar
 ####### MASTER FUNCTION ########################################################
 ################################################################################
 # Returns dict of (plant+cooltype,cell):hrly tech curtailments
-def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam, curtailparam, resultsDir):
+def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam, curtailparam,
+                                         resultsDir, pbar=True):
 
     # Isolate water Ts to year of analysis
     eligibleCellWaterTsCurrYear = getWaterTsInCurrYear(currYear, eligibleCellWaterTs)
@@ -40,7 +41,14 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
     fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm, currYear))
     meteodata = read_netcdf_full(currYear, fname, curtailparam)
 
-    for cell in progressbar.progressbar(cellWaterTsForNewTechs):
+    if pbar:
+        ProgressBar = progressbar.NullBar
+    else:
+        ProgressBar = progressbar.ProgressBar
+
+    bar = ProgressBar()
+
+    for cell in bar(cellWaterTsForNewTechs):
         t0 = time.time()
         #print(cell)
 
