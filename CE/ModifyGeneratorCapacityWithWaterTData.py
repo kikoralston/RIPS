@@ -577,6 +577,7 @@ def read_waterdata_cell(curtailparam, currYear, cellLat, cellLon):
 
     # reading flow/streamT file. substitute '_' to '.'
     gcm = gcm.replace('_', '.')
+    gcm = gcm.replace('RCP', 'rcp')
 
     fname = curtailparam.basenamestreamT
     fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm))
@@ -603,8 +604,9 @@ def get_all_cells_from_netcdf(curtailparam):
     fname = curtailparam.basenameflow
     gcm = curtailparam.listgcms[0]
 
-    # reading flow file. substitute '_' to '.'
+    # reading flow file. substitute '_' to '.' and change 'RCP' to small caps
     gcm = gcm.replace('_', '.')
+    gcm = gcm.replace('RCP', 'rcp')
 
     allCellFolders = None
 
@@ -664,6 +666,7 @@ def order_cells_by_flow(genparam, curtailparam, currYear, n=100):
 
     # reading flow/streamT file. substitute '_' to '.'
     gcm = gcm.replace('_', '.')
+    gcm = gcm.replace('RCP', 'rcp')
 
     fname = curtailparam.basenameflow
     fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm))
