@@ -190,9 +190,9 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, curtailmentYear, genFle
     regCoeffs = loadRegCoeffs(genparam.dataRoot, 'capacity.json')
 
     if pbar:
-        ProgressBar = progressbar.NullBar
-    else:
         ProgressBar = progressbar.ProgressBar
+    else:
+        ProgressBar = progressbar.NullBar
 
     bar = ProgressBar()
 

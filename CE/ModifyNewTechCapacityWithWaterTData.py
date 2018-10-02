@@ -42,9 +42,9 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
     meteodata = read_netcdf_full(currYear, fname, curtailparam)
 
     if pbar:
-        ProgressBar = progressbar.NullBar
-    else:
         ProgressBar = progressbar.ProgressBar
+    else:
+        ProgressBar = progressbar.NullBar
 
     bar = ProgressBar()
 
