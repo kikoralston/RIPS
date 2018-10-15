@@ -1,11 +1,12 @@
 import os
 import sys
-from TransmissionLineFuncs import *
 from AssignCellsToIPMZones import getIPMPolys, assignCellsToIPMZones
 from AssignCellsToStates import getStatePolys
 from AuxFuncs import *
 from CO2CapCalculations import getCo2Cap, interpolateCO2Cap
 from ast import literal_eval as lev
+import copy
+
 
 class Generalparameters:
     """ Generalparameters class
@@ -319,7 +320,7 @@ class Generalparameters:
                          os.path.join(self.resultsDir, 'zoneNamesToNumbers.csv'))
 
         # IMPORT TRANSMISSION SYSTEM DATA
-        self.lineList, self.lineCapacs = setLines(self.dataRoot)
+        self.setLines()
 
     def setstates(self):
         if self.analysisArea == 'coreSERC':
@@ -357,6 +358,55 @@ class Generalparameters:
 
         with open(os.path.expanduser(fname), 'w') as csvfile:
             csvfile.write(self.__str__())
+
+    def setLines(self):
+
+        # set path with transmission data (dataRoot/Transmission)
+        dataDir = os.path.join(self.dataRoot, 'Transmission')
+
+        # Create 2 empty lists to store lines and capacities
+        self.lineList, self.lineCapacs = list(), dict()
+
+        # Load data
+        if os.path.isfile(os.path.join(dataDir, 'ZonalTransmission.csv')):
+            lines = readCSVto2dList(os.path.join(dataDir, 'ZonalTransmission.csv'))
+
+            sourceCol, sinkCol = lines[0].index('Source'), lines[0].index('Sink')
+            capacCol = lines[0].index('Limit')
+
+            for row in lines[1:]:
+                lineName = createLineName(row[sourceCol], row[sinkCol])
+                self.lineList.append(lineName)
+
+                self.lineCapacs[lineName] = float(row[capacCol])
+
+        else:
+            print()
+            print('File ZonalTransmission.csv not found in {}'.format(dataDir))
+            print('Transmission upper bounds will be set to +INF.')
+            print()
+
+            for s in self.ipmZones:
+
+                sinks = copy.deepcopy(self.ipmZones)
+                sinks.remove(s)
+
+                for t in sinks:
+                    lineName = self.createLineName(s, t)
+                    self.lineList.append(lineName)
+
+                    self.lineCapacs[lineName] = float('inf')
+
+    @staticmethod
+    def createLineName(zoneFrom, zoneTo):
+        # If modify this, modify getLineSourceAndSink
+        return zoneFrom + '_to_' + zoneTo
+
+    @staticmethod
+    def getLineSourceAndSink(line):
+        temp = line.split('_to_')
+        return temp[0], temp[1]
+
 
 
 

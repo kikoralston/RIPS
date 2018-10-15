@@ -5,7 +5,6 @@
 import copy, math
 from GAMSAuxFuncs import *
 from CalculateOpCost import calcOpCostsTech, calcOpCosts
-from TransmissionLineFuncs import getLineSourceAndSink
 from AuxFuncs import convertCostToTgtYr
 
 
@@ -115,7 +114,7 @@ def getParamIndexedByHourDict(paramVals, hourSymbols, *scalar):
 def addLineSourceAndSink(db, lineSet, lines, ipmZones, ipmZoneNums):
     lineSources, lineSinks = dict(), dict()
     for line in lines:
-        lineSource, lineSink = getLineSourceAndSink(line)
+        lineSource, lineSink = line.split('_to_')
         lineSources[line] = ipmZoneNums[ipmZones.index(lineSource)]  # convert zone from name to 1+ number
         lineSinks[line] = ipmZoneNums[ipmZones.index(lineSink)]
     sourceName, sourceDesc = 'pLinesources', 'source zone for each line'

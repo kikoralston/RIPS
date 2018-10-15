@@ -10,7 +10,7 @@ from GAMSAuxFuncs import *
 from SetupGeneratorFleet import setupGeneratorFleet,aggregatePlantTypeToORIS
 # from ImportDemandProfile import importZonalHourlyDemand
 from ForecastDemandWithRegression import forecastZonalDemandWithReg
-from TransmissionLineFuncs import *
+#from TransmissionLineFuncs import *
 from UpdateFuelPriceFuncs import *
 from DemandFuncs import *
 from DemandFuncsCE import *

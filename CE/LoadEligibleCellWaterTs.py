@@ -129,7 +129,7 @@ def loadCellWaterTs(eligibleCellFolders, allCellFoldersInZone, curtailparam, cur
         # reading flow/streamT file. substitute '_' to '.'
         gcm = gcm.replace('_', '.')
         gcm = gcm.replace('rcp', 'RCP')
-        
+
         fname = curtailparam.basenamestreamT
         fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm))
         waterT, date, lons, lats = read_waterdata_netcdf(fname, 'T_stream', currYear)
