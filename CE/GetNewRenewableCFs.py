@@ -9,14 +9,25 @@ from GetRenewableCFs import getRenewableCFs
 from AuxFuncs import *
 
 
-########### GET NEW WIND AND SOLAR CFS #########################################
-# Determines hourly CFs for potential new wind & solar plants by getting average
-# CF of input assumed incremental capacity of wind & solar.
-# Inputs: gen fleet (2d list), net demand (1d list), list of state & state abbrevs,
-# curr year of CE run, name of model (UC or CE)
-# Outputs: hourly CFs for new wind and solar builds (1d list)
 def getNewWindAndSolarCFs(genFleet, currYear, modelName, tzAnalysis, dataRoot, resultsDir,
                           windGenDataYr, currZone, fipsToZones, fipsToPolys):
+    """ GET NEW WIND AND SOLAR CFS
+
+    Determines hourly CFs for potential new wind & solar plants by getting average CF of input assumed incremental
+    capacity of wind & solar.
+
+    :param genFleet: gen fleet (2d list), net demand (1d list), list of state & state abbrevs,
+    :param currYear: curr year of CE run,
+    :param modelName: name of model (UC or CE)
+    :param tzAnalysis:
+    :param dataRoot:
+    :param resultsDir:
+    :param windGenDataYr:
+    :param currZone: current zone
+    :param fipsToZones:
+    :param fipsToPolys:
+    :return: hourly CFs for new wind and solar builds (1d list)
+    """
     windCapacInCurrFleet = getPlantTypeCapacInFleet(genFleet, 'Wind')
     solarCapacInCurrFleet = getPlantTypeCapacInFleet(genFleet, 'Solar PV')
 
@@ -42,21 +53,31 @@ def getNewWindAndSolarCFs(genFleet, currYear, modelName, tzAnalysis, dataRoot, r
             additionalSolar)
 
 
-# Inputs: gen fleet (2d list), plant type (str)
-# Outputs: sum of capacity of all plants in fleet of that plant type
 def getPlantTypeCapacInFleet(fleet, plantType):
+    """
+
+    :param fleet: gen fleet (2d list),
+    :param plantType: plant type (str)
+    :return: sum of capacity of all plants in fleet of that plant type
+    """
     plantTypeCol = fleet[0].index('PlantType')
     capacCol = fleet[0].index('Capacity (MW)')
     capacsOfPlantType = [float(row[capacCol]) for row in fleet[1:] if row[plantTypeCol] == plantType]
     return sum(capacsOfPlantType)
 
 
-# Temporarily add input fixed capacity of new wind and solar (jointly) to fleet.
-# Adds all wind (new + existing) to single arbitrary state, since get
-# wind and solar additions at best places across region.
-# Inputs: gen fleet (2d list), capacity of wind and solar to add, list of states
-# Output: gen fleet w/ wind & solar units added
 def addNewREToFleet(genFleet, totalWindCapac, totalSolarCapac, currZone):
+    """ Temporarily add input fixed capacity of new wind and solar (jointly) to fleet.
+
+    Temporarily add input fixed capacity of new wind and solar (jointly) to fleet. Adds all wind (new + existing)
+    to single arbitrary state, since get wind and solar additions at best places across region.
+
+    :param genFleet: gen fleet (2d list),
+    :param totalWindCapac: capacity of wind to add
+    :param totalSolarCapac: capacity of solar to add
+    :param currZone: current zone
+    :return: gen fleet w/ wind & solar units added
+    """
     genFleetWithNewRE = copy.deepcopy(genFleet)
     headers = genFleetWithNewRE[0]
     (zoneCol, plantTypeCol, fuelTypeCol, capacCol) = (headers.index('Region Name'),
@@ -79,12 +100,17 @@ def addNewREToFleet(genFleet, totalWindCapac, totalSolarCapac, currZone):
     return genFleetWithNewRE
 
 
-# Gets capacity-weighted CFs for set of renewable units. Used here to get
-# capacity-weighted CF for input assumed incremental capacity of wind or solar.
-# Inputs: hourly CFs for each RE unit (2d list), unit IDs and capacities (2d list)
-# Outputs: hourly capacity-weighted CFs (1d list)
 def getCapacWtdCF(allCfs, idAndCapacs, tzAnalysis):
+    """ Gets capacity-weighted CFs for set of renewable units.
 
+    Gets capacity-weighted CFs for set of renewable units. Used here to get capacity-weighted CF for input
+    assumed incremental capacity of wind or solar.
+
+    :param allCfs: hourly CFs for each RE unit (2d list),
+    :param idAndCapacs: unit IDs and capacities (2d list)
+    :param tzAnalysis: timezone of analysis
+    :return: hourly capacity-weighted CFs (1d list)
+    """
     capacWtCfs = None
 
     if allCfs is not None:
@@ -107,15 +133,22 @@ def getCapacWtdCF(allCfs, idAndCapacs, tzAnalysis):
     return capacWtCfs
 
 
-########### TRIM HOURS OF NEW RENEWABLE CFS TO HOURS OF CE #####################
-# Inputs: hourly CFs for new wind & solar builds (1d lists), hours included in CE
-# (1d list, 1-8760 basis)
-# Outputs: zonal hourly CFs for new wind and solar builds only for CE hours
-# as dict of zone: [CFs (1-8760 basis, 1d list)]
 def trimNewRECFsToCEHours(zonalNewWindCFs, zonalNewSolarCFs, hoursForCE):
+    """TRIM HOURS OF NEW RENEWABLE CFS TO HOURS OF CE
+
+    :param zonalNewWindCFs: hourly CFs for new wind & solar builds (1d lists)
+    :param zonalNewSolarCFs: hourly CFs for new wind & solar builds (1d lists)
+    :param hoursForCE: hours included in CE (1d list, 1-8760 basis)
+    :return: zonal hourly CFs for new wind and solar builds only for CE hours as dict of zone:
+            [CFs (1-8760 basis, 1d list)]
+    """
     newWindCFsCEZonal, newSolarCFsCEZonal = dict(), dict()
-    for zone in zonalNewWindCFs:
-        newWindCFsCEZonal[zone] = [zonalNewWindCFs[zone][hr - 1] for hr in
-                                   hoursForCE]  # -1 b/c hours in year start @ 1, not 0 like Python idx
-        newSolarCFsCEZonal[zone] = [zonalNewSolarCFs[zone][hr - 1] for hr in hoursForCE]  # -1 b/c
-    return (newWindCFsCEZonal, newSolarCFsCEZonal)
+
+    for gcm in hoursForCE:
+            # (hr - 1) b/c hours in year start @ 1, not 0 like Python idx
+        newWindCFsCEZonal[gcm] = {zone: [zonalNewWindCFs[zone][hr - 1] for hr in hoursForCE[gcm]]
+                                  for zone in zonalNewWindCFs}
+        newSolarCFsCEZonal[gcm] = {zone: [zonalNewSolarCFs[zone][hr - 1] for hr in hoursForCE[gcm]]
+                                   for zone in zonalNewWindCFs}
+
+    return newWindCFsCEZonal, newSolarCFsCEZonal

@@ -14,9 +14,8 @@ class Generalparameters:
     This class contains all general parameters used in the simulation. I aggregated all of them inside this class
     to make it easier to pass them as argument to the functions.
 
-    The method load reads a formatted csv file with the values of the parameters (be careful with the order)
+    The method load reads a formatted txt file with the values of the parameters (be careful with the order and format)
 
-    TO DO: create a write method to create the csv file
     """
 
     def __init__(self):
@@ -30,6 +29,7 @@ class Generalparameters:
         self.yearStepCE = 10
         self.daysPerSeason = 10
         self.analysisArea = 'TVA'
+        self.useLineLimits = False     # True: Tries to read file with transmission limits. False: limits = +Inf
 
         self.incCurtailments = True  # whether to model curtailments,whether to model env regs on water T
         self.incRegs = True  # whether to model curtailments,whether to model env regs on water T
@@ -87,8 +87,6 @@ class Generalparameters:
         self.scaleDollarsToThousands = 1000
         self.scaleLbToShortTon = 2000
 
-        self.annualDemandGrowth = 0.02  # fraction per year
-
         self.states = []
         self.statesAbbrev = []
         self.ipmZones = []
@@ -103,6 +101,9 @@ class Generalparameters:
         # TRANSMISSION SYSTEM DATA
         self.lineList = None
         self.lineCapacs = None
+
+        # OTHER
+        self.ncores = 1  # number of cores to use for parallel simulation
 
         # OLD VARIABLES
         self.testModel = False  # use dummy test system; not currently working
@@ -121,6 +122,7 @@ class Generalparameters:
         outstr = outstr + 'yearStepCE = {}\n'.format(self.yearStepCE)
         outstr = outstr + 'daysPerSeason = {}\n'.format(self.daysPerSeason)
         outstr = outstr + 'analysisArea = {}\n'.format(self.analysisArea)
+        outstr = outstr + 'useLineLimits = {}\n'.format(self.useLineLimits)
 
         outstr = outstr + '#\n# -------- KEY CURTAILMENT PARAMETERS --------\n#\n'
         outstr = outstr + 'incCurtailments = {} \t # whether to model curtailments,whether to model env regs ' \
@@ -139,23 +141,28 @@ class Generalparameters:
                           'wtr T per zone.\n'
         outstr = outstr + 'cellNewTechCriteria = {} \t # \'all\' or \'maxWaterT\' (maxWaterT: only include cell w/ ' \
                           'max water T in CE.\n'.format(self.cellNewTechCriteria)
+
         outstr = outstr + '#\n# -------- GENERAL PARAMETERS --------\n#\n'
         outstr = outstr + 'compressFleet = {}\n'.format(self.compressFleet)
         outstr = outstr + 'co2CapScenario = {}\n'.format(self.co2CapScenario)
         outstr = outstr + 'scenario = {}\n'.format(self.scenario)
+
         outstr = outstr + '#\n# -------- RESULTS DIRECTORY --------\n#\n'
         outstr = outstr + 'resultsDir = {}\n'.format(self.resultsDir)
+
         outstr = outstr + '#\n# -------- THERMAL CURTAILMENT PARAMETERS --------\n#\n'
         outstr = outstr + 'processRBMData = {} \t # set to True if first time improting ' \
                           'set of RBM data\n'.format(self.processRBMData)
+
         outstr = outstr + '#\n# -------- RENEWABLE CAPACITY FACTOR PARAMETERS --------\n#\n'
         outstr = outstr + 'tzAnalysis = {}\n'.format(self.tzAnalysis)
         outstr = outstr + 'projectName = {}\n'.format(self.projectName)
         outstr = outstr + 'windGenDataYr = {} \t # picked somewhat arbitrarily - average CF of all years ' \
                           'in WIND data\n'.format(self.windGenDataYr)
+
         outstr = outstr + '#\n# -------- CAPACITY EXPANSION PARAMETERS --------\n#\n'
         outstr = outstr + 'capacExpFilename = {}\n'.format(self.capacExpFilename)
-        outstr = outstr + 'maxAddedZonalCapacPerTech = {}\n'.format(self.maxAddedZonalCapacPerTech)
+        outstr = outstr + 'maxAddedZonalCapacPerTech = {}\n'.format(self.writeMaxCapacTechParam())
         outstr = outstr + 'incITC = {}\n'.format(self.incITC)
         outstr = outstr + 'retirementCFCutoff = {} \t # retire units w/ CF lower than given ' \
                           'value\n'.format(self.retirementCFCutoff)
@@ -166,6 +173,7 @@ class Generalparameters:
         outstr = outstr + 'allowCoalWithoutCCS = {}\n'.format(self.allowCoalWithoutCCS)
         outstr = outstr + 'onlyNSPSUnits = {}\n'.format(self.onlyNSPSUnits)
         outstr = outstr + 'permitOncethru = {}\n'.format(self.permitOncethru)
+
         outstr = outstr + '#\n# -------- UNIT COMMITMENT PARAMETERS --------\n#\n'
         outstr = outstr + 'ucFilename = {}\n'.format(self.ucFilename)
         outstr = outstr + 'calculateCO2Price = {}\n'.format(self.calculateCO2Price)
@@ -182,8 +190,8 @@ class Generalparameters:
         outstr = outstr + 'scaleMWtoGW = {}\n'.format(self.scaleMWtoGW)
         outstr = outstr + 'scaleDollarsToThousands = {}\n'.format(self.scaleDollarsToThousands)
         outstr = outstr + 'scaleLbToShortTon = {}\n'.format(self.scaleLbToShortTon)
-        outstr = outstr + '#\n# -------- TEMPORARY PARAMETERS --------\n#\n'
-        outstr = outstr + 'annualDemandGrowth = {} \t # fraction per year'.format(self.annualDemandGrowth)
+        outstr = outstr + '#\n# -------- OTHER PARAMETERS --------\n#\n'
+        outstr = outstr + 'ncores = {} \t # number of cores to use for parallel simulation'.format(self.ncores)
 
         return outstr
 
@@ -242,26 +250,27 @@ class Generalparameters:
         self.yearStepCE = lev(data[7][1])
         self.daysPerSeason = lev(data[8][1])
         self.analysisArea = data[9][1]
+        self.useLineLimits = data[10][1]
 
-        self.incCurtailments = lev(data[10][1])
-        self.incRegs = lev(data[11][1])
-        self.coolDesignT = data[12][1]
+        self.incCurtailments = lev(data[11][1])
+        self.incRegs = lev(data[12][1])
+        self.coolDesignT = data[13][1]
 
-        self.ptCurtailed = set(map(str.strip, data[13][1].split(',')))  # set
-        self.ptCurtailedRegs = set(map(str.strip, data[14][1].split(',')))  # set
+        self.ptCurtailed = set(map(str.strip, data[14][1].split(',')))  # set
+        self.ptCurtailedRegs = set(map(str.strip, data[15][1].split(',')))  # set
         self.ptCurtailedAll = self.ptCurtailed | self.ptCurtailedRegs
 
-        self.cellsEligibleForNewPlants = data[15][1]
-        self.cellNewTechCriteria = data[16][1]
+        self.cellsEligibleForNewPlants = data[16][1]
+        self.cellNewTechCriteria = data[17][1]
 
-        self.compressFleet = lev(data[17][1])
-        self.co2CapScenario = data[18][1]
-        self.scenario = data[19][1]
+        self.compressFleet = lev(data[18][1])
+        self.co2CapScenario = data[19][1]
+        self.scenario = data[20][1]
 
         self.co2CapEndYr, self.co2CapEnd = getCo2Cap(self.co2CapScenario)
         self.fuelPricesTimeSeries = self.importFuelPrices(self.dataRoot, self.scenario)
 
-        self.resultsDir = data[20][1]
+        self.resultsDir = data[21][1]
         folderName = ('Area' + self.analysisArea + 'Cells' + self.cellNewTechCriteria +
                       ('Curtail' if self.incCurtailments == True else 'NoCurtail') +
                       ('EnvRegs' if self.incRegs == True else 'NoRegs') +
@@ -271,40 +280,41 @@ class Generalparameters:
         if not os.path.exists(self.resultsDir):
             os.makedirs(self.resultsDir)
 
-        self.processRBMData = lev(data[21][1])
+        self.processRBMData = lev(data[22][1])
 
-        self.tzAnalysis = data[22][1]
-        self.projectName = data[23][1]
-        self.windGenDataYr = lev(data[24][1])
+        self.tzAnalysis = data[23][1]
+        self.projectName = data[24][1]
+        self.windGenDataYr = lev(data[25][1])
 
-        self.capacExpFilename = data[25][1]
-        self.maxAddedZonalCapacPerTech = lev(data[26][1])
-        self.incITC = lev(data[27][1])
-        self.retirementCFCutoff = lev(data[28][1])
-        self.ptEligRetCF = list(map(str.strip, data[29][1].split(',')))  # list
-        self.selectCurtailDays = lev(data[30][1])
-        self.planningReserve = lev(data[31][1])
-        self.discountRate = lev(data[32][1])
-        self.allowCoalWithoutCCS = lev(data[33][1])
-        self.onlyNSPSUnits = lev(data[34][1])
-        self.permitOncethru = lev(data[35][1])
+        self.capacExpFilename = data[26][1]
+        #self.maxAddedZonalCapacPerTech = lev(data[27][1])
+        self.maxAddedZonalCapacPerTech = self.readMaxCapacTechParam(data[27][1])
+        self.incITC = lev(data[28][1])
+        self.retirementCFCutoff = lev(data[29][1])
+        self.ptEligRetCF = list(map(str.strip, data[30][1].split(',')))  # list
+        self.selectCurtailDays = lev(data[31][1])
+        self.planningReserve = lev(data[32][1])
+        self.discountRate = lev(data[33][1])
+        self.allowCoalWithoutCCS = lev(data[34][1])
+        self.onlyNSPSUnits = lev(data[35][1])
+        self.permitOncethru = lev(data[36][1])
 
-        self.ucFilename = data[36][1]
-        self.calculateCO2Price = lev(data[37][1])
-        self.daysOpt = lev(data[38][1])
-        self.daysLA = lev(data[39][1])
-        self.ocAdderMin = lev(data[40][1])
-        self.ocAdderMax = lev(data[41][1])
+        self.ucFilename = data[37][1]
+        self.calculateCO2Price = lev(data[38][1])
+        self.daysOpt = lev(data[39][1])
+        self.daysLA = lev(data[40][1])
+        self.ocAdderMin = lev(data[41][1])
+        self.ocAdderMax = lev(data[42][1])
 
-        self.phEff = lev(data[42][1])
-        self.phMaxSoc = lev(data[43][1])
-        self.phInitSoc = lev(data[44][1])
+        self.phEff = lev(data[43][1])
+        self.phMaxSoc = lev(data[44][1])
+        self.phInitSoc = lev(data[45][1])
 
-        self.scaleMWtoGW = lev(data[45][1])
-        self.scaleDollarsToThousands = lev(data[46][1])
-        self.scaleLbToShortTon = lev(data[47][1])
+        self.scaleMWtoGW = lev(data[46][1])
+        self.scaleDollarsToThousands = lev(data[47][1])
+        self.scaleLbToShortTon = lev(data[48][1])
 
-        self.annualDemandGrowth = lev(data[48][1])
+        self.ncores = lev(data[49][1])
 
         self.setstates()
 
@@ -368,34 +378,47 @@ class Generalparameters:
         self.lineList, self.lineCapacs = list(), dict()
 
         # Load data
-        if os.path.isfile(os.path.join(dataDir, 'ZonalTransmission.csv')):
-            lines = readCSVto2dList(os.path.join(dataDir, 'ZonalTransmission.csv'))
+        if self.useLineLimits:
+            if os.path.isfile(os.path.join(dataDir, 'ZonalTransmission.csv')):
+                lines = readCSVto2dList(os.path.join(dataDir, 'ZonalTransmission.csv'))
 
-            sourceCol, sinkCol = lines[0].index('Source'), lines[0].index('Sink')
-            capacCol = lines[0].index('Limit')
+                sourceCol, sinkCol = lines[0].index('Source'), lines[0].index('Sink')
+                capacCol = lines[0].index('Limit')
 
-            for row in lines[1:]:
-                lineName = createLineName(row[sourceCol], row[sinkCol])
-                self.lineList.append(lineName)
+                for row in lines[1:]:
+                    lineName = createLineName(row[sourceCol], row[sinkCol])
+                    self.lineList.append(lineName)
 
-                self.lineCapacs[lineName] = float(row[capacCol])
+                    self.lineCapacs[lineName] = float(row[capacCol])
 
-        else:
-            print()
-            print('File ZonalTransmission.csv not found in {}'.format(dataDir))
-            print('Transmission upper bounds will be set to +INF.')
-            print()
+            else:
+                print()
+                print('File ZonalTransmission.csv not found in {}'.format(dataDir))
+                print('Transmission upper bounds will be set to +INF.')
+                print('Changing useLineLimits parameter to FALSE.')
+                print()
+                self.useLineLimits = False
 
+        if not self.useLineLimits:
             for s in self.ipmZones:
-
                 sinks = copy.deepcopy(self.ipmZones)
                 sinks.remove(s)
 
                 for t in sinks:
                     lineName = self.createLineName(s, t)
                     self.lineList.append(lineName)
-
                     self.lineCapacs[lineName] = float('inf')
+
+    def writeMaxCapacTechParam(self):
+
+        if isinstance(self.maxAddedZonalCapacPerTech, dict):
+            # data is a dictionary {type: maxCapacValue}
+            s = Generalparameters.dict2string(self.maxAddedZonalCapacPerTech)
+        else:
+            # data is a single value
+            s = str(self.maxAddedZonalCapacPerTech)
+
+        return s
 
     @staticmethod
     def createLineName(zoneFrom, zoneTo):
@@ -406,6 +429,43 @@ class Generalparameters:
     def getLineSourceAndSink(line):
         temp = line.split('_to_')
         return temp[0], temp[1]
+
+    @staticmethod
+    def readMaxCapacTechParam(s):
+
+        if s.find(':') > -1:
+            # data is a dictionary {type: maxCapacValue}
+            d = Generalparameters.string2dict(s)
+        else:
+            # data is a single value
+            d = float(s)
+
+        return d
+
+    @staticmethod
+    def string2dict(s):
+
+        a = list(map(str.strip, s.split(',')))
+        b = dict()
+
+        for x in a:
+            c = x.split(':')
+            k = c[0].strip()  # key
+            v = float(c[1].strip())  # value
+
+            b.update({k: v})
+
+        return b
+
+    @staticmethod
+    def dict2string(d):
+
+        a = str(d)
+        b = ((a.replace('{', '')).replace('}', '')).replace('\'', '')
+
+        return b
+
+
 
 
 

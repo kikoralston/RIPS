@@ -17,28 +17,32 @@ Sets
          solaregu(egu)                   existing solar generators
          hydroegu(egu)                   existing hydro generators
          pumphydroegu(egu)               existing pumped hydro generators
-         tech                            candidate plant types for new construction
+         type                            plant types (no cooling info)
+         tech                            candidate plant types for new construction (with cooling info)
+         tech2d(type, tech)              2d set mapping types to techs
          techcurtailed(tech)             plant types that can be curtailed for new construction
          techrenew(tech)                 renewable plant types for new construction
          technotcurtailed(tech)          plant types that are not curtailed and not renewables for new construction
          c                               cells that new techs can be placed in
-         h                               hours
-         dispatchh(h)                    hours that are not peak hour
-         peakh(h)                        hours for each zone with peak net demand
-         springh(h)                      hours representing spring
-         summerh(h)                      hours representing summer
-         winterh(h)                      hours representing winter
-         fallh(h)                        hours representing fall
-         specialh(h)                     hours representing special periods
+         g                               gcm scenarios
+         h                               hours (1d set. over all gcm scenarios)
+         h2(g,h)                         hours in each gcm scenario
+         dispatchh(g,h)                  hours that are not peak hour
+         springh(g,h)                    hours representing spring
+         summerh(g,h)                    hours representing summer
+         winterh(g,h)                    hours representing winter
+         fallh(g,h)                      hours representing fall
+         specialh(g,h)                   hours representing special periods
          z                               zones
          l                               lines
+         peakh(g,z,h)                    hours for each zone with peak net demand and respective gcm
          ;
 
 Parameters
 *SIZE PARAMETERS [GW]
-         pCapac(egu,h)                   hourly capacity of existing generators accounting for curtailments [GW]
-         pCapactech(tech)                nameplate capacity of new builds for cost calculations [GW]
-         pCapactechcurtailed(c,techcurtailed,h)   hourly capacity of new builds accounting for curtailments [GW]
+         pCapac(g,egu,h)                                hourly capacity of existing generators accounting for curtailments [GW]
+         pCapactech(tech)                               nameplate capacity of new builds for cost calculations [GW]
+         pCapactechcurtailed(g,c,techcurtailed,h)       hourly capacity of new builds accounting for curtailments [GW]
 *TIME- AND SPACE-VARYING OP COSTS AND HEAT RATES [MMBtu/GWh]
          pHr(egu)                        heat rate of existing generators [MMBtu per GWh]
          pHrtech(tech)                   heat rate of new builds [MMBtu per GWh]
@@ -53,15 +57,15 @@ Parameters
 *EMISSIONS CAP AND COST
          pCO2emcap                       CO2 annual emissions cap [short tons]
 *HOURLY CAPACITY FACTORS FOR RENEWABLES
-         pCf(z,techrenew,h)              hourly capacity factors for potential new renewables in each zone
-         pMaxgenwind(z,h)                max hourly generation for existing wind [GWh]
-         pMaxgensolar(z,h)               max hourly generation for existing solar [GWh]
+         pCf(g,z,techrenew,h)              hourly capacity factors for potential new renewables in each zone
+         pMaxgenwind(g,z,h)                max hourly generation for existing wind [GWh]
+         pMaxgensolar(g,z,h)               max hourly generation for existing solar [GWh]
 *MAX GENERATION VALUES FOR HYDRO POWER PER SEASON
-         pMaxhydrogenspr(hydroegu)       max generation by each hydro unit in spring [GWh]
-         pMaxhydrogensum(hydroegu)       max generation by each hydro unit in summer [GWh]
-         pMaxhydrogenwin(hydroegu)       max generation by each hydro unit in winter [GWh]
-         pMaxhydrogenfal(hydroegu)       max generation by each hydro unit in fall [GWh]
-         pMaxhydrogenspe(hydroegu)       max generation by each hydro unit in special hours [GWh]
+         pMaxhydrogenspr(g,hydroegu)       max generation by each hydro unit in spring [GWh]
+         pMaxhydrogensum(g,hydroegu)       max generation by each hydro unit in summer [GWh]
+         pMaxhydrogenwin(g,hydroegu)       max generation by each hydro unit in winter [GWh]
+         pMaxhydrogenfal(g,hydroegu)       max generation by each hydro unit in fall [GWh]
+         pMaxhydrogenspe(g,hydroegu)       max generation by each hydro unit in special hours [GWh]
 *INITIAL STATE OF CHARGE FOR PUMPED HYDRO
          pInitsoc(pumphydroegu)          initial state of charge of each pumped hydro unit [GWh]
          pMaxsoc(pumphydroegu)           max state of charge of each pumped hydro unit [GWh]
@@ -71,11 +75,11 @@ Parameters
          pLife(tech)                     lifetime of tech [years]
          pCrf(tech)                      capital recovery factor
 *BUILD LIMITS ON NEW TECHS
-         pNmax(z,tech)                   max number techs built per zone and tech
+         pNmax(z,type)                   max number techs built per zone and plant type (no cooling info)
 *ZONAL PARAMETERS
-         pDemand(z,h)                    hourly electricity demand [GWh]
+         pDemand(g,z,h)                  hourly electricity demand [GWh]
          pPlanningreserve(z)             planning margin reserve capacity [GW]
-         pPeakhtozone(peakh)             peakh for each zone
+*         pPeakhtozone(peakh)             peakh for each zone
          pEguzones(egu)                  zone EGU is in
          pCellzones(c)                   zone that each cell eligible for new tech builds is in
          pLinesources(l)                 which zone line carries power from
@@ -89,25 +93,51 @@ Parameters
 *DIAGNOSTIC PARAMETERS
          pModelstat                      model status whether optimal solution achieved
          pSolvestat                      solver status whether terminated normally
+*OTHER PARAMETERS
+         pNgcm                           number of gcms considered
+         pHourIniSpring(g)                           number of gcms considered
+         pHourIniSummer(g)                           number of gcms considered
+         pHourIniFall(g)                           number of gcms considered
+         pHourIniWinter(g)                           number of gcms considered
+         pHourIniSpecial(g)                           number of gcms considered
+         pPreviousHourSpecial(g, h)
          ;
 
 $if not set gdxincname $abort 'no include file name for data file provided'
 $gdxin %gdxincname%
-$load egu, windegu, solaregu, hydroegu, pumphydroegu, tech, techcurtailed, techrenew, technotcurtailed, c
-$load h, peakh, springh, summerh, winterh, fallh, specialh, z, l
+$load egu, windegu, solaregu, hydroegu, pumphydroegu, type, tech, tech2d, techcurtailed, techrenew, technotcurtailed, c, g
+$load h, h2, springh, summerh, winterh, fallh, specialh, z, l, peakh
 $load pCapac, pCapactech, pCapactechcurtailed, pHr, pHrtech, pOpcost, pOpcosttech
 $load pFom, pOcc, pCO2emrate, pCO2emratetech, pCO2emcap, pCf, pMaxgenwind, pMaxgensolar
 $load pMaxhydrogensum, pMaxhydrogenspr, pMaxhydrogenwin, pMaxhydrogenfal, pMaxhydrogenspe
 $load pDemand, pEguzones, pCellzones, pLinesources, pLinesinks, pLinecapacs
-$load pR, pLife, pNmax, pPlanningreserve, pPeakhtozone, pWeightspring, pWeightsummer, pWeightfall, pWeightwinter
+$load pR, pLife, pNmax, pPlanningreserve, pWeightspring, pWeightsummer, pWeightfall, pWeightwinter
 $load pInitsoc, pMaxsoc, pEfficiency
 $gdxin
 
+*pPeakhtozone,
+
 *DEFINE NON-PEAK HOURS THAT WILL BE INCLUDED IN DEMAND=SUPPLY EQUATION
-dispatchh(h) = winterh(h) + summerh(h) + specialh(h) + fallh(h) + springh(h);
+*dispatchh(g,h) = winterh(h) + summerh(h) + specialh(h) + fallh(h) + springh(h);
 
 *CALCULATE CAPITAL RECOVERY FACTOR
 pCrf(tech) = pR / (1 - (1 / ( (1 + pR)**pLife(tech))));
+
+*GET NUMBER OF GCMS USED IN THE SIMULATION
+pNgcm = card(g);
+
+*GET POSITION OF INITIAL HOUR OF EACH SEASON IN EACH GCM (NECESSARY FOR PUMPED HYDRO SIMULATION)
+pHourIniSpring(g) = smin(h$springh(g,h), ord(h));
+pHourIniSummer(g) = smin(h$summerh(g,h), ord(h));
+pHourIniWinter(g) = smin(h$winterh(g,h), ord(h));
+pHourIniFall(g) = smin(h$fallh(g,h), ord(h));
+pHourIniSpecial(g) = smin(h$specialh(g,h), ord(h));
+
+* CREATE ANOTHER NAME ('Alias') FOR SET h
+Alias(h, hh);
+
+* FOR EACH OF THE SPECIAL HOURS, GET THE PREVIOUS HOUR (NECESSARY FOR PUMPED HYDRO SIMULATION)
+pPreviousHourSpecial(g, h) = smax(hh$[specialh(g,hh) and ord(hh) < ord(h)], ord(hh));
 
 Variable
          vZ                              obj func [thousand USD per yr]
@@ -121,19 +151,19 @@ Variable
          ;
 
 Positive variables
-         vPtechcurtailed(c,techcurtailed,h)                      hourly electricity generation by new techs that can be curtailed by cell c and hour h [GWh]
-         vPtechrenew(z,techrenew,h)                              hourly electricity generation by new renewable techs [GWh]
-         vPtechnotcurtailed(z,technotcurtailed,h)                hourly electricity generation by new plants [GWh]
-         vPegu(egu,h)                                            hourly electricity generation by existing plants [GWh]
-         vLineflow(l,h)                                          flow over lines per hour (GW)
+         vPtechcurtailed(g,c,techcurtailed,h)                      hourly electricity generation by new techs that can be curtailed by cell c and hour h [GWh]
+         vPtechrenew(g,z,techrenew,h)                              hourly electricity generation by new renewable techs [GWh]
+         vPtechnotcurtailed(g,z,technotcurtailed,h)                hourly electricity generation by new plants [GWh]
+         vPegu(g,egu,h)                                            hourly electricity generation by existing plants [GWh]
+         vLineflow(g,l,h)                                          flow over lines per hour (GW)
          vCO2emsannual                                           co2 emissions in entire year from new and existing plants [short ton]
          vCO2emssummer                                           co2 emissions in summer from new and existing plants [short ton]
          vCO2emsspring                                           co2 emissions in spring from new and existing plants [short ton]
          vCO2emswinter                                           co2 emissions in winter from new and existing plants [short ton]
          vCO2emsfall                                             co2 emissions in fall from new and existing plants [short ton]
          vCO2emsspecial                                          co2 emissions in special hours from new and existing plants [short ton]
-         vSoc(pumphydroegu,h)                                    state of charge of pumped hydro units [GWh]
-         vCharge(pumphydroegu,h)                                 charging by pumped hydro units [GWh]
+         vSoc(g,pumphydroegu,h)                                    state of charge of pumped hydro units [GWh]
+         vCharge(g,pumphydroegu,h)                                 charging by pumped hydro units [GWh]
          ;
 
 Integer variable
@@ -154,38 +184,43 @@ Equations
          varcostwinter                                           calculate winter variable costs
          varcostfall                                             calculate fall variable costs
          varcostspecial                                          calculate special hour variable costs
-         meetdemand(z,h)                                         meet supply with demand
+         meetdemand(g,z,h)                                       meet supply with demand
          meetreservemargin(z)                                    meet planning reserve requirement with installed capacity
-         curtailedtechgen(c,techcurtailed,h)                     restrict electricity generation by new curtailed plants to number built and hourly capacities
-         notcurtailedtechgen(z,technotcurtailed,h)               restrict elec gen by not curtailed plants to number built and constant capacity
-         renewtechgen(z,techrenew,h)                             restrict electricity generation by new renewables to number built and capacity and capacity factor
-         maxzonalbuildcurtailed(z,techcurtailed)                 max number curtailed techs built per zone
-         maxzonalbuildrenew(z,techrenew)                         max number renew techs built per zone
-         maxzonalbuildnotcurtailed(z,technotcurtailed)           max number noncurtailed techs built per zone
-         egugen(egu,h)                                           restrict electricity generation by existing generators to hourly capacities
-         eguwindgen(z,h)                                         restrict electricity generation by existing wind generation to maximum aggregate output per zone
-         egusolargen(z,h)                                        restrict electricity generation by existing solar generation to maximum aggregate output per zone
-         hydrogenspr(hydroegu)                                   restrict total max elec gen by hydro units in spring
-         hydrogensum(hydroegu)                                   restrict total max elec gen by hydro units in summer
-         hydrogenwin(hydroegu)                                   restrict total max elec gen by hydro units in winter
-         hydrogenfal(hydroegu)                                   restrict total max elec gen by hydro units in fall
-         hydrogenspe(hydroegu)                                   restrict total max elec gen by hydro units in special hours
-         co2emsannual                                            sum annual co2 emissions
-         co2emssummer                                            calculate summer co2 emissions
-         co2emsspring                                            calculate spring co2 emissions
-         co2emswinter                                            calculate winter co2 emissions
-         co2emsfall                                              calculate fall co2 emissions
-         co2emsspecial                                           calculate special hour co2 emissions
-         enforceco2emissionscap                                  restrict total co2 emissions to cap
-         genandsoc(pumphydroegu,h)                               restrict gen by pump hydro to state of charge
-         maxsto(pumphydroegu,h)                                  set max soc limit
-         limitcharging(pumphydroegu,h)                           limit charging to capacity times efficiency
-         defsocspr(pumphydroegu,springh)                         link state of charge and charging and discharging
-         defsocsum(pumphydroegu,summerh)                         link state of charge and charging and discharging
-         defsocfal(pumphydroegu,fallh)                           link state of charge and charging and discharging
-         defsocwin(pumphydroegu,winterh)                         link state of charge and charging and discharging
-         defsocspe(pumphydroegu,specialh)                        link state of charge and charging and discharging
+         curtailedtechgen(g,c,techcurtailed,h)                   restrict electricity generation by new curtailed plants to number built and hourly capacities
+         notcurtailedtechgen(g,z,technotcurtailed,h)             restrict elec gen by not curtailed plants to number built and constant capacity
+         renewtechgen(g,z,techrenew,h)                           restrict electricity generation by new renewables to number built and capacity and capacity factor
+         maxzonalbuild(z,type)                                   max number plant types built per zone
+         egugen(g,egu,h)                                         restrict electricity generation by existing generators to hourly capacities
+         eguwindgen(g,z,h)                                       restrict electricity generation by existing wind generation to maximum aggregate output per zone
+         egusolargen(g,z,h)                                      restrict electricity generation by existing solar generation to maximum aggregate output per zone
+         hydrogenspr(g,hydroegu)                                   restrict total max elec gen by hydro units in spring
+         hydrogensum(g,hydroegu)                                   restrict total max elec gen by hydro units in summer
+         hydrogenwin(g,hydroegu)                                   restrict total max elec gen by hydro units in winter
+         hydrogenfal(g,hydroegu)                                   restrict total max elec gen by hydro units in fall
+         hydrogenspe(g,hydroegu)                                   restrict total max elec gen by hydro units in special hours
+*         co2emsannual                                            sum annual co2 emissions
+*         co2emssummer                                            calculate summer co2 emissions
+*         co2emsspring                                            calculate spring co2 emissions
+*         co2emswinter                                            calculate winter co2 emissions
+*         co2emsfall                                              calculate fall co2 emissions
+*         co2emsspecial                                           calculate special hour co2 emissions
+*         enforceco2emissionscap                                  restrict total co2 emissions to cap
+         genandsoc(g,pumphydroegu,h)                             restrict gen by pump hydro to state of charge
+         maxsto(g,pumphydroegu,h)                                set max soc limit
+         limitcharging(g,pumphydroegu,h)                         limit charging to capacity times efficiency
+         defsocspr(g,pumphydroegu,h)                         link state of charge and charging and discharging
+         defsocsum(g,pumphydroegu,h)                         link state of charge and charging and discharging
+         defsocfal(g,pumphydroegu,h)                           link state of charge and charging and discharging
+         defsocwin(g,pumphydroegu,h)                         link state of charge and charging and discharging
+         defsocspe(g,pumphydroegu,h)                        link state of charge and charging and discharging
          ;
+
+
+******************PUT FILE******************
+* defines a put file to write some of the model parameters
+* File file_name "this defines a specific external file"  / /Users/kiko/report.txt /;
+* put file_name;
+******************************************************
 
 ******************OBJECTIVE FUNCTION******************
 *Objective: minimize fixed + variable costs
@@ -199,139 +234,165 @@ investmentcost..         vIc =e= sum((c,techcurtailed),vNcurtailed(c,techcurtail
                                + sum((z,technotcurtailed),vNnotcurtailed(z,technotcurtailed)*pCapactech(technotcurtailed)*(pFom(technotcurtailed)+pOcc(technotcurtailed)*pCrf(technotcurtailed)));
 
 *Variable costs = electricity generation costs by new and existing plants
-varcosttotal..           vVc =e= vVcspring + vVcsummer + vVcwinter + vVcfall + vVcspecial;
-varcostspring..          vVcspring =e= pWeightspring*sum(springh,sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,springh)*pOpcosttech(techcurtailed))
-                                                               + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,springh)*pOpcosttech(technotcurtailed))
-                                                               + sum((techrenew,z),vPtechrenew(z,techrenew,springh)*pOpcosttech(techrenew))
-                                                               + sum(egu,vPegu(egu,springh)*pOpcost(egu)));
-varcostsummer..          vVcsummer =e= pWeightsummer*sum(summerh,sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,summerh)*pOpcosttech(techcurtailed))
-                                                               + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,summerh)*pOpcosttech(technotcurtailed))
-                                                               + sum((techrenew,z),vPtechrenew(z,techrenew,summerh)*pOpcosttech(techrenew))
-                                                               + sum(egu,vPegu(egu,summerh)*pOpcost(egu)));
-varcostwinter..          vVcwinter =e= pWeightwinter*sum(winterh,sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,winterh)*pOpcosttech(techcurtailed))
-                                                               + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,winterh)*pOpcosttech(technotcurtailed))
-                                                               + sum((techrenew,z),vPtechrenew(z,techrenew,winterh)*pOpcosttech(techrenew))
-                                                               + sum(egu,vPegu(egu,winterh)*pOpcost(egu)));
-varcostfall..            vVcfall =e= pWeightfall*sum(fallh,sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,fallh)*pOpcosttech(techcurtailed))
-                                                         + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,fallh)*pOpcosttech(technotcurtailed))
-                                                         + sum((techrenew,z),vPtechrenew(z,techrenew,fallh)*pOpcosttech(techrenew))
-                                                         + sum((egu),vPegu(egu,fallh)*pOpcost(egu)));
-varcostspecial..         vVcspecial =e= sum(specialh,sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,specialh)*pOpcosttech(techcurtailed))
-                                                   + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,specialh)*pOpcosttech(technotcurtailed))
-                                                   + sum((techrenew,z),vPtechrenew(z,techrenew,specialh)*pOpcosttech(techrenew))
-                                                   + sum(egu,vPegu(egu,specialh)*pOpcost(egu)));
+varcosttotal..      vVc =e= vVcspring + vVcsummer + vVcwinter + vVcfall + vVcspecial;
+
+varcostspring..     vVcspring =e= (pWeightspring/pNgcm)*sum((g,h)$[springh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttech(techcurtailed))
+                                                                                 + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttech(technotcurtailed))
+                                                                                 + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttech(techrenew))
+                                                                                 + sum(egu,vPegu(g,egu,h)*pOpcost(egu)));
+
+varcostsummer..     vVcsummer =e= (pWeightsummer/pNgcm)*sum((g,h)$[summerh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttech(techcurtailed))
+                                                                                 + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttech(technotcurtailed))
+                                                                                 + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttech(techrenew))
+                                                                                 + sum(egu,vPegu(g,egu,h)*pOpcost(egu)));
+
+varcostwinter..     vVcwinter =e= (pWeightwinter/pNgcm)*sum((g,h)$[winterh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttech(techcurtailed))
+                                                                                 + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttech(technotcurtailed))
+                                                                                 + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttech(techrenew))
+                                                                                 + sum(egu,vPegu(g,egu,h)*pOpcost(egu)));
+
+varcostfall..       vVcfall =e= (pWeightfall/pNgcm)*sum((g,h)$[fallh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttech(techcurtailed))
+                                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttech(technotcurtailed))
+                                                                           + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttech(techrenew))
+                                                                           + sum((egu),vPegu(g,egu,h)*pOpcost(egu)));
+
+varcostspecial..    vVcspecial =e= (1/pNgcm)*sum((g,h)$[specialh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttech(techcurtailed))
+                                                                            + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttech(technotcurtailed))
+                                                                            + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttech(techrenew))
+                                                                            + sum(egu,vPegu(g,egu,h)*pOpcost(egu)));
 ***************************************************
 
 ******************SYSTEM-WIDE GENERATION AND CAPACITY CONSTRAINTS******************
 *Demand = generation by new and existing plants in each zone
-meetdemand(z,dispatchh)..       sum((techcurtailed,c)$[pCellzones(c)=ORD(z)],vPtechcurtailed(c,techcurtailed,dispatchh))
-                              + sum(technotcurtailed,vPtechnotcurtailed(z,technotcurtailed,dispatchh))
-                              + sum(techrenew,vPtechrenew(z,techrenew,dispatchh))
-                              + sum(egu$[pEguzones(egu)=ORD(z)],vPegu(egu,dispatchh))
-                              - sum(l$[pLinesources(l)=ORD(z)],vLineflow(l,dispatchh))
-                              + sum(l$[pLinesinks(l)=ORD(z)],vLineflow(l,dispatchh))
-                              - sum(pumphydroegu,vCharge(pumphydroegu,dispatchh)) =e= pDemand(z,dispatchh);
+meetdemand(g,z,h) $ h2(g,h)..   sum((techcurtailed,c)$[pCellzones(c)=ORD(z)],vPtechcurtailed(g,c,techcurtailed,h))
+                                + sum(technotcurtailed,vPtechnotcurtailed(g,z,technotcurtailed,h))
+                                + sum(techrenew,vPtechrenew(g,z,techrenew,h))
+                                + sum(egu$[pEguzones(egu)=ORD(z)],vPegu(g,egu,h))
+                                - sum(l$[pLinesources(l)=ORD(z)],vLineflow(g,l,h))
+                                + sum(l$[pLinesinks(l)=ORD(z)],vLineflow(g,l,h))
+                                - sum(pumphydroegu,vCharge(g,pumphydroegu,h)) =e= pDemand(g,z,h);
 
 *Total installed capacity must exceed peak demand + planning reserve margin in each zone
-meetreservemargin(z)..  pPlanningreserve(z) =l= sum(peakh$[pPeakhtozone(peakh)=ORD(z)], sum(egu$[pEguzones(egu)=ORD(z)],pCapac(egu,peakh))
-                                                                                      + sum((techcurtailed,c)$[pCellzones(c)=ORD(z)],pCapactechcurtailed(c,techcurtailed,peakh)*vNcurtailed(c,techcurtailed))
-                                                                                      + sum(technotcurtailed,pCapactech(technotcurtailed)*vNnotcurtailed(z,technotcurtailed))
-                                                                                      + sum(techrenew,pCapactech(techrenew)*vNrenew(z,techrenew)*pCf(z,techrenew,peakh)));
+meetreservemargin(z)..  pPlanningreserve(z) =l= sum((g,h)$[peakh(g,z,h)], sum(egu$[pEguzones(egu)=ORD(z)],pCapac(g,egu,h))
+                                                                         + sum((techcurtailed,c)$[pCellzones(c)=ORD(z)],pCapactechcurtailed(g,c,techcurtailed,h)*vNcurtailed(c,techcurtailed))
+                                                                         + sum(technotcurtailed,pCapactech(technotcurtailed)*vNnotcurtailed(z,technotcurtailed))
+                                                                         + sum(techrenew,pCapactech(techrenew)*vNrenew(z,techrenew)*pCf(g,z,techrenew,h)));
 ***********************************************************************************
 
 *****************LINE FLOW LIMITS*************************
-*Limit max value of line flow to line capacity (already bounded at 0 since declared as positive variable)
-vLineflow.up(l,h)=pLinecapacs(l);
+*Limit max value of line flow to line capacity (already bounded below at 0 since declared as positive variable)
+vLineflow.up(g,l,h) $ h2(g,h) = pLinecapacs(l);
 **********************************************************
 
 ******************GENERATION CONSTRAINTS ON NEW UNITS******************
 *Generation by techs that can be curtailed is limited by curtailed capacity
-curtailedtechgen(c,techcurtailed,h)..                    vPtechcurtailed(c,techcurtailed,h) =l= vNcurtailed(c,techcurtailed)*pCapactechcurtailed(c,techcurtailed,h);
+curtailedtechgen(g,c,techcurtailed,h)$h2(g,h)..          vPtechcurtailed(g,c,techcurtailed,h) =l= vNcurtailed(c,techcurtailed)*pCapactechcurtailed(g,c,techcurtailed,h);
 
 *Generation by techs that cant be curtailed is limited by their capacity
-notcurtailedtechgen(z,technotcurtailed,h)..              vPtechnotcurtailed(z,technotcurtailed,h) =l= vNnotcurtailed(z,technotcurtailed)*pCapactech(technotcurtailed);
+notcurtailedtechgen(g,z,technotcurtailed,h)$h2(g,h)..    vPtechnotcurtailed(g,z,technotcurtailed,h) =l= vNnotcurtailed(z,technotcurtailed)*pCapactech(technotcurtailed);
 
 *Renewable generation limited by capacity factor and nameplate capacity
-renewtechgen(z,techrenew,h)..                            vPtechrenew(z,techrenew,h) =l= vNrenew(z,techrenew)*pCapactech(techrenew)*pCf(z,techrenew,h);
+renewtechgen(g,z,techrenew,h)$h2(g,h)..                  vPtechrenew(g,z,techrenew,h) =l= vNrenew(z,techrenew)*pCapactech(techrenew)*pCf(g,z,techrenew,h);
 ***********************************************************************
 
 ******************BUILD DECISIONS******************
-*Limit total number builds to input value
-maxzonalbuildcurtailed(z,techcurtailed)..               sum(c$[pCellzones(c)=ORD(z)],vNcurtailed(c,techcurtailed)) =l= pNmax(z,techcurtailed);
-maxzonalbuildrenew(z,techrenew)..                       vNrenew(z,techrenew) =l= pNmax(z,techrenew);
-maxzonalbuildnotcurtailed(z,technotcurtailed)..         vNnotcurtailed(z,technotcurtailed) =l= pNmax(z,technotcurtailed);
+* Limit total number builds to input value
+* build limits are imposed by zone and plant type. Plant types do not take into account cooling type, just fuel source.
+* So a upper bound of 10 on type 'Coal Steam', mean that the model can build [10 Coal/OT] or [5 Coal/OT + 5 Coal/RC] or ...
+* Syntax of the right hand side conditional assignment:
+* eq.. (expression) $ (logical condition) <======> if(logical condition) then {expression}
+*
+maxzonalbuild(z,type)..  sum(c$[pCellzones(c)=ORD(z)], sum(techcurtailed$[tech2d(type,techcurtailed)], vNcurtailed(c,techcurtailed))) $ (sum(techcurtailed$[tech2d(type,techcurtailed)],1) > 0) +
+                         sum(techrenew$[tech2d(type,techrenew)], vNrenew(z,techrenew)) $ (sum(techrenew$[tech2d(type,techrenew)],1) > 0) +
+                         sum(technotcurtailed$[tech2d(type,technotcurtailed)], vNnotcurtailed(z,technotcurtailed)) $ (sum(technotcurtailed$[tech2d(type,technotcurtailed)],1) > 0) =l=
+                         pNmax(z,type);
 
-*Change upper bound on build variables
-*vNcurtailed.up(c,techcurtailed) = 1000;
-*vNrenew.up(z,techrenew) = 1000;
-*vNnotcurtailed.up(z,technotcurtailed) = 1000;
 ***************************************************
 
 ******************GENERATION CONSTRAINTS ON EXISTING UNITS******************
 *Enforce max hourly generation limit based on hourly capacity
-egugen(egu,h)..          vPegu(egu,h) =l= pCapac(egu,h);
+egugen(g,egu,h)$h2(g,h)..          vPegu(g,egu,h) =l= pCapac(g,egu,h);
 
 *Enforce max generation on existing wind and solar plants
-eguwindgen(z,h)..        pMaxgenwind(z,h) =g= sum(windegu$[pEguzones(windegu)=ORD(z)],vPegu(windegu,h));
-egusolargen(z,h)..       pMaxgensolar(z,h) =g= sum(solaregu$[pEguzones(solaregu)=ORD(z)],vPegu(solaregu,h));
+eguwindgen(g,z,h)$h2(g,h)..        pMaxgenwind(g,z,h) =g= sum(windegu$[pEguzones(windegu)=ORD(z)],vPegu(g,windegu,h));
+egusolargen(g,z,h)$h2(g,h)..       pMaxgensolar(g,z,h) =g= sum(solaregu$[pEguzones(solaregu)=ORD(z)],vPegu(g,solaregu,h));
 
 *Enforce max generation on total hydro generation
-hydrogenspr(hydroegu).. pMaxhydrogenspr(hydroegu) =g= sum(springh,vPegu(hydroegu,springh));
-hydrogensum(hydroegu).. pMaxhydrogensum(hydroegu) =g= sum(summerh,vPegu(hydroegu,summerh));
-hydrogenwin(hydroegu).. pMaxhydrogenwin(hydroegu) =g= sum(winterh,vPegu(hydroegu,winterh));
-hydrogenfal(hydroegu).. pMaxhydrogenfal(hydroegu) =g= sum(fallh,vPegu(hydroegu,fallh));
-hydrogenspe(hydroegu).. pMaxhydrogenspe(hydroegu) =g= sum(specialh,vPegu(hydroegu,specialh));
+hydrogenspr(g,hydroegu)..   pMaxhydrogenspr(g,hydroegu) =g= sum(h$springh(g,h),vPegu(g,hydroegu,h));
+hydrogensum(g,hydroegu)..   pMaxhydrogensum(g,hydroegu) =g= sum(h$summerh(g,h),vPegu(g,hydroegu,h));
+hydrogenwin(g,hydroegu)..   pMaxhydrogenwin(g,hydroegu) =g= sum(h$winterh(g,h),vPegu(g,hydroegu,h));
+hydrogenfal(g,hydroegu)..   pMaxhydrogenfal(g,hydroegu) =g= sum(h$fallh(g,h),vPegu(g,hydroegu,h));
+hydrogenspe(g,hydroegu)..   pMaxhydrogenspe(g,hydroegu) =g= sum(h$specialh(g,h),vPegu(g,hydroegu,h));
 ****************************************************************************
 
 ******************CO2 EMISSIONS CONSTRAINT******************
 *Co2 emissions = electricity generation * co2 emissions rate
-co2emsannual..   vCO2emsannual =e= vCO2emsspring + vCO2emssummer + vCO2emswinter + vCO2emsfall + vCO2emsspecial;
-co2emsspring..   vCO2emsspring =e= pWeightspring*sum(springh,sum(egu,vPegu(egu,springh)*pHr(egu)*pCO2emrate(egu))
-                                                           + sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,springh)*pHrtech(techcurtailed)*pCO2emratetech(techcurtailed))
-                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,springh)*pHrtech(technotcurtailed)*pCO2emratetech(technotcurtailed))
-                                                           + sum((techrenew,z),vPtechrenew(z,techrenew,springh)*pHrtech(techrenew)*pCO2emratetech(techrenew)));
-co2emssummer..   vCO2emssummer =e= pWeightsummer*sum(summerh,sum(egu,vPegu(egu,summerh)*pHr(egu)*pCO2emrate(egu))
-                                                           + sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,summerh)*pHrtech(techcurtailed)*pCO2emratetech(techcurtailed))
-                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,summerh)*pHrtech(technotcurtailed)*pCO2emratetech(technotcurtailed))
-                                                           + sum((techrenew,z),vPtechrenew(z,techrenew,summerh)*pHrtech(techrenew)*pCO2emratetech(techrenew)));
-co2emswinter..   vCO2emswinter =e= pWeightwinter*sum(winterh,sum(egu,vPegu(egu,winterh)*pHr(egu)*pCO2emrate(egu))
-                                                           + sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,winterh)*pHrtech(techcurtailed)*pCO2emratetech(techcurtailed))
-                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,winterh)*pHrtech(technotcurtailed)*pCO2emratetech(technotcurtailed))
-                                                           + sum((techrenew,z),vPtechrenew(z,techrenew,winterh)*pHrtech(techrenew)*pCO2emratetech(techrenew)));
-co2emsfall..     vCO2emsfall =e= pWeightfall*sum(fallh,sum(egu,vPegu(egu,fallh)*pHr(egu)*pCO2emrate(egu))
-                                                     + sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,fallh)*pHrtech(techcurtailed)*pCO2emratetech(techcurtailed))
-                                                     + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,fallh)*pHrtech(technotcurtailed)*pCO2emratetech(technotcurtailed))
-                                                     + sum((techrenew,z),vPtechrenew(z,techrenew,fallh)*pHrtech(techrenew)*pCO2emratetech(techrenew)));
-co2emsspecial..  vCO2emsspecial =e= sum(specialh,sum(egu,vPegu(egu,specialh)*pHr(egu)*pCO2emrate(egu))
-                                               + sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,specialh)*pHrtech(techcurtailed)*pCO2emratetech(techcurtailed))
-                                               + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,specialh)*pHrtech(technotcurtailed)*pCO2emratetech(technotcurtailed))
-                                               + sum((techrenew,z),vPtechrenew(z,techrenew,specialh)*pHrtech(techrenew)*pCO2emratetech(techrenew)));
-
+*co2emsannual..   vCO2emsannual =e= vCO2emsspring + vCO2emssummer + vCO2emswinter + vCO2emsfall + vCO2emsspecial;
+*
+*co2emsspring..   vCO2emsspring =e= pWeightspring*sum(springh,sum(egu,vPegu(egu,springh)*pHr(egu)*pCO2emrate(egu))
+*                                                           + sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,springh)*pHrtech(techcurtailed)*pCO2emratetech(techcurtailed))
+*                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,springh)*pHrtech(technotcurtailed)*pCO2emratetech(technotcurtailed))
+*                                                           + sum((techrenew,z),vPtechrenew(z,techrenew,springh)*pHrtech(techrenew)*pCO2emratetech(techrenew)));
+*
+*co2emssummer..   vCO2emssummer =e= pWeightsummer*sum(summerh,sum(egu,vPegu(egu,summerh)*pHr(egu)*pCO2emrate(egu))
+*                                                           + sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,summerh)*pHrtech(techcurtailed)*pCO2emratetech(techcurtailed))
+*                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,summerh)*pHrtech(technotcurtailed)*pCO2emratetech(technotcurtailed))
+*                                                           + sum((techrenew,z),vPtechrenew(z,techrenew,summerh)*pHrtech(techrenew)*pCO2emratetech(techrenew)));
+*
+*co2emswinter..   vCO2emswinter =e= pWeightwinter*sum(winterh,sum(egu,vPegu(egu,winterh)*pHr(egu)*pCO2emrate(egu))
+*                                                           + sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,winterh)*pHrtech(techcurtailed)*pCO2emratetech(techcurtailed))
+*                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,winterh)*pHrtech(technotcurtailed)*pCO2emratetech(technotcurtailed))
+*                                                           + sum((techrenew,z),vPtechrenew(z,techrenew,winterh)*pHrtech(techrenew)*pCO2emratetech(techrenew)));
+*
+*co2emsfall..     vCO2emsfall =e= pWeightfall*sum(fallh,sum(egu,vPegu(egu,fallh)*pHr(egu)*pCO2emrate(egu))
+*                                                     + sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,fallh)*pHrtech(techcurtailed)*pCO2emratetech(techcurtailed))
+*                                                     + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,fallh)*pHrtech(technotcurtailed)*pCO2emratetech(technotcurtailed))
+*                                                     + sum((techrenew,z),vPtechrenew(z,techrenew,fallh)*pHrtech(techrenew)*pCO2emratetech(techrenew)));
+*
+*co2emsspecial..  vCO2emsspecial =e= sum(specialh,sum(egu,vPegu(egu,specialh)*pHr(egu)*pCO2emrate(egu))
+*                                               + sum((techcurtailed,c),vPtechcurtailed(c,techcurtailed,specialh)*pHrtech(techcurtailed)*pCO2emratetech(techcurtailed))
+*                                               + sum((technotcurtailed,z),vPtechnotcurtailed(z,technotcurtailed,specialh)*pHrtech(technotcurtailed)*pCO2emratetech(technotcurtailed))
+*                                               + sum((techrenew,z),vPtechrenew(z,techrenew,specialh)*pHrtech(techrenew)*pCO2emratetech(techrenew)));
+*
 *Meet emissions cap
-enforceco2emissionscap.. vCO2emsannual =l= pCO2emcap;
+*enforceco2emissionscap.. vCO2emsannual =l= pCO2emcap;
 ************************************************************
 
 ******************STORAGE CONSTRAINTS******************
 *Limit generation to state of charge
-genandsoc(pumphydroegu,h) .. vPegu(pumphydroegu,h) =l= vSoc(pumphydroegu,h);
+genandsoc(g,pumphydroegu,h)$h2(g,h).. vPegu(g,pumphydroegu,h) =l= vSoc(g,pumphydroegu,h);
 
 *Link state of charge, charging, and discharging
-defsocspr(pumphydroegu,springh) .. vSoc(pumphydroegu,springh) =e= pInitsoc(pumphydroegu)$[ORD(springh)=1] + vSoc(pumphydroegu,springh-1)$[ORD(springh)>1] - vPegu(pumphydroegu,springh)
-                                                                                 + pEfficiency(pumphydroegu) * vCharge(pumphydroegu,springh);
-defsocsum(pumphydroegu,summerh) .. vSoc(pumphydroegu,summerh) =e= pInitsoc(pumphydroegu)$[ORD(summerh)=1] + vSoc(pumphydroegu,summerh-1)$[ORD(summerh)>1] - vPegu(pumphydroegu,summerh)
-                                                                                 + pEfficiency(pumphydroegu) * vCharge(pumphydroegu,summerh);
-defsocfal(pumphydroegu,fallh) .. vSoc(pumphydroegu,fallh) =e= pInitsoc(pumphydroegu)$[ORD(fallh)=1] + vSoc(pumphydroegu,fallh-1)$[ORD(fallh)>1] - vPegu(pumphydroegu,fallh)
-                                                                                 + pEfficiency(pumphydroegu) * vCharge(pumphydroegu,fallh);
-defsocwin(pumphydroegu,winterh) .. vSoc(pumphydroegu,winterh) =e= pInitsoc(pumphydroegu)$[ORD(winterh)=1] + vSoc(pumphydroegu,winterh-1)$[ORD(winterh)>1] - vPegu(pumphydroegu,winterh)
-                                                                                 + pEfficiency(pumphydroegu) * vCharge(pumphydroegu,winterh);
-defsocspe(pumphydroegu,specialh) .. vSoc(pumphydroegu,specialh) =e= pInitsoc(pumphydroegu)$[ORD(specialh)=1] + vSoc(pumphydroegu,specialh-1)$[ORD(specialh)>1] - vPegu(pumphydroegu,specialh)
-                                                                                 + pEfficiency(pumphydroegu) * vCharge(pumphydroegu,specialh);
+defsocspr(g,pumphydroegu,h)$springh(g,h).. vSoc(g,pumphydroegu,h) =e= pInitsoc(pumphydroegu)$[ord(h)=pHourIniSpring(g)]
+                                                                      + vSoc(g,pumphydroegu,h-1)$[ord(h)>pHourIniSpring(g)]
+                                                                      - vPegu(g,pumphydroegu,h)
+                                                                      + pEfficiency(pumphydroegu) * vCharge(g,pumphydroegu,h);
+
+defsocsum(g,pumphydroegu,h)$summerh(g,h)..   vSoc(g,pumphydroegu,h) =e= pInitsoc(pumphydroegu)$[ord(h)=pHourIniSummer(g)]
+                                                                      + vSoc(g,pumphydroegu,h-1)$[ord(h)>pHourIniSummer(g)]
+                                                                      - vPegu(g,pumphydroegu,h)
+                                                                      + pEfficiency(pumphydroegu) * vCharge(g,pumphydroegu,h);
+
+defsocfal(g,pumphydroegu,h)$fallh(g,h)..     vSoc(g,pumphydroegu,h) =e= pInitsoc(pumphydroegu)$[ord(h)=pHourIniFall(g)]
+                                                                      + vSoc(g,pumphydroegu,h-1)$[ord(h)>pHourIniFall(g)]
+                                                                      - vPegu(g,pumphydroegu,h)
+                                                                      + pEfficiency(pumphydroegu) * vCharge(g,pumphydroegu,h);
+
+defsocwin(g,pumphydroegu,h)$winterh(g,h)..   vSoc(g,pumphydroegu,h) =e= pInitsoc(pumphydroegu)$[ord(h)=pHourIniWinter(g)]
+                                                                      + vSoc(g,pumphydroegu,h-1)$[ord(h)>pHourIniWinter(g)]
+                                                                      - vPegu(g,pumphydroegu,h)
+                                                                      + pEfficiency(pumphydroegu) * vCharge(g,pumphydroegu,h);
+
+defsocspe(g,pumphydroegu,h)$specialh(g,h)..  vSoc(g,pumphydroegu,h) =e= pInitsoc(pumphydroegu)$[ord(h)=pHourIniSpecial(g)]
+                                                                      + sum(hh$[ord(hh)=pPreviousHourSpecial(g, h)], vSoc(g,pumphydroegu,hh))
+                                                                      - vPegu(g,pumphydroegu,h)
+                                                                      + pEfficiency(pumphydroegu) * vCharge(g,pumphydroegu,h);
 
 *Limit state of charge to maximum storage capacity
-maxsto(pumphydroegu,h) .. vSoc(pumphydroegu,h) =l= pMaxsoc(pumphydroegu);
+maxsto(g,pumphydroegu,h)$h2(g,h) .. vSoc(g,pumphydroegu,h) =l= pMaxsoc(pumphydroegu);
 
 *Limit rate of charging to capacity times efficiency
-limitcharging(pumphydroegu,h) .. vCharge(pumphydroegu,h) =l= pCapac(pumphydroegu,h);
+limitcharging(g,pumphydroegu,h)$h2(g,h) .. vCharge(g,pumphydroegu,h) =l= pCapac(g,pumphydroegu,h);
 ***************************************************
 
 Model expansion includes all equations /all/;

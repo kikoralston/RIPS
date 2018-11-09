@@ -125,7 +125,6 @@ class Curtailmentparameters:
         self.basenamestreamT = data[12][1]
         self.basenameflow = data[13][1]
 
-
     def writefile(self, fname):
 
         with open(os.path.expanduser(fname), 'w') as csvfile:

@@ -13,9 +13,8 @@ import numpy as np
 from AuxFuncs import *
 import pickle as pk
 from AssignCellsToIPMZones import mapCellToIPMZone
-from ModifyGeneratorCapacityWithWaterTData import (getGenToCellAndCellToGenDictionaries, read_waterdata_netcdf,
-                                                   get_all_cells_from_netcdf, order_cells_by_flow,
-                                                   getCellLatAndLongFromFolderName)
+from ModifyGeneratorCapacityWithWaterTData import getGenToCellAndCellToGenDictionaries
+from AuxCurtailmentFuncs import get_all_cells_from_netcdf, order_cells_by_flow, get_all_cells_in_zone, loadCellWaterTs
 from PreProcessRBM import createBaseFilenameToReadOrWrite
 
 # genparam.cellsEligibleForNewPlants, genFleet, curtailparam.rbmOutputDir, curtailparam.locPrecision, genparam.ipmZones, genparam.fipsToZones, genparam.fipsToPolys, currYear
@@ -36,7 +35,11 @@ def loadEligibleCellWaterTs(genFleet, currYear, genparam, curtailparam):
     """
     allCellFoldersInZone, eligibleCellFolders = setCellFolders(genFleet, currYear, genparam, curtailparam)
 
-    return loadCellWaterTs(eligibleCellFolders, allCellFoldersInZone, curtailparam, currYear)
+    dict_out = dict()
+    for gcm in curtailparam.listgcms:
+        dict_out[gcm] = loadCellWaterTs(eligibleCellFolders, allCellFoldersInZone, curtailparam, gcm, currYear)
+
+    return dict_out
 
 
 # rbmOutputDir, cellsEligibleForNewPlants, genFleet, locPrecision, zones, fipsToZones, fipsToPolys
@@ -51,14 +54,12 @@ def setCellFolders(genFleet, currYear, genparam, curtailparam, netcdf=True):
     """
 
     if netcdf:
+        # get cells from first gcm in list
+        gcm = curtailparam.listgcms[0]
 
-        allCellFolders = get_all_cells_from_netcdf(curtailparam)
+        allCellFolders = get_all_cells_from_netcdf(curtailparam, gcm)
+        allCellFoldersInZone = get_all_cells_in_zone(allCellFolders, genparam, curtailparam)
 
-        # read file with dictionary mapping cells to IPM zones (this file must be in the VICS/RBM folder)
-        with open(os.path.join(curtailparam.rbmRootDir, 'cells2zones.pk'), 'rb') as f:
-            cells2zones = pk.load(f)
-
-        allCellFoldersInZone = [c for c in allCellFolders if cells2zones[c] in genparam.ipmZones]
     else:
         allCellFolders = [name for name in os.listdir(curtailparam.rbmOutputDir)
                           if os.path.isdir(os.path.join(curtailparam.rbmOutputDir, name))]
@@ -69,8 +70,22 @@ def setCellFolders(genFleet, currYear, genparam, curtailparam, netcdf=True):
         eligibleCellFolders = copy.deepcopy(allCellFoldersInZone)
 
     elif genparam.cellsEligibleForNewPlants == 'maxflow':
-        best_cells_zone_dict = order_cells_by_flow(genparam, curtailparam, currYear)
+        # get all cells in each zone ordered by flow (descending order)
+        best_cells_zone_dict = order_cells_by_flow(genparam, curtailparam, currYear, sys.maxsize)
 
+        # get list of cells with existing generators in it (including build decisions from previous CE runs)
+        cellLatLongToGenDict = getGenToCellAndCellToGenDictionaries(genFleet)[1]
+        cells_list = list(cellLatLongToGenDict.keys())
+        cells_list_str = list(map(lambda x: createBaseFilenameToReadOrWrite(curtailparam.locPrecision, x[0], x[1]),
+                                  cells_list))
+
+        # for each zone remove cells that already have a generator in it and keep only 100 best cells
+        for z in best_cells_zone_dict:
+            auxList = [x for x in best_cells_zone_dict[z] if x not in cells_list_str]
+            auxList = auxList[:100]
+            best_cells_zone_dict[z] = auxList
+
+        # combine into one single list with all eligible cells
         eligibleCellFolders = []
         for z in best_cells_zone_dict:
             eligibleCellFolders = eligibleCellFolders + best_cells_zone_dict[z]
@@ -107,79 +122,3 @@ def isolateCellsInZones(allCellFolders, genparam):
         cellZone = mapCellToIPMZone(cell, genparam.fipsToZones, genparam.fipsToPolys)
         if cellZone in genparam.impZones: allCellFoldersInZone.append(cell)
     return allCellFoldersInZone
-
-
-def loadCellWaterTs(eligibleCellFolders, allCellFoldersInZone, curtailparam, currYear=None, netcdf=True):
-    """Returns dict of {cell folder name : [[Datetime], [AverageWaterT(degC)], [AirT], [flow]]}
-
-    :param eligibleCellFolders:
-    :param allCellFoldersInZone:
-    :param curtailparam: object of class Curtailparameters
-    :param currYear: (integer) year of data being imported. If None, imports all years
-    :param netcdf: (boolean) if true reads water data from NETCDF files (new format from August 2018)
-
-    :return: dict of {cell folder name : [[Datetime],[AverageWaterT(degC)], [AirT], [flow]]}
-    """
-    eligibleCellWaterTs = dict()
-
-    if netcdf:
-        # TODO: find a way to combine different GCMs
-        gcm = curtailparam.listgcms[0]
-
-        # reading flow/streamT file. substitute '_' to '.'
-        gcm = gcm.replace('_', '.')
-        gcm = gcm.replace('rcp', 'RCP')
-
-        fname = curtailparam.basenamestreamT
-        fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm))
-        waterT, date, lons, lats = read_waterdata_netcdf(fname, 'T_stream', currYear)
-
-        fname = curtailparam.basenameflow
-        fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm))
-        streamflow = read_waterdata_netcdf(fname, 'streamflow', currYear)[0]
-
-        for cellFolder in eligibleCellFolders:
-            if cellFolder in allCellFoldersInZone:
-
-                cellLat, cellLon = getCellLatAndLongFromFolderName(cellFolder)
-
-                ix = np.argwhere(lats == cellLat).flatten()[0]
-                iy = np.argwhere(lons == cellLon).flatten()[0]
-
-                cellAvgWaterTCurrYear = [['date', 'waterT', 'flow']]
-
-                for i, d in enumerate(date):
-                    cellAvgWaterTCurrYear = cellAvgWaterTCurrYear + \
-                                            [[date[i], waterT[i, ix, iy], streamflow[i, ix, iy]]]
-
-                eligibleCellWaterTs[cellFolder] = cellAvgWaterTCurrYear
-
-    else:
-        for cellFolder in eligibleCellFolders:
-            if cellFolder in allCellFoldersInZone:
-
-                cellFolderAvgTFilename = cellFolder + 'Average.csv'
-                avgTFilePath = os.path.join(curtailparam.rbmOutputDir, cellFolder, cellFolderAvgTFilename)
-                cellAvgWaterT = readCSVto2dList(avgTFilePath)
-
-                # filter current year
-                if currYear is not None:
-                    dateCol = cellAvgWaterT[0].index('date')
-                    waterTCol = cellAvgWaterT[0].index('waterT')
-                    airTCol = cellAvgWaterT[0].index('AirT')
-                    flowCol = cellAvgWaterT[0].index('flow')
-
-                    # convert to numeric
-                    cellAvgWaterTCurrYear = [cellAvgWaterT[0]]
-
-                    for row in cellAvgWaterT[1:]:
-                        if str(currYear) in row[dateCol]:
-                            cellAvgWaterTCurrYear = cellAvgWaterTCurrYear + \
-                                                    [[row[dateCol], float(row[waterTCol]), float(row[airTCol]),
-                                                      float(row[flowCol])]]
-                else:
-                    cellAvgWaterTCurrYear = cellAvgWaterT
-
-                eligibleCellWaterTs[cellFolder] = cellAvgWaterTCurrYear
-
-    return eligibleCellWaterTs

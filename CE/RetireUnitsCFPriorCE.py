@@ -4,59 +4,122 @@
 # not retire after prior CE run to maintain planning margin.)
 
 from GAMSAuxFuncs import *
-from ProcessCEResults import markRetiredUnitsFromCE, sumHourlyGenByGensInCE
+from ProcessCEResults import markRetiredUnitsFromCE
+import pandas as pd
+import numpy as np
 
 
-def retireUnitsCFPriorCE(genFleet, genFleetPriorCE, retirementCFCutoff, priorCapacExpModel,
-                         priorHoursCE, scaleMWtoGW, ptEligRetireCF, currYear):
-    unitsRetireCF = markAndSaveRetiredUnitsFromPriorCE(retirementCFCutoff, genFleet,
-                                                       genFleetPriorCE, priorCapacExpModel, priorHoursCE, scaleMWtoGW,
-                                                       ptEligRetireCF, currYear)
+def retireUnitsCFPriorCE(genFleet, genFleetPriorCE, retirementCFCutoff, priorCapacExpModel, priorHoursCE, scaleMWtoGW,
+                         ptEligRetireCF, currYear):
+
+    unitsRetireCF = markAndSaveRetiredUnitsFromPriorCE(retirementCFCutoff, genFleet, genFleetPriorCE,
+                                                       priorCapacExpModel, priorHoursCE, scaleMWtoGW, ptEligRetireCF,
+                                                       currYear)
     return unitsRetireCF
 
 
-################ RETIRE UNITS BASED ON CF IN PRIOR CE RUN ######################
-# Retires coal plants that don't meet CF threshold in PRIOR CE run. These units
-# may not retire due to limiting retirements per planning margin.
-# INPUTS: Retirement CF cutoff, GAMS CE model output from prior CE run, generator
-# fleet, hours included in CE, scale MW to GW, 1d list of plant types eligible
-# to retire based on CFs.
-# OUTPUT: 1d list w/ units that retire due to CF
-def markAndSaveRetiredUnitsFromPriorCE(retirementCFCutoff, genFleet, genFleetPriorCE,
-                                       priorCapacExpModel, priorHoursCE, scaleMWtoGW, ptEligRetireCF, currYear):
-    unitsRetireCF = getUnitsRetireByCF(retirementCFCutoff, genFleet, genFleetPriorCE,
-                                       priorCapacExpModel, priorHoursCE, scaleMWtoGW, ptEligRetireCF)
+def markAndSaveRetiredUnitsFromPriorCE(retirementCFCutoff, genFleet, genFleetPriorCE, priorCapacExpModel,
+                                       priorHoursCE, scaleMWtoGW, ptEligRetireCF, currYear):
+    """RETIRE UNITS BASED ON CF IN PRIOR CE RUN
+
+    Retires coal plants that don't meet CF threshold in PRIOR CE run. These units may not retire due to limiting
+    retirements per planning margin.
+
+    :param retirementCFCutoff: Retirement CF cutoff
+    :param genFleet: generator fleet
+    :param genFleetPriorCE:
+    :param priorCapacExpModel: GAMS CE model output from prior CE run
+    :param priorHoursCE: hours included in CE
+    :param scaleMWtoGW: scale MW to GW
+    :param ptEligRetireCF: 1d list of plant types eligible to retire based on CFs
+    :param currYear:
+    :return: 1d list w/ units that retire due to CF
+    """
+    unitsRetireCF = getUnitsRetireByCF(retirementCFCutoff, genFleet, genFleetPriorCE, priorCapacExpModel,
+                                       priorHoursCE, scaleMWtoGW, ptEligRetireCF)
     markRetiredUnitsFromCE(genFleet, unitsRetireCF, currYear)
+
     return unitsRetireCF
 
 
-# Determines which units retire due to CF in prior CE run
-# Inputs: CF cutoff retirement, dictionary (genID:CF) for generators eligible to retire based on CF,
+def getUnitsRetireByCF(retirementCFCutoff, genFleet, genFleetPriorCE, priorCapacExpModel, priorHoursCE,
+                       scaleMWtoGW, ptEligRetireCF):
+    """Determines which units retire due to CF in prior CE run
+
+# Inputs: , dictionary (genID:CF) for generators eligible to retire based on CF,
 # planning reserve, curr & end year, gen fleet w/ only online gens, plant types that
 # can retire due to CF in CE.
 # Outputs: 1d list of units to retire for economic reasons
-def getUnitsRetireByCF(retirementCFCutoff, genFleet, genFleetPriorCE,
-                       priorCapacExpModel, priorHoursCE, scaleMWtoGW, ptEligRetireCF):
-    hourlyGenByGens = extract2dVarResultsIntoDict(priorCapacExpModel, 'vPegu')  # (genID,hr):hourly gen [GW]
-    ceHoursGenByGens = sumHourlyGenByGensInCE(hourlyGenByGens, scaleMWtoGW)
+
+
+    :param retirementCFCutoff: CF cutoff retirement
+    :param genFleet:
+    :param genFleetPriorCE:
+    :param priorCapacExpModel:
+    :param priorHoursCE:
+    :param scaleMWtoGW:
+    :param ptEligRetireCF:
+    :return:
+    """
+    # (gcm,genID,hr):hourly gen [GW]
+    hourlyGenByGens = dict()
+    for rec in priorCapacExpModel.out_db['vPegu']:
+        hourlyGenByGens[tuple(rec.keys)] = float(rec.level) * scaleMWtoGW
+
+    # convert to list
+    hourlyGenByGens = list(hourlyGenByGens.items())
+
+    # convert to pd data frame
+    hourlyGenByGensDf = pd.DataFrame({'gcm': [k[0][0] for k in hourlyGenByGens],
+                                      'genId': [k[0][1] for k in hourlyGenByGens],
+                                      'genValue': [i[1] for i in hourlyGenByGens]})
+
+    # aggregate average annual generation for each plant (over all gcms, over all hours)
+    hourlyGenByGensDf = hourlyGenByGensDf.groupby(['gcm', 'genId'], as_index=False).aggregate(np.sum)
+    hourlyGenByGensDf = hourlyGenByGensDf.groupby('genId', as_index=False).aggregate(np.mean)
+
+    # convert to dictionary (original format)
+    keys = hourlyGenByGensDf['genId'].values
+    values = hourlyGenByGensDf['genValue'].values
+    ceHoursGenByGens = dict(zip(keys, values))
+
+    # get longest hoursForCE (different gcms could have different lengths because of special hours)
+    auxArray = np.array([[i[0], float(len(i[1]))] for i in priorHoursCE.items()], dtype=object)
+    idxMax = np.argmax(auxArray[:, 1])
+    longGcm = auxArray[idxMax, 0]
+
+    priorHoursCEAux = priorHoursCE[longGcm]
+
+    #hourlyGenByGens = extract2dVarResultsIntoDict(priorCapacExpModel, 'vPegu')  # (genID,hr):hourly gen [GW]
+    #ceHoursGenByGens = sumHourlyGenByGensInCE(hourlyGenByGens, scaleMWtoGW)
+
     gensEligToRetireCFs = getGenCFsInCENotAlreadyRetired(ceHoursGenByGens, genFleet,
-                                                         genFleetPriorCE, ptEligRetireCF, priorHoursCE)
+                                                         genFleetPriorCE, ptEligRetireCF, priorHoursCEAux)
     unitsRetireCF = []
     if len(gensEligToRetireCFs) > 0:
         minCF = min([gensEligToRetireCFs[gen] for gen in gensEligToRetireCFs])
         if minCF < retirementCFCutoff:  # if any plants eligible for retirement
             addAllUnitsWithCFBelowCutoff(gensEligToRetireCFs, retirementCFCutoff, unitsRetireCF)
+
     return unitsRetireCF
 
 
-# Determines which gens retire due to CF in prior CE run that didn't already
-# retire after last CE run.
+def getGenCFsInCENotAlreadyRetired(ceHoursGenByGens, genFleet, genFleetPriorCE, plantTypesEligibleForRetirementByCF,
+                                   hoursForCE):
+    """Determines which gens retire due to CF in prior CE run that didn't already retire after last CE run.
+
 # Inputs: total gen by generators for CE hours (dict of genID:total gen), gen fleet
 # only w/ online generators (2d list), list of plant types that can retire based on CF,
 # 1d list of hours input to CE
 # Outputs: dictionary (genID:CF) for generators eligible to retire based on CF
-def getGenCFsInCENotAlreadyRetired(ceHoursGenByGens, genFleet, genFleetPriorCE,
-                                   plantTypesEligibleForRetirementByCF, hoursForCE):
+
+    :param ceHoursGenByGens:
+    :param genFleet:
+    :param genFleetPriorCE:
+    :param plantTypesEligibleForRetirementByCF:
+    :param hoursForCE:
+    :return:
+    """
     gensEligToRetireCFs = dict()
     (capacCol, plantTypeCol) = (genFleet[0].index('Capacity (MW)'),
                                 genFleet[0].index('PlantType'))
@@ -79,11 +142,16 @@ def getGenCFsInCENotAlreadyRetired(ceHoursGenByGens, genFleet, genFleetPriorCE,
     return gensEligToRetireCFs
 
 
-# Adds all units elig to retire w/ CF below cutoff to unitsToRetire list
+def addAllUnitsWithCFBelowCutoff(gensEligToRetireCFs, retirementCFCutoff, unitsRetireCF):
+    """Adds all units elig to retire w/ CF below cutoff to unitsToRetire list
+
 # Inputs: dictionary (genID:CF) for gens elig to retire, retirement CF cutoff,
 # empty list to which genIDs for units that should retire are added
-def addAllUnitsWithCFBelowCutoff(gensEligToRetireCFs, retirementCFCutoff, unitsRetireCF):
+
+    :param gensEligToRetireCFs:
+    :param retirementCFCutoff:
+    :param unitsRetireCF:
+    """
     for gen in gensEligToRetireCFs:
         genCF = gensEligToRetireCFs[gen]
         if genCF < retirementCFCutoff: unitsRetireCF.append(gen)
-################################################################################

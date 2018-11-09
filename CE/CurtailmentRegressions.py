@@ -140,7 +140,7 @@ def calcCurtailmentForGenOrTech(plantType, fuelAndCoalType, coolType, state, cap
     :param coeffs: (dict) dictionary with curtailment regression coefficients (plantType,coolType,coolDesignT)
     :param genparam: object of class Generalparameters
     :param curtailparam: object of class Curtailmentparameters
-    :return:
+    :return: 1d numpy array
     """
 
     # add interaction term used by Aviva's regressions

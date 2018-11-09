@@ -467,6 +467,16 @@ def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZo
 
 def getBestSolarIdsInStates(solarDir, solarCapacByState, startSolarCapacForCFs,
                             fipsToZones, fipsToPolys, currZone):
+    """Get list with best
+
+    :param solarDir:
+    :param solarCapacByState:
+    :param startSolarCapacForCFs:
+    :param fipsToZones:
+    :param fipsToPolys:
+    :param currZone:
+    :return:
+    """
     solarMetadataFilename = os.path.join(solarDir, 'SolarCapacityFactorsNRELSERC.csv')
     solarMetadata = readCSVto2dList(solarMetadataFilename)
     solarCfCol = solarMetadata[0].index('CF')
@@ -546,6 +556,7 @@ def getSolarSiteCfs(solarDir, siteFilename, siteCapac, siteTz, desiredTz):
     datetimeAndGenHourlyInYr = slimSolarGenToYear(datetimeAndGenHourly, desiredTz, siteFilename)
     subhourlyCfs = convertToCfs(datetimeAndGenSuhHourlyInYr, siteCapac)
     hourlyCfs = convertToCfs(datetimeAndGenHourlyInYr, siteCapac)
+
     return hourlyCfs, subhourlyCfs
 
 

@@ -8,9 +8,11 @@ import os
 from AuxFuncs import *
 from GAMSAuxFuncs import createGenSymbol
 from DemandFuncsCE import getHoursInMonths
+import pandas as pd
+import pickle as pk
 
 
-def getHydroEPotential(fleet, demandZonal, repAndSpeHoursDict, currYear, dataRoot):
+def getHydroEPotential(fleet, demandZonal, repAndSpeHoursDict, currYear, genparam, curtailparam):
     """Computes maximum hydro potential for each hydro generator
 
     This function computes the maximum hydro potential for each hydro generator using PNNL data. Hydro potential is
@@ -25,53 +27,90 @@ def getHydroEPotential(fleet, demandZonal, repAndSpeHoursDict, currYear, dataRoo
     :param repAndSpeHoursDict: rep hrs per season or special block (dict of block:rep hrs, where seasons are labled
     by name and special hours are 'special')
     :param currYear: current year
-    :param dataRoot: folder with input data
-    :return: dict of season:genSymbol:generation potential
+    :param genparam: object of class Generalparameters
+    :param curtailparam: object of class Curtailmentparameters
+
+    :return: nested dict of {gcm:{season:{genSymbol:generation potential}}}
     """
-    hydroPotentials = importHydroPotentialGen(currYear, dataRoot)
-    hydroPotPerSeason = dict()
-    plantCol, orisCol = fleet[0].index('PlantType'), fleet[0].index('ORIS Plant Code')
-    zoneCol = fleet[0].index('Region Name')
-    hydroUnits = [row for row in fleet[1:] if row[plantCol] == 'Hydro']
-    for season in repAndSpeHoursDict:
-        repHrs = repAndSpeHoursDict[season]
-        months = getMonthsOfRepHrs(repHrs)
-        monthlyDemandZonal = getMonthlyDemand(demandZonal, months)
-        repHrsDemandZonal = getRepHrsDemand(demandZonal, repHrs)
-        seasonDict, unitsNoData = dict(), list()
 
-        for row in hydroUnits:
-            oris, zone, genSymbol = row[orisCol], row[zoneCol], createGenSymbol(row, fleet[0])
-            potential, hasData = getMonthsPotential(oris, hydroPotentials, months)
+    hydroPotentials = {gcm: importHydroPotentialGen(currYear, genparam, gcm) for gcm in curtailparam.listgcms}
 
-            if not hasData:
-                unitsNoData.append(genSymbol)
-            else:
-                seasonDict[genSymbol] = potential * repHrsDemandZonal[zone] / monthlyDemandZonal[zone]
+    hydroPotentialsTotal = dict()
 
-        if len(unitsNoData) > 0: assignPotentialsToMissingUnits(unitsNoData, fleet, seasonDict, repHrs)
+    for gcm in repAndSpeHoursDict:
+        hydroPotPerSeason = dict()
+        plantCol, orisCol = fleet[0].index('PlantType'), fleet[0].index('ORIS Plant Code')
+        zoneCol = fleet[0].index('Region Name')
+        hydroUnits = [row for row in fleet[1:] if row[plantCol] == 'Hydro']
+        for season in repAndSpeHoursDict[gcm]:
+            repHrs = repAndSpeHoursDict[gcm][season]
+            months = getMonthsOfRepHrs(repHrs)
+            monthlyDemandZonal = getMonthlyDemand(demandZonal[gcm], months)
+            repHrsDemandZonal = getRepHrsDemand(demandZonal[gcm], repHrs)
+            seasonDict, unitsNoData = dict(), list()
 
-        hydroPotPerSeason[season] = seasonDict
+            for row in hydroUnits:
+                oris, zone, genSymbol = row[orisCol], row[zoneCol], createGenSymbol(row, fleet[0])
+                potential, hasData = getMonthsPotential(oris, hydroPotentials[gcm], months)
 
-    return hydroPotPerSeason
+                if not hasData:
+                    unitsNoData.append(genSymbol)
+                else:
+                    seasonDict[genSymbol] = potential * repHrsDemandZonal[zone] / monthlyDemandZonal[zone]
+
+            if len(unitsNoData) > 0: assignPotentialsToMissingUnits(unitsNoData, fleet, seasonDict, repHrs)
+
+            hydroPotPerSeason[season] = seasonDict
+
+        hydroPotentialsTotal[gcm] = hydroPotPerSeason
+
+    return hydroPotentialsTotal
 
 
-def importHydroPotentialGen(currYear, dataRoot):
+def importHydroPotentialGen(currYear, genparam, gcm, format='new'):
     """ Returns hydro potential gen for current year in 2d list w/ col 1 = plant IDs
 
     Read file with monthly hydro potential created by PNNL
 
     :param currYear: (integer)
-    :param dataRoot: (string)
+    :param genparam: object of class Generalparameters
+    :param gcm: (string) name of gcm model
+    :param format: (string) 'new' refers to the new hydro potential file format from october 2018
+
     :return: 2d list w/ col 1 = plant IDs
     """
-    dataDir = os.path.join(dataRoot, 'HydroMonthlyDataPNNL')
+    dataDir = os.path.join(genparam.dataRoot, 'HydroMonthlyDataPNNL')
 
-    potentialsAllYears = readCSVto2dList(os.path.join(dataDir, 'monhydrogen_1550.csv'))
-    # First row in data is months listed w/out years; assign years to each col
-    startYr, endYr = [2015, 2050]
-    yrIndex = (currYear - startYr) * 12 + 1  # +1 to account for first col = PlantID
-    return [[row[0]] + row[yrIndex:yrIndex + 12] for row in potentialsAllYears]
+    name_gcm = gcm
+
+    # reading flow file. substitute '_' to '.' and change 'RCP' to small caps
+    name_gcm = name_gcm.replace('_', '.')
+    name_gcm = name_gcm.replace('rcp', 'RCP')
+
+    if format == 'new':
+        with open(os.path.join(dataDir, 'monthlyhydropotential.pk'), 'rb') as f:
+            allData = pk.load(f)
+
+        potentialsAllYears = allData[name_gcm]
+
+        potentialsCurrYear = potentialsAllYears[potentialsAllYears['months'].dt.year == currYear]
+        potentialsCurrYear = potentialsCurrYear.drop(columns=['months'])
+        potentialsCurrYear = potentialsCurrYear.reset_index(drop=True)
+        potentialsCurrYear = potentialsCurrYear.T
+        potentialsCurrYear = potentialsCurrYear.reset_index()
+
+        out = potentialsCurrYear.astype(str)
+        out = out.values.tolist()
+        out = [['PlantID', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']] + out
+
+    else:
+        potentialsAllYears = readCSVto2dList(os.path.join(dataDir, 'monhydrogen_1550.csv'))
+        # First row in data is months listed w/out years; assign years to each col
+        startYr, endYr = [2015, 2050]
+        yrIndex = (currYear - startYr) * 12 + 1  # +1 to account for first col = PlantID
+        out = [[row[0]] + row[yrIndex:yrIndex + 12] for row in potentialsAllYears]
+
+    return out
 
 
 def getMonthsOfRepHrs(repHrs):
@@ -295,3 +334,97 @@ def getReleasesForUnit(oris, daily_releases):
         hasData = False
 
     return daily_releases_unit, hasData
+
+
+def processHydroPotential(pathin, pathout):
+    """
+    This routine processes the raw hydro potential data created by Nathalie Voisin (PNNL)
+
+    October 2018
+
+    This routine reads the txt files created by Nathalie Voisin (PNNL) for each hydro generator in SERC and processes
+    it in order to create the monthly hydro potential values (in MWh) used by the CE model
+
+    :return:
+    """
+
+    x = pd.read_table(os.path.join(pathin, 'PlantLocationEIA2003_2016.txt'),
+                      usecols=['OrisId', 'Latitude', 'Longitude', 'Lt_final', 'LN_final',
+                               '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])
+
+    # remove rows with ID NaN
+    x = x[~(pd.isnull(x['OrisId']))]
+
+    x['OrisId'] = x['OrisId'].astype(int)
+
+    totaldata = {}
+
+    for i, id in enumerate(x['OrisId']):
+        labels = []
+        values = []
+
+        print('{0:4d}. Reading hydro gen {1}'.format(i, id))
+
+        with open(os.path.join(pathin, '{0:d}.txt'.format(id))) as f:
+            for i, line in enumerate(f):
+
+                # remove break line character
+                if line[-1] == '\n':
+                    line = line[:-1]
+
+                line = line.strip()
+
+                if i % 2 == 0:
+                    labels.append(line)
+                else:
+                    values.append(list(map(float, line.split(sep=' '))))
+
+            labels = labels[1:]
+            values = values[1:]
+
+        out = pd.DataFrame()
+        # expand to monthly values
+        months = pd.date_range(start='2012-01-01', end='2100-12-01', freq='MS')
+
+        out['months'] = months
+
+        for i, l in enumerate(labels):
+            gcm = l.split(sep='.regulated')[0]
+            gcm = gcm.split(sep='serc.')[1]
+
+            y = sum([list((x[x['OrisId'] == id].iloc[0, 5:17]).values*z) for z in values[i]], [])
+            out[gcm] = y
+
+        totaldata[id] = out
+
+    # rearrange totaldata dictionary as {gcm: dataframe with monthly hydro potential}
+    # data frame will have each column as one hydro generator and row as months
+
+    print('Rearranging dictionary to have GCMs as keys...')
+
+    totaldata2 = {}
+
+    # get list of gcms from last data frame
+    list_gcms = totaldata[id].columns
+    list_gcms = list_gcms[1:]
+
+    for g in list_gcms:
+        out = pd.DataFrame()
+        for id in x['OrisId']:
+            out['months'] = months
+            out[id] = totaldata[id][g]
+
+        totaldata2[g] = out
+
+    print('Saving final dictionary as a pickle file...')
+
+    # save final dictionary to pickle file
+    with open(os.path.join(pathout, 'monthlyhydropotential.pk'), 'wb') as f:
+        pk.dump(totaldata2, f)
+
+    print('Done!')
+
+#    with open(os.path.join(pathout, 'monthlyhydropotential.pk'), 'rb') as f:
+#        x = pk.load(f)
+
+

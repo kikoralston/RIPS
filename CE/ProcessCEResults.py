@@ -10,6 +10,7 @@ from CreateFleetForCELoop import onlineAndNotRetired
 from ModifyGeneratorCapacityWithWaterTData import getCellLatAndLongFromFolderName
 from DemandFuncsCE import sumZonalData
 from AssignCellsToStates import getStateOfPt
+import pandas as pd
 
 ########### STORE BUILD DECISIONS FROM CAPACITY EXPANSION ######################
 #Inputs: running list of CE builds (2d list), CE model output as GAMS object, 
@@ -193,38 +194,102 @@ def selectAndMarkUnitsRetiredByCE(genFleet,genFleetForCE,retirementCFCutoff,capa
             capacExpRetiredUnitsByCE,scaleMWtoGW,hoursForCE,planningReserveZonal,endYear,
             capacExpRetiredUnitsByAge,demandZonalCE,hourlyWindGenZonalCE,hourlySolarGenZonalCE,newWindCFsZonalCE,
             newSolarCFsZonalCE,plantTypesEligibleForRetirementByCF):
+
     genFleetUpdated = [genFleet[0]] + [row for row in genFleet[1:] if onlineAndNotRetired(row,genFleet[0],currYear)]
-    (retiredUnitsByCE,ceHoursGenByGens) = selectRetiredUnitsByCE(retirementCFCutoff,capacExpModel,
+
+    (retiredUnitsByCE, ceHoursGenByGens) = selectRetiredUnitsByCE(retirementCFCutoff,capacExpModel,
             genFleetUpdated,genFleetForCE,scaleMWtoGW,hoursForCE,planningReserveZonal,currYear,endYear,
             demandZonalCE,hourlyWindGenZonalCE,hourlySolarGenZonalCE,newWindCFsZonalCE,newSolarCFsZonalCE,
             plantTypesEligibleForRetirementByCF)
+
     print('Num units that retire due to economics in ' + str(currYear) + ':' + str(len(retiredUnitsByCE)))
-    saveAnnualGenByGens(ceHoursGenByGens,capacExpGenByGens,currYear)
+
+    saveAnnualGenByGens(ceHoursGenByGens, capacExpGenByGens, currYear)
     capacExpRetiredUnitsByCE.append(['UnitsRetiredByCE' + str(currYear)] + retiredUnitsByCE)
     genFleetWithRetirements = copy.deepcopy(genFleet)
-    markRetiredUnitsFromCE(genFleetWithRetirements,retiredUnitsByCE,currYear)
+    markRetiredUnitsFromCE(genFleetWithRetirements, retiredUnitsByCE, currYear)
+
     return genFleetWithRetirements
 
-#Determines which units retire for economic reasons after CE run.
-#Inputs: see prior function. genFleetUpdated = gen fleet w/ only online units.
-#Outputs: 1d list of gens that retire for economic reasons, dictionary of 
-#genID:total gen over CE hours in CE run.
-def selectRetiredUnitsByCE(retirementCFCutoff,capacExpModel,genFleetUpdated,genFleetForCE,
-        scaleMWtoGW,hoursForCE,planningReserveZonal,currYear,endYear,demandZonalCE,hourlyWindGenZonalCE,
-        hourlySolarGenZonalCE,newWindCFsZonalCE,newSolarCFsZonalCE,plantTypesEligibleForRetirementByCF):
-    hourlyGenByGens = extract2dVarResultsIntoDict(capacExpModel,'vPegu') #(genID,hr):hourly gen [GW]
-    ceHoursGenByGens = sumHourlyGenByGensInCE(hourlyGenByGens,scaleMWtoGW)
-    gensEligToRetireCFs = getGenCFsInCE(ceHoursGenByGens,genFleetUpdated,genFleetForCE,
-                                        plantTypesEligibleForRetirementByCF,hoursForCE)
+
+def selectRetiredUnitsByCE(retirementCFCutoff, capacExpModel, genFleetUpdated, genFleetForCE, scaleMWtoGW,
+                           hoursForCE, planningReserveZonal, currYear, endYear, demandZonalCE, hourlyWindGenZonalCE,
+                           hourlySolarGenZonalCE, newWindCFsZonalCE, newSolarCFsZonalCE,
+                           plantTypesEligibleForRetirementByCF):
+    """Determines which units retire for economic reasons after CE run.
+
+    Inputs: see prior function. genFleetUpdated = gen fleet w/ only online units.
+
+    :param retirementCFCutoff:
+    :param capacExpModel:
+    :param genFleetUpdated:
+    :param genFleetForCE:
+    :param scaleMWtoGW:
+    :param hoursForCE:
+    :param planningReserveZonal:
+    :param currYear:
+    :param endYear:
+    :param demandZonalCE:
+    :param hourlyWindGenZonalCE:
+    :param hourlySolarGenZonalCE:
+    :param newWindCFsZonalCE:
+    :param newSolarCFsZonalCE:
+    :param plantTypesEligibleForRetirementByCF:
+    :return: 1d list of gens that retire for economic reasons, dictionary of genID:total gen over CE hours in CE run.
+    """
+
+    # (gcm,genID,hr):hourly gen [GW]
+    hourlyGenByGens = dict()
+    for rec in capacExpModel.out_db['vPegu']:
+        hourlyGenByGens[tuple(rec.keys)] = float(rec.level) * scaleMWtoGW
+
+    # convert to list
+    hourlyGenByGens = list(hourlyGenByGens.items())
+
+    # convert to pd data frame
+    hourlyGenByGensDf = pd.DataFrame({'gcm': [k[0][0] for k in hourlyGenByGens],
+                                      'genId': [k[0][1] for k in hourlyGenByGens],
+                                      'genValue': [i[1] for i in hourlyGenByGens]})
+
+    # aggregate average annual generation for each plant (over all gcms, over all hours)
+    hourlyGenByGensDf = hourlyGenByGensDf.groupby(['gcm', 'genId'], as_index=False).aggregate(np.sum)
+    hourlyGenByGensDf = hourlyGenByGensDf.groupby('genId', as_index=False).aggregate(np.mean)
+
+    # convert to dictionary (original format)
+    keys = hourlyGenByGensDf['genId'].values
+    values = hourlyGenByGensDf['genValue'].values
+    ceHoursGenByGens = dict(zip(keys, values))
+
+    # get longest hoursForCE (different gcms could have different lengths because of special hours)
+    auxArray = np.array([[i[0], float(len(i[1]))] for i in hoursForCE.items()], dtype=object)
+    idxMax = np.argmax(auxArray[:, 1])
+    longGcm = auxArray[idxMax, 0]
+
+    hoursForCEAux = hoursForCE[longGcm]
+
+    gensEligToRetireCFs = getGenCFsInCE(ceHoursGenByGens, genFleetUpdated, genFleetForCE,
+                                        plantTypesEligibleForRetirementByCF, hoursForCEAux)
+
     unitsToRetire = retireUnitsByCF(retirementCFCutoff,gensEligToRetireCFs,planningReserveZonal,
                                     currYear,endYear,genFleetUpdated,demandZonalCE,hourlyWindGenZonalCE,
                                     hourlySolarGenZonalCE,newWindCFsZonalCE,newSolarCFsZonalCE)
+
     return (unitsToRetire,ceHoursGenByGens)
 
-#Sum generation by each generator in CE run (so only for hours in CE model)
-#Inputs: dictionary of (hr,genID):hourly gen [GWh], scale MW to GW
-#Outputs: dictionary of genID:total annual gen
-def sumHourlyGenByGensInCE(hourlyGenByGens,scaleMWtoGW):
+
+def sumHourlyGenByGensInCE(hourlyGenByGens, scaleMWtoGW):
+    """Sum generation by each generator in CE run (so only for hours in CE model)
+
+    NOT CALLED ANYMORE. USING PANDAS NOW (see function above)
+
+    Inputs: dictionary of (hr,genID):hourly gen [GWh], scale MW to GW
+    Outputs: dictionary of genID:total annual gen
+
+
+    :param hourlyGenByGens:
+    :param scaleMWtoGW:
+    :return:
+    """
     ceHoursGenByGens = dict()
     for (genSymbol,hourSymbol) in hourlyGenByGens:
         if genSymbol not in ceHoursGenByGens:
@@ -233,17 +298,23 @@ def sumHourlyGenByGensInCE(hourlyGenByGens,scaleMWtoGW):
             ceHoursGenByGens[genSymbol] += float(hourlyGenByGens[(genSymbol,hourSymbol)]) * scaleMWtoGW
     return ceHoursGenByGens
 
-#Inputs: total gen by generators for CE hours (dict of genID:total gen), gen fleet 
-#only w/ online generators (2d list), list of plant types that can retire based on CF,
-#1d list of hours input to CE
-#Outputs: dictionary (genID:CF) for generators eligible to retire based on CF
-def getGenCFsInCE(ceHoursGenByGens,genFleetUpdated,genFleetForCE,
-                plantTypesEligibleForRetirementByCF,hoursForCE):
+
+def getGenCFsInCE(ceHoursGenByGens, genFleetUpdated, genFleetForCE, plantTypesEligibleForRetirementByCF, hoursForCE):
+    """
+
+    :param ceHoursGenByGens: total gen by generators for CE hours (dict of genID:total gen)
+    :param genFleetUpdated: gen fleet only w/ online generators (2d list)
+    :param genFleetForCE:
+    :param plantTypesEligibleForRetirementByCF:  list of plant types that can retire based on CF
+    :param hoursForCE: 1d list of hours input to CE
+    :return: dictionary (genID:CF) for generators eligible to retire based on CF
+    """
     gensEligToRetireCFs = dict()
     (capacCol,plantTypeCol) = (genFleetUpdated[0].index('Capacity (MW)'),
                                 genFleetUpdated[0].index('PlantType'))
     genSymbolsForFleet = [createGenSymbol(row,genFleetUpdated[0]) for row in genFleetUpdated]
     genSymbolsForCEFleet = [createGenSymbol(row,genFleetForCE[0]) for row in genFleetForCE]
+
     for gen in ceHoursGenByGens:
         #Need to screen out wind and solar plants in genFleetForCE, since these
         #are tacked on @ end and are not in genFleetUpdated. Consequently, if don't
@@ -255,6 +326,7 @@ def getGenCFsInCE(ceHoursGenByGens,genFleetUpdated,genFleetForCE,
                 genCapac = genFleetUpdated[genSymbolsForFleet.index(gen)][capacCol]
                 genCF = ceHoursGenByGens[gen]/(float(genCapac)*len(hoursForCE))
                 gensEligToRetireCFs[gen] = genCF
+
     return gensEligToRetireCFs
 
 #Determines which units retire due to CF.
@@ -361,6 +433,7 @@ def markRetiredUnitsFromCE(genFleetWithRetirements,retiredUnitsByCE,currYear):
     orisCol = genFleetWithRetirements[0].index('ORIS Plant Code')
     unitIdCol = genFleetWithRetirements[0].index('Unit ID')
     genSymbols = [createGenSymbol(row,genFleetWithRetirements[0]) for row in genFleetWithRetirements]
+
     for retiredUnit in retiredUnitsByCE:
         fleetRow = genSymbols.index(retiredUnit)
         genFleetWithRetirements[fleetRow][retiredCol] = currYear

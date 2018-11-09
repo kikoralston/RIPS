@@ -2,13 +2,14 @@ import os, csv, copy
 import numpy as np
 import pandas as pd
 import datetime as dt
+from AuxCurtailmentFuncs import createBaseFilenameToReadOrWrite
 import netCDF4 as nc
 import time
 from AuxFuncs import *
 from GAMSAuxFuncs import *
 from CurtailmentRegressions import (calcCurtailmentForGenOrTech, loadRegCoeffs, getKeyCurtailParams,
                                     getCoeffsForGenOrTech)
-#from LoadEligibleCellWaterTs import *
+
 
 
 def processRBMDataIntoIndividualCellFiles(curtailparam):
@@ -316,20 +317,6 @@ def writeCellTemperatureData(allSegmentData, cellInfo, outputDirs, locPrecision,
             f.write('%d %d %d %.1f %.2f %.2f %.2f\n' % (dataCurr[i, 0], dataCurr[i, 1], dataCurr[i, 2],
                                                         dataCurr[i, 3], dataCurr[i, 4], dataCurr[i, 5], dataCurr[i, 6]))
         f.close()
-
-
-def createBaseFilenameToReadOrWrite(locPrecision, inputLat, inputLong):
-    """Creates string with name of folder with cell data
-
-    This function creates a string with the formatted name of the folder that contains the data
-    for the respective grid cell
-
-    :param locPrecision: number of decimal digits in lat and long values
-    :param inputLat: latitude of grid cell
-    :param inputLong: longitude of grid cell
-    :return: string with name of folder (e.g. 34.4375_-86.4375)
-    """
-    return '%.*f_%.*f' % (locPrecision, inputLat, locPrecision, inputLong)
 
 
 def createHeaderStr(outputHeaders):

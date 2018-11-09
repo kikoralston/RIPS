@@ -8,37 +8,84 @@ import os, csv, copy
 from AuxFuncs import *
 from GAMSAuxFuncs import createTechSymbol
 from AssignCellsToIPMZones import mapCellToIPMZone
-from ModifyGeneratorCapacityWithWaterTData import loadWaterAndMetData, read_netcdf_full
+from AuxCurtailmentFuncs import loadWaterAndMetData, read_netcdf_full
 from CurtailmentRegressions import (calcCurtailmentForGenOrTech, loadRegCoeffs, getKeyCurtailParamsNewTechs,
                                     getCoeffsForGenOrTech)
 from AssignCellsToStates import getStateOfPt
 import numpy as np
 import pandas as pd
 import progressbar
+import multiprocessing as mp
+import pickle as pk
+import netCDF4 as nc
 
 
-################################################################################
-####### MASTER FUNCTION ########################################################
-################################################################################
-# Returns dict of (plant+cooltype,cell):hrly tech curtailments
 def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam, curtailparam,
                                          resultsDir, pbar=True):
+    """ Returns dict of (plant+cooltype,cell):hrly tech curtailments
 
+    :param eligibleCellWaterTs:
+    :param newTechsCE:
+    :param currYear:
+    :param genparam:
+    :param curtailparam:
+    :param resultsDir:
+    :param pbar:
+    :return:
+    """
     # Isolate water Ts to year of analysis
     eligibleCellWaterTsCurrYear = getWaterTsInCurrYear(currYear, eligibleCellWaterTs)
     cellWaterTsForNewTechs = selectCells(eligibleCellWaterTsCurrYear, genparam.cellNewTechCriteria,
                                          genparam.fipsToZones, genparam.fipsToPolys)
+
+    # compile list of arguments to call multiprocessing
+    args_list = [[cellWaterTsForNewTechs[gcm], newTechsCE, currYear, genparam, curtailparam, gcm]
+                 for gcm in curtailparam.listgcms]
+
+    with mp.Pool(processes=genparam.ncores) as pool:
+        list_curtailments = pool.map(worker_new_tech_curtailments, args_list)
+
+    # create nested dictionary
+    hrlyCurtailmentsAllTechsInTgtYr = dict(zip(curtailparam.listgcms, list_curtailments))
+
+    return hrlyCurtailmentsAllTechsInTgtYr
+
+
+def worker_new_tech_curtailments(list_args):
+    """ Worker function for using multiprocessing with function calculateGeneratorCurtailments
+
+    :param list_args: list with arguments for function
+    :return:
+    """
+
+    curtailments_out = calculateTechsCurtailments(cellWaterTsForNewTechs=list_args[0], newTechsCE=list_args[1],
+                                                  currYear=list_args[2], genparam=list_args[3],
+                                                  curtailparam=list_args[4], gcm=list_args[5])
+    return curtailments_out
+
+
+def calculateTechsCurtailments(cellWaterTsForNewTechs, newTechsCE, currYear, genparam, curtailparam, gcm, pbar=True):
+    """ Returns dict of (plant+cooltype,cell):hrly tech curtailments
+
+    :param cellWaterTsForNewTechs:
+    :param newTechsCE:
+    :param currYear:
+    :param genparam:
+    :param curtailparam:
+    :param resultsDir:
+    :param pbar:
+    :return:
+    """
+
     # Do curtailments
     (hrlyCurtailmentsAllTechsInTgtYr, hrlyTechCurtailmentsList) = (dict(), [])
     regCoeffs = loadRegCoeffs(genparam.dataRoot, 'capacity.json')  # dict of cooling type: reg coeffs
 
     # read full meteo data for current year (full water data is already loaded)
     fname = curtailparam.basenamemeteo
+    name_gcm = gcm
 
-    # TODO: find a way to combine different GCMs
-    gcm = curtailparam.listgcms[0]
-
-    fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm, currYear))
+    fname = os.path.join(curtailparam.rbmDataDir, fname.format(name_gcm, currYear))
     meteodata = read_netcdf_full(currYear, fname, curtailparam)
 
     if pbar:
@@ -80,38 +127,45 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
                 hrlyCurtailmentsAllTechsInTgtYr[
                     (createTechSymbol(techRow, newTechsCE[0], genparam.ptCurtailedAll),
                      cell)] = hrlyCurtailmentsGen
-                hrlyTechCurtailmentsList.append(
-                    [createTechSymbol(techRow, newTechsCE[0], genparam.ptCurtailedAll), cell]
-                    + list(hrlyCurtailmentsGen))
+#                hrlyTechCurtailmentsList.append(
+#                    [createTechSymbol(techRow, newTechsCE[0], genparam.ptCurtailedAll), cell]
+#                    + list(hrlyCurtailmentsGen))
 
-    return hrlyCurtailmentsAllTechsInTgtYr, hrlyTechCurtailmentsList
+    return hrlyCurtailmentsAllTechsInTgtYr #, hrlyTechCurtailmentsList
 
 
-################################################################################
-####### ISOLATE AVG WATER TS FOR CURRENT YEAR FOR EACH CELL ####################
-################################################################################
-# Returns dict of cell folder name : [[Datetime],[AverageWaterT(degC)]]
 def getWaterTsInCurrYear(currYear, eligibleCellWaterTs):
+    """ISOLATE AVG WATER TS FOR CURRENT YEAR FOR EACH CELL
 
+    :param currYear:
+    :param eligibleCellWaterTs:
+    :return: Returns dict of cell folder name : [[Datetime],[AverageWaterT(degC)]]
+    """
     eligibleCellWaterTsCurrYear = dict()
-    for cell in eligibleCellWaterTs:
-        cellWaterTs = eligibleCellWaterTs[cell]
-        dateCol = cellWaterTs[0].index('date')
-        eligibleCellWaterTsCurrYear[cell] = [cellWaterTs[0]] + [row for row in
-                                                                cellWaterTs[1:] if str(currYear) in str(row[dateCol])]
+
+    for gcm in eligibleCellWaterTs:
+        auxDict = {}
+        for cell in eligibleCellWaterTs[gcm]:
+            cellWaterTs = eligibleCellWaterTs[gcm][cell]
+            dateCol = cellWaterTs[0].index('date')
+            auxDict[cell] = [cellWaterTs[0]] + [row for row in cellWaterTs[1:] if str(currYear) in str(row[dateCol])]
+        eligibleCellWaterTsCurrYear[gcm] = auxDict
+
     return eligibleCellWaterTsCurrYear
 
 
-################################################################################
-################################################################################
-################################################################################
-
-################################################################################
-####### PICK GRID CELL TO PUT NEW TECH IN ######################################
-################################################################################
 def selectCells(eligibleCellWaterTsCurrYear, cellNewTechCriteria, fipsToZones, fipsToPolys):
+    """PICK GRID CELL TO PUT NEW TECH IN
+
+    :param eligibleCellWaterTsCurrYear:
+    :param cellNewTechCriteria:
+    :param fipsToZones:
+    :param fipsToPolys:
+    :return:
+    """
     if cellNewTechCriteria == 'all':
         cellWaterTsForNewTechs = copy.deepcopy(eligibleCellWaterTsCurrYear)
+
     elif cellNewTechCriteria == 'maxWaterT':
         cellsPerZone = getCellsInEachZone(eligibleCellWaterTsCurrYear, fipsToZones, fipsToPolys)
         cellWaterTsForNewTechs = placeTechInMaxWaterTCell(eligibleCellWaterTsCurrYear, cellsPerZone)
@@ -122,8 +176,14 @@ def selectCells(eligibleCellWaterTsCurrYear, cellNewTechCriteria, fipsToZones, f
     return cellWaterTsForNewTechs
 
 
-# Takes in dict of cell:waterTs, and returns dict of zone:all cells in that zone
 def getCellsInEachZone(eligibleCellWaterTsCurrYear, fipsToZones, fipsToPolys):
+    """Takes in dict of cell:waterTs, and returns dict of zone:all cells in that zone
+
+    :param eligibleCellWaterTsCurrYear:
+    :param fipsToZones:
+    :param fipsToPolys:
+    :return:
+    """
     cellsPerZone = dict()
     for cell in eligibleCellWaterTsCurrYear:
         cellZone = mapCellToIPMZone(cell, fipsToZones, fipsToPolys)

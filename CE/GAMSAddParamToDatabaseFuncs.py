@@ -2,25 +2,52 @@
 # October 4, 2016
 # Functions for adding parameters to GAMS database. Used for CE & UC models.
 
+import sys
 import copy, math
 from GAMSAuxFuncs import *
 from CalculateOpCost import calcOpCostsTech, calcOpCosts
-from AuxFuncs import convertCostToTgtYr
+from AuxFuncs import convertCostToTgtYr, nested_dict_to_dict
 
 
 ################################################################################
 ##################### CE & UC PARAMETERS #######################################
 ################################################################################
-##### ADD HOURLY DEMAND (dict of zone:hourly demand)
-def addDemandParam(db, demandCEZonal, zoneSet, hourSet, hourSymbols, ipmZones, ipmZoneNums, scaleMWtoGW):
-    demandCENumZoneSymbs = createDictIndexedByZone(demandCEZonal, ipmZones, ipmZoneNums)
-    demandDict = getHourly2dParamDict(demandCENumZoneSymbs, hourSymbols, 1 / scaleMWtoGW)
+def addDemandParam(db, demandCEZonal, zoneSet, hourSet, gcmSet, hoursForCE, ipmZones, ipmZoneNums, scaleMWtoGW):
+    """ADD HOURLY DEMAND (dict of zone:hourly demand)
+
+    :param db:
+    :param demandCEZonal:
+    :param zoneSet:
+    :param hourSet:
+    :param gcmSet:
+    :param hourSymbols:
+    :param ipmZones:
+    :param ipmZoneNums:
+    :param scaleMWtoGW:
+    """
+
+    demandDict = dict()
+    for gcm in demandCEZonal:
+        demandCENumZoneSymbs = createDictIndexedByZone(demandCEZonal[gcm], ipmZones, ipmZoneNums)
+        demandDict[gcm] = getHourly2dParamDict(demandCENumZoneSymbs, hoursForCE[gcm], 1 / scaleMWtoGW)
+
+    demandDict = nested_dict_to_dict(demandDict)
+
     (demandName, demandDescrip) = ('pDemand', 'hourly zonal demand (GWh)')
-    demandParam = add2dParam(db, demandDict, zoneSet, hourSet, demandName, demandDescrip)
+    demandParam = add_NdParam(db, demandDict, [gcmSet, zoneSet, hourSet], demandName, demandDescrip)
 
 
-# Inputs: dictionary of zone:list, optional scalar. Outputs: dictionary of zone symbol:list.
 def createDictIndexedByZone(dataDict, ipmZones, ipmZoneNums, *args):
+    """
+
+    Inputs: dictionary of zone:list, optional scalar. Outputs: dictionary of zone symbol:list.
+
+    :param dataDict:
+    :param ipmZones:
+    :param ipmZoneNums:
+    :param args:
+    :return:
+    """
     zoneDict = dict()
     for zone in dataDict:
         if len(args) > 0:
@@ -64,40 +91,81 @@ def addEguOpCostParam(db, genFleet, genSet, genSymbols, scaleLbToShortTon, scale
     ocParam = add1dParam(db, ocDict, genSet, genSymbols, ocName, ocDescrip)
 
 
-##### ADD EXISTING GENERATOR HOURLY CAPACITIES
-# Add hourly HR & capac param
-def addEguHourlyParams(db, hourlyCapacsCE, genSet, hourSet, hourSymbols, scaleMWtoGW):
-    capacDict = getHourly2dParamDict(hourlyCapacsCE, hourSymbols, 1 / scaleMWtoGW)
+def addEguHourlyParams(db, hourlyCapacsCE, gcmSet, genSet, hourSet, hoursForCE, scaleMWtoGW):
+    """ ADD EXISTING GENERATOR HOURLY CAPACITIES
+
+    Add hourly HR & capac param
+
+    :param db:
+    :param hourlyCapacsCE:
+    :param gcmSet:
+    :param genSet:
+    :param hourSet:
+    :param hoursForCE:
+    :param scaleMWtoGW:
+    """
+
+    capacDict = dict()
+    for gcm in hourlyCapacsCE:
+        capacDict[gcm] = getHourly2dParamDict(hourlyCapacsCE[gcm], hoursForCE[gcm], 1 / scaleMWtoGW)
+
+    capacDict = nested_dict_to_dict(capacDict)
+
     (capacName, capacDescrip) = ('pCapac', 'hourly capacity (GW)')
-    capacParam = add2dParam(db, capacDict, genSet, hourSet, capacName, capacDescrip)
-    # hrDict = getHourly2dParamDict(hourlyHrsCE,hourSymbols,1)
-    # (hrName,hrDesc) = ('pHr','hourly hr (mmbtu/gwh)')
-    # hrParam = add2dParam(db,hrDict,genSet,hourSet,hrName,hrDesc)   
+    capacParam = add_NdParam(db, capacDict, [gcmSet, genSet, hourSet], capacName, capacDescrip)
 
 
-# Creates dictionary of (key,hourSymbol):param   (for capac or HR, key=gen; for demand
-# or wind & solar gen, key=zone)
-def getHourly2dParamDict(hourlyParam, hourSymbols, scalar):
+def getHourly2dParamDict(hourlyParam, hoursForCE, scalar):
+    """Creates dictionary of (key,hourSymbol):param   (for capac or HR, key=gen; for demand or wind & solar gen,
+    key=zone)
+
+    :param hourlyParam:
+    :param hoursForCE:
+    :param scalar:
+    :return:
+    """
     paramDict = dict()
     for key in hourlyParam:
-        for idx in range(len(hourSymbols)):
-            hourSymbol = hourSymbols[idx]
+        for idx, h in enumerate(hoursForCE):
+            hourSymbol = createHourSymbol(h)
             paramDict[(key, hourSymbol)] = hourlyParam[key][idx] * scalar
     return paramDict
 
 
-##### ADD EXISTING RENEWABLE COMBINED MAXIMUM GENERATION VALUES
-# Converts 1d list of param vals to hour-indexed dicts, then adds dicts to GAMS db
-def addExistingRenewableMaxGenParams(db, zoneSet, ipmZones, ipmZoneNums, hourSet, hourSymbols,
+def addExistingRenewableMaxGenParams(db, gcmSet, zoneSet, ipmZones, ipmZoneNums, hourSet, hoursForCE,
                                      hourlySolarGenCEZonal, hourlyWindGenCEZonal, scaleMWtoGW):
-    hourlySolarGenCEZonalSymbs = createDictIndexedByZone(hourlySolarGenCEZonal, ipmZones, ipmZoneNums)
-    hourlyWindGenCEZonalSymbs = createDictIndexedByZone(hourlyWindGenCEZonal, ipmZones, ipmZoneNums)
-    maxSolarGenDict = getHourly2dParamDict(hourlySolarGenCEZonalSymbs, hourSymbols, 1 / scaleMWtoGW)
-    maxWindGenDict = getHourly2dParamDict(hourlyWindGenCEZonalSymbs, hourSymbols, 1 / scaleMWtoGW)
+    """ADD EXISTING RENEWABLE COMBINED MAXIMUM GENERATION VALUES
+
+    Converts 1d list of param vals to hour-indexed dicts, then adds dicts to GAMS db
+
+    :param db:
+    :param zoneSet:
+    :param ipmZones:
+    :param ipmZoneNums:
+    :param hourSet:
+    :param hourSymbols:
+    :param hourlySolarGenCEZonal:
+    :param hourlyWindGenCEZonal:
+    :param scaleMWtoGW:
+    """
+
+    maxSolarGenDict = dict()
+    maxWindGenDict = dict()
+
+    for gcm in hourlySolarGenCEZonal:
+        hourlySolarGenCEZonalSymbs = createDictIndexedByZone(hourlySolarGenCEZonal[gcm], ipmZones, ipmZoneNums)
+        hourlyWindGenCEZonalSymbs = createDictIndexedByZone(hourlyWindGenCEZonal[gcm], ipmZones, ipmZoneNums)
+        maxSolarGenDict[gcm] = getHourly2dParamDict(hourlySolarGenCEZonalSymbs, hoursForCE[gcm], 1 / scaleMWtoGW)
+        maxWindGenDict[gcm] = getHourly2dParamDict(hourlyWindGenCEZonalSymbs, hoursForCE[gcm], 1 / scaleMWtoGW)
+
+    maxSolarGenDict = nested_dict_to_dict(maxSolarGenDict)
+    maxWindGenDict = nested_dict_to_dict(maxWindGenDict)
+
     (maxSolarGenName, maxSolarGenDescrip) = ('pMaxgensolar', 'max combined gen by existing solar')
-    solarParam = add2dParam(db, maxSolarGenDict, zoneSet, hourSet, maxSolarGenName, maxSolarGenDescrip)
+    solarParam = add_NdParam(db, maxSolarGenDict, [gcmSet, zoneSet, hourSet], maxSolarGenName, maxSolarGenDescrip)
+
     (maxWindGenName, maxWindGenDescrip) = ('pMaxgenwind', 'max combined gen by existing wind')
-    windParam = add2dParam(db, maxWindGenDict, zoneSet, hourSet, maxWindGenName, maxWindGenDescrip)
+    windParam = add_NdParam(db, maxWindGenDict, [gcmSet, zoneSet, hourSet], maxWindGenName, maxWindGenDescrip)
 
 
 # Stores set of values into dictionary keyed by hour
@@ -231,28 +299,43 @@ def getTechOpCostDict(newTechs, ptCurtailed, scalar):
     return paramDict
 
 
-# Add hourly curtailed tech capac.
-# Input capacs: (tech,loc):[capacs]. Output dict added to db: idxed by (loc,tech,hr)
-def addTechCurtailedHourlyCapac(db, hourlyCurtailedTechCapacsCE, cellSet, techCurtailedSet, hourSet, hourSymbols,
+def addTechCurtailedHourlyCapac(db, hourlyCurtailedTechCapacsCE, gcmSet, cellSet, techCurtailedSet, hourSet, hoursForCE,
                                 scaleMWtoGW):
-    capacDict = getHourlyTechParamDict(hourlyCurtailedTechCapacsCE, hourSymbols, 1 / scaleMWtoGW)
+    """Add hourly curtailed tech capac.
+
+    Input capacs: (tech,loc):[capacs]. Output dict added to db: idxed by (loc,tech,hr)
+
+    :param db:
+    :param hourlyCurtailedTechCapacsCE:
+    :param cellSet:
+    :param techCurtailedSet:
+    :param hourSet:
+    :param hoursForCE:
+    :param scaleMWtoGW:
+    """
+    capacDict = dict()
+    for gcm in hourlyCurtailedTechCapacsCE:
+        capacDict[gcm] = getHourlyTechParamDict(hourlyCurtailedTechCapacsCE[gcm], hoursForCE[gcm], 1 / scaleMWtoGW)
+
+    capacDict = nested_dict_to_dict(capacDict)
+
     (cName, cDes) = ('pCapactechcurtailed', 'hourly curtailed capac (GW)')
-    capParam = add3dParam(db, capacDict, cellSet, techCurtailedSet, hourSet, cName, cDes)
+    capParam = add_NdParam(db, capacDict, [gcmSet, cellSet, techCurtailedSet, hourSet], cName, cDes)
 
 
-# Add hourly HR params to tech.
-# Input HRs: (tech,loc):[HR]. Output dict added to db: idxed by (loc,tech,hr)
-# def addTechHourlyHR(db,hourlyTechHrsCE,cellSet,techSet,hourSet,hourSymbols,scaleMWtoGW):
-#     hrDict = getHourlyTechParamDict(hourlyTechHrsCE,hourSymbols,1)
-#     (hrName,hrDescrip) = ('pHrtech','heat rate (MMBtu/GWh)')
-#     techHrParam = add3dParam(db,hrDict,cellSet,techSet,hourSet,hrName,hrDescrip)
+def getHourlyTechParamDict(hourlyParam, hoursForCE, scalar):
+    """Creates dictionary of (gcm, locSymbol, techSymbol, hourSymbol):capac or HR
 
-# Creates dictionary of (locSymbol,techSymbol,hourSymbol):capac or HR
-def getHourlyTechParamDict(hourlyParam, hourSymbols, scalar):
+
+    :param hourlyParam:
+    :param hoursForCE:
+    :param scalar:
+    :return:
+    """
     paramDict = dict()
     for (techSymbol, locSymbol) in hourlyParam:
-        for idx in range(len(hourSymbols)):
-            hourSymbol = hourSymbols[idx]
+        for idx, h in enumerate(hoursForCE):
+            hourSymbol = createHourSymbol(h)
             paramDict[(locSymbol, techSymbol, hourSymbol)] = hourlyParam[(techSymbol, locSymbol)][idx] * scalar
     return paramDict
 
@@ -307,24 +390,41 @@ def getFirmCreditExistingGenDict(genFleet, firmCapacityCreditsExistingGens):
     return firmCapacityCreditsExistingGensDict
 
 
-##### ADD HOURLY CAPACITY FACTORS FOR NEW RENEWABLE TECHS
-# Add CFs for new renew builds. Input: CFs as zone:[CF]
-# Output: dict added to GAMS file as (z,tech,h):[CFs]
-def addRenewTechCFParams(db, renewTechSet, renewTechSymbols, zoneSet, hourSet, hourSymbols,
-                         newWindCFsCEZonal, newSolarCFsCEZonal, ipmZones, ipmZoneNums):
+def addRenewTechCFParams(db, renewTechSet, renewTechSymbols, gcmSet, zoneSet, hourSet, hoursForCE, newWindCFsCEZonal,
+                         newSolarCFsCEZonal, ipmZones, ipmZoneNums):
+    """ADD HOURLY CAPACITY FACTORS FOR NEW RENEWABLE TECHS
+
+    Add CFs for new renew builds. Input: CFs as zone:[CF]
+
+    Output: dict added to GAMS file as (z,tech,h):[CFs]
+
+    :param db:
+    :param renewTechSet:
+    :param renewTechSymbols:
+    :param zoneSet:
+    :param hourSet:
+    :param hourSymbols:
+    :param newWindCFsCEZonal:
+    :param newSolarCFsCEZonal:
+    :param ipmZones:
+    :param ipmZoneNums:
+    """
     renewtechCfDict = dict()
-    for renewtech in renewTechSymbols:
-        if renewtech == 'Wind':
-            relevantCfs = copy.deepcopy(newWindCFsCEZonal)
-        elif renewtech == 'Solar PV':
-            relevantCfs = copy.deepcopy(newSolarCFsCEZonal)
-        for zone in relevantCfs:
-            for idx in range(len(hourSymbols)):
-                renewtechCfDict[(createZoneSymbol(ipmZoneNums[ipmZones.index(zone)]),
-                                 renewtech, hourSymbols[idx])] = relevantCfs[zone][idx]
+    for gcm in newWindCFsCEZonal:
+        for renewtech in renewTechSymbols:
+            if renewtech == 'Wind':
+                relevantCfs = copy.deepcopy(newWindCFsCEZonal[gcm])
+            elif renewtech == 'Solar PV':
+                relevantCfs = copy.deepcopy(newSolarCFsCEZonal[gcm])
+
+            for zone in relevantCfs:
+                for idx, h in enumerate(hoursForCE[gcm]):
+                    renewtechCfDict[(gcm, createZoneSymbol(ipmZoneNums[ipmZones.index(zone)]),
+                                     renewtech, createHourSymbol(h))] = relevantCfs[zone][idx]
+
     (renewtechCFName, renewtechCFDescrip) = ('pCf', 'capacity factors for new wind and solar')
-    renewtechCfParam = add3dParam(db, renewtechCfDict, zoneSet, renewTechSet, hourSet, renewtechCFName,
-                                  renewtechCFDescrip)
+    renewtechCfParam = add_NdParam(db, renewtechCfDict, [gcmSet, zoneSet, renewTechSet, hourSet], renewtechCFName,
+                                   renewtechCFDescrip)
 
 
 ##### ADD CO2 EMISSIONS CAP
@@ -338,40 +438,86 @@ def addSeasonDemandWeights(db, seasonDemandWeights):
         add0dParam(db, 'pWeight' + season, 'weight on rep. seasonal demand', seasonDemandWeights[season])
 
 
-##### ADD LIMIT ON MAX NUMBER OF NEW BUILDS PER TECH BY ZONE
-def addMaxNumNewBuilds(db, newTechsCE, zoneSet, ipmZones, ipmZoneNums, techSet, maxAddedZonalCapacPerTech, ptCurtailed):
-    techMaxNewBuildsDict = getMaxNumBuilds(newTechsCE, ipmZones, ipmZoneNums, maxAddedZonalCapacPerTech, ptCurtailed)
-    (maxBuildName, maxBuildDescrip) = ('pNmax', 'max num builds per tech')
-    maxBuildParam = add2dParam(db, techMaxNewBuildsDict, zoneSet, techSet, maxBuildName, maxBuildDescrip)
+def addMaxNumNewBuilds(db, newTechsCE, zoneSet, ipmZones, ipmZoneNums, typeSet, maxAddedZonalCapacPerTech, ptCurtailed):
+    """ ADD LIMIT ON MAX NUMBER OF NEW BUILDS PER PLANT TYPE BY ZONE
 
-
-# Returns dict of (zone,tech):maxCapac
-def getMaxNumBuilds(newTechsCE, ipmZones, ipmZoneNums, maxAddedZonalCapacPerTech, ptCurtailed):
+    :param db:
+    :param newTechsCE:
+    :param zoneSet:
+    :param ipmZones:
+    :param ipmZoneNums:
+    :param typeSet:
+    :param maxAddedZonalCapacPerTech:
+    :param ptCurtailed:
+    """
     capacCol = newTechsCE[0].index('Capacity(MW)')
     techCol = newTechsCE[0].index('TechnologyType')
+
     techMaxNewBuildsDict = dict()
-    for row in newTechsCE[1:]:
+
+    listTypes = [x.get_keys()[0] for x in typeSet]
+    d = None
+
+    if isinstance(maxAddedZonalCapacPerTech, int) or isinstance(maxAddedZonalCapacPerTech, float):
+        d = dict()
+        for ty in listTypes:
+            d[ty] = maxAddedZonalCapacPerTech
+    elif isinstance(maxAddedZonalCapacPerTech, dict):
+        d = maxAddedZonalCapacPerTech
+    else:
+        print('------------------------------------------------------------------------------------------')
+        print('ERROR!!!')
+        print('Parameter maxAddedZonalCapacPerTech must be either a number or a dictionary')
+        print('------------------------------------------------------------------------------------------')
+        sys.exit()
+
+    for ty in listTypes:
+        # assumes ALL cooling techs in the same plant type have the same capacity size
+        # iterate over list of new techs, find those that match plant type and return only the
+        # first occurrence
+        capacType = [int(row[capacCol]) for row in newTechsCE[1:] if row[techCol] == ty][0]
+
         for zone in ipmZones:
-            techMaxNewBuildsDict[(createZoneSymbol(ipmZoneNums[ipmZones.index(zone)]),
-                                  createTechSymbol(row, newTechsCE[0], ptCurtailed))] = math.ceil(
-                maxAddedZonalCapacPerTech / int(row[capacCol]))
-    return techMaxNewBuildsDict
+            ubound = d[ty]
+
+            if ubound == float('inf'):
+                ubound = sys.maxsize
+
+            techMaxNewBuildsDict[(createZoneSymbol(ipmZoneNums[ipmZones.index(zone)]), ty)] = \
+                math.ceil(ubound / capacType)
+
+    (maxBuildName, maxBuildDescrip) = ('pNmax', 'max num builds per type of plant')
+    maxBuildParam = add2dParam(db, techMaxNewBuildsDict, zoneSet, typeSet, maxBuildName, maxBuildDescrip)
 
 
-###### ADD MAX HYDRO GEN PER TIME BLOCK
-# hydroPotPerSeason is a dict of season:genSymbol:gen (MWh), so just need to scale it.
-# Note that sesaon can be 'special'!
-def addHydroMaxGenPerSeason(db, hydroGenSet, hydroGenSymbols, hydroPotPerSeason, scaleMWtoGW):
-    for season in hydroPotPerSeason:
+def addHydroMaxGenPerSeason(db, hydroGenSet, gcmSet, hydroPotPerSeason, scaleMWtoGW):
+    """ ADD MAX HYDRO GEN PER TIME BLOCK
+
+    hydroPotPerSeason is a dict of season:genSymbol:gen (MWh), so just need to scale it.
+    Note that sesaon can be 'special'!
+
+    :param db:
+    :param hydroGenSet:
+    :param hydroGenSymbols:
+    :param hydroPotPerSeason:
+    :param scaleMWtoGW:
+    """
+
+    seasonList = hydroPotPerSeason[list(hydroPotPerSeason.keys())[0]].keys()
+
+    for season in seasonList:
         maxGenDict = dict()
-        for symb, pot in hydroPotPerSeason[season].items(): maxGenDict[symb] = pot / scaleMWtoGW
+        for gcm in hydroPotPerSeason:
+            auxDict = dict()
+            for symb, pot in hydroPotPerSeason[gcm][season].items():
+                auxDict[symb] = pot / scaleMWtoGW
+            maxGenDict[gcm] = auxDict
+
+        maxGenDict = nested_dict_to_dict(maxGenDict)
+
         name, desc = 'pMaxhydrogen' + season[:3], 'max gen by each hydro unit'  # ex: pMaxhydrogensum
-        maxGenParam = add1dParam(db, maxGenDict, hydroGenSet, hydroGenSymbols, name, desc)
+        maxGenParam = add_NdParam(db, maxGenDict, [gcmSet, hydroGenSet], name, desc)
 
-
-################################################################################
-################################################################################
-################################################################################
 
 ################################################################################
 ##################### UNIT COMMITMENT PARAMETERS ###############################
@@ -555,6 +701,25 @@ def add2dParam(db, param2dDict, idxSet1, idxSet2, paramName, paramDescrip):
     return addedParam
 
 
+def add_NdParam(db, paramDict, list_idxSet, paramName, paramDescrip):
+    """ Generic function to add a N-dimensional parameter to database
+
+    paramDict is a simple dictionary (it MUST NOT BE a nested dictionary). See function 'nested_dict_to_dict()'
+    to convert a nested dictionary into a simple dictionary where the key is a tuple with combination of nested keys
+
+    :param db: database object
+    :param paramDict: simple dictionary with data. keys must be a tuple with N values
+    :param list_idxSet: list with sets for domain of parameters (must be in the correct orders)
+    :param paramName: (string)
+    :param paramDescrip: (string)
+    :return:
+    """
+    addedParam = db.add_parameter_dc(paramName, list_idxSet, paramDescrip)
+    for k, v in iter(paramDict.items()):
+        addedParam.add_record(k).value = v
+    return addedParam
+
+
 def add3dParam(db, param3dDict, idxSet1, idxSet2, idxSet3, paramName, paramDescrip):
     addedParam = db.add_parameter_dc(paramName, [idxSet1, idxSet2, idxSet3], paramDescrip)
     for k, v in iter(param3dDict.items()):
@@ -587,3 +752,10 @@ def getEguOpCostDict(genFleet, scaleLbToShortTon, scaleMWtoGW, scaleDollarsToTho
 ################################################################################
 ################################################################################
 ################################################################################
+
+# Add hourly HR params to tech.
+# Input HRs: (tech,loc):[HR]. Output dict added to db: idxed by (loc,tech,hr)
+# def addTechHourlyHR(db,hourlyTechHrsCE,cellSet,techSet,hourSet,hourSymbols,scaleMWtoGW):
+#     hrDict = getHourlyTechParamDict(hourlyTechHrsCE,hourSymbols,1)
+#     (hrName,hrDescrip) = ('pHrtech','heat rate (MMBtu/GWh)')
+#     techHrParam = add3dParam(db,hrDict,cellSet,techSet,hourSet,hrName,hrDescrip)

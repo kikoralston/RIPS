@@ -7,7 +7,8 @@ import sys
 import pandas as pd
 from AuxFuncs import *
 from TempTransformation import *
-from ModifyGeneratorCapacityWithWaterTData import read_netcdf, find125GridMaurerLatLong
+from AuxCurtailmentFuncs import read_netcdf
+from ModifyGeneratorCapacityWithWaterTData import find125GridMaurerLatLong
 
 
 def forecastZonalDemandWithReg(yr, genparam, curtailparam):
@@ -19,10 +20,15 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
 
     :param yr: (integer) Current year of analysis
     :param genparam: object of class Generalparameters
-    :return: zonalDemand: dictionary with hourly load data for each zone in current year
-             zonalTempDfs: dictionary with data frames with meteo and load data for each zone in current year
+    :param curtailparam: object of class Curtailmentparameters
+
+    :return: zonalDemand: nested dictionary with hourly load data for each zone in current year in each gcm.
+                          {gcm:zone:[hourly demand]}
+             zonalTempDfs: nested dictionary with data frames with meteo and load data for each zone in current year
+                           in each gcm. {gcm: zone: Df}
     """
-    zonalDemand, zonalTempDfs = dict(), dict()
+
+    totalDemandDict, totalDemandDictDf = dict(), dict()
 
     if genparam.analysisArea == 'test':
         # if analysisArea == 'test', assumes that there is a file 'demand.csv' at dataRoot, with hourly demand
@@ -46,27 +52,35 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
             sys.exit()
 
     else:
-        for zone in genparam.ipmZones:
+        for (idx_gcm, gcm) in enumerate(curtailparam.listgcms):
+            zonalDemand, zonalTempDfs = dict(), dict()
 
-            dataRoot = genparam.dataRoot
-            dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, holidays = loadRegData(dataRoot, yr, zone,
-                                                                                               curtailparam,
-                                                                                               netcdf=True)
+            for zone in genparam.ipmZones:
 
-            addTimeDummies(dataYr, str(yr), holidays)
-            predictDemand(dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, yr)
-            dataYr.to_csv(os.path.join(genparam.resultsDir, 'demandAndMetDf' + zone + str(yr) + '.csv'))
-            zonalDemand[zone], zonalTempDfs[zone] = list(dataYr['load(MW)'].values), dataYr
+                dataRoot = genparam.dataRoot
+                (dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept,
+                 holidays) = loadRegData(dataRoot, yr, zone, curtailparam, idx_gcm, netcdf=True)
 
-    return zonalDemand, zonalTempDfs
+                addTimeDummies(dataYr, str(yr), holidays)
+                predictDemand(dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, yr)
+                #dataYr.to_csv(os.path.join(genparam.resultsDir, 'demandAndMetDf' + zone + str(yr) + '.csv'))
+
+                zonalDemand[zone], zonalTempDfs[zone] = list(dataYr['load(MW)'].values), dataYr
+
+            totalDemandDict[gcm], totalDemandDictDf[gcm] = zonalDemand, zonalTempDfs
+
+    return totalDemandDict, totalDemandDictDf
 
 
-def loadRegData(dataRoot, currYear, zone, curtailparam, netcdf=False):
+def loadRegData(dataRoot, currYear, zone, curtailparam, idx_gcm, netcdf=False):
     """Load all necessary data into pandas DFs exept inercept (just return value)
 
-    :param dataRoot:
-    :param currYear:
-    :param zone:
+    :param dataRoot: (string) path to meteo data
+    :param currYear: (int) current year of simulation
+    :param zone: (string) ipm zone being simulated
+    :param curtailparam: object of class Curtailmentparameters
+    :param idx_gcm: (int) index of GCM being considered (within curtailparam.listgcms)
+    :param netcdf: (boolean) true if format of meteo data is netcdf
     :return:
     """
     dataDir = os.path.join(dataRoot, 'DemandData')
@@ -74,10 +88,16 @@ def loadRegData(dataRoot, currYear, zone, curtailparam, netcdf=False):
     if netcdf:
         cellLat, cellLon = getCellForZone(dataDir, zone)
         cellLat, cellLon = find125GridMaurerLatLong(cellLat, cellLon)
-        data = read_netcdf(cellLat, cellLon, currYear, curtailparam)
+        data = read_netcdf(cellLat, cellLon, currYear, curtailparam, idx_gcm)
     else:
         data = pd.read_table(os.path.join(dataDir, 'meteo_memphis'), names=['precip', 'sh', 'rh', 'tC', 'p'])
         data = isolateYrData(data, currYear)
+
+    # a few negative values of RH have appeared in the past. To avoid errors when computing demand set negative
+    # values to 0.1%
+    if np.sum((data['rh'] <= 0)) > 0:
+        print('**WARNING:** There are negative values of RH in the data set. They were changed to 0.1%.')
+        data['rh'] = data['rh'].apply(lambda x: 0.1 if x <= 0 else x)
 
     tempCoefs = pd.read_csv(os.path.join(dataDir, 'temp_coef_{}.csv'.format(zone)))
     fixEffHr = pd.read_csv(os.path.join(dataDir, 'fix_eff_hour_{}.csv'.format(zone)))

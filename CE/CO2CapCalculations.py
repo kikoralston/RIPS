@@ -7,30 +7,44 @@ from AuxFuncs import *
 import os
 
 
-# Get CO2 cap for given scenario. Refs:
-# For emissions limits, see: see Databases, CO2EmissionERCOT, UCBaseCase2015Output9April2017 folder,
-# baseCaseCo2Emissions9April2017.xlsx.
 def getCo2Cap(co2CapScenario):
+    """
+    Get CO2 cap for given scenario. Refs: For emissions limits, see: see Databases, CO2EmissionERCOT,
+    UCBaseCase2015Output9April2017 folder, baseCaseCo2Emissions9April2017.xlsx.
+
+    :param co2CapScenario: name of CO2 scenario
+    :return:
+    """
     if co2CapScenario == 'cpp':
         capYear, capEms = 2050, 87709115  # 50% redux
     elif co2CapScenario == 'deep':
         capYear, capEms = 2050, 35083646  # 80% redux
     elif co2CapScenario == 'none':
-        capYear, capEms = 2050, 175418230 * 10  # set to arbitrarily large value so effectively no cap
+        capYear, capEms = 2050, float('inf')  # set to arbitrarily large value so effectively no cap
     return capYear, capEms  # short tons!
 
 
-# Inputs: current year and end year and emissions quantity for cap.
-# Outputs: project co2 emissions cap (short tons)
-# Data soruce for 2015 emissions: UC run w/out co2 price or storage. See xls file above.
-# (data from EIA, "Texas electricity profile 2017", Table 7, electric power industry emissions estimates, 1990-2014).s
 def interpolateCO2Cap(currYear, endYr, endLimit):
+    """Computes a CO2 cap for current year
+
+    Data soruce for 2015 emissions: UC run w/out co2 price or storage. See xls file above.
+    (data from EIA, "Texas electricity profile 2017", Table 7, electric power industry emissions estimates, 1990-2014).
+
+    :param currYear: current year
+    :param endYr: end year
+    :param endLimit: emissions quantity for cap in end year (depends on CO2 scenario)
+    :return: projected co2 emissions cap for current year (short tons)
+    """
     startYr, startEms = 2015, 175418230
     if currYear == startYr: startEms *= 10  # if first year, don't want to enforce co2 cap, so just scale up
+
     (deltaYear, deltaEms) = (endYr - startYr, startEms - endLimit)
     emsReduxPerYear = deltaEms / deltaYear
     diffCurrYearFromStart = currYear - startYr
-    return startEms - diffCurrYearFromStart * emsReduxPerYear
+
+    co2Cap = (startEms) if diffCurrYearFromStart == 0 else (startEms - diffCurrYearFromStart * emsReduxPerYear)
+
+    return co2Cap
 
 
 ################################################################################

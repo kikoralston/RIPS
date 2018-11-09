@@ -65,7 +65,8 @@ def addHourSet(db, hours):
     hourSymbols = [createHourSymbol(hour) for hour in hours]
     (hourSetName, hourSetDescrip, hourSetDim) = ('h', 'hour', 1)
     hourSet = addSet(db, hourSymbols, hourSetName, hourSetDescrip, hourSetDim)
-    return (hourSet, hourSymbols)
+
+    return hourSet, hourSymbols
 
 
 def addHourSeasonSubsets(db, repHrsBySeason):
@@ -76,20 +77,22 @@ def addHourSeasonSubsets(db, repHrsBySeason):
     :param db: GAMS database object
     :param repHrsBySeason: dict of (season:rep hrs)
     """
-    for season in repHrsBySeason:
-        seasonHours = repHrsBySeason[season]
-        seasonHourSymbols = [createHourSymbol(hour) for hour in seasonHours]
+    seasonList = repHrsBySeason[list(repHrsBySeason.keys())[0]].keys()
+
+    for season in seasonList:
         hourSubsetName = createHourSubsetName(season)
-        addSeasonHourSubset(db, hourSubsetName, season, seasonHourSymbols)
+        (seasonSetName, seasonSetDescrip, seasonSetDim) = (hourSubsetName, 'hours in ' + season, 2)
+        seasonHourSymbols = []
+        for gcm in repHrsBySeason:
+            seasonHours = repHrsBySeason[gcm][season]
+            seasonHourSymbols = seasonHourSymbols + [[gcm, createHourSymbol(hour)] for hour in seasonHours]
+
+        # creates a 2d set for this season
+        hourSeasonSet = addSet(db, seasonHourSymbols, seasonSetName, seasonSetDescrip, seasonSetDim)
 
 
 def createHourSubsetName(subsetPrefix):
     return subsetPrefix + 'h'
-
-
-def addSeasonHourSubset(db, hourSubsetName, season, seasonHourSymbols):
-    (seasonSetName, seasonSetDescrip, seasonSetDim) = (hourSubsetName, 'hours in ' + season, 1)
-    hourSeasonSet = addSet(db, seasonHourSymbols, seasonSetName, seasonSetDescrip, seasonSetDim)
 
 
 def addHourSpecialSubset(db, specialHrs):
@@ -100,27 +103,39 @@ def addHourSpecialSubset(db, specialHrs):
     :param db: GAMS database object
     :param specialHrs: 1d list of special hours
     """
-    specialHourSymbols = [createHourSymbol(hour) for hour in specialHrs]
+    specialHourSymbols = [[gcm, createHourSymbol(hour)] for gcm in specialHrs for hour in specialHrs[gcm]]
     hourSubsetName = createHourSubsetName('special')
-    (specialSetName,specialSetDescrip,specialSetDim) = (hourSubsetName,'hours in special days',1)
-    hourSpecialSet = addSet(db,specialHourSymbols,specialSetName,specialSetDescrip,specialSetDim)
+    (specialSetName, specialSetDescrip, specialSetDim) = (hourSubsetName, 'hours in special days', 2)
+
+    hourSpecialSet = addSet(db, specialHourSymbols, specialSetName, specialSetDescrip, specialSetDim)
 
 
-def addPeakHourSubset(db, peakDemandHourZonal):
+def addPeakHourSubset(db, peakDemandHourZonal, genparam):
     """Define peak demand hour subset
 
     :param db: GAMS database object
     :param peakDemandHourZonal:
     :return:
     """
-    peakHrSymbols = [createHourSymbol(peakDemandHourZonal[zone]) for zone in peakDemandHourZonal]
+    # create new dict which converts zone names (e.g. S_C_TVA) to zone symbols (e.g, z1) and gets hour symbol
+    auxDict = dict()
+    for gcm in peakDemandHourZonal:
+        auxDict2 = dict()
+        for z in peakDemandHourZonal[gcm]:
+            zoneSymbol = createZoneSymbol(genparam.ipmZoneNums[genparam.ipmZones.index(z)])
+            auxDict2[zoneSymbol] = createHourSymbol(peakDemandHourZonal[gcm][z])
+
+        auxDict[gcm] = auxDict2
+
+    peakHrSymbols = [[gcm, zone, auxDict[gcm][zone]] for gcm in auxDict for zone in auxDict[gcm]]
 
     # convert to set and back to list to keep only unique values
-    peakHrSymbols = list(set(peakHrSymbols))
+    # peakHrSymbols = list(set(peakHrSymbols))
 
     hourSubsetName = createHourSubsetName('peak')
-    (specialSetName, specialSetDescrip, specialSetDim) = (hourSubsetName, 'peak hour', 1)
-    peakHourSet = addSet(db, peakHrSymbols, specialSetName, specialSetDescrip, specialSetDim)
+    (peakHrSetName, peakHrSetDescrip, peakHrSetDim) = (hourSubsetName, 'mapping of gcm of peak hour in each zone', 3)
+    peakHourSet = addSet(db, peakHrSymbols, peakHrSetName, peakHrSetDescrip, peakHrSetDim)
+
     return peakHourSet, peakHrSymbols
 
 

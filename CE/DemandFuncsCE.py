@@ -5,75 +5,109 @@ Functions that process demand data for CE model - select which days are included
 get peak demand hour, and calculate planning reserve margin.
 """
 
-import copy, operator, os
+import copy, operator, os, sys
+import numpy as np
 from AuxFuncs import *
+import pprint
 
 
 def selectWeeksForExpansion(zonalDemandProfile, zonalNetDemand, zonalHourlyWindGen, zonalHourlySolarGen, daysPerSeason,
                             selectCurtailDays, hrlyCurtailmentsAllGensInTgtYr, currYear, resultsDir, planningMargin):
     """SELECT WEEKS FOR EXPANSION
 
-    :param zonalDemandProfile: demand for current CE run (1d list w/out head)
-    :param zonalNetDemand: net demand for current CE run (1d list w/out head)
+    :param zonalDemandProfile: nested dictionary {gcm: {zone: [1d list hourly demand]}} with demand for current CE run
+    :param zonalNetDemand: nested dictionary {gcm: {zone: [1d list hourly net demand]}} with net demand for CE run
     :param zonalHourlyWindGen: hourly wind gen (1d lists w/out heads)
     :param zonalHourlySolarGen: hourly solar gen (1d lists w/out heads)
-    :param daysPerSeason: num representative days per season
-    :param selectCurtailDays: (boolean) whether to include days to represent thermal curtailments
-    :param hrlyCurtailmentsAllGensInTgtYr: hourly curtailments of each generator in current CE year (dictionary mapping
-    generator to 2d list w/ headers of hourly curtailments)
-    :param currYear: current CE year
-    :param resultsDir: path to folder of results
-    :param planningMargin: (scalar) parameter with planning reserve margin
+    :param daysPerSeason: num representative days per season (general parameter of simulation)
+    :param selectCurtailDays: (boolean) whether to include days to represent thermal curtailments (general parameter)
+    :param hrlyCurtailmentsAllGensInTgtYr: hourly curtailments of each generator in current CE year
+                                          (nested dictionary {gcm: {genId: [1d list with hourly curtailments]}}
+                                          mapping generator to 1d list without headers of hourly curtailments)
+    :param currYear: (int) current CE year
+    :param resultsDir: (string) path to folder of results
+    :param planningMargin: (scalar) parameter with planning reserve margin (general parameter)
     :return: hourly demand, wind and solar values for CE (1d lists w/out headers), and hour numbers for whole CE,
     representative per season, special days, and all other season hours (1d lists, all 1-8760 basis).
     """
-    netDemand, demand = sumZonalData(zonalNetDemand), sumZonalData(zonalDemandProfile)
-    # Get hour of peak demand in each zone
+
+    netDemand = {gcm: sumZonalData(zonalNetDemand[gcm]) for gcm in zonalNetDemand.keys()}
+    demand = {gcm: sumZonalData(zonalDemandProfile[gcm]) for gcm in zonalDemandProfile.keys()}
+
+    # Get hour of peak demand in each zone (over all gcms)
     peakDemandHourZonal, planningMarginZonal = getPeakDemandHourAndPlanningMarginCEZonal(zonalDemandProfile,
                                                                                          planningMargin)
     # Get hours for special days
-    specialDayHours = []
+
     (peakNetDemandDayHours, netDemandMinusPeak) = getPeakNetDemandDayHours(netDemand)  # 1-8760 basis
-    specialDayHours.extend(peakNetDemandDayHours)
+
+    pp = pprint.PrettyPrinter(indent=3, compact=True)
+    print('Peak net demand hours:')
+    pp.pprint(peakNetDemandDayHours)
+
+    specialDayHours = {gcm: copy.deepcopy(peakNetDemandDayHours[gcm]) for gcm in peakNetDemandDayHours}
 
     if selectCurtailDays:  # if considering thermal curtailments in selection of special days
+
         totalHrlyCurtailments = getTotalSystemCurtailments(hrlyCurtailmentsAllGensInTgtYr)
 
         totalHrlyCurtailments = eliminateLeapYearDay(totalHrlyCurtailments, currYear)
 
         if len(totalHrlyCurtailments) > 0:
-            write2dListToCSV([totalHrlyCurtailments], os.path.join(resultsDir,
-                                                                   'curtailmentsHourlyCombined' + str(currYear) + '.csv'))
+            writeDictToCSV(totalHrlyCurtailments,
+                           os.path.join(resultsDir,'curtailmentsHourlyCombined'+str(currYear)+'.csv'))
+
             peakCurtailmentDayHours = getPeakCurtailmentDayHours(totalHrlyCurtailments)  # 1-8760
-            if peakCurtailmentDayHours != peakNetDemandDayHours:  # use netDemandMinusPeak if change this
-                specialDayHours.extend(peakCurtailmentDayHours)
+
+            for g in peakNetDemandDayHours:
+                if peakCurtailmentDayHours[g] != peakNetDemandDayHours[g]:  # use netDemandMinusPeak if change this
+                    specialDayHours[g].extend(peakCurtailmentDayHours[g])
+
             peakNetDemandAndCurtailmentDayHours = getPeakDemandPlusCurtailmentDayHours(netDemand,
                                                                                        totalHrlyCurtailments)  # 1-8760
-            if (peakNetDemandAndCurtailmentDayHours != peakCurtailmentDayHours and
-                        peakNetDemandAndCurtailmentDayHours != peakNetDemandDayHours):  # use netDemandMinusPeak if change this
-                specialDayHours.extend(peakNetDemandAndCurtailmentDayHours)
-            print('Peak net demand hours:', peakNetDemandDayHours)
-            print('Peak curtailment hours:', peakCurtailmentDayHours)
-            print('Peak net demand + curtailment hours:', peakNetDemandAndCurtailmentDayHours)
-            print('Special hours:', specialDayHours)
+            for g in peakNetDemandDayHours:
+                if (peakNetDemandAndCurtailmentDayHours[g] != peakCurtailmentDayHours[g] and
+                        peakNetDemandAndCurtailmentDayHours[g] != peakNetDemandDayHours[g]):  # use netDemandMinusPeak if change this
+                    specialDayHours[g].extend(peakNetDemandAndCurtailmentDayHours[g])
+
+            print('Peak curtailment hours:')
+            pp.pprint(peakCurtailmentDayHours)
+            print('Peak net demand + curtailment hours:')
+            pp.pprint(peakNetDemandAndCurtailmentDayHours)
+
         else:
             print('List of hourly curtailment is empty!')
 
+    print('Special hours:')
+    pp.pprint(specialDayHours)
+
     # Get representative hours by NLDC
-    (repSeasonalHours, repHrsBySeason, regHrsBySeason) = getRepSeasonalHoursByNLDC(netDemand,
-                                                                                   daysPerSeason, specialDayHours)
+    repSeasonalHours, repHrsBySeason, regHrsBySeason = dict(), dict(), dict()
+    for gcm in netDemand:
+        (repSeasonalHours[gcm], repHrsBySeason[gcm],
+         regHrsBySeason[gcm]) = getRepSeasonalHoursByNLDC(netDemand[gcm], daysPerSeason, specialDayHours[gcm])
+
     # Create combined dictionary of rep hrs by season and 'special':special hours
     # (used for getting max hydro generation in each time block)
-    repAndSpeHoursDict = copy.deepcopy(repHrsBySeason)
-    repAndSpeHoursDict['special'] = specialDayHours
+    repAndSpeHoursDict = dict()
+    for gcm in netDemand:
+        repAndSpeHoursDict[gcm] = copy.deepcopy(repHrsBySeason[gcm])
+        repAndSpeHoursDict[gcm]['special'] = specialDayHours[gcm]
 
     # Combine representative w/ special and peak hours
-    hoursForCE = copy.copy(specialDayHours) + copy.copy(repSeasonalHours)
+    hoursForCE = dict()
+    for gcm in netDemand:
+        hoursForCE[gcm] = copy.copy(specialDayHours[gcm]) + copy.copy(repSeasonalHours[gcm])
 
-    for zone in peakDemandHourZonal:
-        if peakDemandHourZonal[zone] not in hoursForCE: hoursForCE.append(peakDemandHourZonal[zone])
+    for gcm in peakDemandHourZonal.keys():
+        for zone in peakDemandHourZonal[gcm].keys():
+            if peakDemandHourZonal[gcm][zone] not in hoursForCE[gcm]:
+                hoursForCE[gcm].append(peakDemandHourZonal[gcm][zone])
 
-    demandCE = [demand[hr - 1] for hr in hoursForCE]
+    demandCE = dict()
+    for gcm in netDemand:
+        demandCE[gcm] = [demand[gcm][hr - 1] for hr in hoursForCE[gcm]]
+
     (demandCEZonal, hourlyWindGenCEZonal, hourlySolarGenCEZonal) = isolateDemandAndREGenForCEZonal(hoursForCE,
                                                                                                    zonalDemandProfile,
                                                                                                    zonalHourlyWindGen,
@@ -102,12 +136,19 @@ def getPeakNetDemandDayHours(netDemand):
 
     Get hours of entire day w/ peak net demand
 
-    :param netDemand: net demand (1d lits w/out head)
-    :return: hours of day w/ peak net demand (1d list, 1-8760 basis), net demand without peak demand day (1d list)
+    :param netDemand: dictionary with {gcm: [net demand]}
+    :return: hours of day w/ peak net demand (dictionary with {gcm: [hours of days]}, 1-8760 basis),
+             net demand without peak demand day (dictionary with {gcm: [net demand]})
     """
-    peakDemandDayHour = netDemand.index(max(netDemand))
-    peakNetDemandDayHours = getHoursOfDayForGivenHour(peakDemandDayHour)  # 1-8760 basis
-    netDemandMinusPeak = removeHoursFrom1dList(netDemand, peakNetDemandDayHours)
+
+    peakNetDemandDayHours = {}
+    netDemandMinusPeak = {}
+
+    for gcm in netDemand.keys():
+        peakDemandDayHour = netDemand[gcm].index(max(netDemand[gcm]))
+
+        peakNetDemandDayHours[gcm] = getHoursOfDayForGivenHour(peakDemandDayHour)  # 1-8760 basis
+        netDemandMinusPeak[gcm] = removeHoursFrom1dList(netDemand[gcm], peakNetDemandDayHours[gcm])
 
     return peakNetDemandDayHours, netDemandMinusPeak  # 1-8760 basis
 
@@ -147,55 +188,80 @@ def removeHoursFrom1dList(list1d, hoursToRemove):
 def getTotalSystemCurtailments(hrlyCurtailmentsAllGensInTgtYr):
     """Determine total system hourly curtailments by summing curtailments for each generator
 
-    :param hrlyCurtailmentsAllGensInTgtYr: dict mapping each gen to 2d list of datetime for year of run to hourly net
-                                           capacity curtailments (MW)
-    :return: 1d list w/ total system hourly thermal curtailments
+    :param hrlyCurtailmentsAllGensInTgtYr: nested dict mapping in each gcm each gen to 2d list of datetime for year of
+                                           run to hourly net capacity curtailments (MW)
+                                           {gcm: genId: [1d list hourly net capacity curtailments]}
+    :return: dict {gcm: [1d list w/ total system hourly thermal curtailments]}
     """
-    totalHrlyCurtailments = []
-    for gen in hrlyCurtailmentsAllGensInTgtYr:
-        genHrlyCurtailments = hrlyCurtailmentsAllGensInTgtYr[gen]
-        if len(totalHrlyCurtailments) == 0:
-            totalHrlyCurtailments = list(copy.deepcopy(genHrlyCurtailments))
-        else:
-            totalHrlyCurtailments = list(map(operator.add, totalHrlyCurtailments, genHrlyCurtailments))
+    totalHrlyCurtailments = {}
+    for gcm in hrlyCurtailmentsAllGensInTgtYr:
+        auxHrlyCurtailments = []
+        for gen in hrlyCurtailmentsAllGensInTgtYr[gcm]:
+            genHrlyCurtailments = hrlyCurtailmentsAllGensInTgtYr[gcm][gen]
+
+            if len(auxHrlyCurtailments) == 0:
+                auxHrlyCurtailments = list(copy.deepcopy(genHrlyCurtailments))
+            else:
+                auxHrlyCurtailments = list(map(operator.add, auxHrlyCurtailments, genHrlyCurtailments))
+
+        totalHrlyCurtailments[gcm] = auxHrlyCurtailments
+
     return totalHrlyCurtailments
 
 
 def eliminateLeapYearDay(totalHrlyCurtailments, currYear):
     """Remove extra leap year day from hourly curtailment data (RBM includes leap year)
 
-    :param totalHrlyCurtailments: total system hourly curtailments (1d list w/out head)
+    :param totalHrlyCurtailments: total system hourly curtailments in each gcm (dict {gcm: [1d list w/out head]})
     :param currYear: current year
-    :return: 1d list w/out head
+    :return: (dict {gcm: [1d list w/out head]})
     """
     leapYears = [yr for yr in range(2016, 2101, 4)]
-    if currYear in leapYears:
-        totalHrlyCurtailments = totalHrlyCurtailments[:-24]
 
-    return totalHrlyCurtailments
+    if currYear in leapYears:
+        out_dict = {}
+        for gcm in totalHrlyCurtailments:
+            out_dict[gcm] = totalHrlyCurtailments[gcm][:-24]
+    else:
+        out_dict = totalHrlyCurtailments
+
+    return out_dict
 
 
 def getPeakCurtailmentDayHours(totalHrlyCurtailments):
     """Get hours for entire day for hour w/ peak system curtailment
 
-    :param totalHrlyCurtailments: total system curtailment (1d list w/out head)
-    :return: 1d list of hours of day w/ peak hourly curtailment (output on 1-8760 basis)
+    :param totalHrlyCurtailments: total system curtailment dict {gcm: [1d list w/out head]}
+    :return: dict {gcm: [1d list w/out head]} of hours of day w/ peak hourly curtailment in each gcm (1-8760 basis)
     """
-    peakCurtailmentDay = totalHrlyCurtailments.index(max(totalHrlyCurtailments))
-    return getHoursOfDayForGivenHour(peakCurtailmentDay)  # output in 1-8760 basis
+
+    peakCurtailmentHour = {g: totalHrlyCurtailments[g].index(min(totalHrlyCurtailments[g]))
+                           for g in totalHrlyCurtailments}
+
+    # output in 1-8760 basis
+    peakCurtailment24Hours = {g: getHoursOfDayForGivenHour(peakCurtailmentHour[g]) for g in peakCurtailmentHour}
+
+    return peakCurtailment24Hours
 
 
 def getPeakDemandPlusCurtailmentDayHours(netDemand, totalHrlyCurtailments):
     """Get hours for entire day for day w/ peak net demand + hourly curtailment
 
-    :param netDemand: 1d list w/out headers of net demand
-    :param totalHrlyCurtailments: 1d list w/out headers of system curtailments
-    :return: 1d list of hours of day (1-8760 basis)
+    :param netDemand: net demand dict {gcm: [1d list w/out head]}
+    :param totalHrlyCurtailments: total system curtailment dict {gcm: [1d list w/out head]}
+    :return: dict with 1d list of hours of day (1-8760 basis) for each gcm {gcm: [1d list w/out head]}
     """
     (maxPeakDemandAndCurtailment, maxPeakDemandAndCurtailmentDay) = (None, None)
-    assert (len(netDemand) == len(totalHrlyCurtailments))
-    demandPlusCurtail = list(map(operator.add, netDemand, totalHrlyCurtailments))
-    return getHoursOfDayForGivenHour(demandPlusCurtail.index(max(demandPlusCurtail)))
+    assert (netDemand.keys() == totalHrlyCurtailments.keys())
+
+    out_dict = dict()
+    for g in netDemand:
+        assert (len(netDemand[g]) == len(totalHrlyCurtailments[g]))
+        demandPlusCurtail = list(map(operator.add, netDemand[g], totalHrlyCurtailments[g]))
+
+        out_dict[g] = getHoursOfDayForGivenHour(demandPlusCurtail.index(max(demandPlusCurtail)))
+
+    return out_dict
 
 
 def getRepSeasonalHoursByNLDC(netDemand, daysPerSeason, specialDayHours):
@@ -209,7 +275,8 @@ def getRepSeasonalHoursByNLDC(netDemand, daysPerSeason, specialDayHours):
     """
     seasons = ['winter', 'spring', 'summer', 'fall']
     seasonMonths = {'winter': [1, 2, 12], 'spring': [3, 4, 5], 'summer': [6, 7, 8], 'fall': [9, 10, 11]}
-    (repHrsBySeason, regHrsBySeason, allRepSeasonalHours) = (dict(), dict(), [])
+    repHrsBySeason, regHrsBySeason, allRepSeasonalHours = dict(), dict(), []
+
     for season in seasons:
         monthsInSeason = seasonMonths[season]
         (seasonRepHours, otherSeasonHours) = getSeasonRepHoursByNLDC(netDemand,
@@ -218,7 +285,7 @@ def getRepSeasonalHoursByNLDC(netDemand, daysPerSeason, specialDayHours):
         allRepSeasonalHours.extend(seasonRepHours)
         repHrsBySeason[season] = seasonRepHours
         regHrsBySeason[season] = otherSeasonHours
-    return (allRepSeasonalHours, repHrsBySeason, regHrsBySeason)
+    return allRepSeasonalHours, repHrsBySeason, regHrsBySeason
 
 
 def getSeasonRepHoursByNLDC(netDemand, daysPerSeason, monthsInSeason, specialDayHours):
@@ -340,49 +407,120 @@ def isolateDemandAndREGenForCEZonal(hoursForCE, zonalDemandProfile, zonalHourlyW
     :return: dict of zones to hourly demand, wind or solar for next CE run
     """
     demandCEZonal, hourlyWindGenCEZonal, hourlySolarGenCEZonal = dict(), dict(), dict()
-    for zone in zonalDemandProfile:
-        demandCEZonal[zone] = [zonalDemandProfile[zone][hr - 1] for hr in
-                               hoursForCE]  # -1 b/c hours in year start @ 1, not 0 like Python idx
-        hourlyWindGenCEZonal[zone] = [zonalHourlyWindGen[zone][hr - 1] for hr in
-                                      hoursForCE]  # -1 b/c hours in year start @ 1, not 0 like Python idx
-        hourlySolarGenCEZonal[zone] = [zonalHourlySolarGen[zone][hr - 1] for hr in
-                                       hoursForCE]  # -1 b/c hours in year start @ 1, not 0 like Python idx
-    return (demandCEZonal, hourlyWindGenCEZonal, hourlySolarGenCEZonal)
+
+    for gcm in hoursForCE:
+        auxDemand = dict()
+        for zone in zonalDemandProfile[gcm]:
+            # -1 b/c hours in year start @ 1, not 0 like Python idx
+            auxDemand[zone] = [zonalDemandProfile[gcm][zone][hr - 1] for hr in hoursForCE[gcm]]
+
+        demandCEZonal[gcm] = auxDemand
+
+    for gcm in hoursForCE:
+        auxDictSolar = dict()
+        auxDictWind = dict()
+        for zone in zonalHourlyWindGen:
+            # -1 b/c hours in year start @ 1, not 0 like Python idx
+            auxDictWind[zone] = [zonalHourlyWindGen[zone][hr - 1] for hr in hoursForCE[gcm]]
+            auxDictSolar[zone] = [zonalHourlySolarGen[zone][hr - 1] for hr in hoursForCE[gcm]]
+
+        hourlyWindGenCEZonal[gcm] = auxDictWind
+        hourlySolarGenCEZonal[gcm] = auxDictSolar
+
+    return demandCEZonal, hourlyWindGenCEZonal, hourlySolarGenCEZonal
 
 
 def calculateSeasonalWeights(zonalDemandProfile, repHrsBySeason, regHrsBySeason):
     """CALCULATE SEASONAL WEIGHTS TO SCALE REP. DEMAND TO SEASON VALUE
 
-    :param zonalDemandProfile: hourly demand in curr CE year (1d list w/out headers)
+    :param zonalDemandProfile: hourly demand in curr CE year for each zone in each gcm.
     :param repHrsBySeason: 1d list of representative hours per season (1-8760 basis)
     :param regHrsBySeason: 1d list of regular (i.e. non-rep) hours per season (1-8760 basis)
     :return: map of season to weight to scale rep demand to full season demand (scalar)
     """
     seasonDemandWeights, weightsList = dict(), [['Season', 'SeasonWeight']]
-    demand = sumZonalData(zonalDemandProfile)
-    for season in repHrsBySeason:
-        (repHrs, regHrs) = (repHrsBySeason[season], regHrsBySeason[season])
-        (repHourlyDemand, regHourlyDemand) = ([demand[hr - 1] for hr in repHrs],
-                                              [demand[hr - 1] for hr in regHrs])
-        seasonWeight = (sum(regHourlyDemand) + sum(repHourlyDemand)) / sum(repHourlyDemand)
+
+    # get list of seasons to iterate over
+    seasonsList = repHrsBySeason[list(repHrsBySeason.keys())[0]].keys()
+
+    for season in seasonsList:
+        repHourlyDemand, regHourlyDemand = 0, 0
+        for gcm in repHrsBySeason:
+            demand = sumZonalData(zonalDemandProfile[gcm])
+            (repHrs, regHrs) = (repHrsBySeason[gcm][season], regHrsBySeason[gcm][season])
+            repHourlyDemand = repHourlyDemand + sum([demand[hr - 1] for hr in repHrs])
+            regHourlyDemand = repHourlyDemand + sum([demand[hr - 1] for hr in regHrs])
+
+        # average over all gcms
+        seasonWeight = (regHourlyDemand + repHourlyDemand) / repHourlyDemand
+
         seasonDemandWeights[season] = seasonWeight
         weightsList.append([season, seasonWeight])
+
     return seasonDemandWeights, weightsList
 
 
 def getPeakDemandHourAndPlanningMarginCEZonal(demandCEZonal, planningMargin):
     """GET PEAK DEMAND HOUR AND PLANNING RESERVE CAPACITY
 
-    :param demandCEZonal: dict of zonal to hourly demand, hours in CE
+    The output dictionary will only keep the largest peak demand value among all gcms (for each zone).
+    For example, if we have 2 gcms and 3 zones and the largest peak demand value for z1 occurs in gcm2, for z2 occurs in
+    gcm2, and for z3 occurs at gcm1 the output dictionary will look like this:
+
+    {gcm1: {z3: x}, gcm2:{z2: y, z3: w}}
+
+    That is the list of keys in the outer dictionary may not be extensive over all gcms. And the list of keys
+    in the inner dictionary may not contain all zones.
+
+    :param demandCEZonal: nested dict of zone to hourly demand in each CE, hours in CE {gcm:zone:[hourly demand]}
     :param planningMargin: margin as fraction
-    :return: dict of zone: hour of peak demand in that zone
+    :return: nested dict of {gcm: {zone: hour of peak demand}} (see observation above)
+             dict of {zone: planningMargin} with planning margin (in MW) for each zone
     """
     peakDemandHourZonal, planningMarginZonal = dict(), dict()
-    for zone in demandCEZonal:
-        zoneDemand = demandCEZonal[zone]
-        peakDemandHourZonal[zone] = zoneDemand.index(max(zoneDemand)) + 1  # +1 b/c idx of pos 0 = 0, want 1
-        planningMarginZonal[zone] = max(zoneDemand) * (1 + planningMargin)
+
+    gcms = list(demandCEZonal.keys())
+    zones = list(demandCEZonal[gcms[0]].keys())
+
+    for z in zones:
+        auxDemand = np.array([demandCEZonal[g][z] for g in gcms])
+        maxHoursEachGcm = auxDemand.argmax(axis=1)
+        peakDemandValuesEachGcm = np.array([auxDemand[i, maxHoursEachGcm[i]] for i in range(len(gcms))])
+
+        peakDemandValue = np.max(peakDemandValuesEachGcm)
+        idx_peak_gcm = np.argmax(peakDemandValuesEachGcm)
+        maxHourZone = maxHoursEachGcm[idx_peak_gcm] + 1 # +1 b/c idx of pos 0 = 0, want 1
+
+        if gcms[idx_peak_gcm] in peakDemandHourZonal.keys():
+            peakDemandHourZonal[gcms[idx_peak_gcm]][z] = maxHourZone
+        else:
+            peakDemandHourZonal[gcms[idx_peak_gcm]] = {z: maxHourZone}
+
+        planningMarginZonal[z] = peakDemandValue * (1 + planningMargin)
+
     return peakDemandHourZonal, planningMarginZonal
+
+
+def get_list_all_hours_ce(hoursForCE):
+    """ compiles a 1d list with all hours considered for CE model across all GCM scenarios
+
+    :param hoursForCE: dict {gcm: [hours CE]}
+    :return: 1d list with all hours for CE
+    """
+
+    a = [hoursForCE[gcm] for gcm in hoursForCE]
+
+    b = []
+    for i in a:
+        b = b + copy.deepcopy(i)
+
+    b.sort()
+
+    # convert to set (to remove duplicates) and back to list (to be able to sort)
+    d = list(set(b))
+    d.sort()
+
+    return d
 
 
 ########### TEST FUNCTIONS #####################################################

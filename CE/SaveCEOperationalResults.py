@@ -6,39 +6,29 @@ from GAMSAuxFuncs import *
 from SetupResultLists import (setupHourlyGenByPlant, setupHourlySystemResultsWithHourSymbols,
                               setupHourlyLineflow, setupEmptyHourly2dList)
 import copy, csv
+import pandas as pd
 
 
-def saveCapacExpOperationalData(ceModel, genFleetForCE, curtailedTechs, renewTechs, notCurtailedTechs, cellsForTechs,
-                                ipmZoneNums, hoursForCE, lineList, pumpedHydroSymbs):
+def saveCapacExpOperationalData(ceModel):
     """Saves operational CE results: operations by plants & new techs, and MCs on demand and reserve constraints.
 
     :param ceModel:
-    :param genFleetForCE:
-    :param curtailedTechs:
-    :param renewTechs:
-    :param notCurtailedTechs:
-    :param cellsForTechs:
-    :param ipmZoneNums:
-    :param hoursForCE:
-    :param lineList:
-    :param pumpedHydroSymbs:
     :return:
     """
-    hoursForCESymbols = [createHourSymbol(hr) for hr in hoursForCE]
-    (genByPlant, genByCTechAndCell, genByRETechAndZone,
-     genByNCTechAndZone) = saveGeneratorSpecificResults(ceModel, genFleetForCE,
-                                                        curtailedTechs, renewTechs, notCurtailedTechs, cellsForTechs,
-                                                        ipmZoneNums, hoursForCESymbols)
-    (chargeByPH, socByPH) = savePumpedHydroResults(ceModel, genFleetForCE, pumpedHydroSymbs, hoursForCESymbols)
-    flowByLine = saveLineFlows(ceModel, hoursForCESymbols, lineList)
-    sysResults = saveSystemResults(ceModel, hoursForCESymbols, ipmZoneNums)
-    co2EmAndCostResults = saveCo2EmAndCostResults(ceModel)
-    return (genByPlant, genByCTechAndCell, genByRETechAndZone, genByNCTechAndZone, sysResults,
-            co2EmAndCostResults, flowByLine, chargeByPH, socByPH)
+
+    (genByPlant, genByCTechAndCell, genByRETechAndZone, genByNCTechAndZone) = saveGeneratorSpecificResults(ceModel)
+
+    (chargeByPH, socByPH) = savePumpedHydroResults(ceModel)
+
+    flowByLine = saveLineFlows(ceModel)
+
+    #sysResults = saveSystemResults(ceModel, hoursForCESymbols, ipmZoneNums)
+    #co2EmAndCostResults = saveCo2EmAndCostResults(ceModel)
+
+    return genByPlant, genByCTechAndCell, genByRETechAndZone, genByNCTechAndZone, flowByLine, chargeByPH, socByPH
 
 
-def saveGeneratorSpecificResults(ceModel, genFleetForCE, curtailedTechs, renewTechs,
-                                 notCurtailedTechs, cellsForTechs, ipmZoneNums, hoursForCESymbols):
+def saveGeneratorSpecificResults(ceModel):
     """SAVE GENERATOR SPECIFIC RESULTS
 
     All result arrays need to have same exact format & row/col idxs for gens/hours
@@ -53,16 +43,63 @@ def saveGeneratorSpecificResults(ceModel, genFleetForCE, curtailedTechs, renewTe
     :param hoursForCESymbols:
     :return:
     """
-    (genByPlant, genToRow, hourToCol) = setupHourlyGenByPlant(hoursForCESymbols, genFleetForCE)
 
-    saveCEResultsByPlantVar(genByPlant, genToRow, hourToCol, ceModel)
+    d = dict()
+    for rec in ceModel.out_db['vPegu']:
+        d[tuple(rec.keys)] = rec.get_level()
 
-    (genByCTechAndCell, genByRETechAndZone, genByNCTechAndZone, cTechAndCellToRow, reTechAndZoneToRow,
-     ncTechAndZoneToRow, hourToColTech) = setupCETechResultsLists(curtailedTechs, renewTechs, notCurtailedTechs,
-                                                                  cellsForTechs, ipmZoneNums, hoursForCESymbols)
+    genByPlant = dict_tuples_to_list2d(d)
 
-    saveCEResultsByTechVar(genByCTechAndCell, genByRETechAndZone, genByNCTechAndZone, cTechAndCellToRow,
-                           reTechAndZoneToRow, ncTechAndZoneToRow, hourToColTech, ceModel)
+    # use pandas to sort resulting list
+    genByPlant = pd.DataFrame(genByPlant, columns=['gcm', 'genId', 'hour', 'value'])
+    genByPlant = genByPlant.sort_values(by=['gcm', 'hour', 'genId']).reset_index(drop=True)
+    genByPlant = genByPlant.values.tolist()
+
+    # for curtailed candidate techs, the size of the list may be too long and most of the candidates will
+    # not be chosen. So filter only to the chosen candidates.
+
+    # get build decisions for candidate techs
+    d = dict()
+    for rec in ceModel.out_db['vNcurtailed']:
+        d[tuple(rec.keys)] = rec.get_level()
+
+    # list with (cell, tech) of curtailed techs that were built
+    build_techs = [k for k in d if d[k] > 0]
+
+    # populate dictionary with generation by built candidates
+    daux = dict()
+    for rec in ceModel.out_db['vPtechcurtailed']:
+        if (rec.key(1), rec.key(2)) in build_techs:
+            daux[tuple(rec.keys)] = rec.get_level()
+
+    genByCTechAndCell = dict_tuples_to_list2d(daux)
+
+    # use pandas to sort resulting list
+    genByCTechAndCell = pd.DataFrame(genByCTechAndCell, columns=['gcm', 'cell', 'tech', 'hour', 'value'])
+    genByCTechAndCell = genByCTechAndCell.sort_values(by=['gcm', 'hour', 'tech', 'cell']).reset_index(drop=True)
+    genByCTechAndCell = genByCTechAndCell.values.tolist()
+
+    d = dict()
+    for rec in ceModel.out_db['vPtechrenew']:
+        d[tuple(rec.keys)] = rec.get_level()
+
+    genByRETechAndZone = dict_tuples_to_list2d(d)
+
+    # use pandas to sort resulting list
+    genByRETechAndZone = pd.DataFrame(genByRETechAndZone, columns=['gcm', 'zone', 'tech', 'hour', 'value'])
+    genByRETechAndZone = genByRETechAndZone.sort_values(by=['gcm', 'hour', 'tech', 'zone']).reset_index(drop=True)
+    genByRETechAndZone = genByRETechAndZone.values.tolist()
+
+    d = dict()
+    for rec in ceModel.out_db['vPtechnotcurtailed']:
+        d[tuple(rec.keys)] = rec.get_level()
+
+    genByNCTechAndZone = dict_tuples_to_list2d(d)
+
+    # use pandas to sort resulting list
+    genByNCTechAndZone = pd.DataFrame(genByNCTechAndZone, columns=['gcm', 'zone', 'tech', 'hour', 'value'])
+    genByNCTechAndZone = genByNCTechAndZone.sort_values(by=['gcm', 'hour', 'tech', 'zone']).reset_index(drop=True)
+    genByNCTechAndZone = genByNCTechAndZone.values.tolist()
 
     return genByPlant, genByCTechAndCell, genByRETechAndZone, genByNCTechAndZone
 
@@ -127,6 +164,7 @@ def saveCEResultsByPlantVar(genByPlant, genToRow, hourToCol, ceModel):
 
 def saveCEResultsByTechVar(genByCTechAndCell, genByRETechAndZone, genByNCTechAndZone, cTechAndCellToRow,
                            reTechAndZoneToRow, ncTechAndZoneToRow, hourToCol, ceModel):
+
     saveLocByTechByHourVarCE(genByCTechAndCell, cTechAndCellToRow, hourToCol, ceModel, 'vPtechcurtailed')
     saveLocByTechByHourVarCE(genByRETechAndZone, reTechAndZoneToRow, hourToCol, ceModel, 'vPtechrenew')
     saveLocByTechByHourVarCE(genByNCTechAndZone, ncTechAndZoneToRow, hourToCol, ceModel, 'vPtechnotcurtailed')
@@ -149,21 +187,59 @@ def saveLocByTechByHourVarCE(result, genByTechAndLocToRow, hourToCol, ceModel, v
     ################################################################################
 
 
-################### SAVE PUMPED HYDRO RESULTS ##################################
-def savePumpedHydroResults(ceModel, genFleetForCE, pumpedHydroSymbs, hoursForCESymbols):
-    (chargeByPH, genToRow, hourToCol) = setupEmptyHourly2dList(pumpedHydroSymbs, hoursForCESymbols, 'genID')
-    saveHourByPlantVarCE(chargeByPH, genToRow, hourToCol, ceModel, 'vCharge')
-    (socByPH, genToRow, hourToCol) = setupEmptyHourly2dList(pumpedHydroSymbs, hoursForCESymbols, 'genID')
-    saveHourByPlantVarCE(socByPH, genToRow, hourToCol, ceModel, 'vSoc')
-    return (chargeByPH, socByPH)
+def savePumpedHydroResults(ceModel):
+    """SAVE PUMPED HYDRO RESULTS
+
+    :param ceModel:
+    :param genFleetForCE:
+    :param pumpedHydroSymbs:
+    :param hoursForCESymbols:
+    :return:
+    """
+
+    d = dict()
+    for rec in ceModel.out_db['vCharge']:
+        d[tuple(rec.keys)] = rec.get_level()
+
+    chargeByPH = dict_tuples_to_list2d(d)
+
+    # use pandas to sort resulting list
+    chargeByPH = pd.DataFrame(chargeByPH, columns=['gcm', 'genId', 'hour', 'value'])
+    chargeByPH = chargeByPH.sort_values(by=['gcm', 'hour', 'genId']).reset_index(drop=True)
+    chargeByPH = chargeByPH.values.tolist()
+
+    d = dict()
+    for rec in ceModel.out_db['vSoc']:
+        d[tuple(rec.keys)] = rec.get_level()
+
+    socByPH = dict_tuples_to_list2d(d)
+
+    # use pandas to sort resulting list
+    socByPH = pd.DataFrame(socByPH, columns=['gcm', 'genId', 'hour', 'value'])
+    socByPH = socByPH.sort_values(by=['gcm', 'hour', 'genId']).reset_index(drop=True)
+    socByPH = socByPH.values.tolist()
+
+    return chargeByPH, socByPH
 
 
-################################################################################
+def saveLineFlows(ceModel):
+    """SAVE LINE FLOWS BETWEEN ZONES
 
-################### SAVE LINE FLOWS BETWEEN ZONES ##############################
-def saveLineFlows(ceModel, hoursForCESymbols, lineList):
-    (flowByLine, lineToRow, hourToCol) = setupHourlyLineflow(hoursForCESymbols, lineList)
-    saveHourByPlantVarCE(flowByLine, lineToRow, hourToCol, ceModel, 'vLineflow')
+    :param ceModel:
+    :return:
+    """
+    d = dict()
+    for rec in ceModel.out_db['vLineflow']:
+        d[tuple(rec.keys)] = rec.get_level()
+
+    flowByLine = dict_tuples_to_list2d(d)
+
+    # use pandas to sort resulting list
+    flowByLine = pd.DataFrame(flowByLine, columns=['gcm', 'line', 'hour', 'value'])
+    flowByLine = flowByLine.sort_values(by=['gcm', 'hour', 'line']).reset_index(drop=True)
+    flowByLine = flowByLine.values.tolist()
+
+
     return flowByLine
 
 
@@ -174,9 +250,11 @@ def saveSystemResults(ceModel, hoursForCESymbols, ipmZoneNums):
     resultLabels = ['mcGen']
     sysResults, resultToRow, hourToCol = setupHourlyZonalSysResults(hoursForCESymbols, resultLabels, ipmZoneNums)
     saveCEResultsByZonalSysVar(sysResults, resultToRow, hourToCol, ceModel)
+
     # Commented code is for hourly system results not indexed by zone
     # sysResults,resultToRow,hourToCol = setupHourlySystemResultsWithHourSymbols(hoursForCESymbols,resultLabels)
     # saveCEResultsBySysVar(sysResults,resultToRow,hourToCol,ceModel)
+
     return sysResults
 
 

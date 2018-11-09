@@ -6,37 +6,74 @@ import operator, os
 from AuxFuncs import *
 
 
-########### GET SCALED DEMAND BASED ON CURRENT YEAR ############################
-# Inputs: initial demand values (1d list), annual demand growth (fraction),
-# year of initial demand values, current CE year
-# Outputs: demand values in current CE year (1d list)
 def scaleDemandForGrowthAndEE(baseDemand, annualDemandGrowth, demandYear, currYear):
+    """ GET SCALED DEMAND BASED ON CURRENT YEAR
+
+    This function is not used anymore
+
+    :param baseDemand: initial demand values (1d list)
+    :param annualDemandGrowth: annual demand growth (fraction)
+    :param demandYear: year of initial demand values
+    :param currYear: current CE year
+    :return: demand values in current CE year (1d list)
+    """
     demandScalar = (1 + annualDemandGrowth) ** (currYear - demandYear)
     return [val * demandScalar for val in baseDemand]
 
 
-########### GET NET DEMAND AND REMOVE WIND & SOLAR FROM FLEET ##################
-# Inputs: hourly demand values (1d list w/out header), wind and solar CFs (2d list OR
-# None if no wind/solar in zone), list of solar/wind IDs and their capacities in fleet (2d list),
-# current CE year, name of model (CE versus UC)
-# Outputs: net demand (1d list w/out headers), hourly wind and solar gen (1d lists w/out headers)
-def getNetDemand(hourlyDemand, windCFs, ewdIdAndCapac, solarCFs, solarFilenameAndCapac, currYear,
-                 modelName, resultsDir):
-    if windCFs == None:
+def getAggregateSolarAndWind(windCFs, ewdIdAndCapac, solarCFs, solarFilenameAndCapac):
+    """ Aggregates existing solar and wind generation by zone
+
+    These aggregated values will be used to compute a net demand value
+
+    :param windCFs: wind CFs (2d list OR None if no wind/solar in zone)
+    :param ewdIdAndCapac: list of solar/wind IDs and their capacities in fleet (2d list)
+    :param solarCFs: solar CFs (2d list OR None if no wind/solar in zone)
+    :param solarFilenameAndCapac:
+    :return: hourly wind gen (1d list w/out headers)
+             hourly solar gen (1d list w/out headers)
+    """
+
+    if windCFs is None:
         hourlyWindGen = [0 for val in range(len(hourlyDemand))]
     else:
         hourlyWindGen = getHourlyGenProfile(windCFs, ewdIdAndCapac)
-    if solarCFs == None:
+
+    if solarCFs is None:
         hourlySolarGen = [0 for val in range(len(hourlyDemand))]
     else:
         hourlySolarGen = getHourlyGenProfile(solarCFs, solarFilenameAndCapac)
-    netDemand = calcNetDemand(hourlyDemand, hourlyWindGen, hourlySolarGen)
-    return (netDemand, hourlyWindGen, hourlySolarGen)
+
+    return hourlyWindGen, hourlySolarGen
 
 
-# Inputs: CFs (2d list w/ header), unit ids and capacities (2d list w/ header)
-# Outputs: hourly generation values (1d list w/out header)
+def getNetDemand(hourlyDemand, hourlyWindGen, hourlySolarGen):
+    """ GET NET DEMAND AND REMOVE WIND & SOLAR FROM FLEET
+
+    :param hourlyDemand: hourly demand values in zone (1d list w/out header)
+    :param hourlyWindGen: hourly wind gen in zone (1d list w/out headers)
+    :param hourlySolarGen: hourly solar gen in zone (1d list w/out headers)
+    :return: net demand in zone (1d list w/out headers),
+    """
+
+    if len(hourlyWindGen) > 0 and len(hourlySolarGen) > 0:
+        hourlyWindAndSolarGen = list(map(operator.add, hourlyWindGen, hourlySolarGen))
+        return list(map(operator.sub, hourlyDemand, hourlyWindAndSolarGen))
+    elif len(hourlyWindGen) > 0:
+        return list(map(operator.sub, hourlyDemand, hourlyWindGen))
+    elif len(hourlySolarGen) > 0:
+        return list(map(operator.sub, hourlyDemand, hourlySolarGen))
+    else:
+        return hourlyDemand
+
+
 def getHourlyGenProfile(cfs, idAndCapacs):
+    """Computes aggregate Solar or Wind hourly generation profile
+
+    :param cfs: CFs (2d list w/ header)
+    :param idAndCapacs: unit ids and capacities (2d list w/ header)
+    :return: hourly generation values (1d list w/out header)
+    """
     (idCol, capacCol) = (idAndCapacs[0].index('Id'), idAndCapacs[0].index('FleetCapacity'))
     totalHourlyGen = []
     for idAndCapac in idAndCapacs[1:]:
@@ -48,17 +85,3 @@ def getHourlyGenProfile(cfs, idAndCapacs):
         else:
             for hr in range(len(hourlyGen)): totalHourlyGen[hr] += hourlyGen[hr]
     return totalHourlyGen
-
-
-# Inputs: hourly demand & wind & solar gen (1d lists w/out headers)
-# Outputs: hourly net demand (1d list w/out headers)
-def calcNetDemand(hourlyDemand, hourlyWindGen, hourlySolarGen):
-    if len(hourlyWindGen) > 0 and len(hourlySolarGen) > 0:
-        hourlyWindAndSolarGen = list(map(operator.add, hourlyWindGen, hourlySolarGen))
-        return list(map(operator.sub, hourlyDemand, hourlyWindAndSolarGen))
-    elif len(hourlyWindGen) > 0:
-        return list(map(operator.sub, hourlyDemand, hourlyWindGen))
-    elif len(hourlySolarGen) > 0:
-        return list(map(operator.sub, hourlyDemand, hourlySolarGen))
-    else:
-        return hourlyDemand
