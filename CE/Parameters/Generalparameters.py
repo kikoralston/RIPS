@@ -386,7 +386,7 @@ class Generalparameters:
                 capacCol = lines[0].index('Limit')
 
                 for row in lines[1:]:
-                    lineName = createLineName(row[sourceCol], row[sinkCol])
+                    lineName = self.createLineName(row[sourceCol], row[sinkCol])
                     self.lineList.append(lineName)
 
                     self.lineCapacs[lineName] = float(row[capacCol])
