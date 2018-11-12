@@ -21,7 +21,8 @@ def scaleDemandForGrowthAndEE(baseDemand, annualDemandGrowth, demandYear, currYe
     return [val * demandScalar for val in baseDemand]
 
 
-def getAggregateSolarAndWind(windCFs, ewdIdAndCapac, solarCFs, solarFilenameAndCapac):
+def getAggregateSolarAndWind(windCFs, ewdIdAndCapac, solarCFs, solarFilenameAndCapac,
+                             nhours_year=8760):
     """ Aggregates existing solar and wind generation by zone
 
     These aggregated values will be used to compute a net demand value
@@ -30,17 +31,18 @@ def getAggregateSolarAndWind(windCFs, ewdIdAndCapac, solarCFs, solarFilenameAndC
     :param ewdIdAndCapac: list of solar/wind IDs and their capacities in fleet (2d list)
     :param solarCFs: solar CFs (2d list OR None if no wind/solar in zone)
     :param solarFilenameAndCapac:
+    :param nhours_year: number of hours in current year
     :return: hourly wind gen (1d list w/out headers)
              hourly solar gen (1d list w/out headers)
     """
 
     if windCFs is None:
-        hourlyWindGen = [0 for val in range(len(hourlyDemand))]
+        hourlyWindGen = [0 for val in range(nhours_year)]
     else:
         hourlyWindGen = getHourlyGenProfile(windCFs, ewdIdAndCapac)
 
     if solarCFs is None:
-        hourlySolarGen = [0 for val in range(len(hourlyDemand))]
+        hourlySolarGen = [0 for val in range(nhours_year)]
     else:
         hourlySolarGen = getHourlyGenProfile(solarCFs, solarFilenameAndCapac)
 

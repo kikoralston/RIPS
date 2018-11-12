@@ -266,8 +266,13 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
         write2dListToCSV(newSolarFilenameAndCapac,
                          os.path.join(resultsDir, 'solarNewIdAndCapacCE' + zone + str(currYear) + '.csv'))
 
+        # get number of hours in year (assume that is the same over all gcms)
+        gcm = curtailparam.listgcms[0]
+        nhours_year = len(zonalDemandProfile[gcm][zone])
+
         zonalHourlyWindGen[zone], zonalHourlySolarGen[zone] = getAggregateSolarAndWind(windCFs, ewdIdAndCapac,
-                                                                                       solarCFs, solarFilenameAndCapac)
+                                                                                       solarCFs, solarFilenameAndCapac,
+                                                                                       nhours_year)
         zonalNewWindCFs[zone], zonalNewSolarCFs[zone] = newWindCFs, newSolarCFs
 
     zonalNetDemand = dict()
