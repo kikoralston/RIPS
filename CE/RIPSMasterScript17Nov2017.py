@@ -421,10 +421,10 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
 
     genFleet = selectAndMarkUnitsRetiredByCE(genFleet, genFleetForCE, genparam.retirementCFCutoff, capacExpModel,
                                              currYear, capacExpGenByGens, capacExpRetiredUnitsByCE,
-                                             genparam.scaleMWtoGW, hoursForCE,
-                                             planningReserveZonal, genparam.endYear, capacExpRetiredUnitsByAge,
-                                             demandCEZonal, hourlyWindGenCEZonal, hourlySolarGenCEZonal,
-                                             newWindCFsCEZonal, newSolarCFsCEZonal, genparam.ptEligRetCF)
+                                             genparam.scaleMWtoGW, hoursForCE, planningReserveZonal, genparam.endYear,
+                                             capacExpRetiredUnitsByAge, demandCEZonal, hourlyWindGenCEZonal,
+                                             hourlySolarGenCEZonal, newWindCFsCEZonal, newSolarCFsCEZonal,
+                                             genparam.ptEligRetCF, peakDemandHourZonal)
 
     # removes all retired units; [] is dummy list b/c not adding ret age units to list
     genFleetNoRetiredUnits = createFleetForCurrentCELoop(genFleet, currYear, [], genparam.dataRoot, genparam.scenario)
