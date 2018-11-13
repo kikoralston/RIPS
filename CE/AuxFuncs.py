@@ -65,10 +65,13 @@ def dict_tuples_to_list2d(dict_in):
             (where n is the length of the tuples)
     """
 
-    list2d = []
+    dict_keys = list(dict_in.keys())
+    len_list = len(dict_keys)
 
-    for (key, v) in dict_in.items():
-        list2d = list2d + [list(key) + [v]]
+    list2d = [0]*len_list
+
+    for (i, key) in enumerate(dict_keys):
+        list2d[i] = list(key) + [dict_in[key]]
 
     return list2d
 
