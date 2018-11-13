@@ -458,7 +458,7 @@ def retireUnitsByCF(retirementCFCutoff, gensEligToRetireCFs, planningReserveZona
                 # get gcm where peak Demand occurs for this zone
                 gcm = [g for g in peakDemandHourZonal.keys() if zone in peakDemandHourZonal[g].keys()][0]
 
-                planningReserve, demand = planningReserveZonal[gcm][zone], demandZonalCE[gcm][zone]
+                planningReserve, demand = planningReserveZonal[zone], demandZonalCE[gcm][zone]
                 hourlyWindGen, hourlySolarGen = hourlyWindGenZonalCE[gcm][zone], hourlySolarGenZonalCE[gcm][zone]
                 newWindCFs, newSolarCFs = newWindCFsZonalCE[gcm][zone], newSolarCFsZonalCE[gcm][zone]
 
