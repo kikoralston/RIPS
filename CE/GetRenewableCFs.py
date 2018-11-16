@@ -638,7 +638,7 @@ def getSolarSiteCfs_2(solarDir, siteFilename, datasetSiteCapac, siteTz, desiredT
     :return:
     """
 
-    subhourly = pd.read_csv(os.path.join(solarDir, 'AllSerc', siteFilename))
+    subhourly = pd.read_csv(os.path.join(solarDir, 'AllSERC', siteFilename))
 
     # convert from string to datetime
     subhourly['LocalTime'] = pd.to_datetime(subhourly['LocalTime'], format='%m/%d/%y %H:%M')
