@@ -56,11 +56,26 @@ def assignCellsToIPMZones(cells, fipsToZones, fipsToPolys):
 # Input: 1 cell. Output: zone that cell belongs in.
 def mapCellToIPMZone(cell, fipsToZones, fipsToPolys):
     (lat, lon) = cell.split('_')
-    return fipsToZones[getFIPSOfPt(fipsToPolys, float(lat), float(lon))]
+    fips = getFIPSOfPt(fipsToPolys, float(lat), float(lon))
+
+    if fips is None:
+        out = 'NA'
+    else:
+        out = fipsToZones[fips]
+
+    return out
 
 
-# Returns True if given lat/lon is in tgtZone (using IPM zones)
 def locInZone(lat, lon, tgtZone, fipsToZones, fipsToPolys):
+    """Returns True if given lat/lon is in tgtZone (using IPM zones)
+
+    :param lat:
+    :param lon:
+    :param tgtZone:
+    :param fipsToZones:
+    :param fipsToPolys:
+    :return:
+    """
     p = Point(lon, lat)
     fips = getFIPSOfPt(fipsToPolys, lat, lon)
     if fips in fipsToZones:

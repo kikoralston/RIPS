@@ -45,15 +45,18 @@ def markAndSaveRetiredUnitsFromAge(genFleet, currYear, capacExpRetiredUnitsByAge
     retiredByAgeCol = genFleet[0].index('YearRetiredByAge')
     retiredByCECol = genFleet[0].index('YearRetiredByCE')
     retiredUnitsByAge = []
+
     for row in genFleet[1:]:
         if row[retiredByAgeCol] == '' and row[retiredByCECol] == '':  # if not already retired by age or CE
             (onlineYear, plantType) = (row[onlineYearCol], row[plantTypeCol])
             lifetimePlantType = lifetimeByPlantTypeDict[plantType]
             if int(onlineYear) + lifetimePlantType < currYear:
-                if plantType in renewablePlantTypes: readdRenewablePlant(genFleet, row,
-                                                                         currYear)  # readd to fleet before add retired year!
+                if plantType in renewablePlantTypes:
+                    readdRenewablePlant(genFleet, row, currYear)  # readd to fleet before add retired year!
+
                 row[retiredByAgeCol] = currYear
                 retiredUnitsByAge.append(createGenSymbol(row, genFleet[0]))
+
     capacExpRetiredUnitsByAge.append(['UnitsRetiredByAge' + str(currYear)] + retiredUnitsByAge)
 
 
