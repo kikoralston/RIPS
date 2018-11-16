@@ -123,8 +123,7 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataY
             siteCfsHourly, siteCfsSubhourly = copy.deepcopy(avgFleetCfHr), copy.deepcopy(avgFleetCfSubhr)
 
         else:
-            siteCfsHourly, siteCfsSubhourly = getWindSiteCfs_2(windDir, siteId, datasetCapac, desiredTz, windGenDataYr,
-                                                               subHour=subHour)
+            siteCfsHourly, siteCfsSubhourly = getWindSiteCfs_2(windDir, siteId, datasetCapac, desiredTz, windGenDataYr)
 
         addSiteCfsToAggList(siteCfsHourly, siteCfsSubhourly, allSiteCfsHourly, allSiteCfsSubhourly, siteId)
 
