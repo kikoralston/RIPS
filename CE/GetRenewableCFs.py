@@ -175,8 +175,6 @@ def wrapperwind(list_args):
     """
     (windDir, siteId, datasetCapac, desiredTz, windGenDataYr) = list_args
 
-    print(list_args)
-
     siteCfsHourly, siteCfsSubhourly = getWindSiteCfs_2(windDir, siteId, datasetCapac, desiredTz, windGenDataYr)
 
     out = [siteCfsHourly, siteCfsSubhourly, siteId]
