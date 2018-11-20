@@ -103,7 +103,8 @@ class Generalparameters:
         self.lineCapacs = None
 
         # OTHER
-        self.ncores = 1  # number of cores to use for parallel simulation
+        self.ncores_py = 1      # number of cores to use for parallel simulation in python
+        self.ncores_gams = 1    # number of cores to use for parallel simulation in gams
 
         # OLD VARIABLES
         self.testModel = False  # use dummy test system; not currently working
@@ -191,7 +192,8 @@ class Generalparameters:
         outstr = outstr + 'scaleDollarsToThousands = {}\n'.format(self.scaleDollarsToThousands)
         outstr = outstr + 'scaleLbToShortTon = {}\n'.format(self.scaleLbToShortTon)
         outstr = outstr + '#\n# -------- OTHER PARAMETERS --------\n#\n'
-        outstr = outstr + 'ncores = {} \t # number of cores to use for parallel simulation'.format(self.ncores)
+        outstr = outstr + 'ncores_py = {} \t    # number of cores to use for parallel simulation in python'.format(self.ncores_py)
+        outstr = outstr + 'ncores_gams = {} \t  # number of cores to use for parallel simulation in gams'.format(self.ncores_gams)
 
         return outstr
 
@@ -314,7 +316,8 @@ class Generalparameters:
         self.scaleDollarsToThousands = lev(data[47][1])
         self.scaleLbToShortTon = lev(data[48][1])
 
-        self.ncores = lev(data[49][1])
+        self.ncores_py = lev(data[49][1])
+        self.ncores_gams = lev(data[50][1])
 
         self.setstates()
 
@@ -351,6 +354,10 @@ class Generalparameters:
             self.states = ['North Carolina', 'Georgia', 'Mississippi', 'Alabama', 'Kentucky', 'Tennessee']
             self.statesAbbrev = ['NC', 'GA', 'MS', 'AL', 'KY', 'TN']
             self.ipmZones = ['S_C_TVA']
+        elif self.analysisArea == 'S_C_KY':
+            self.states = ['Kentucky']
+            self.statesAbbrev = ['KY']
+            self.ipmZones = ['S_C_KY']
         elif self.analysisArea == 'test':
             self.states = ['North Carolina', 'South Carolina', 'Georgia', 'Mississippi', 'Alabama']
             self.statesAbbrev = ['NC', 'SC', 'GA', 'MS', 'AL']

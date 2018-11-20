@@ -310,8 +310,8 @@ maxzonalbuild(z,type)..  sum(c$[pCellzones(c)=ORD(z)], sum(techcurtailed$[tech2d
 
 * Fix an upper bound on integer build variables (otherwise GAMS automatically sets it to 100)
 * (note that the constraint above will still be applied)
-vNrenew.up(z,techrenew) = 10000;
-vNnotcurtailed.up(z,technotcurtailed) = 10000;
+vNrenew.up(z,techrenew) = 100000;
+vNnotcurtailed.up(z,technotcurtailed) = 100000;
 
 ***************************************************
 

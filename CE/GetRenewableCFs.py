@@ -15,8 +15,8 @@ import pickle as pk
 import gc
 
 
-def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desiredTz,
-                    dataRoot, windGenDataYr, currZone, fipsToZones, fipsToPolys, subHour=False):
+def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desiredTz, dataRoot, windGenDataYr,
+                    currZone, fipsToZones, fipsToPolys, subHour=False, ncores_py=1):
     """GET RENEWABLE CAPACITY FACTORS
 
     Function takes in generator fleet that has already been isolated to a single zone and maps data to CFs for
@@ -47,7 +47,8 @@ def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desir
     if len(windUnits) > 1:  # have wind in zone
         (windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac) = getWindCFs(windUnits, windDir, startWindCapacForCFs,
                                                                            desiredTz, windGenDataYr, fipsToZones,
-                                                                           fipsToPolys, currZone, subHour=subHour)
+                                                                           fipsToPolys, currZone, subHour=subHour,
+                                                                           ncores_py=ncores_py)
         windCfsDtHr, windCfsDtSubhr = rotate(windCfsDtHr), rotate(windCfsDtSubhr)
     else:
         windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac = None, None, None, None
@@ -57,7 +58,7 @@ def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desir
         (solarCFs, solarCfsDtHr, solarCfsDtSubhr, solarFilenameAndCapac) = getSolarCFs(solarUnits, solarDir,
                                                                                        startSolarCapacForCFs, desiredTz,
                                                                                        fipsToZones, fipsToPolys,
-                                                                                       currZone)
+                                                                                       currZone, ncores_py=ncores_py)
         solarCfsDtHr, solarCfsDtSubhr = rotate(solarCfsDtHr), rotate(solarCfsDtSubhr)
     else:
         solarCFs, solarCfsDtHr, solarCfsDtSubhr, solarFilenameAndCapac = None, None, None, None
@@ -67,7 +68,7 @@ def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desir
 
 
 def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataYr, fipsToZones, fipsToPolys, currZone,
-               subHour=False):
+               subHour=False, ncores_py=1):
     """GET WIND Capacity FACTORS
 
     All CFs output in EST
@@ -104,7 +105,7 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataY
                  for site in ewdIdAndCapac[1:] if 'NoMoreSites' not in site[idCol]]
 
     if len(list_args) > 0:
-        with mp.Pool(processes=(mp.cpu_count()-1)) as pool:
+        with mp.Pool(processes=ncores_py) as pool:
             list_cfs_wind = pool.map(wrapperwind, list_args)
     else:
         list_cfs_wind = []
@@ -511,7 +512,8 @@ def convertToCfs(datetimeAndGen, siteCapac):
     return [dateInfoHoriz, cfsHoriz]
 
 
-def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZones, fipsToPolys, currZone):
+def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZones, fipsToPolys, currZone,
+                ncores_py=1):
     """ Read SOLAR Potential and compute CFS for sites in this current zone
 
     :param solarUnits:
@@ -543,7 +545,7 @@ def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZo
                  for site in solarFilenameAndCapacAndTz[1:] if 'NoMoreSites' not in site[idCol]]
 
     if len(list_args) > 0:
-        with mp.Pool(processes=(mp.cpu_count()-1)) as pool:
+        with mp.Pool(processes=ncores_py) as pool:
             list_cfs_solar = pool.map(wrappersolar, list_args)
         gc.collect()
     else:

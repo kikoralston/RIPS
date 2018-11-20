@@ -9,8 +9,8 @@ from GetRenewableCFs import getRenewableCFs
 from AuxFuncs import *
 
 
-def getNewWindAndSolarCFs(genFleet, currYear, modelName, tzAnalysis, dataRoot, resultsDir,
-                          windGenDataYr, currZone, fipsToZones, fipsToPolys):
+def getNewWindAndSolarCFs(genFleet, currYear, modelName, tzAnalysis, dataRoot, resultsDir, windGenDataYr, currZone,
+                          fipsToZones, fipsToPolys, ncores_py=1):
     """ GET NEW WIND AND SOLAR CFS
 
     Determines hourly CFs for potential new wind & solar plants by getting average CF of input assumed incremental
@@ -39,9 +39,9 @@ def getNewWindAndSolarCFs(genFleet, currYear, modelName, tzAnalysis, dataRoot, r
     genFleetWithNewRE = addNewREToFleet(genFleet, totalWindCapac, totalSolarCapac, currZone)
 
     (windCFs, windCfsDtHr, windCfsDtSubhr, windIdAndCapac, solarCFs, solarCfsDtHr, solarCfsDtSubhr,
-     solarFilenameAndCapac) = getRenewableCFs(genFleetWithNewRE, windCapacInCurrFleet,
-                                              solarCapacInCurrFleet, tzAnalysis, dataRoot, windGenDataYr,
-                                              currZone, fipsToZones, fipsToPolys)
+     solarFilenameAndCapac) = getRenewableCFs(genFleetWithNewRE, windCapacInCurrFleet, solarCapacInCurrFleet,
+                                              tzAnalysis, dataRoot, windGenDataYr, currZone, fipsToZones,
+                                              fipsToPolys, ncores_py=ncores_py)
 
     avgWindCF = getCapacWtdCF(rotate(windCfsDtHr), windIdAndCapac, tzAnalysis)
     avgWindCFSubhr = getCapacWtdCF(rotate(windCfsDtSubhr), windIdAndCapac, tzAnalysis)

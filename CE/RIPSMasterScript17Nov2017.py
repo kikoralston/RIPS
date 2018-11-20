@@ -236,7 +236,8 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
         (windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac, solarCFs, solarCfsDtHr, solarCfsDtSubhr,
          solarFilenameAndCapac) = getRenewableCFs(zonalGenFleet, startWindCapacForCFs, startSolarCapacForCFs,
                                                   genparam.tzAnalysis, genparam.dataRoot, genparam.windGenDataYr,
-                                                  zone, genparam.fipsToZones, genparam.fipsToPolys)
+                                                  zone, genparam.fipsToZones, genparam.fipsToPolys,
+                                                  ncores_py=genparam.ncores_py)
         print('Got RE CFs. Elapsed time: ' + str_elapsedtime(start_time))
 
         start_time = time.time()
@@ -258,7 +259,8 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
          newWindIdAndCapac, newSolarCfsDtHr, newSolarCfsDtSubhr, newSolarFilenameAndCapac,
          addedWindCapac, addedSolarCapac) = getNewWindAndSolarCFs(zonalGenFleet, currYear, 'CE', genparam.tzAnalysis,
                                                                   genparam.dataRoot, resultsDir, genparam.windGenDataYr,
-                                                                  zone, genparam.fipsToZones, genparam.fipsToPolys)
+                                                                  zone, genparam.fipsToZones, genparam.fipsToPolys,
+                                                                  ncores_py=genparam.ncores_py)
         print('Got new RE CFs. Elapsed time: ' + str_elapsedtime(start_time))
 
         write2dListToCSV(newWindIdAndCapac,
@@ -548,7 +550,7 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
     opt.defines['gdxincname'] = db.name
 
     # get numbers of cores
-    n_cores = genparam.ncores
+    n_cores = genparam.ncores_gams
 
     # add CPLEX option file
     file = open(os.path.join(ws.working_directory, "cplex.opt"), "w")

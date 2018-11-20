@@ -47,7 +47,7 @@ def determineHrlyCurtailmentsForExistingGens(genFleet, currYear, genparam, curta
     args_list = [[cellLatLongToGenDict, currYear, genFleet, genparam, curtailparam, gcm]
                  for gcm in curtailparam.listgcms]
 
-    with mp.Pool(processes=genparam.ncores) as pool:
+    with mp.Pool(processes=genparam.ncores_py) as pool:
         list_curtailments = pool.map(worker_generator_curtailments, args_list)
 
     # create nested dictionary
