@@ -1,6 +1,5 @@
 $TITLE CAPACITY EXPANSION WITH CHRONOLOGICAL DEMAND THROUGH PYTHON API, 27 MAY 2016, MICHAEL CRAIG
 
-*$offlisting
 *$offsymxref offsymlist
 
 Options
@@ -8,7 +7,7 @@ Options
          reslim = 20000
          limcol = 0
          limrow = 0
-*         solprint = silent
+         solprint = off
          ;
 
 Sets
