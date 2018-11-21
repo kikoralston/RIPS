@@ -579,7 +579,7 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
 
     path_gams = gamsFileDir
     str_target = 'SET z  zones'
-    fname = os.path.join(path_gams, '{}.lst'.format(db.name))
+    fname = os.path.join(path_gams, '_gams_py_gjo0.lst')
 
     with open(fname) as f:
         lines = [line.rstrip('\n') for line in f]
