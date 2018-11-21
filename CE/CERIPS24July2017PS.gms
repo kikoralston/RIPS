@@ -215,6 +215,8 @@ Equations
          defsocspe(g,pumphydroegu,h)                        link state of charge and charging and discharging
          ;
 
+* PRINT ZONES SET IN LST FILE IN ORDER TO CHECK IF ORDER IS CORRECT!
+display z;
 
 ******************PUT FILE******************
 * defines a put file to write some of the model parameters

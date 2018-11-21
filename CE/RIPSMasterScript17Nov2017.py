@@ -577,6 +577,29 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
     print('Solver Status: {0:4d} ({1})'.format(ss, ss_description))
     print()
 
+    path_gams = gamsFileDir
+    str_target = 'SET z  zones'
+    fname = os.path.join(path_gams, capacExpFilename.replace('gms', 'lst'))
+
+    with open(fname) as f:
+        lines = [line.rstrip('\n') for line in f]
+
+    idx_set_zone = [i for i in range(len(lines)) if str_target in lines[i]][0]
+
+    if len(idx_set_zone > 0):
+        idx_set_zone = idx_set_zone[0]
+        str_zones = lines[idx_set_zone + 2]
+
+        print()
+        print('-------- Order of Zone set used in GAMS: ------------')
+        print(str_zones)
+        print()
+
+    else:
+        print()
+        print('---- DISPLAY OF ZONE SET NOT FOUND IN LST FILE ------')
+        print()
+
     return capacExpModel, ms, ss, techCurtailedSymbols, renewTechSymbols, techNotCurtailedSymbols, pumpHydroGenSymbols
 
 
@@ -586,13 +609,22 @@ def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeaso
 
     ipmZoneNums, lineList, ptCurtailedAll = genparam.ipmZoneNums, genparam.lineList, genparam.ptCurtailedAll
 
-    (genSet, genSymbols, hydroGenSet, hydroGenSymbols, pumpHydroGenSet,
-     pumpHydroGenSymbols) = addGeneratorSets(db, genFleetForCE)
+    zoneSet, zoneSymbols = addZoneSets(db, ipmZoneNums)  # create string for set IDs
+    lineSet = addLineSets(db, lineList)
+    cellSet = addCellSet(db, cellsToZones)
 
     # compile 1d list with all hours for CE model
     hoursForCETotal = get_list_all_hours_ce(hoursForCE)
 
     (hourSet, hourSymbols) = addHourSet(db, hoursForCETotal)
+
+    (gcmSetName, gcmSetDescrip, gcmSetDim) = ('g', 'gcms scenarios', 1)
+    gcmSet = db.add_set(gcmSetName, gcmSetDim, gcmSetDescrip)
+    for gcm in hoursForCE:
+        gcmSet.add_record(gcm)
+
+    (genSet, genSymbols, hydroGenSet, hydroGenSymbols, pumpHydroGenSet,
+     pumpHydroGenSymbols) = addGeneratorSets(db, genFleetForCE)
 
     # write 2d set with hours for CE in each gcm
     (hours2dSetName, hours2dSetDescrip, hours2dSetDim) = ('h2', '2d set mapping gcm to hours for CE', 2)
@@ -602,16 +634,9 @@ def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeaso
             hsymbol = createHourSymbol(h)
             hours2dSet.add_record([gcm, hsymbol])
 
-    (gcmSetName, gcmSetDescrip, gcmSetDim) = ('g', 'gcms scenarios', 1)
-    gcmSet = db.add_set(gcmSetName, gcmSetDim, gcmSetDescrip)
-    for gcm in hoursForCE:
-        gcmSet.add_record(gcm)
-
     addHourSeasonSubsets(db, repHrsBySeason)
 
     addHourSpecialSubset(db, specialHrs)
-
-    peakHourSet, peakHrSymbols = addPeakHourSubset(db, peakDemandHourZonal, genparam)
 
     (techSet, techSymbols, techCurtailedSet, techCurtailedSymbols, renewTechSet, renewTechSymbols,
      techNotCurtailedSet, techNotCurtailedSymbols) = addNewTechsSets(db, newTechsCE, ptCurtailedAll)
@@ -631,10 +656,7 @@ def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeaso
         for t2 in list_techs:
             techSet2.add_record([t1, t2])
 
-    zoneSet, zoneSymbols = addZoneSets(db, ipmZoneNums)  # create string for set IDs
-
-    lineSet = addLineSets(db, lineList)
-    cellSet = addCellSet(db, cellsToZones)
+    peakHourSet, peakHrSymbols = addPeakHourSubset(db, peakDemandHourZonal, genparam)
 
     return (genSet, genSymbols, hourSet, hourSymbols, techSet, techSymbols, techCurtailedSet,
             techCurtailedSymbols, renewTechSet, renewTechSymbols, techNotCurtailedSymbols,

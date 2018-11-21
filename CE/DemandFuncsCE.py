@@ -6,6 +6,7 @@ get peak demand hour, and calculate planning reserve margin.
 """
 
 import copy, operator, os, sys
+from collections import OrderedDict
 import numpy as np
 from AuxFuncs import *
 import pprint
@@ -16,7 +17,8 @@ def selectWeeksForExpansion(zonalDemandProfile, zonalNetDemand, zonalHourlyWindG
     """SELECT WEEKS FOR EXPANSION
 
     :param zonalDemandProfile: nested dictionary {gcm: {zone: [1d list hourly demand]}} with demand for current CE run
-    :param zonalNetDemand: nested dictionary {gcm: {zone: [1d list hourly net demand]}} with net demand for CE run
+    :param zonalNetDemand: nested dictionary {gcm: {zone: [1d list hourly net demand]}} with net demand for CE run.
+                           (list with Net demand list already removed additional leap year day)
     :param zonalHourlyWindGen: hourly wind gen (1d lists w/out heads)
     :param zonalHourlySolarGen: hourly solar gen (1d lists w/out heads)
     :param daysPerSeason: num representative days per season (general parameter of simulation)
@@ -31,8 +33,13 @@ def selectWeeksForExpansion(zonalDemandProfile, zonalNetDemand, zonalHourlyWindG
     representative per season, special days, and all other season hours (1d lists, all 1-8760 basis).
     """
 
-    netDemand = {gcm: sumZonalData(zonalNetDemand[gcm]) for gcm in zonalNetDemand.keys()}
-    demand = {gcm: sumZonalData(zonalDemandProfile[gcm]) for gcm in zonalDemandProfile.keys()}
+    netDemand = OrderedDict()
+    for gcm in zonalNetDemand.keys():
+        netDemand[gcm] = sumZonalData(zonalNetDemand[gcm])
+
+    demand = OrderedDict()
+    for gcm in zonalDemandProfile.keys():
+        demand[gcm] = sumZonalData(zonalNetDemand[gcm])
 
     # Get hour of peak demand in each zone (over all gcms)
     peakDemandHourZonal, planningMarginZonal = getPeakDemandHourAndPlanningMarginCEZonal(zonalDemandProfile,
@@ -219,7 +226,8 @@ def eliminateLeapYearDay(totalHrlyCurtailments, currYear):
     leapYears = [yr for yr in range(2016, 2101, 4)]
 
     if currYear in leapYears:
-        out_dict = {}
+        out_dict = OrderedDict()
+
         for gcm in totalHrlyCurtailments:
             out_dict[gcm] = totalHrlyCurtailments[gcm][:-24]
     else:
@@ -477,7 +485,7 @@ def getPeakDemandHourAndPlanningMarginCEZonal(demandCEZonal, planningMargin):
     :return: nested dict of {gcm: {zone: hour of peak demand}} (see observation above)
              dict of {zone: planningMargin} with planning margin (in MW) for each zone
     """
-    peakDemandHourZonal, planningMarginZonal = dict(), dict()
+    peakDemandHourZonal, planningMarginZonal = OrderedDict(), OrderedDict()
 
     gcms = list(demandCEZonal.keys())
     zones = list(demandCEZonal[gcms[0]].keys())
@@ -494,7 +502,9 @@ def getPeakDemandHourAndPlanningMarginCEZonal(demandCEZonal, planningMargin):
         if gcms[idx_peak_gcm] in peakDemandHourZonal.keys():
             peakDemandHourZonal[gcms[idx_peak_gcm]][z] = maxHourZone
         else:
-            peakDemandHourZonal[gcms[idx_peak_gcm]] = {z: maxHourZone}
+            aux = OrderedDict()
+            aux[z] = maxHourZone
+            peakDemandHourZonal[gcms[idx_peak_gcm]] = aux
 
         planningMarginZonal[z] = peakDemandValue * (1 + planningMargin)
 

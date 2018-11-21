@@ -49,7 +49,7 @@ def createDictIndexedByZone(dataDict, ipmZones, ipmZoneNums, *args):
     :return:
     """
     zoneDict = dict()
-    for zone in dataDict:
+    for zone in ipmZones:
         if len(args) > 0:
             zoneDict[createZoneSymbol(ipmZoneNums[ipmZones.index(zone)])] = dataDict[zone] * args[0]
         else:
@@ -423,6 +423,7 @@ def addRenewTechCFParams(db, renewTechSet, renewTechSymbols, gcmSet, zoneSet, ho
                                      renewtech, createHourSymbol(h))] = relevantCfs[zone][idx]
 
     (renewtechCFName, renewtechCFDescrip) = ('pCf', 'capacity factors for new wind and solar')
+
     renewtechCfParam = add_NdParam(db, renewtechCfDict, [gcmSet, zoneSet, renewTechSet, hourSet], renewtechCFName,
                                    renewtechCFDescrip)
 

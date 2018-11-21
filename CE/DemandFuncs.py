@@ -60,13 +60,18 @@ def getNetDemand(hourlyDemand, hourlyWindGen, hourlySolarGen):
 
     if len(hourlyWindGen) > 0 and len(hourlySolarGen) > 0:
         hourlyWindAndSolarGen = list(map(operator.add, hourlyWindGen, hourlySolarGen))
-        return list(map(operator.sub, hourlyDemand, hourlyWindAndSolarGen))
+        out =  list(map(operator.sub, hourlyDemand, hourlyWindAndSolarGen))
     elif len(hourlyWindGen) > 0:
-        return list(map(operator.sub, hourlyDemand, hourlyWindGen))
+        out = list(map(operator.sub, hourlyDemand, hourlyWindGen))
     elif len(hourlySolarGen) > 0:
-        return list(map(operator.sub, hourlyDemand, hourlySolarGen))
+        out = list(map(operator.sub, hourlyDemand, hourlySolarGen))
     else:
-        return hourlyDemand
+        out = hourlyDemand
+
+    # in case of leap year, remove last day
+    out = out[:8760]
+
+    return out
 
 
 def getHourlyGenProfile(cfs, idAndCapacs):

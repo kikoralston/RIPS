@@ -5,6 +5,7 @@
 import os
 import sys
 import pandas as pd
+from collections import OrderedDict
 from AuxFuncs import *
 from TempTransformation import *
 from AuxCurtailmentFuncs import read_netcdf
@@ -28,7 +29,7 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
                            in each gcm. {gcm: zone: Df}
     """
 
-    totalDemandDict, totalDemandDictDf = dict(), dict()
+    totalDemandDict, totalDemandDictDf = OrderedDict(), OrderedDict()
 
     if genparam.analysisArea == 'test':
         # if analysisArea == 'test', assumes that there is a file 'demand.csv' at dataRoot, with hourly demand
@@ -53,7 +54,7 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
 
     else:
         for (idx_gcm, gcm) in enumerate(curtailparam.listgcms):
-            zonalDemand, zonalTempDfs = dict(), dict()
+            zonalDemand, zonalTempDfs = OrderedDict(), OrderedDict()
 
             for zone in genparam.ipmZones:
 

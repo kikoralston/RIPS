@@ -78,9 +78,10 @@ Icon?
 #########################
 .idea/
 
-# Python cache #
+# Python cache and pyenv #
 ########################
 *.pyc
+.python-version
 
 # parameter files for CE model
 ########################
