@@ -584,9 +584,9 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
     with open(fname) as f:
         lines = [line.rstrip('\n') for line in f]
 
-    idx_set_zone = [i for i in range(len(lines)) if str_target in lines[i]][0]
+    idx_set_zone = [i for i in range(len(lines)) if str_target in lines[i]]
 
-    if len(idx_set_zone > 0):
+    if len(idx_set_zone) > 0:
         idx_set_zone = idx_set_zone[0]
         str_zones = lines[idx_set_zone + 2]
 
