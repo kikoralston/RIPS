@@ -43,12 +43,12 @@ def convert_dict2list2d(dict_in):
     list2d = []
 
     for key in dict_in:
-        if type(dict_in[key]) is dict:
+        if isinstance(dict_in[key], dict):
             aux = convert_dict2list2d(dict_in[key])
             list2d = list2d + [[key] + row for row in aux]
-        elif type(dict_in[key]) is list:
+        elif isinstance(dict_in[key], list):
             list2d = list2d + [[key] + dict_in[key]]
-        elif type(dict_in[key]) is np.ndarray:
+        elif isinstance(dict_in[key], np.ndarray):
             list2d = list2d + [[key] + list(dict_in[key])]
         else:
             list2d = list2d + [[key] + [dict_in[key]]]
@@ -87,10 +87,10 @@ def nested_dict_to_dict(dict_in):
     dict_out = dict()
 
     for key in dict_in:
-        if type(dict_in[key]) is dict:
+        if isinstance(dict_in[key], dict):
             aux = nested_dict_to_dict(dict_in[key])
             for key2 in aux:
-                if type(key2) is tuple:
+                if isinstance(key2, tuple):
                     keyfinal = tuple([key] + [k for k in key2])
                 else:
                     keyfinal = (key, key2)
