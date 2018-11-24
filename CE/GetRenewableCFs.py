@@ -99,7 +99,8 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataY
         allSiteCfsHourly, allSiteCfsSubhourly, avgFleetCfHr = [], None, []
 
     idCol = ewdIdAndCapac[0].index('Id')
-    datasetCapacCol = ewdIdAndCapac[0].index('DatasetCapacity')
+    #datasetCapacCol = ewdIdAndCapac[0].index('DatasetCapacity')
+    datasetCapacCol = ewdIdAndCapac[0].index('OriginalDatasetCap')
 
     list_args = [[windDir, site[idCol], site[datasetCapacCol], desiredTz, windGenDataYr]
                  for site in ewdIdAndCapac[1:] if 'NoMoreSites' not in site[idCol]]
@@ -235,7 +236,7 @@ def getWindOrSolarIdsInZonesDecreasingCF(metadata, capacInZone, cfCol, capacCol,
     :param windOrSolar:
     :return:
     """
-    idAndCapacs = [['Id', 'DatasetCapacity', 'FleetCapacity']]
+    idAndCapacs = [['Id', 'DatasetCapacity', 'FleetCapacity', 'OriginalDatasetCap']]
     (cfs, capacs, siteNumbers) = getPlantInfoInZone(metadata, startRECapacForCFs, cfCol, capacCol, siteNumberOrFileCol,
                                                     fipsToZones, fipsToPolys, currZone)
     currZoneCapac = 0
@@ -264,7 +265,7 @@ def getWindOrSolarIdsInZonesDecreasingCF(metadata, capacInZone, cfCol, capacCol,
 
                 if currZoneCapac > startRECapacForCFs:
                     # only start appending to list after it is greater than existing capacity
-                    idAndCapacs.append([siteNumbers[maxCfIdx], datasetCapac, fleetCapac])
+                    idAndCapacs.append([siteNumbers[maxCfIdx], datasetCapac, fleetCapac, capacs[maxCfIdx]])
 
             # remove from lists
             cfs.pop(maxCfIdx)
@@ -536,7 +537,9 @@ def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZo
 
     # Import CFs for each wind plant
     idCol = solarFilenameAndCapacAndTz[0].index('Id')
-    datasetCapacCol = solarFilenameAndCapacAndTz[0].index('DatasetCapacity')
+    #datasetCapacCol = solarFilenameAndCapacAndTz[0].index('DatasetCapacity')
+    datasetCapacCol = solarFilenameAndCapacAndTz[0].index('OriginalDatasetCap')
+
     tzCol = solarFilenameAndCapacAndTz[0].index('Timezone')
 
     allSiteCfsHourly, allSiteCfsSubhourly, avgFleetCfHr = [], [], []
