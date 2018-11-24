@@ -7,6 +7,7 @@ import numpy as np
 import datetime as dt
 import multiprocessing as mp
 import shutil
+import gc
 
 try:
     from gams import *
@@ -369,6 +370,18 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
 
     cellsToZones = assignCellsToIPMZones(cellsForNewTechs, genparam.fipsToZones, genparam.fipsToPolys)
     writeDictToCSV(cellsToZones, os.path.join(resultsDir, 'cellsToZonesCE' + str(currYear) + '.csv'))
+
+    # free memory before calling GAMS/CPLEX!
+    del hrlyCurtailmentsAllTechsInTgtYr
+    del eligibleCellWaterTs
+    del hrlyCurtailmentsAllGensInTgtYr
+    del zonalHourlyWindGen
+    del zonalHourlySolarGen
+    del zonalNewSolarCFs
+    del zonalNewWindCFs
+    del zonalHourlyWindGen
+
+    gc.collect()
 
     # Run CE
     print('Set inputs, running CE model...')
