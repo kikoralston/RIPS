@@ -31,7 +31,7 @@ def getNewWindAndSolarCFs(genFleet, currYear, modelName, tzAnalysis, dataRoot, r
     windCapacInCurrFleet = getPlantTypeCapacInFleet(genFleet, 'Wind')
     solarCapacInCurrFleet = getPlantTypeCapacInFleet(genFleet, 'Solar PV')
 
-    (additionalWind, additionalSolar) = (5, 5)  # 3000, 3000
+    (additionalWind, additionalSolar) = (1000, 1000)  # 3000, 3000
 
     totalWindCapac = windCapacInCurrFleet + additionalWind
     totalSolarCapac = solarCapacInCurrFleet + additionalSolar
