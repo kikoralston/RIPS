@@ -32,6 +32,9 @@ def runCEmain(case=None):
         print('list gcms: {}'.format(curtailparam.listgcms))
         print('------------------------------------------')
 
+        if not os.path.exists(genparam.resultsDir):
+            os.mkdir(genparam.resultsDir)
+
     print()
     print('Parameters loaded! Calling CE masterFunction...')
     print()
