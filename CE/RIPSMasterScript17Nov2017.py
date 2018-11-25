@@ -379,7 +379,6 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
     del zonalHourlySolarGen
     del zonalNewSolarCFs
     del zonalNewWindCFs
-    del zonalHourlyWindGen
 
     gc.collect()
 
