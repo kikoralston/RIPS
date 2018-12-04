@@ -8,6 +8,7 @@ import datetime as dt
 import multiprocessing as mp
 import shutil
 import gc
+import platform
 
 try:
     from gams import *
@@ -59,6 +60,8 @@ def masterFunction(genparam, reserveparam, curtailparam):
     """MASTER FUNCTION
 
     """
+    create_description_file(genparam, curtailparam)
+    
     print()
 
     genFleet = getInitialFleetAndDemand(genparam, reserveparam)
@@ -916,8 +919,48 @@ def addParametersToDatabaseUC(db, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGe
     addLineSourceAndSink(db, lineSet, lineList)
 
 
-################################################################################
-################################################################################
-################################################################################
+def create_description_file(genparam, curtailparam):
+    """ Create a description file of the case in the output folder
 
-#masterFunction()
+    """
+
+    outstr = '\n\n'
+    outstr = outstr + '------------------ CE/UC simulation ------------------\n'
+    outstr = outstr + '\n\n'
+    outstr = outstr + 'Machine info         : {}\n'.format(platform.platform())
+    outstr = outstr + 'Date & time          : {}\n'.format(time.strftime('%Y-%m-%d  %H:%M %Z'))
+    outstr = outstr + 'CE run               : {}\n'.format(genparam.runCE)
+    outstr = outstr + 'UC run               : {}\n'.format(genparam.runUC)
+    outstr = outstr + 'Output Folder        : {}\n'.format(genparam.resultsDir)
+    outstr = outstr + 'Input Folder         : {}\n'.format(genparam.dataRoot)
+    outstr = outstr + 'Water data Folder    : {}\n'.format(curtailparam.rbmRootDir)
+
+    outstr = outstr + '\n'
+
+    outstr = outstr + 'Initial Year         : {}\n'.format(genparam.startYear)
+    outstr = outstr + 'End Year             : {}\n'.format(genparam.endYear)
+    outstr = outstr + 'Step CE              : {} years\n'.format(genparam.yearStepCE)
+
+    outstr = outstr + '\n'
+
+    outstr = outstr + 'Days per season      : {}\n'.format(genparam.daysPerSeason)
+    outstr = outstr + 'Analysis area        : {}\n'.format(genparam.analysisArea)
+    outstr = outstr + 'GCMs considered      : {}\n'.format("{0}".format(", ".join(str(i) for i in curtailparam.listgcms)))
+    outstr = outstr + 'CO2 Cap case         : {}\n'.format(genparam.co2CapScenario)
+
+    outstr = outstr + '\n\n'
+
+    outstr = outstr + 'Transmission lines capacities:\n'
+
+    for k, value in genparam.lineCapacs.items():
+        outstr = outstr + '{0:<21}: {1: .2f} MW\n'.format(k, value)
+
+    outstr = outstr + '\n\n'
+
+    fname = os.path.join(os.path.expanduser(genparam.resultsDir), 'DESCRIPTION.TXT')
+
+    with open(fname, 'w') as f:
+        f.write(outstr)
+
+
+

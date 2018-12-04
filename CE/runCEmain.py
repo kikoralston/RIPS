@@ -40,3 +40,7 @@ def runCEmain(case=None):
     print()
     print()
     masterFunction(genparam, reserveparam, curtailparam)
+
+
+if __name__ == "__main__":
+    runCEmain()
