@@ -21,7 +21,7 @@ def runCEmain(cwd=os.getcwd(), case=None):
 
         case = int(case) - 1
 
-        df = pd.read_csv(fname=os.path.join(cwd, 'list_cases.csv'))
+        df = pd.read_csv(os.path.join(cwd, 'list_cases.csv'))
 
         genparam.resultsDir = df['resultsDir'].iloc[case]
         curtailparam.listgcms = [df['listgcms'].iloc[case]]
