@@ -61,7 +61,7 @@ def masterFunction(genparam, reserveparam, curtailparam):
 
     """
     create_description_file(genparam, curtailparam)
-    
+
     print()
 
     genFleet = getInitialFleetAndDemand(genparam, reserveparam)
