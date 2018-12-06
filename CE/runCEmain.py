@@ -21,10 +21,10 @@ def runCEmain(cwd=os.getcwd(), case=None):
 
         case = int(case) - 1
 
-        df = pd.read_csv(os.path.join(cwd, 'list_cases.csv'))
+        df = pd.read_csv(os.path.join(cwd, 'list_cases.csv'), comment='#', sep=',')
 
-        genparam.resultsDir = df['resultsDir'].iloc[case]
-        curtailparam.listgcms = [df['listgcms'].iloc[case]]
+        genparam.resultsDir = df['resultsDir'].iloc[case].strip()
+        curtailparam.listgcms = list(map(str.strip, df['listgcms'].iloc[0].split(';')))
 
         print()
         print('------------------------------------------')
