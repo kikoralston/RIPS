@@ -279,9 +279,6 @@ class Generalparameters:
                       'C' + self.co2CapScenario + 'S' + self.scenario[:3])
         self.resultsDir = os.path.join(self.resultsDir, folderName)
 
-        if not os.path.exists(self.resultsDir):
-            os.makedirs(self.resultsDir)
-
         self.processRBMData = lev(data[22][1])
 
         self.tzAnalysis = data[23][1]

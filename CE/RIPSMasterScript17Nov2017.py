@@ -60,6 +60,9 @@ def masterFunction(genparam, reserveparam, curtailparam):
     """MASTER FUNCTION
 
     """
+    if not os.path.exists(genparam.resultsDir):
+        os.makedirs(genparam.resultsDir)
+
     create_description_file(genparam, curtailparam)
 
     print()
