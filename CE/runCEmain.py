@@ -35,16 +35,17 @@ def runCEmain(cwd=os.getcwd(), case=None):
             genparam.incCurtailments = False
             genparam.incRegs = False
 
-        print()
-        print('------------------------------------------')
-        print('folder out: {}'.format(genparam.resultsDir))
-        print('list gcms: {}'.format(curtailparam.listgcms))
-        print('incCurtailments: {}'.format(curtailparam.incCurtailments))
-        print('incRegs: {}'.format(curtailparam.incRegs))
-        print('------------------------------------------')
-
         if not os.path.exists(genparam.resultsDir):
             os.mkdir(genparam.resultsDir)
+
+    print()
+    print('------------------------------------------')
+    print('folder out: {}'.format(genparam.resultsDir))
+    print('list gcms: {}'.format(curtailparam.listgcms))
+    print('incCurtailments: {}'.format(curtailparam.incCurtailments))
+    print('incRegs: {}'.format(curtailparam.incRegs))
+    print('------------------------------------------')
+
 
     print()
     print('Parameters loaded! Calling CE masterFunction...')
