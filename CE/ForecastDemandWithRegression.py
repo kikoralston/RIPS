@@ -56,11 +56,18 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
         for (idx_gcm, gcm) in enumerate(curtailparam.listgcms):
             zonalDemand, zonalTempDfs = OrderedDict(), OrderedDict()
 
+            if gcm.lower() == 'na':
+                # baseline case (no projections from GCMs -- assume present conditions)
+                idx_gcm2 = -1
+            else:
+                # use projection from GCM
+                idx_gcm2 = idx_gcm
+
             for zone in genparam.ipmZones:
 
                 dataRoot = genparam.dataRoot
                 (dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept,
-                 holidays) = loadRegData(dataRoot, yr, zone, curtailparam, idx_gcm, netcdf=True)
+                 holidays) = loadRegData(dataRoot, yr, zone, curtailparam, idx_gcm2, netcdf=True)
 
                 addTimeDummies(dataYr, str(yr), holidays)
                 predictDemand(dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, yr)
@@ -86,13 +93,54 @@ def loadRegData(dataRoot, currYear, zone, curtailparam, idx_gcm, netcdf=False):
     """
     dataDir = os.path.join(dataRoot, 'DemandData')
 
-    if netcdf:
+    if idx_gcm == -1:
+        # import data for BASELINE case
+
+        # get location of representative stations for zone
         cellLat, cellLon = getCellForZone(dataDir, zone)
         cellLat, cellLon = find125GridMaurerLatLong(cellLat, cellLon)
-        data = read_netcdf(cellLat, cellLon, currYear, curtailparam, idx_gcm)
+
+        # get file name from NREL with TMY for this location
+        a = pd.read_csv(os.path.join(dataDir, 'alltmy3a', 'TMY3_StationsMeta.csv'))
+        a['cellLat'] = find125GridMaurerLatLong(a['Latitude'], a['Longitude'])[0]
+        a['cellLon'] = find125GridMaurerLatLong(a['Latitude'], a['Longitude'])[1]
+        a = a[(a['cellLon'] == cellLon) & (a['cellLat'] == cellLat)]
+        fname = os.path.join(dataDir, 'alltmy3a', '{}TYA.CSV'.format(a['USAF'].iloc[0]))
+
+        # read file with TMY info (we are interested in the historical dates of the TMY)
+        b = pd.read_csv(fname, skiprows=1)
+        # b = b[['Date (MM/DD/YYYY)', 'Time (HH:MM)', 'Dry-bulb (C)', 'Dew-point (C)', 'RHum (%)']]
+        b = b[['Date (MM/DD/YYYY)', 'Time (HH:MM)']]
+        b['Time (HH:MM)'] = b['Time (HH:MM)'].apply(lambda x: '{0:02d}:00'.format(int(x.split(':')[0]) - 1))
+        b['datetime'] = b['Date (MM/DD/YYYY)'] + ' ' + b['Time (HH:MM)']
+        b['datetime'] = pd.to_datetime(b['datetime'])
+
+        # training data set only has data between 1979 and 2016. Typical Meteorological Year (TMY) uses data between
+        # 1976 and 2005. So assume that years 1978, 1977 and 1976 are 1979.
+        b['datetime'] = b['datetime'].apply(lambda x: x.replace(year=1979) if x.year < 1979 else x)
+
+        # Now read historical data for these locations that is "coherent" with GCM projections
+        # this is the data set used for training the demand model
+        # (see demand paper for more on this)
+        city = getStationForZone(dataDir, zone)
+        c = pd.read_csv(os.path.join(dataDir, 'training', 'RH_airT_19790101_20161231.{}.csv'.format(city)))
+        c = c.rename(columns={c.columns[0]: 'datetime'})
+        c['datetime'] = pd.to_datetime(c['datetime'])
+
+        # merge two DFs to get historical observations from our training data set for the dates in the TMY
+        data = pd.merge(b, c, on='datetime', how='left')
+        data = data[['datetime', 'air_T', 'rel_humid']]
+        data = data.rename(index=str, columns={'datetime': 'date', 'airT': 'airT', 'rel_humid': 'rh'})
+
     else:
-        data = pd.read_table(os.path.join(dataDir, 'meteo_memphis'), names=['precip', 'sh', 'rh', 'tC', 'p'])
-        data = isolateYrData(data, currYear)
+        if netcdf:
+            cellLat, cellLon = getCellForZone(dataDir, zone)
+            cellLat, cellLon = find125GridMaurerLatLong(cellLat, cellLon)
+            data = read_netcdf(cellLat, cellLon, currYear, curtailparam, idx_gcm)
+
+        else:
+            data = pd.read_table(os.path.join(dataDir, 'meteo_memphis'), names=['precip', 'sh', 'rh', 'tC', 'p'])
+            data = isolateYrData(data, currYear)
 
     # a few negative values of RH have appeared in the past. To avoid errors when computing demand set negative
     # values to 0.1%
@@ -130,6 +178,21 @@ def getCellForZone(dataDir, zone):
     cellLon = map_zone_cell[map_zone_cell['zone'] == zone].iloc[0]['cellLon']
 
     return cellLat, cellLon
+
+
+def getStationForZone(dataDir, zone):
+    """This functions reads a file that maps each zone to a representative city that has the METEO data
+
+    :param dataDir: path to folder with demand data
+    :param zone: string with symbol for subzone in SERC
+    :return: name of city used for this zone
+    """
+
+    map_zone_cell = pd.read_csv(os.path.join(dataDir, 'map_zone_cell.csv'))
+
+    city = map_zone_cell[map_zone_cell['zone'] == zone].iloc[0, 3]
+
+    return city
 
 
 def isolateYrData(data, yr):

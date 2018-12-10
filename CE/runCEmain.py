@@ -26,10 +26,21 @@ def runCEmain(cwd=os.getcwd(), case=None):
         genparam.resultsDir = df['resultsDir'].iloc[case].strip()
         curtailparam.listgcms = list(map(str.strip, df['listgcms'].iloc[0].split(';')))
 
+        # BASE LINE CASE
+        if curtailparam.listgcms[0] == '' and len(curtailparam.listgcms) == 1:
+            # baseline case. change to 'na' or 'NA'
+            curtailparam.listgcms = ['na']
+
+        if curtailparam.listgcms[0] == 'na' and len(curtailparam.listgcms) == 1:
+            genparam.incCurtailments = False
+            genparam.incRegs = False
+
         print()
         print('------------------------------------------')
         print('folder out: {}'.format(genparam.resultsDir))
         print('list gcms: {}'.format(curtailparam.listgcms))
+        print('incCurtailments: {}'.format(curtailparam.incCurtailments))
+        print('incRegs: {}'.format(curtailparam.incRegs))
         print('------------------------------------------')
 
         if not os.path.exists(genparam.resultsDir):
