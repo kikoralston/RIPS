@@ -42,8 +42,8 @@ def runCEmain(cwd=os.getcwd(), case=None):
     print('------------------------------------------')
     print('folder out: {}'.format(genparam.resultsDir))
     print('list gcms: {}'.format(curtailparam.listgcms))
-    print('incCurtailments: {}'.format(curtailparam.incCurtailments))
-    print('incRegs: {}'.format(curtailparam.incRegs))
+    print('incCurtailments: {}'.format(genparam.incCurtailments))
+    print('incRegs: {}'.format(genparam.incRegs))
     print('------------------------------------------')
 
 
