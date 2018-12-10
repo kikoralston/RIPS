@@ -326,8 +326,6 @@ class Generalparameters:
 
         # CREATE LIST W/ IDXS THAT PARALLEL ZONES - NEED TO PRESERVE ORDER SO DON'T USE A DICT
         self.ipmZoneNums = [idx for idx in range(1, len(self.ipmZones) + 1)]
-        write2dListToCSV([['Zone', 'ZoneNum']] + rotate([self.ipmZones, self.ipmZoneNums]),
-                         os.path.join(self.resultsDir, 'zoneNamesToNumbers.csv'))
 
         # IMPORT TRANSMISSION SYSTEM DATA
         self.setLines()

@@ -63,6 +63,9 @@ def masterFunction(genparam, reserveparam, curtailparam):
     if not os.path.exists(genparam.resultsDir):
         os.makedirs(genparam.resultsDir)
 
+    write2dListToCSV([['Zone', 'ZoneNum']] + rotate([genparam.ipmZones, genparam.ipmZoneNums]),
+                     os.path.join(genparam.resultsDir, 'zoneNamesToNumbers.csv'))
+
     create_description_file(genparam, curtailparam)
 
     print()
