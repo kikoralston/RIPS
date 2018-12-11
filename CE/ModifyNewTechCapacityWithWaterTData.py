@@ -42,7 +42,9 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
     args_list = [[cellWaterTsForNewTechs[gcm], newTechsCE, currYear, genparam, curtailparam, gcm]
                  for gcm in curtailparam.listgcms]
 
-    with mp.Pool(processes=genparam.ncores_py) as pool:
+    ncores = min(len(curtailparam.listgcms), genparam.ncores_py)
+
+    with mp.Pool(processes=ncores) as pool:
         list_curtailments = pool.map(worker_new_tech_curtailments, args_list)
 
     # create nested dictionary
