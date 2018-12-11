@@ -24,28 +24,26 @@ def runCEmain(cwd=os.getcwd(), case=None):
         df = pd.read_csv(os.path.join(cwd, 'list_cases.csv'), comment='#', sep=',')
 
         genparam.resultsDir = df['resultsDir'].iloc[case].strip()
+        genparam.referenceCase = df['referenceCase'].iloc[case]
         curtailparam.listgcms = list(map(str.strip, df['listgcms'].iloc[0].split(';')))
 
-        # BASE LINE CASE
-        if curtailparam.listgcms[0] == '' and len(curtailparam.listgcms) == 1:
-            # baseline case. change to 'na' or 'NA'
-            curtailparam.listgcms = ['na']
+    # BASE LINE CASE
+    if genparam.referenceCase:
+        genparam.incCurtailments = False
+        genparam.incRegs = False
+        curtailparam.listgcms = [curtailparam.listgcms[0]]
 
-        if curtailparam.listgcms[0] == 'na' and len(curtailparam.listgcms) == 1:
-            genparam.incCurtailments = False
-            genparam.incRegs = False
-
-        if not os.path.exists(genparam.resultsDir):
-            os.mkdir(genparam.resultsDir)
+    if not os.path.exists(genparam.resultsDir):
+        os.mkdir(genparam.resultsDir)
 
     print()
     print('------------------------------------------')
     print('folder out: {}'.format(genparam.resultsDir))
     print('list gcms: {}'.format(curtailparam.listgcms))
+    print('referenceCase: {}'.format(genparam.referenceCase))
     print('incCurtailments: {}'.format(genparam.incCurtailments))
     print('incRegs: {}'.format(genparam.incRegs))
     print('------------------------------------------')
-
 
     print()
     print('Parameters loaded! Calling CE masterFunction...')

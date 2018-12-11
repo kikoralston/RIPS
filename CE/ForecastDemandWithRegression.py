@@ -56,18 +56,10 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
         for (idx_gcm, gcm) in enumerate(curtailparam.listgcms):
             zonalDemand, zonalTempDfs = OrderedDict(), OrderedDict()
 
-            if gcm.lower() == 'na':
-                # baseline case (no projections from GCMs -- assume present conditions)
-                idx_gcm2 = -1
-            else:
-                # use projection from GCM
-                idx_gcm2 = idx_gcm
-
             for zone in genparam.ipmZones:
 
-                dataRoot = genparam.dataRoot
                 (dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept,
-                 holidays) = loadRegData(dataRoot, yr, zone, curtailparam, idx_gcm2, netcdf=True)
+                 holidays) = loadRegData(genparam, yr, zone, curtailparam, idx_gcm, netcdf=True)
 
                 addTimeDummies(dataYr, str(yr), holidays)
                 predictDemand(dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, yr)
@@ -80,10 +72,10 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
     return totalDemandDict, totalDemandDictDf
 
 
-def loadRegData(dataRoot, currYear, zone, curtailparam, idx_gcm, netcdf=False):
+def loadRegData(genparam, currYear, zone, curtailparam, idx_gcm, netcdf=False):
     """Load all necessary data into pandas DFs exept inercept (just return value)
 
-    :param dataRoot: (string) path to meteo data
+    :param genparam: object of class Generalparameters
     :param currYear: (int) current year of simulation
     :param zone: (string) ipm zone being simulated
     :param curtailparam: object of class Curtailmentparameters
@@ -91,9 +83,10 @@ def loadRegData(dataRoot, currYear, zone, curtailparam, idx_gcm, netcdf=False):
     :param netcdf: (boolean) true if format of meteo data is netcdf
     :return:
     """
-    dataDir = os.path.join(dataRoot, 'DemandData')
 
-    if idx_gcm == -1:
+    dataDir = os.path.join(genparam.dataRoot, 'DemandData')
+
+    if genparam.referenceCase:
         # import data for BASELINE case
 
         # get location of representative stations for zone
@@ -130,7 +123,7 @@ def loadRegData(dataRoot, currYear, zone, curtailparam, idx_gcm, netcdf=False):
         # merge two DFs to get historical observations from our training data set for the dates in the TMY
         data = pd.merge(b, c, on='datetime', how='left')
         data = data[['datetime', 'air_T', 'rel_humid']]
-        data = data.rename(index=str, columns={'datetime': 'date', 'airT': 'airT', 'rel_humid': 'rh'})
+        data = data.rename(index=str, columns={'datetime': 'date', 'air_T': 'airT', 'rel_humid': 'rh'})
 
     else:
         if netcdf:

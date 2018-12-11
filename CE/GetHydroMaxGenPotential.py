@@ -81,34 +81,49 @@ def importHydroPotentialGen(currYear, genparam, gcm, format='new'):
     """
     dataDir = os.path.join(genparam.dataRoot, 'HydroMonthlyDataPNNL')
 
-    name_gcm = gcm
+    if genparam.referenceCase:
+        # get historical values
 
-    # reading flow file. substitute '_' to '.' and change 'RCP' to small caps
-    name_gcm = name_gcm.replace('_', '.')
-    name_gcm = name_gcm.replace('rcp', 'RCP')
+        a = pd.read_csv(os.path.join(dataDir, 'PlantLocationEIA2003_2016.txt'), sep='\t')
+        a = a[list(a.columns[:17])]
+        a = a.loc[~a['OrisId'].isna(), :]
 
-    if format == 'new':
-        with open(os.path.join(dataDir, 'monthlyhydropotential.pk'), 'rb') as f:
-            allData = pk.load(f)
+        a = a[['OrisId', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']]
+        a = a.rename(columns={'OrisId': 'PlantID'})
+        a['PlantID'] = a['PlantID'].astype(int)
+        a = a.astype(str)
 
-        potentialsAllYears = allData[name_gcm]
-
-        potentialsCurrYear = potentialsAllYears[potentialsAllYears['months'].dt.year == currYear]
-        potentialsCurrYear = potentialsCurrYear.drop(columns=['months'])
-        potentialsCurrYear = potentialsCurrYear.reset_index(drop=True)
-        potentialsCurrYear = potentialsCurrYear.T
-        potentialsCurrYear = potentialsCurrYear.reset_index()
-
-        out = potentialsCurrYear.astype(str)
-        out = out.values.tolist()
-        out = [['PlantID', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']] + out
+        out = [a.columns.tolist()] + a.values.tolist()
 
     else:
-        potentialsAllYears = readCSVto2dList(os.path.join(dataDir, 'monhydrogen_1550.csv'))
-        # First row in data is months listed w/out years; assign years to each col
-        startYr, endYr = [2015, 2050]
-        yrIndex = (currYear - startYr) * 12 + 1  # +1 to account for first col = PlantID
-        out = [[row[0]] + row[yrIndex:yrIndex + 12] for row in potentialsAllYears]
+        name_gcm = gcm
+
+        # reading flow file. substitute '_' to '.' and change 'RCP' to small caps
+        name_gcm = name_gcm.replace('_', '.')
+        name_gcm = name_gcm.replace('rcp', 'RCP')
+
+        if format == 'new':
+            with open(os.path.join(dataDir, 'monthlyhydropotential.pk'), 'rb') as f:
+                allData = pk.load(f)
+
+            potentialsAllYears = allData[name_gcm]
+
+            potentialsCurrYear = potentialsAllYears[potentialsAllYears['months'].dt.year == currYear]
+            potentialsCurrYear = potentialsCurrYear.drop(columns=['months'])
+            potentialsCurrYear = potentialsCurrYear.reset_index(drop=True)
+            potentialsCurrYear = potentialsCurrYear.T
+            potentialsCurrYear = potentialsCurrYear.reset_index()
+
+            out = potentialsCurrYear.astype(str)
+            out = out.values.tolist()
+            out = [['PlantID', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']] + out
+
+        else:
+            potentialsAllYears = readCSVto2dList(os.path.join(dataDir, 'monhydrogen_1550.csv'))
+            # First row in data is months listed w/out years; assign years to each col
+            startYr, endYr = [2015, 2050]
+            yrIndex = (currYear - startYr) * 12 + 1  # +1 to account for first col = PlantID
+            out = [[row[0]] + row[yrIndex:yrIndex + 12] for row in potentialsAllYears]
 
     return out
 

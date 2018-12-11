@@ -123,12 +123,12 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, currYear, genFleet, gen
              hrlyCurtailmentsList: 2d list [[orisId] + [hourly curtailments]]
     """
 
+    hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList = dict(), list()
+
     if netcdf:
         allCellFolders = get_all_cells_from_netcdf(curtailparam, gcm)
     else:
         allCellFolders = os.listdir(curtailparam.rbmOutputDir)
-
-    hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList = dict(), list()
 
     # dict of planttype:coolingtype:cooldesignT:param:coeffs
     regCoeffs = loadRegCoeffs(genparam.dataRoot, 'capacity.json')
@@ -157,6 +157,7 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, currYear, genFleet, gen
 
             metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam,
                                                   metdatatot=meteodata, waterDatatot=cellWaterTsForGens)
+
             gensInCell = cellLatLongToGenDict[(cellLat, cellLong)]  # list of ORIS-UNITID in cell
 
             for gen in gensInCell:

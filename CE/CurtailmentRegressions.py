@@ -36,18 +36,19 @@ def setEnvRegCurtailments(coolType, capac, pt, ppDeltaT, metAndWaterData, maxT, 
     :return:
     """
 
-    waterC = metAndWaterData['waterT'].values
-
-    waterFlow = metAndWaterData['flow'].values
-
-    # water flow is in cfs. Convert to gal/h
-    waterFlow = waterFlow * (7.48052 * 3600)
-
     hrlyCurtsRegs = np.ones(metAndWaterData.shape[0])
 
-    capacs = [np.concatenate((np.arange(0, float(capac), 50), np.array([float(capac)]))) for hr in range(len(waterC))]
-
     if genparam.incRegs and (pt in genparam.ptCurtailedRegs) and (coolType == 'once through'):
+
+        waterC = metAndWaterData['waterT'].values
+
+        waterFlow = metAndWaterData['flow'].values
+
+        capacs = [np.concatenate((np.arange(0, float(capac), 50), np.array([float(capac)]))) for hr in
+                  range(len(waterC))]
+
+        # water flow is in cfs. Convert to gal/h
+        waterFlow = waterFlow * (7.48052 * 3600)
 
         # read set of regression coefficients on water intensity
         regcoeffs = loadRegCoeffs(dataRoot=genparam.dataRoot, fname='water.json')

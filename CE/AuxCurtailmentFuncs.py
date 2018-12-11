@@ -311,7 +311,10 @@ def get_all_cells_in_zone(allCellFolders, genparam, curtailparam):
     with open(os.path.join(curtailparam.rbmRootDir, 'cells2zones.pk'), 'rb') as f:
         cells2zones = pk.load(f)
 
-    allCellFoldersInZone = [c for c in allCellFolders if cells2zones[c] in genparam.ipmZones]
+    if allCellFolders is not None:
+        allCellFoldersInZone = [c for c in allCellFolders if cells2zones[c] in genparam.ipmZones]
+    else:
+        allCellFoldersInZone = [c for c in cells2zones if cells2zones[c] in genparam.ipmZones]
 
     return allCellFoldersInZone
 

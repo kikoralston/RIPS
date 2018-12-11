@@ -31,6 +31,8 @@ class Generalparameters:
         self.analysisArea = 'TVA'
         self.useLineLimits = False     # True: Tries to read file with transmission limits. False: limits = +Inf
 
+        self.referenceCase = False     # True: Run case without curtailments or effects of cc in demand
+
         self.incCurtailments = True  # whether to model curtailments,whether to model env regs on water T
         self.incRegs = True  # whether to model curtailments,whether to model env regs on water T
         self.coolDesignT = 100  # design temperature of cooling techs
@@ -125,6 +127,8 @@ class Generalparameters:
         outstr = outstr + 'analysisArea = {}\n'.format(self.analysisArea)
         outstr = outstr + 'useLineLimits = {}\n'.format(self.useLineLimits)
 
+        outstr = outstr + 'referenceCase = {}\n'.format(self.referenceCase)
+
         outstr = outstr + '#\n# -------- KEY CURTAILMENT PARAMETERS --------\n#\n'
         outstr = outstr + 'incCurtailments = {} \t # whether to model curtailments,whether to model env regs ' \
                           'on water T\n'.format(self.incCurtailments)
@@ -192,7 +196,7 @@ class Generalparameters:
         outstr = outstr + 'scaleDollarsToThousands = {}\n'.format(self.scaleDollarsToThousands)
         outstr = outstr + 'scaleLbToShortTon = {}\n'.format(self.scaleLbToShortTon)
         outstr = outstr + '#\n# -------- OTHER PARAMETERS --------\n#\n'
-        outstr = outstr + 'ncores_py = {} \t    # number of cores to use for parallel simulation in python'.format(self.ncores_py)
+        outstr = outstr + 'ncores_py = {} \t    # number of cores to use for parallel simulation in python\n'.format(self.ncores_py)
         outstr = outstr + 'ncores_gams = {} \t  # number of cores to use for parallel simulation in gams'.format(self.ncores_gams)
 
         return outstr
@@ -252,69 +256,71 @@ class Generalparameters:
         self.yearStepCE = lev(data[7][1])
         self.daysPerSeason = lev(data[8][1])
         self.analysisArea = data[9][1]
-        self.useLineLimits = data[10][1]
+        self.useLineLimits = lev(data[10][1])
 
-        self.incCurtailments = lev(data[11][1])
-        self.incRegs = lev(data[12][1])
-        self.coolDesignT = data[13][1]
+        self.referenceCase = lev(data[11][1])
 
-        self.ptCurtailed = set(map(str.strip, data[14][1].split(',')))  # set
-        self.ptCurtailedRegs = set(map(str.strip, data[15][1].split(',')))  # set
+        self.incCurtailments = lev(data[12][1])
+        self.incRegs = lev(data[13][1])
+        self.coolDesignT = data[14][1]
+
+        self.ptCurtailed = set(map(str.strip, data[15][1].split(',')))  # set
+        self.ptCurtailedRegs = set(map(str.strip, data[16][1].split(',')))  # set
         self.ptCurtailedAll = self.ptCurtailed | self.ptCurtailedRegs
 
-        self.cellsEligibleForNewPlants = data[16][1]
-        self.cellNewTechCriteria = data[17][1]
+        self.cellsEligibleForNewPlants = data[17][1]
+        self.cellNewTechCriteria = data[18][1]
 
-        self.compressFleet = lev(data[18][1])
-        self.co2CapScenario = data[19][1]
-        self.scenario = data[20][1]
+        self.compressFleet = lev(data[19][1])
+        self.co2CapScenario = data[20][1]
+        self.scenario = data[21][1]
 
         self.co2CapEndYr, self.co2CapEnd = getCo2Cap(self.co2CapScenario)
         self.fuelPricesTimeSeries = self.importFuelPrices(self.dataRoot, self.scenario)
 
-        self.resultsDir = data[21][1]
+        self.resultsDir = data[22][1]
         folderName = ('Area' + self.analysisArea + 'Cells' + self.cellNewTechCriteria +
                       ('Curtail' if self.incCurtailments == True else 'NoCurtail') +
                       ('EnvRegs' if self.incRegs == True else 'NoRegs') +
                       'C' + self.co2CapScenario + 'S' + self.scenario[:3])
         self.resultsDir = os.path.join(self.resultsDir, folderName)
 
-        self.processRBMData = lev(data[22][1])
+        self.processRBMData = lev(data[23][1])
 
-        self.tzAnalysis = data[23][1]
-        self.projectName = data[24][1]
-        self.windGenDataYr = lev(data[25][1])
+        self.tzAnalysis = data[24][1]
+        self.projectName = data[25][1]
+        self.windGenDataYr = lev(data[26][1])
 
-        self.capacExpFilename = data[26][1]
+        self.capacExpFilename = data[27][1]
         #self.maxAddedZonalCapacPerTech = lev(data[27][1])
-        self.maxAddedZonalCapacPerTech = self.readMaxCapacTechParam(data[27][1])
-        self.incITC = lev(data[28][1])
-        self.retirementCFCutoff = lev(data[29][1])
-        self.ptEligRetCF = list(map(str.strip, data[30][1].split(',')))  # list
-        self.selectCurtailDays = lev(data[31][1])
-        self.planningReserve = lev(data[32][1])
-        self.discountRate = lev(data[33][1])
-        self.allowCoalWithoutCCS = lev(data[34][1])
-        self.onlyNSPSUnits = lev(data[35][1])
-        self.permitOncethru = lev(data[36][1])
+        self.maxAddedZonalCapacPerTech = self.readMaxCapacTechParam(data[28][1])
+        self.incITC = lev(data[29][1])
+        self.retirementCFCutoff = lev(data[30][1])
+        self.ptEligRetCF = list(map(str.strip, data[31][1].split(',')))  # list
+        self.selectCurtailDays = lev(data[32][1])
+        self.planningReserve = lev(data[33][1])
+        self.discountRate = lev(data[34][1])
+        self.allowCoalWithoutCCS = lev(data[35][1])
+        self.onlyNSPSUnits = lev(data[36][1])
+        self.permitOncethru = lev(data[37][1])
 
-        self.ucFilename = data[37][1]
-        self.calculateCO2Price = lev(data[38][1])
-        self.daysOpt = lev(data[39][1])
-        self.daysLA = lev(data[40][1])
-        self.ocAdderMin = lev(data[41][1])
-        self.ocAdderMax = lev(data[42][1])
+        self.ucFilename = data[38][1]
+        self.calculateCO2Price = lev(data[39][1])
+        self.daysOpt = lev(data[40][1])
+        self.daysLA = lev(data[41][1])
+        self.ocAdderMin = lev(data[42][1])
+        self.ocAdderMax = lev(data[43][1])
 
-        self.phEff = lev(data[43][1])
-        self.phMaxSoc = lev(data[44][1])
-        self.phInitSoc = lev(data[45][1])
+        self.phEff = lev(data[44][1])
+        self.phMaxSoc = lev(data[45][1])
+        self.phInitSoc = lev(data[46][1])
 
-        self.scaleMWtoGW = lev(data[46][1])
-        self.scaleDollarsToThousands = lev(data[47][1])
-        self.scaleLbToShortTon = lev(data[48][1])
+        self.scaleMWtoGW = lev(data[47][1])
+        self.scaleDollarsToThousands = lev(data[48][1])
+        self.scaleLbToShortTon = lev(data[49][1])
 
-        self.ncores_py = lev(data[49][1])
-        self.ncores_gams = lev(data[50][1])
+        self.ncores_py = lev(data[50][1])
+        self.ncores_gams = lev(data[51][1])
 
         self.setstates()
 
