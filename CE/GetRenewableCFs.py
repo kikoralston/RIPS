@@ -106,7 +106,9 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataY
                  for site in ewdIdAndCapac[1:] if 'NoMoreSites' not in site[idCol]]
 
     if len(list_args) > 0:
-        with mp.Pool(processes=ncores_py) as pool:
+        ncores = min(ncores_py, len(list_args))
+
+        with mp.Pool(processes=ncores) as pool:
             list_cfs_wind = pool.map(wrapperwind, list_args)
     else:
         list_cfs_wind = []
@@ -548,7 +550,9 @@ def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZo
                  for site in solarFilenameAndCapacAndTz[1:] if 'NoMoreSites' not in site[idCol]]
 
     if len(list_args) > 0:
-        with mp.Pool(processes=ncores_py) as pool:
+        ncores = min(ncores_py, len(list_args))
+
+        with mp.Pool(processes=ncores) as pool:
             list_cfs_solar = pool.map(wrappersolar, list_args)
         gc.collect()
     else:
