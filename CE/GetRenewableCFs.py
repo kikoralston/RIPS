@@ -108,8 +108,10 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataY
     if len(list_args) > 0:
         ncores = min(ncores_py, len(list_args))
 
+        gc.collect()
         with mp.Pool(processes=ncores) as pool:
             list_cfs_wind = pool.map(wrapperwind, list_args)
+        gc.collect()
     else:
         list_cfs_wind = []
 
@@ -552,8 +554,10 @@ def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZo
     if len(list_args) > 0:
         ncores = min(ncores_py, len(list_args))
 
+        gc.collect()
         with mp.Pool(processes=ncores) as pool:
             list_cfs_solar = pool.map(wrappersolar, list_args)
+            pool.terminate()
         gc.collect()
     else:
         list_cfs_solar = []
