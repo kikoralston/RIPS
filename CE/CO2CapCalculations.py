@@ -39,7 +39,7 @@ def interpolateCO2Cap(currYear, genparam):
 
     endYr, endLimit = getCo2Cap(genparam.co2CapScenario)
 
-    if currYear == startYr: startEms *= 10  # if first year, don't want to enforce co2 cap, so just scale up
+    #if currYear == startYr: startEms *= 10  # if first year, don't want to enforce co2 cap, so just scale up
 
     (deltaYear, deltaEms) = (endYr - startYr, startEms - endLimit)
     emsReduxPerYear = deltaEms / deltaYear
