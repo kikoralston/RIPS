@@ -24,8 +24,10 @@ def runCEmain(cwd=os.getcwd(), case=None):
         df = pd.read_csv(os.path.join(cwd, 'list_cases.csv'), comment='#', sep=',')
 
         genparam.resultsDir = df['resultsDir'].iloc[case].strip()
-        genparam.referenceCase = df['referenceCase'].iloc[case]
+        genparam.referenceCase = df['referenceCase'].iloc[case].strip()
         curtailparam.listgcms = list(map(str.strip, df['listgcms'].iloc[0].split(';')))
+
+        genparam.co2CapScenario = df['co2CapScenario'].iloc[case].lower()
 
     # BASE LINE CASE
     if genparam.referenceCase:
@@ -43,6 +45,8 @@ def runCEmain(cwd=os.getcwd(), case=None):
     print('referenceCase: {}'.format(genparam.referenceCase))
     print('incCurtailments: {}'.format(genparam.incCurtailments))
     print('incRegs: {}'.format(genparam.incRegs))
+    print('CO2 Cap Scenario: {}'.format(genparam.co2CapScenario))
+
     print('------------------------------------------')
 
     print()
