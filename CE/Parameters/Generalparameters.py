@@ -51,7 +51,6 @@ class Generalparameters:
         self.co2CapScenario = 'none'
         self.scenario = 'normal'
 
-        self.co2CapEndYr, self.co2CapEnd = None, None
         self.fuelPricesTimeSeries = []
 
         self.resultsDir = ''
@@ -275,7 +274,6 @@ class Generalparameters:
         self.co2CapScenario = data[20][1]
         self.scenario = data[21][1]
 
-        self.co2CapEndYr, self.co2CapEnd = getCo2Cap(self.co2CapScenario)
         self.fuelPricesTimeSeries = self.importFuelPrices(self.dataRoot, self.scenario)
 
         self.resultsDir = data[22][1]

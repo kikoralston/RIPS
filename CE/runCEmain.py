@@ -27,7 +27,7 @@ def runCEmain(cwd=os.getcwd(), case=None):
         genparam.referenceCase = df['referenceCase'].iloc[case].strip()
         curtailparam.listgcms = list(map(str.strip, df['listgcms'].iloc[0].split(';')))
 
-        genparam.co2CapScenario = df['co2CapScenario'].iloc[case].lower()
+        genparam.co2CapScenario = df['co2CapScenario'].iloc[case].lower().strip()
 
     # BASE LINE CASE
     if genparam.referenceCase:

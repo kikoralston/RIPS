@@ -21,21 +21,24 @@ def getCo2Cap(co2CapScenario):
         capYear, capEms = 2050, 35083646  # 80% redux
     elif co2CapScenario == 'none':
         capYear, capEms = 2050, float('inf')  # set to arbitrarily large value so effectively no cap
+
     return capYear, capEms  # short tons!
 
 
-def interpolateCO2Cap(currYear, endYr, endLimit):
+def interpolateCO2Cap(currYear, genparam):
     """Computes a CO2 cap for current year
 
     Data soruce for 2015 emissions: UC run w/out co2 price or storage. See xls file above.
     (data from EIA, "Texas electricity profile 2017", Table 7, electric power industry emissions estimates, 1990-2014).
 
     :param currYear: current year
-    :param endYr: end year
-    :param endLimit: emissions quantity for cap in end year (depends on CO2 scenario)
+    :param genparam: object of class Generalparameters
     :return: projected co2 emissions cap for current year (short tons)
     """
     startYr, startEms = 2015, 175418230
+
+    endYr, endLimit = getCo2Cap(genparam.co2CapScenario)
+
     if currYear == startYr: startEms *= 10  # if first year, don't want to enforce co2 cap, so just scale up
 
     (deltaYear, deltaEms) = (endYr - startYr, startEms - endLimit)
