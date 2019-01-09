@@ -87,7 +87,7 @@ def masterFunction(genparam, reserveparam, curtailparam):
         t_year = time.time()
         print('\n----------------------------------------------------------------\n')
         print('Starting loop for year {0:4d}\n'.format(currYear))
-        currCo2Cap = interpolateCO2Cap(currYear, genparam.co2CapEndYr, genparam.co2CapEnd) * 1E3
+        currCo2Cap = interpolateCO2Cap(currYear, genparam) * 1E3
 
         print('CO2 cap in year {1:4d}: {0:,.3f} million tons'.format(currCo2Cap/1e6, currYear))
 
