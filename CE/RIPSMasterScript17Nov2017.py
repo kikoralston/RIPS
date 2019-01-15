@@ -951,7 +951,13 @@ def create_description_file(genparam, curtailparam):
 
     outstr = outstr + 'Days per season      : {}\n'.format(genparam.daysPerSeason)
     outstr = outstr + 'Analysis area        : {}\n'.format(genparam.analysisArea)
-    outstr = outstr + 'GCMs considered      : {}\n'.format("{0}".format(", ".join(str(i) for i in curtailparam.listgcms)))
+
+    if genparam.referenceCase:
+        outstr = outstr + 'GCMs considered      : {}\n'.format("Baseline case (no climate change)")
+    else:
+        outstr = outstr + 'GCMs considered      : {}\n'.format("{0}".format(", ".join(
+            str(i) for i in curtailparam.listgcms)))
+
     outstr = outstr + 'CO2 Cap case         : {}\n'.format(genparam.co2CapScenario)
 
     outstr = outstr + '\n\n'

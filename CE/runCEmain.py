@@ -1,9 +1,10 @@
-import os
+import os, sys
 import pandas as pd
 from RIPSMasterScript17Nov2017 import *
 from Parameters import *
 
 
+@profile
 def runCEmain(cwd=os.getcwd(), case=None):
 
     print('Loading parameters and setting up initial data')
@@ -24,7 +25,8 @@ def runCEmain(cwd=os.getcwd(), case=None):
         df = pd.read_csv(os.path.join(cwd, 'list_cases.csv'), comment='#', sep=',')
 
         genparam.resultsDir = df['resultsDir'].iloc[case].strip()
-        genparam.referenceCase = df['referenceCase'].iloc[case].strip()
+        genparam.referenceCase = df['referenceCase'].iloc[case]
+
         curtailparam.listgcms = list(map(str.strip, df['listgcms'].iloc[0].split(';')))
 
         genparam.co2CapScenario = df['co2CapScenario'].iloc[case].lower().strip()
@@ -33,6 +35,7 @@ def runCEmain(cwd=os.getcwd(), case=None):
     if genparam.referenceCase:
         genparam.incCurtailments = False
         genparam.incRegs = False
+        genparam.selectCurtailDays = False
         curtailparam.listgcms = [curtailparam.listgcms[0]]
 
     if not os.path.exists(genparam.resultsDir):
@@ -40,10 +43,12 @@ def runCEmain(cwd=os.getcwd(), case=None):
 
     print()
     print('------------------------------------------')
+
     print('folder out: {}'.format(genparam.resultsDir))
     print('list gcms: {}'.format(curtailparam.listgcms))
     print('referenceCase: {}'.format(genparam.referenceCase))
     print('incCurtailments: {}'.format(genparam.incCurtailments))
+    print('selectCurtailDays: {}'.format(genparam.selectCurtailDays))
     print('incRegs: {}'.format(genparam.incRegs))
     print('CO2 Cap Scenario: {}'.format(genparam.co2CapScenario))
 
@@ -57,4 +62,4 @@ def runCEmain(cwd=os.getcwd(), case=None):
 
 
 if __name__ == "__main__":
-    runCEmain()
+    runCEmain(case=sys.argv[1])

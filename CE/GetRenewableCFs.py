@@ -120,6 +120,8 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataY
 
     # treat 'NoMoreSites' case
     if 'NoMoreSites' in ewdIdAndCapac[1:][-1]:
+        site = ewdIdAndCapac[1:][-1]
+        (siteId, datasetCapac) = (site[idCol], site[datasetCapacCol])
 
         # If doing new RE CFs & existing RE > potential RE capac for CFs, can end up w/ nothing in allSiteCFs.
         # In that case, new RE CFs should jsut be fleet average CF.
