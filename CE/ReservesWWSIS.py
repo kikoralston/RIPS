@@ -1,11 +1,14 @@
-#Michael Craig
-#December 16, 2016
+"""
+Michael Craig
+December 16, 2016
 
-#Calculates spinning reserve requirements per WWSIS 
-#Regulation: geometric sum (square root of sum of squared values) of 
-#1% load, 95th percentile of 10-min forecast erros for wind and solar.
-#Contingency: 3% load
-#Flexibility: geometric sum of 70th percentile of 1-hour forecast errors for wind and solar
+Calculates spinning reserve requirements per WWSIS
+Regulation: geometric sum (square root of sum of squared values) of
+1% load, 95th percentile of 10-min forecast erros for wind and solar.
+Contingency: 3% load
+Flexibility: geometric sum of 70th percentile of 1-hour forecast errors for wind and solar
+
+"""
 
 import csv, os, datetime, copy, operator
 from AuxFuncs import *
@@ -18,36 +21,49 @@ rc = {'font.family':'Times New Roman','font.size':14,'text.color':'k',
     'axes.labelcolor':'k','xtick.color':'k','ytick.color':'k'}
 plt.rcParams.update(**rc)
 
-########## CALCULATE WWSIS RESERVES ############################################
-#Loads raw data, gets erorr in 10/5-min and hourly gen, and returns reserve 
-#requirements. Based on WWSIS Phase 2 requirements.
-#Inputs: windIdsAndCapacs (2d list w/ NREL wind IDs used to load gen files),
-#solarFilenamesAndCapacs (2d list w/ NREL solar filenames used to load gen files),
-#hourly demand, fraction of load included in reg & cont reserves, percentile error
-#of wind and solar forecasts included in reg & flex reserves, windCfsDtHr (2d list w/ hourly 
-#wind CFs for each wind generator in fleet, col 1 = dt, subsequent cols = gen),
-#same formatted 2d lists subhourly wind CFs & solar hourly & subhourly CFs. 
-#Outputs: 1d list (1x8760) of hourly contingency, regulation up and down, and flexibility
-#reserve requirements; 2d list of all res and res components w/ labels
+
 def calcWWSISReserves(windCfsDtHr,windCfsDtSubhr,windIdAndCapac,solarCfsDtHr,solarCfsDtSubhr,
             solarFilenameAndCapac,demand,regLoadFrac,contLoadFrac,regErrorPercentile,flexErrorPercentile):
+    """CALCULATE WWSIS RESERVES
+
+    Loads raw data, gets erorr in 10/5-min and hourly gen, and returns reserve requirements. Based on WWSIS Phase 2 requirements.
+
+    :param windCfsDtHr: windCfsDtHr (2d list w/ hourly wind CFs for each wind generator in fleet, col 1 = dt, subsequent cols = gen)
+    :param windCfsDtSubhr: same formatted 2d lists subhourly wind CFs
+    :param windIdAndCapac: windIdsAndCapacs (2d list w/ NREL wind IDs used to load gen files)
+    :param solarCfsDtHr: solar hourly  CFs.
+    :param solarCfsDtSubhr: solar subhourly CFs.
+    :param solarFilenameAndCapac: solarFilenamesAndCapacs (2d list w/ NREL solar filenames used to load gen files)
+    :param demand: hourly demand
+    :param regLoadFrac: fraction of load included in reg reserves
+    :param contLoadFrac: fraction of load included in cont reserves
+    :param regErrorPercentile: percentile error of wind and solar forecasts included in reg reserves
+    :param flexErrorPercentile: percentile error of wind and solar forecasts included in flex reserves
+    :return: 1d list (1x8760) of hourly contingency, regulation up and down, and flexibility reserve requirements;
+    2d list of all res and res components w/ labels
+    """
     #Convert CFs to gen
-    windGenHr,windGenSubhr = convertCfToGenAndSumGen(windIdAndCapac,windCfsDtHr,windCfsDtSubhr)
-    solarGenHr,solarGenSubhr = convertCfToGenAndSumGen(solarFilenameAndCapac,solarCfsDtHr,solarCfsDtSubhr)
+    windGenHr, windGenSubhr = convertCfToGenAndSumGen(windIdAndCapac, windCfsDtHr, windCfsDtSubhr)
+    solarGenHr, solarGenSubhr = convertCfToGenAndSumGen(solarFilenameAndCapac, solarCfsDtHr, solarCfsDtSubhr)
+
     #Calculate reserves - subhourly wind & solar gen is in 10 & 5 min, respectively
-    contResHourly = setContReserves(contLoadFrac,demand)
-    (regUpHourly,regDownHourly,regDemand,regUpWind,regDownWind,
-            regUpSolar,regDownSolar) = setRegReserves(regErrorPercentile,regLoadFrac,
-            windGenSubhr,solarGenSubhr,demand)
-    flexResHourly,flexWind,flexSolar = setFlexReserves(flexErrorPercentile,windGenHr,solarGenHr)
+    contResHourly = setContReserves(contLoadFrac, demand)
+    (regUpHourly, regDownHourly, regDemand, regUpWind, regDownWind,
+     regUpSolar,regDownSolar) = setRegReserves(regErrorPercentile, regLoadFrac, windGenSubhr, solarGenSubhr, demand)
+
+    flexResHourly, flexWind, flexSolar = setFlexReserves(flexErrorPercentile, windGenHr, solarGenHr)
+
     # plotGenDemandAndRes(demand,windGenHr,solarGenHr,regUpHourly,flexResHourly,contResHourly)
     # plotWindAndSolarRes(regUpWind,regUpSolar,windGenHr,solarGenHr,'RegUp')
     # plotWindAndSolarRes(regDownWind,regDownSolar,windGenHr,solarGenHr,'RegDown')
     # plotWindAndSolarRes(flexWind,flexSolar,windGenHr,solarGenHr,'Flex')
-    allRes = rotate(copy.deepcopy(combineResLists(contResHourly,regUpHourly,regDownHourly,flexResHourly,
-                regDemand,regUpSolar,regDownSolar,regUpWind,regDownWind,flexWind,flexSolar)))
-    return (contResHourly,regUpHourly,regDownHourly,flexResHourly,allRes,regUpWind,
-            regDownWind,regUpSolar,regDownSolar,flexWind,flexSolar)
+
+    allRes = rotate(copy.deepcopy(combineResLists(contResHourly, regUpHourly, regDownHourly, flexResHourly,
+                regDemand, regUpSolar, regDownSolar, regUpWind, regDownWind, flexWind, flexSolar)))
+
+    return (contResHourly, regUpHourly, regDownHourly, flexResHourly, allRes, regUpWind, regDownWind, regUpSolar,
+            regDownSolar, flexWind, flexSolar)
+
 
 def combineResLists(contResHourly,regUpHourly,regDownHourly,flexResHourly,regDemand,regUpSolar,
             regDownSolar,regUpWind,regDownWind,flexWind,flexSolar):
@@ -89,14 +105,16 @@ def sumAllSolarOrWindGen(windOrSolarGen):
     return windOrSolarGenTotal
 ################################################################################
 
+
 ########## SET RESERVE REQUIREMENTS ############################################
 #All setReserve funcs output 1d list (1x8760) w/ hourly reserve requirement in MW
 #Set contingency reserves as fraction of hourly demand
 def setContReserves(contLoadFrac,demand):
     return [val*contLoadFrac for val in demand]
 
+
 #Set reg reserve requirement as % of hourly load plus percentile of subhourly wind and solar gen
-def setRegReserves(regErrorPercentile,regLoadFrac,windGen10MinTotal,solarGen5MinTotal,demand):
+def setRegReserves(regErrorPercentile, regLoadFrac, windGen10MinTotal, solarGen5MinTotal, demand):
     regDemand = [val*regLoadFrac for val in demand]
     regUpWind,regDownWind = calcWindReserves(windGen10MinTotal,regErrorPercentile,'reg')
     regUpSolar,regDownSolar = calcSolarReserves(solarGen5MinTotal,regErrorPercentile)

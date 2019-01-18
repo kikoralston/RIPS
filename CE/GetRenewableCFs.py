@@ -31,7 +31,7 @@ def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desir
     :param currZone:
     :param fipsToZones:
     :param fipsToPolys:
-    :param subHour: if True reads sub hourly data for Wind Data
+    :param subHour: if True reads and returns sub hourly data for Wind Data and Solar data
     :return:
     """
     # Isolate wind & solar units
@@ -58,7 +58,8 @@ def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desir
         (solarCFs, solarCfsDtHr, solarCfsDtSubhr, solarFilenameAndCapac) = getSolarCFs(solarUnits, solarDir,
                                                                                        startSolarCapacForCFs, desiredTz,
                                                                                        fipsToZones, fipsToPolys,
-                                                                                       currZone, ncores_py=ncores_py)
+                                                                                       currZone, subHour=subHour,
+                                                                                       ncores_py=ncores_py)
         solarCfsDtHr, solarCfsDtSubhr = rotate(solarCfsDtHr), rotate(solarCfsDtSubhr)
     else:
         solarCFs, solarCfsDtHr, solarCfsDtSubhr, solarFilenameAndCapac = None, None, None, None
@@ -102,7 +103,7 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataY
     #datasetCapacCol = ewdIdAndCapac[0].index('DatasetCapacity')
     datasetCapacCol = ewdIdAndCapac[0].index('OriginalDatasetCap')
 
-    list_args = [[windDir, site[idCol], site[datasetCapacCol], desiredTz, windGenDataYr]
+    list_args = [[windDir, site[idCol], site[datasetCapacCol], desiredTz, windGenDataYr, subHour]
                  for site in ewdIdAndCapac[1:] if 'NoMoreSites' not in site[idCol]]
 
     if len(list_args) > 0:
@@ -181,9 +182,10 @@ def wrapperwind(list_args):
     :param list_args:
     :return:
     """
-    (windDir, siteId, datasetCapac, desiredTz, windGenDataYr) = list_args
+    (windDir, siteId, datasetCapac, desiredTz, windGenDataYr, subHour) = list_args
 
-    siteCfsHourly, siteCfsSubhourly = getWindSiteCfs_2(windDir, siteId, datasetCapac, desiredTz, windGenDataYr)
+    siteCfsHourly, siteCfsSubhourly = getWindSiteCfs_2(windDir, siteId, datasetCapac, desiredTz, windGenDataYr,
+                                                       subHour=subHour)
 
     out = [siteCfsHourly, siteCfsSubhourly, siteId]
 
@@ -388,7 +390,7 @@ def getWindSiteCfs(windDir, siteId, siteCapac, desiredTz, windGenDataYr, subHour
     return hourlyCfs, subhourlyCfs
 
 
-def getWindSiteCfs_2(windDir, siteId, siteCapac, desiredTz, windGenDataYr):
+def getWindSiteCfs_2(windDir, siteId, siteCapac, desiredTz, windGenDataYr, subHour=False):
     """optimized version of function getWindSiteCfs using pandas (75% faster)
 
     :param windDir: dir w/ wind data
@@ -400,16 +402,17 @@ def getWindSiteCfs_2(windDir, siteId, siteCapac, desiredTz, windGenDataYr):
     :return: 2 2d lists, both have first row = datetime. 1 2d list = hourly CFs, 2nd 2d list = subhourly CFs.
              Also row labels
     """
-    hourlyFile = 'powerhourly_' + siteId + '.csv'
-    hourlyGen = pd.read_csv(os.path.join(windDir, 'hourlyPowerSERC', hourlyFile))
-
-    # convert from string to datetime
-    hourlyGen['Datetime'] = pd.to_datetime(hourlyGen['Datetime'], format='%Y-%m-%d %H:%M:%S')
-
-    # correct time zone
+    column_types = {siteId: 'float'}
     tzOffsetDict = {'UTCtoCST': -6, 'CSTtoCST': 0, 'ESTtoCST': -1, 'CSTtoEST': 1, 'UTCtoEST': -5,
                     'ESTtoEST': 0}
     timezoneOffset = tzOffsetDict['UTC' + 'to' + desiredTz]
+
+    hourlyFile = 'powerhourly_' + siteId + '.csv'
+
+    hourlyGen = pd.read_csv(os.path.join(windDir, 'hourlyPowerSERC', hourlyFile), dtype=column_types,
+                            parse_dates=['Datetime'], infer_datetime_format=True)
+
+    # correct time zone
     hourlyGen['Datetime'] = hourlyGen['Datetime'] + dt.timedelta(hours=timezoneOffset)
 
     # filter to current year
@@ -425,7 +428,31 @@ def getWindSiteCfs_2(windDir, siteId, siteCapac, desiredTz, windGenDataYr):
     # convert to list
     hourlyGen = convert_pandas_to_list(hourlyGen, header=list(hourlyGen.columns))
 
-    return hourlyGen, None
+    if subHour:
+        subhourlyFile = 'powersubhourly_' + siteId + '.csv'
+        subhourlyGen = pd.read_csv(os.path.join(windDir, 'subhourlyPowerSERC', subhourlyFile), dtype=column_types,
+                                   parse_dates=['Datetime'], infer_datetime_format=True)
+
+        # correct time zone
+        subhourlyGen['Datetime'] = subhourlyGen['Datetime'] + dt.timedelta(hours=timezoneOffset)
+
+        # filter to current year
+        subhourlyGen = pd.DataFrame(hourlyGen[subhourlyGen['Datetime'].dt.year == windGenDataYr])
+        subhourlyGen = subhourlyGen.reset_index(drop=True)
+
+        # convert to cfs
+        subhourlyGen[siteId] = subhourlyGen[siteId] / siteCapac
+
+        # rename columns
+        subhourlyGen = subhourlyGen.rename(columns={'Datetime': 'datetime{}'.format(desiredTz),
+                                                    siteId: 'power(MW){}'.format(siteId)})
+
+        # convert to list
+        subhourlyGen = convert_pandas_to_list(subhourlyGen, header=list(hourlyGen.columns))
+    else:
+        subhourlyGen = None
+
+    return hourlyGen, subhourlyGen
 
 
 def convertTimeToDatetimeInTgtTz(genData, windOrSolar, siteOrFilename, tgtTz, siteTz):
@@ -520,7 +547,7 @@ def convertToCfs(datetimeAndGen, siteCapac):
 
 
 def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZones, fipsToPolys, currZone,
-                ncores_py=1):
+                subHour=False, ncores_py=1):
     """ Read SOLAR Potential and compute CFS for sites in this current zone
 
     :param solarUnits:
@@ -530,6 +557,8 @@ def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZo
     :param fipsToZones:
     :param fipsToPolys:
     :param currZone:
+    :param subHour:
+    :param ncores_py:
     :return:
     """
     # Get total wind capacity by state
@@ -550,7 +579,7 @@ def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZo
 
     allSiteCfsHourly, allSiteCfsSubhourly, avgFleetCfHr = [], [], []
 
-    list_args = [[solarDir, site[idCol], site[datasetCapacCol], site[tzCol], desiredTz]
+    list_args = [[solarDir, site[idCol], site[datasetCapacCol], site[tzCol], desiredTz, subHour]
                  for site in solarFilenameAndCapacAndTz[1:] if 'NoMoreSites' not in site[idCol]]
 
     if len(list_args) > 0:
@@ -595,17 +624,18 @@ def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZo
 
 def wrappersolar(site):
 
-    (solarDir, siteFilename, datasetSiteCapac, siteTz, desiredTz) = site
+    (solarDir, siteFilename, datasetSiteCapac, siteTz, desiredTz, subHour) = site
 
-    siteCfsHourly, siteCfsSubhourly = getSolarSiteCfs_2(solarDir, siteFilename, datasetSiteCapac, siteTz, desiredTz)
+    siteCfsHourly, siteCfsSubhourly = getSolarSiteCfs_2(solarDir=solarDir, siteFilename=siteFilename,
+                                                        datasetSiteCapac=datasetSiteCapac, siteTz=siteTz,
+                                                        desiredTz=desiredTz, subHour=subHour)
 
     out = [siteCfsHourly, siteCfsSubhourly, siteFilename]
 
     return out
 
 
-def getBestSolarIdsInStates(solarDir, solarCapacByState, startSolarCapacForCFs,
-                            fipsToZones, fipsToPolys, currZone):
+def getBestSolarIdsInStates(solarDir, solarCapacByState, startSolarCapacForCFs, fipsToZones, fipsToPolys, currZone):
     """Get list with best
 
     :param solarDir:
@@ -708,7 +738,7 @@ def getSolarSiteCfs(solarDir, siteFilename, siteCapac, siteTz, desiredTz):
     return hourlyCfs, subhourlyCfs
 
 
-def getSolarSiteCfs_2(solarDir, siteFilename, datasetSiteCapac, siteTz, desiredTz, listout=True):
+def getSolarSiteCfs_2(solarDir, siteFilename, datasetSiteCapac, siteTz, desiredTz, listout=True, subHour=False):
     """Optimized version of getSolarSiteCfs. This function uses Pandas in order to get more efficient processing
 
     :param solarDir:
@@ -717,19 +747,23 @@ def getSolarSiteCfs_2(solarDir, siteFilename, datasetSiteCapac, siteTz, desiredT
     :param siteTz:
     :param desiredTz:
     :param listout: True if final result should be converted to list (same format as original function)
+    :param subHour: True if subhourly values should be returned
     :return:
     """
 
+    column_types = {'Power(MW)': 'float'}
+
+    tzOffsetDict = {'UTCtoCST': -6, 'CSTtoCST': 0, 'ESTtoCST': -1, 'CSTtoEST': 1, 'UTCtoEST': -5,
+                    'ESTtoEST': 0}
+    timezoneOffset = tzOffsetDict[siteTz + 'to' + desiredTz]
+
     if os.path.exists(os.path.join(solarDir, 'AllSERC', siteFilename)):
-        subhourly = pd.read_csv(os.path.join(solarDir, 'AllSERC', siteFilename))
+        subhourly = pd.read_csv(os.path.join(solarDir, 'AllSERC', siteFilename), dtype=column_types)
 
         # convert from string to datetime
         subhourly['LocalTime'] = pd.to_datetime(subhourly['LocalTime'], format='%m/%d/%y %H:%M')
 
         # correct time zone
-        tzOffsetDict = {'UTCtoCST': -6, 'CSTtoCST': 0, 'ESTtoCST': -1, 'CSTtoEST': 1, 'UTCtoEST': -5,
-                        'ESTtoEST': 0}
-        timezoneOffset = tzOffsetDict[siteTz + 'to' + desiredTz]
         subhourly['LocalTime'] = subhourly['LocalTime'] + dt.timedelta(hours=timezoneOffset)
 
         # convert to hourly
@@ -739,25 +773,38 @@ def getSolarSiteCfs_2(solarDir, siteFilename, datasetSiteCapac, siteTz, desiredT
 
         # change column name
         hourly = hourly.rename(columns={'Date_hour': 'datetimeEST'})
-        subhourly = subhourly.rename(columns={'LocalTime': 'datetimeEST'})
 
         #convert to cfs
         hourly_cf = pd.DataFrame(hourly)
         hourly_cf['cf'] = hourly_cf['Power(MW)']/datasetSiteCapac
         del hourly_cf['Power(MW)']
 
-        subhourly_cf = pd.DataFrame(subhourly)
-        subhourly_cf['cf'] = subhourly_cf['Power(MW)']/datasetSiteCapac
-        del subhourly_cf['Power(MW)']
-
         # convert timestamps to datetime
         hourly_cf['datetimeEST'] = hourly_cf['datetimeEST'].dt.to_pydatetime()
-        subhourly_cf['datetimeEST'] = subhourly_cf['datetimeEST'].dt.to_pydatetime()
 
         # convert to lists
         if listout:
-            subhourly_cf = convert_pandas_to_list(subhourly_cf, header=['datetimeEST', 'power(MW){}'.format(siteFilename)])
             hourly_cf = convert_pandas_to_list(hourly_cf, header=['datetimeEST', 'power(MW){}'.format(siteFilename)])
+
+        if subHour:
+            # change column name
+            subhourly = subhourly.rename(columns={'LocalTime': 'datetimeEST'})
+
+            #convert to cfs
+            subhourly_cf = pd.DataFrame(subhourly)
+            subhourly_cf['cf'] = subhourly_cf['Power(MW)']/datasetSiteCapac
+            del subhourly_cf['Power(MW)']
+
+            # convert timestamps to datetime
+            subhourly_cf['datetimeEST'] = subhourly_cf['datetimeEST'].dt.to_pydatetime()
+
+            # convert to lists
+            if listout:
+                subhourly_cf = convert_pandas_to_list(subhourly_cf, header=['datetimeEST',
+                                                                            'power(MW){}'.format(siteFilename)])
+        else:
+            subhourly_cf = None
+
     else:
         hourly_cf, subhourly_cf = [], []
 

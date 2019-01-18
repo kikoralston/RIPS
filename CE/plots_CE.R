@@ -28,6 +28,9 @@ ngTypes <- c('Combined Cycle', 'Combustion Turbine', 'IGCC', 'O/G Steam')
 plant.types <- c('Hydro', 'Nuclear', 'Coal Steam', 'Natural Gas', 
                  'Solar PV', 'Wind', 'Biomass', 'Other')
 
+col.pallete <- rev(c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#c7eae5','#80cdc1',
+                     '#35978f','#01665e'))
+
 # Auxiliary Functions ----
 
 set.year.retired.by.age <- function(year.online, lifetime, retirement.yr) {
@@ -205,9 +208,6 @@ plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand,
     mutate(PlantType=factor(PlantType, levels=rev(plant.types))) %>%
     mutate(Region.Name == as.character(Region.Name))
   
-  col.pallete <- rev(c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#c7eae5','#80cdc1',
-                       '#35978f','#01665e'))
-  
   df.demand.aux <- df.demand %>% gather(key = "type", value = "value", 
                                     mean.load:peak.load)
 
@@ -361,9 +361,6 @@ plot.new.additions <- function(path.output.ce,
   g <- ggplot() + geom_col(data=df.complete.decision.3, 
                            aes(x=year, y=total.cap/1e3, fill=Type), 
                            width=width-0.1)
-  
-  col.pallete <- rev(c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#c7eae5','#80cdc1',
-                       '#35978f','#01665e'))
   
   g <- g + scale_fill_manual(limits = rev(plant.types), 
                              values = col.pallete) +
