@@ -578,7 +578,10 @@ def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZo
 
     tzCol = solarFilenameAndCapacAndTz[0].index('Timezone')
 
-    allSiteCfsHourly, allSiteCfsSubhourly, avgFleetCfHr = [], [], []
+    if subHour:
+        allSiteCfsHourly, allSiteCfsSubhourly, avgFleetCfHr = [], [], []
+    else:
+        allSiteCfsHourly, allSiteCfsSubhourly, avgFleetCfHr = [], None, []
 
     list_args = [[solarDir, site[idCol], site[datasetCapacCol], site[tzCol], desiredTz, subHour]
                  for site in solarFilenameAndCapacAndTz[1:] if 'NoMoreSites' not in site[idCol]]
