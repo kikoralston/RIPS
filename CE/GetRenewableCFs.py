@@ -117,7 +117,7 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataY
         list_cfs_wind = []
 
     for siteCfs in list_cfs_wind:
-        addSiteCfsToAggList(siteCfs[0], siteCfs[1], allSiteCfsHourly, allSiteCfsSubhourly, siteCfs[2])
+        addSiteCfsToAggList(siteCfs[0], siteCfs[1], allSiteCfsHourly, allSiteCfsSubhourly, siteCfs[2], subHour=subHour)
 
     # treat 'NoMoreSites' case
     if 'NoMoreSites' in ewdIdAndCapac[1:][-1]:
@@ -139,7 +139,8 @@ def getWindCFs(windUnits, windDir, startWindCapacForCFs, desiredTz, windGenDataY
 
         siteCfsHourly, siteCfsSubhourly = copy.deepcopy(avgFleetCfHr), copy.deepcopy(avgFleetCfSubhr)
 
-        addSiteCfsToAggList(siteCfsHourly, siteCfsSubhourly, allSiteCfsHourly, allSiteCfsSubhourly, siteId)
+        addSiteCfsToAggList(siteCfsHourly, siteCfsSubhourly, allSiteCfsHourly, allSiteCfsSubhourly, siteId,
+                            subHour=subHour)
 
     # for site in ewdIdAndCapac[1:]:
     #     (siteId, datasetCapac) = (site[idCol], site[datasetCapacCol])
@@ -597,7 +598,7 @@ def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZo
         # addSiteCfsToAggList(siteCfsHourly, siteCfsSubhourly, allSiteCfsHourly, allSiteCfsSubhourly, siteFilename,
         # subHour=True)
         addSiteCfsToAggList(cfs_solar[0], cfs_solar[1], allSiteCfsHourly, allSiteCfsSubhourly, cfs_solar[2],
-                            subHour=True)
+                            subHour=subHour)
 
     # treat 'NoMoreSites' case
     if 'NoMoreSites' in solarFilenameAndCapacAndTz[1:][-1]:
@@ -615,7 +616,7 @@ def getSolarCFs(solarUnits, solarDir, startSolarCapacForCFs, desiredTz, fipsToZo
                                                                 allSiteCfsSubhourly)
 
         addSiteCfsToAggList(avgFleetCfHr, avgFleetCfSubhr, allSiteCfsHourly, allSiteCfsSubhourly, 'NoMoreSites',
-                            subHour=True)
+                            subHour=subHour)
 
     allSiteCfsHourOfYear = [['HourOfYear'] + [val for val in range(1, 8761)]] + copy.deepcopy(allSiteCfsHourly[1:])
 

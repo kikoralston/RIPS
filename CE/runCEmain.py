@@ -2,6 +2,7 @@ import os, sys
 import pandas as pd
 from RIPSMasterScript17Nov2017 import *
 from Parameters import *
+sys.stdout.flush()
 
 
 @profile

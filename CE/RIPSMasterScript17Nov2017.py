@@ -54,6 +54,7 @@ from PreProcessRBM import processRBMDataIntoIndividualCellFiles
 from ModifyNewTechCapacityWithWaterTData import determineHrlyCurtailmentsForNewTechs
 
 from Parameters import *
+sys.stdout.flush()
 
 
 def masterFunction(genparam, reserveparam, curtailparam):
