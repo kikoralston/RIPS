@@ -2,6 +2,7 @@ import csv
 import os
 from ast import literal_eval as lev
 
+
 class Curtailmentparameters:
     """
     Curtailmentparameters class

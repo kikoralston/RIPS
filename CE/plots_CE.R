@@ -22,11 +22,14 @@ library(grid)
 renewablePlantTypes <- c('Geothermal', 'Hydro', 'Pumped Storage', 'Wind', 
                         'Solar PV')
 otherTypes <- c('Geothermal', 'Fuel Cell', 'Landfill Gas', 'Non-Fossil Waste',
-                'Municipal Solid Waste')
-ngTypes <- c('Combined Cycle', 'Combustion Turbine', 'IGCC', 'O/G Steam')
+                'Municipal Solid Waste', 'Biomass')
+ngTypes <- c('Combined Cycle', 'Combustion Turbine', 'O/G Steam')
 
-plant.types <- c('Hydro', 'Nuclear', 'Coal Steam', 'Natural Gas', 
-                 'Solar PV', 'Wind', 'Biomass', 'Other')
+plant.types <- c('Hydro', 'Nuclear', 'Coal', 'Natural Gas', 'Solar', 'Wind', 
+                 'Fuel Oil', 'Other')
+
+coal.types <- c('Bituminous', 'Bituminous& Subbituminous', 'Lignite', 
+                'Subbituminous')
 
 col.pallete <- rev(c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#c7eae5','#80cdc1',
                      '#35978f','#01665e'))
