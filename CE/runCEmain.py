@@ -28,7 +28,7 @@ def runCEmain(cwd=os.getcwd(), case=None):
         genparam.resultsDir = df['resultsDir'].iloc[case].strip()
         genparam.referenceCase = df['referenceCase'].iloc[case]
 
-        curtailparam.listgcms = list(map(str.strip, df['listgcms'].iloc[0].split(';')))
+        curtailparam.listgcms = list(map(str.strip, df['listgcms'].iloc[case].split(';')))
 
         genparam.co2CapScenario = df['co2CapScenario'].iloc[case].lower().strip()
 
