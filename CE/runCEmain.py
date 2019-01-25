@@ -23,7 +23,7 @@ def runCEmain(cwd=os.getcwd(), case=None):
 
         case = int(case) - 1
 
-        df = pd.read_csv(os.path.join(cwd, 'list_cases.csv'), comment='#', sep=',')
+        df = pd.read_csv(os.path.join(cwd, 'list_cases.csv'), comment='#', sep=',', skipinitialspace=True)
 
         genparam.resultsDir = df['resultsDir'].iloc[case].strip()
         genparam.referenceCase = df['referenceCase'].iloc[case]
@@ -37,6 +37,7 @@ def runCEmain(cwd=os.getcwd(), case=None):
         genparam.incCurtailments = False
         genparam.incRegs = False
         genparam.selectCurtailDays = False
+        # if baseline case we just need a valid gcm for indexing the dictionaries (GCM data will not be used)
         curtailparam.listgcms = [curtailparam.listgcms[0]]
 
     if not os.path.exists(genparam.resultsDir):
