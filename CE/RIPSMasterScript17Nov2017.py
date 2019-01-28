@@ -623,6 +623,14 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
         print('---- DISPLAY OF ZONE SET NOT FOUND IN LST FILE ------')
         print()
 
+    if ss != 1:
+        print()
+        print('-------- INVALID SOLUTION FOUND BY SOLVER ------------')
+        print('Exiting simulation...')
+        print()
+        print()
+        sys.exit()
+
     return capacExpModel, ms, ss, techCurtailedSymbols, renewTechSymbols, techNotCurtailedSymbols, pumpHydroGenSymbols
 
 

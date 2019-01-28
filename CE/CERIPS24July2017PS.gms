@@ -4,7 +4,7 @@ $TITLE CAPACITY EXPANSION WITH CHRONOLOGICAL DEMAND THROUGH PYTHON API, 27 MAY 2
 
 Options
          optcr = 5E-1
-         reslim = 20000
+         reslim = 50000
          limcol = 0
          limrow = 0
          solprint = off
