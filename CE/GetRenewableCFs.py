@@ -403,7 +403,7 @@ def getWindSiteCfs_2(windDir, siteId, siteCapac, desiredTz, windGenDataYr, subHo
     :return: 2 2d lists, both have first row = datetime. 1 2d list = hourly CFs, 2nd 2d list = subhourly CFs.
              Also row labels
     """
-    column_types = {siteId: 'float'}
+    column_types = {'siteId': 'float'}
     tzOffsetDict = {'UTCtoCST': -6, 'CSTtoCST': 0, 'ESTtoCST': -1, 'CSTtoEST': 1, 'UTCtoEST': -5,
                     'ESTtoEST': 0}
     timezoneOffset = tzOffsetDict['UTC' + 'to' + desiredTz]
@@ -438,7 +438,7 @@ def getWindSiteCfs_2(windDir, siteId, siteCapac, desiredTz, windGenDataYr, subHo
         subhourlyGen['Datetime'] = subhourlyGen['Datetime'] + dt.timedelta(hours=timezoneOffset)
 
         # filter to current year
-        subhourlyGen = pd.DataFrame(hourlyGen[subhourlyGen['Datetime'].dt.year == windGenDataYr])
+        subhourlyGen = pd.DataFrame(subhourlyGen[subhourlyGen['Datetime'].dt.year == windGenDataYr])
         subhourlyGen = subhourlyGen.reset_index(drop=True)
 
         # convert to cfs
@@ -449,7 +449,7 @@ def getWindSiteCfs_2(windDir, siteId, siteCapac, desiredTz, windGenDataYr, subHo
                                                     siteId: 'power(MW){}'.format(siteId)})
 
         # convert to list
-        subhourlyGen = convert_pandas_to_list(subhourlyGen, header=list(hourlyGen.columns))
+        subhourlyGen = convert_pandas_to_list(subhourlyGen, header=list(subhourlyGen.columns))
     else:
         subhourlyGen = None
 
