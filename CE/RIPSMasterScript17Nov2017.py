@@ -810,16 +810,16 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
 
         start_time = time.time()
         if windCFs is not None:
-            write2dListToCSV(windCFs, os.path.join(resultsDir, 'windCFsFullYrCE' + zone + str(currYear) + '.csv'))
-            write2dListToCSV(windCfsDtHr, os.path.join(resultsDir, 'windCFsDtFullYrCE' + zone + str(currYear) + '.csv'))
-            write2dListToCSV(windCfsDtSubhr,os.path.join(resultsDir,'windCFsDtSubhrFullYrCE' + zone + str(currYear) + '.csv'))
-            write2dListToCSV(windIdAndCapac, os.path.join(resultsDir, 'windIdAndCapacCE' + zone + str(currYear) + '.csv'))
+            write2dListToCSV(windCFs, os.path.join(resultsDir, 'windCFsFullYrCE' + zone + str(ucYear) + '.csv'))
+            write2dListToCSV(windCfsDtHr, os.path.join(resultsDir, 'windCFsDtFullYrCE' + zone + str(ucYear) + '.csv'))
+            write2dListToCSV(windCfsDtSubhr,os.path.join(resultsDir,'windCFsDtSubhrFullYrCE' + zone + str(ucYear) + '.csv'))
+            write2dListToCSV(windIdAndCapac, os.path.join(resultsDir, 'windIdAndCapacCE' + zone + str(ucYear) + '.csv'))
         if solarCFs is not None:
-            write2dListToCSV(solarCFs, os.path.join(resultsDir, 'solarCFsFullYrCE' + zone + str(currYear) + '.csv'))
-            write2dListToCSV(solarCfsDtHr, os.path.join(resultsDir, 'solarCFsDtFullYrCE' + zone + str(currYear) + '.csv'))
-            write2dListToCSV(solarCfsDtSubhr,os.path.join(resultsDir,'solarCFsDtSubhrFullYrCE' + zone + str(currYear) + '.csv'))
+            write2dListToCSV(solarCFs, os.path.join(resultsDir, 'solarCFsFullYrCE' + zone + str(ucYear) + '.csv'))
+            write2dListToCSV(solarCfsDtHr, os.path.join(resultsDir, 'solarCFsDtFullYrCE' + zone + str(ucYear) + '.csv'))
+            write2dListToCSV(solarCfsDtSubhr,os.path.join(resultsDir,'solarCFsDtSubhrFullYrCE' + zone + str(ucYear) + '.csv'))
             write2dListToCSV(solarFilenameAndCapac,
-                             os.path.join(resultsDir, 'solarIdAndCapacCE' + zone + str(currYear) + '.csv'))
+                             os.path.join(resultsDir, 'solarIdAndCapacCE' + zone + str(ucYear) + '.csv'))
 
         # get number of hours in year (assume that is the same over all gcms)
         gcm = curtailparam.listgcms[0]
