@@ -64,4 +64,8 @@ def runCEmain(cwd=os.getcwd(), case=None):
 
 
 if __name__ == "__main__":
-    runCEmain(case=sys.argv[1])
+
+    if len(sys.argv) > 1:
+        runCEmain(case=sys.argv[1])
+    else:
+        runCEmain()
