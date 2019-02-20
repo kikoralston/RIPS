@@ -9,28 +9,27 @@ Options
          reslim = 1000
          limcol = 0
          limrow = 0
-         threads = 0
-         solprint = silent
-*         solvelink = 5
+         threads = -1
+         solprint = off
          ;
 
 Sets
+         z                                       "demand zones"
+         l                                       "lines between pairs of zones"
+         h                                       "hours"
          egu                                     "electricity generators"
          windegu(egu)                            "wind electricity generators"
          solaregu(egu)                           "solar electricity generators"
          hydroegu(egu)                           "hydroelectric generators"
-         h                                       "hours"
-         z                                       "demand zones"
-         l                                       "lines between pairs of zones"
-                 ;
+         ;
 
 alias(h,hh);
 
 Parameters
 *Time-varying unit-specific parameters
          pCapac(egu,h)                           "capacity of egu (GW)"
-         pOpcost(egu,h)                          "plant operating cost (thousands$/GWh)"
 *Unit-specific parameters
+         pOpcost(egu)                            "plant operating cost (thousands$/GWh)"
          pMinload(egu)                           "minimum load of EGU (GW)"
          pRamprate(egu)                          "ramp rate of EGU, assumed to be the same up & down (GW/hr)"
          pStartupfixedcost(egu)                  "start up cost of EGU (thousands$)"
@@ -48,14 +47,15 @@ Parameters
          pMdtcarriedhours(egu)                   "MDT carried over from last optimization (hours)"
          pGenabovemininitial(egu)                "gen above min load from last period of prior optimization (GW)"
 *Zonal parameters
-         pDemand(z,h)                              "electricity demand (GWh)"
-         pRegupreserves(z,h)                       "required hourly up regulation reserves (GW)"
+         pDemand(z,h)                            "electricity demand (GWh)"
+         pRegupreserves(z,h)                     "required hourly up regulation reserves (GW)"
+         pRegdownreserves(z,h)                   "required hourly down regulation reserves (GW)"
          pFlexreserves(z,h)
          pContreserves(z,h)
-         pEguzones(egu)                          "zone EGU is in
+         pEguzones(egu)                          "zone EGU is in"
          pLinesources(l)                         "which zone line carries power from, i.e. source zone for line"
          pLinesinks(l)                           "which zone line carries power to, i.e. sink zone for line"
-         pLinecapacs(l,h)                        "transmission limit per line (GW/hr)"
+         pLinecapacs(l)                          "transmission limit per line (GW/hr)"
 *Scalars
          pRampratetoregreservescalar             "converts timeframe that ramp rate is given in to reg reserve provision timeframe"
          pRampratetoflexreservescalar
@@ -64,6 +64,7 @@ Parameters
          pMaxflexoffer(egu)
          pMaxcontoffer(egu)
          pCnse                                   "cost of non-served energy (thousands$/GWh)"
+         pCO2price                               "cost of CO2"
 *Diagnostic parameters
          pModelstat
          pSolvestat
@@ -71,14 +72,12 @@ Parameters
 
 $if not set gdxincname $abort 'no include file name for data file provided'
 $gdxin %gdxincname%
-$load egu, windegu, solaregu, hydroegu, h, z, l, pCapac
-$load pMinload, pRamprate, pStartupfixedcost, pMindowntime, pOpcost
-$load pRegeligible, pFlexeligible, pConteligible
-$load pMaxgenwind, pMaxgensolar, pMaxgenhydro, pOnoroffinitial, pMdtcarriedhours, pGenabovemininitial
-$load pDemand, pRegupreserves, pFlexreserves, pContreserves
-$load pEguzones, pLinesources, pLinesinks, pLinecapacs
-$load pRampratetoregreservescalar, pRampratetoflexreservescalar, pRampratetocontreservescalar
-$load pCnse
+$load z, l, h, egu, windegu, solaregu, hydroegu
+$load pDemand, pEguzones, pCapac, pOpcost, pMinload, pRamprate, pStartupfixedcost, pMindowntime
+$load pOnoroffinitial, pMdtcarriedhours, pGenabovemininitial, pRegeligible, pFlexeligible, pConteligible
+$load pMaxgensolar, pMaxgenwind, pMaxgenhydro, pRampratetoregreservescalar, pRegupreserves, pRegdownreserves
+$load pRampratetoflexreservescalar, pFlexreserves, pRampratetocontreservescalar, pContreserves
+$load pCnse, pCO2price, pLinecapacs, pLinesources, pLinesinks
 $gdxin
 
 *DEFINE PARAMETERS
@@ -130,32 +129,35 @@ Equations
          genplusresuplimit(egu,h)                 "limit generation + spin reserves to max capac"
                   ;
 
+* PRINT ZONES SET IN LST FILE IN ORDER TO CHECK IF ORDER IS CORRECT!
+display z;
+
 ******************OBJECTIVE FUNCTION******************
 *Minimize total operational cost
-objfunc .. vTotalopcost =e= sum(h,pCnse*vNse(z,h))
-                 + sum((egu,h), vGen(egu,h)*pOpcost(egu,h)+pStartupfixedcost(egu)*vTurnon(egu,h));
+objfunc .. vTotalopcost =e= sum((z,h),pCnse*vNse(z,h))
+                 + sum((egu,h), vGen(egu,h)*pOpcost(egu)+pStartupfixedcost(egu)*vTurnon(egu,h));
 ******************************************************
 
 ******************ZONAL DEMAND AND RESERVE CONSTRAINTS******************
 *Demand requirement
-meetdemand(z,h).. sum(egu$[pEguzones(egu)=z],vGen(egu,h)) - sum(l$[pLinesources(l)=z],vLineflow(l,h))
-         + sum(l$[pLinesinks(l)=z],vLineflow(l,h)) + vNse(z,h) =e= pDemand(z,h);
+meetdemand(z,h).. sum(egu$[pEguzones(egu)=ORD(z)],vGen(egu,h)) - sum(l$[pLinesources(l)=ORD(z)],vLineflow(l,h))
+         + sum(l$[pLinesinks(l)=ORD(z)],vLineflow(l,h)) + vNse(z,h) =e= pDemand(z,h);
 
 *Reserve requirements
-meetflexreserves(z,h)  .. sum(egu$[pEguzones(egu)=z],vFlex(egu,h)) =g= pFlexreserves(z,h);
-meetcontreserves(z,h) .. sum(egu$[pEguzones(egu)=z],vCont(egu,h)) =g= pContreserves(z,h);
-meetregupreserves(z,h) .. sum(egu$[pEguzones(egu)=z],vRegup(egu,h)) =g= pRegupreserves(z,h);
+meetflexreserves(z,h)  .. sum(egu$[pEguzones(egu)=ORD(z)],vFlex(egu,h)) =g= pFlexreserves(z,h);
+meetcontreserves(z,h) .. sum(egu$[pEguzones(egu)=ORD(z)],vCont(egu,h)) =g= pContreserves(z,h);
+meetregupreserves(z,h) .. sum(egu$[pEguzones(egu)=ORD(z)],vRegup(egu,h)) =g= pRegupreserves(z,h);
 ***********************************************************
 
 ******************GENERATION CONSTRAINTS******************
 *Enforce max generation on all wind generators
-maxwindgen(z,h).. pMaxgenwind(z,h) =g= sum(windegu$[pEguzones(windegu)=z],vGen(windegu,h));
+maxwindgen(z,h).. pMaxgenwind(z,h) =g= sum(windegu$[pEguzones(windegu)=ORD(z)],vGen(windegu,h));
 
 *Enforce max generation on all solar generators
-maxsolargen(z,h).. pMaxgensolar(z,h) =g= sum(solaregu$[pEguzones(solaregu)=z],vGen(solaregu,h));
+maxsolargen(z,h).. pMaxgensolar(z,h) =g= sum(solaregu$[pEguzones(solaregu)=ORD(z)],vGen(solaregu,h));
 
 *Enforce max generation on daily hydro generation
-maxdailyhydrogen(hydroegu).. sum(h,vGen(hydroegu,h)) =l= pMaxhydrogen(hydroegu);
+maxdailyhydrogen(hydroegu).. sum(h,vGen(hydroegu,h)) =l= pMaxgenhydro(hydroegu);
 
 *Constrain plants to generate below their max capacity
 definegenabovemin(egu,h).. vGen(egu,h) =e= vOnoroff(egu,h)*pMinload(egu)+vGenabovemin(egu,h);
@@ -166,7 +168,7 @@ determineloadabovemin(egu,h) .. vGenabovemin(egu,h) =l= (pCapac(egu,h)-pMinload(
 
 *****************LINE FLOW LIMITS*************************
 *Limit max value of line flow to line capacity (already bounded at 0 since declared as positive variable)
-vLineflow.up(l,h)=pLinecapacs(l,h);
+vLineflow.up(l,h)=pLinecapacs(l);
 **********************************************************
 
 ******************RESERVE PROVISION CONSTRAINTS******************
@@ -206,5 +208,5 @@ enforcemindowntimecarryover(egu,h)$[ORD(h)<=pMdtcarriedhours(egu)] .. vOnoroff(e
 model ripsUC /all/;
 solve ripsUC using mip minimizing vTotalopcost;
 
-pModelstat = unitcommitment.Modelstat;
-pSolvestat = unitcommitment.solvestat;
+pModelstat = ripsUC.Modelstat;
+pSolvestat = ripsUC.solvestat;

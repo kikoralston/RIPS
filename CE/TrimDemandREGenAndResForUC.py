@@ -1,8 +1,10 @@
 #Michael Craig
 #October 4, 2016
 
+from GAMSAuxFuncs import *
 
-def getDemandAndREGenForUC(day,daysOpt,daysLA,demandScaled,hourlyWindGen,hourlySolarGen):
+
+def getDemandAndREGenForUC(day, daysOpt, daysLA, demandScaled, hourlyWindGen, hourlySolarGen):
     """Isolate hourly demand and wind & solar gen for hours input to UC model
 
     :param day: current UC day
@@ -14,19 +16,28 @@ def getDemandAndREGenForUC(day,daysOpt,daysLA,demandScaled,hourlyWindGen,hourlyS
     :return: hourly demand & wind & solar gen for UC hours, UC hours
     """
 
-    hoursForUC = getUCHours(day,daysOpt, daysLA)
+    hoursForUC = getUCHours(day, daysOpt, daysLA)
 
-    if (day + daysOpt + daysLA) <= 366: #necessary data doesn't extend beyond end of year
-        demandUC = [demandScaled[hr-1] for hr in hoursForUC] #-1 b/c hours in year start @ 1, not 0 like Python idx
-        hourlyWindGenUC = [hourlyWindGen[hr-1] for hr in hoursForUC] #-1 b/c hours in year start @ 1, not 0 like Python idx
-        hourlySolarGenUC = [hourlySolarGen[hr-1] for hr in hoursForUC] #-1 b/c hours in year start @ 1, not 0 like Python idx
+    demandUC, hourlyWindGenUC, hourlySolarGenUC = dict(), dict(), dict()
 
-    else: #necessary data extends beyond end of year, so copy data from last day
-        demandUC = getDataPastEndOfYear(day,daysOpt,daysLA,hoursForUC,demandScaled)
-        hourlyWindGenUC = getDataPastEndOfYear(day,daysOpt,daysLA,hoursForUC,hourlyWindGen)
-        hourlySolarGenUC = getDataPastEndOfYear(day,daysOpt,daysLA,hoursForUC,hourlySolarGen)
+    if (day + daysOpt + daysLA) <= 366:
+        #necessary data doesn't extend beyond end of year
 
-    return (demandUC, hourlyWindGenUC, hourlySolarGenUC, hoursForUC)
+        for zone in demandScaled.keys():
+            # -1 b/c hours in year start @ 1, not 0 like Python idx
+            demandUC[zone] = [demandScaled[zone][hr-1] for hr in hoursForUC]
+            hourlyWindGenUC[zone] = [hourlyWindGen[zone][hr-1] for hr in hoursForUC]
+            hourlySolarGenUC[zone] = [hourlySolarGen[zone][hr-1] for hr in hoursForUC]
+
+    else:
+        #necessary data extends beyond end of year, so copy data from last day
+
+        for zone in demandScaled.keys():
+            demandUC[zone] = getDataPastEndOfYear(day, daysOpt, daysLA, hoursForUC, demandScaled[zone])
+            hourlyWindGenUC[zone] = getDataPastEndOfYear(day, daysOpt, daysLA, hoursForUC, hourlyWindGen[zone])
+            hourlySolarGenUC[zone] = getDataPastEndOfYear(day, daysOpt, daysLA, hoursForUC, hourlySolarGen[zone])
+
+    return demandUC, hourlyWindGenUC, hourlySolarGenUC, hoursForUC
 
 
 def getResForUC(day, daysOpt, daysLA, hourlyRegUp, hourlyRegDown, hourlyFlex, hourlyCont):
@@ -42,20 +53,26 @@ def getResForUC(day, daysOpt, daysLA, hourlyRegUp, hourlyRegDown, hourlyFlex, ho
     :return: hourly reg up & down req for UC hours
     """
 
-    hoursForUC = getUCHours(day,daysOpt,daysLA)
+    hoursForUC = getUCHours(day, daysOpt, daysLA)
+
+    regUpUC, regDownUC, flexUC, contUC = dict(), dict(), dict(), dict()
 
     if (day + daysOpt + daysLA) <= 366:
-        regUpUC = [hourlyRegUp[hr-1] for hr in hoursForUC] #-1 b/c hours in year start @ 1, not 0 like Python idx
-        regDownUC = [hourlyRegDown[hr-1] for hr in hoursForUC] #-1 b/c hours in year start @ 1, not 0 like Python idx
-        flexUC = [hourlyFlex[hr-1] for hr in hoursForUC]
-        contUC = [hourlyCont[hr-1] for hr in hoursForUC]
-    else:
-        regUpUC = getDataPastEndOfYear(day,daysOpt,daysLA,hoursForUC,hourlyRegUp)
-        regDownUC = getDataPastEndOfYear(day,daysOpt,daysLA,hoursForUC,hourlyRegDown)
-        flexUC = getDataPastEndOfYear(day,daysOpt,daysLA,hoursForUC,hourlyFlex)
-        contUC = getDataPastEndOfYear(day,daysOpt,daysLA,hoursForUC,hourlyCont)
 
-    return (regUpUC,regDownUC,flexUC,contUC)
+        for zone in hourlyRegUp.keys():
+            # -1 b/c hours in year start @ 1, not 0 like Python idx
+            regUpUC[zone] = [hourlyRegUp[zone][hr-1] for hr in hoursForUC]
+            regDownUC[zone] = [hourlyRegDown[zone][hr-1] for hr in hoursForUC]
+            flexUC[zone] = [hourlyFlex[zone][hr-1] for hr in hoursForUC]
+            contUC[zone] = [hourlyCont[zone][hr-1] for hr in hoursForUC]
+    else:
+        for zone in hourlyRegUp.keys():
+            regUpUC[zone] = getDataPastEndOfYear(day, daysOpt, daysLA, hoursForUC, hourlyRegUp[zone])
+            regDownUC[zone] = getDataPastEndOfYear(day, daysOpt, daysLA, hoursForUC, hourlyRegDown[zone])
+            flexUC[zone] = getDataPastEndOfYear(day, daysOpt, daysLA, hoursForUC, hourlyFlex[zone])
+            contUC[zone] = getDataPastEndOfYear(day, daysOpt, daysLA, hoursForUC, hourlyCont[zone])
+
+    return regUpUC, regDownUC, flexUC, contUC
 
 
 def getUCHours(day,daysOpt,daysLA):

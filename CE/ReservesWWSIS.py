@@ -10,11 +10,13 @@ Flexibility: geometric sum of 70th percentile of 1-hour forecast errors for wind
 
 """
 
-import csv, os, datetime, copy, operator
+import csv, os, copy, operator
 from AuxFuncs import *
 from GetRenewableCFs import getFleetToCapacDict
 import matplotlib.pyplot as plt
 import numpy as np
+import datetime as dt
+import pandas as pd
 
 plt.style.use('ggplot')
 rc = {'font.family': 'Times New Roman', 'font.size': 14, 'text.color': 'k',
@@ -24,10 +26,11 @@ plt.rcParams.update(**rc)
 
 def calcWWSISReserves(windCfsDtHr, windCfsDtSubhr, windIdAndCapac, solarCfsDtHr, solarCfsDtSubhr,
                       solarFilenameAndCapac, demand, regLoadFrac, contLoadFrac, regErrorPercentile,
-                      flexErrorPercentile):
+                      flexErrorPercentile, tzAnalysis='EST'):
     """CALCULATE WWSIS RESERVES
 
     Loads raw data, gets erorr in 10/5-min and hourly gen, and returns reserve requirements. Based on WWSIS Phase 2 requirements.
+
 
     :param windCfsDtHr: windCfsDtHr (2d list w/ hourly wind CFs for each wind generator in fleet, col 1 = dt, subsequent cols = gen)
     :param windCfsDtSubhr: same formatted 2d lists subhourly wind CFs
@@ -40,12 +43,14 @@ def calcWWSISReserves(windCfsDtHr, windCfsDtSubhr, windIdAndCapac, solarCfsDtHr,
     :param contLoadFrac: fraction of load included in cont reserves
     :param regErrorPercentile: percentile error of wind and solar forecasts included in reg reserves
     :param flexErrorPercentile: percentile error of wind and solar forecasts included in flex reserves
+    :param tzAnalysis: (String) time zone of analysis
     :return: 1d list (1x8760) of hourly contingency, regulation up and down, and flexibility reserve requirements;
     2d list of all res and res components w/ labels
     """
     # Convert CFs to gen
-    windGenHr, windGenSubhr = convertCfToGenAndSumGen(windIdAndCapac, windCfsDtHr, windCfsDtSubhr)
-    solarGenHr, solarGenSubhr = convertCfToGenAndSumGen(solarFilenameAndCapac, solarCfsDtHr, solarCfsDtSubhr)
+    windGenHr, windGenSubhr = convertCfToGenAndSumGen(windIdAndCapac, windCfsDtHr, windCfsDtSubhr, tzAnalysis)
+    solarGenHr, solarGenSubhr = convertCfToGenAndSumGen(solarFilenameAndCapac, solarCfsDtHr, solarCfsDtSubhr,
+                                                        tzAnalysis)
 
     # Calculate reserves - subhourly wind & solar gen is in 10 & 5 min, respectively
     contResHourly = setContReserves(contLoadFrac, demand)
@@ -75,7 +80,7 @@ def combineResLists(contResHourly, regUpHourly, regDownHourly, flexResHourly, re
             ['FlexWind'] + flexWind, ['FlexSolar'] + flexSolar]
 
 
-def convertCfToGenAndSumGen(idAndCapacs, cfsHr, cfsSubhr):
+def convertCfToGenAndSumGen(idAndCapacs, cfsHr, cfsSubhr, tzAnalysis):
     """CONVERT CFS TO GEN AND THEN SUM GEN
 
     Converts hourly and subhourly CFs to hourly and subhourly gen, then sums gen for all generators.
@@ -85,19 +90,19 @@ def convertCfToGenAndSumGen(idAndCapacs, cfsHr, cfsSubhr):
     :param cfsSubhr: 2d lists w/ subhourly CFs (1st col = datetime, subsequent cols = gen)
     :return: 2 2d lists with hourly and subhourly generation (col 1 = datetime, col 2 = total gen)
     """
-    genHr = convertCfToGen(idAndCapacs, cfsHr)
-    genSubhr = convertCfToGen(idAndCapacs, cfsSubhr)
+    genHr = convertCfToGen(idAndCapacs, cfsHr, tzAnalysis)
+    genSubhr = convertCfToGen(idAndCapacs, cfsSubhr, tzAnalysis)
     return sumAllSolarOrWindGen(genHr), sumAllSolarOrWindGen(genSubhr)
 
 
-def convertCfToGen(idAndCapacs, cfs):
+def convertCfToGen(idAndCapacs, cfs, tzAnalysis):
     """Converts hourly or subhourly CFs to gen
 
     :param idAndCapacs: 2d list w/ id and capacity in fleet
     :param cfs: 2d list w/ CFs (1st col = datetime, subsequent cols = cfs)
     :return: 2d list (col 1 = datetime, col 2 = gen by generators)
     """
-    dateCol = cfs[0].index('datetimeCST')
+    dateCol = cfs[0].index('datetime'+tzAnalysis)
     idToFleetCapac = getFleetToCapacDict(idAndCapacs)
     capacs = [idToFleetCapac[currId] for currId in cfs[0][dateCol + 1:]]
     return [copy.deepcopy(cfs[0])] + [[row[0]] + list(map(operator.mul, row[1:], capacs)) for row in cfs[1:]]
@@ -142,10 +147,12 @@ def setRegReserves(regErrorPercentile, regLoadFrac, windGen10MinTotal, solarGen5
     regDemand = [val * regLoadFrac for val in demand]
     regUpWind, regDownWind = calcWindReserves(windGen10MinTotal, regErrorPercentile, 'reg')
     regUpSolar, regDownSolar = calcSolarReserves(solarGen5MinTotal, regErrorPercentile)
+
     regUpTotal = [(regDemand[idx] ** 2 + regUpWind[idx] ** 2 +
                    regUpSolar[idx] ** 2) ** .5 for idx in range(len(regDemand))]
     regDownTotal = [(regDemand[idx] ** 2 + regDownWind[idx] ** 2 +
                      regDownSolar[idx] ** 2) ** .5 for idx in range(len(regDemand))]
+
     return regUpTotal, regDownTotal, regDemand, regUpWind, regDownWind, regUpSolar, regDownSolar
 
 
@@ -243,7 +250,7 @@ def getReservesPerGenValue(windGen, grpAvgPowerAndPtls):
     avgPows = [row[avgPowCol] for row in grpAvgPowerAndPtls[1:]]
     lowErrs = [row[lowErrCol] for row in grpAvgPowerAndPtls[1:]]
     highErrs = [row[highErrCol] for row in grpAvgPowerAndPtls[1:]]
-    lastDate = datetime.datetime(1980, 1, 1, 1)
+    lastDate = dt.datetime(1980, 1, 1, 1)
     for row in windGen[1:]:
         gen, currDate = row[genCol], row[dateCol]
         locInAvgPows = [(val - gen) < 0 for val in avgPows]
@@ -259,7 +266,7 @@ def getReservesPerGenValue(windGen, grpAvgPowerAndPtls):
                 upRes = calcYValOnLine(highErrs[avgPowIdx - 1], highErrs[avgPowIdx],
                                        avgPows[avgPowIdx - 1], avgPows[avgPowIdx], gen)
         currYr, currMnth, currDy, currHr = currDate.year, currDate.month, currDate.day, currDate.hour
-        currDateToHour = datetime.datetime(currYr, currMnth, currDy, currHr)
+        currDateToHour = dt.datetime(currYr, currMnth, currDy, currHr)
         if currDateToHour == lastDate:  # if same hour
             if abs(upRes) > abs(upResHourly[-1]): upResHourly[-1] = abs(upRes)
             if abs(downRes) > abs(downResHourly[-1]): downResHourly[-1] = abs(downRes)
@@ -274,30 +281,35 @@ def calcYValOnLine(y0, y1, x0, x1, x):
     return y0 + (y1 - y0) / (x1 - x0) * (x - x0)
 
 
-################################################################################
-
-########## CALCULATE SOLAR RESERVES ############################################
-# Calculate solar reserves by calculating error versus time of day, divide day
-# into night (no gen), pre-midday (sunrise -> peak), and post-midday (peak -> sunset)
-# for each month, then use those values for each part of day by month.
-# Inputs: 2d list of solar gen (col 1 = datetime, col 2 = gen (MWh) w/ headers),
-# percentile error (float)
-# Outputs: 1d list of solar reserves by hour
 def calcSolarReserves(solarGen, errorPercentile):
+    """CALCULATE SOLAR RESERVES
+
+    Calculate solar reserves by calculating error versus time of day, divide day
+    into night (no gen), pre-midday (sunrise -> peak), and post-midday (peak -> sunset)
+    for each month, then use those values for each part of day by month.
+
+
+    :param solarGen: 2d list of solar gen (col 1 = datetime, col 2 = gen (MWh) w/ headers)
+    :param errorPercentile: percentile error (float)
+    :return: 1d list of solar reserves by hour
+    """
     # plotSolarErrorsVsReserves(solarGen,errorPercentile)
     # plotSolarGen([[mnth,mnth+1] for mnth in range(1,13,2)],solarGen)
     # plotSolarErrors(solarGen)
     # write2dListToCSV(solarGen,'testsolargen.csv')
     # Offsets for which errors are used to calculate percentiles; sunrise & sunset have
     # large but predictable ramps. Offsets try to skip those ramps.
+
     if len(solarGen) > 8761:
         sunriseOffset, sunsetOffset = 5, 8  # skip several intervals when
     else:
         sunriseOffset, sunsetOffset = 2, 2  # skip first & last 2 hours of gen each day (sunrise & sunset)
+
     lowPtl, upPtl = (100 - errorPercentile) / 2, errorPercentile + (100 - errorPercentile) / 2
     dtCol, genCol = solarGen[0].index('datetime'), solarGen[0].index('totalGen(MWh)')
     monthGroups = [[mnth, mnth + 1] for mnth in range(1, 13, 2)]  # months in groups of 2; datetime month is 1..12
     upRes, downRes, dts = list(), list(), list()
+
     for months in monthGroups:  # months is list of months
         monthsRows = [row for row in solarGen[1:] if row[dtCol].month in months]
         preMiddayErrorsMonths, postMiddayErrorsMonths = getMonthsErrors(months,
@@ -312,7 +324,9 @@ def calcSolarReserves(solarGen, errorPercentile):
         upRes.extend(copy.copy(upResMonths))
         downRes.extend(copy.copy(downResMonths))
         dts.extend([row[dtCol] for row in monthsRows])
+
     if len(upRes) > 8760: upRes, downRes = aggregateResToHourly(upRes, downRes, dts)
+
     return upRes, downRes
 
 
@@ -333,7 +347,7 @@ def getMonthsErrors(months, monthsRows, dtCol, genCol, sunriseOffset, sunsetOffs
                                                           sunset, midday, sunriseOffset, sunsetOffset)
         preMiddayErrorsMonths.extend(preMiddayErrors)
         postMiddayErrorsMonths.extend(postMiddayErrors)
-        currDate += datetime.timedelta(days=1)
+        currDate += dt.timedelta(days=1)
     return preMiddayErrorsMonths, postMiddayErrorsMonths
 
 
@@ -349,7 +363,7 @@ def getSunriseAndSunset(currDateRows, dtCol, genCol):
     sunrise, sunset = dts[sunriseIdx], dts[sunsetIdx]
     midday = sunrise + (sunset - sunrise) / 2
     minuteIntervals = int(60 * 24 / len(currDateRows))
-    middayDistToNearestInterval = datetime.timedelta(minutes=((midday - sunrise).seconds / 60 % minuteIntervals))
+    middayDistToNearestInterval = dt.timedelta(minutes=((midday - sunrise).seconds / 60 % minuteIntervals))
     midday -= middayDistToNearestInterval
     return sunrise, sunset, midday
 
@@ -391,7 +405,7 @@ def assignReserves(months, monthsRows, dtCol, genCol, lowPtlPre, highPtlPre, low
         postMiddayUpRes, postMiddayDownRes = setUpAndDownRes(highPtlPost, lowPtlPost, postMidday)
         downRes.extend(list(map(operator.add, preMiddayDownRes, postMiddayDownRes)))
         upRes.extend(list(map(operator.add, preMiddayUpRes, postMiddayUpRes)))
-        currDate += datetime.timedelta(days=1)
+        currDate += dt.timedelta(days=1)
     return upRes, downRes
 
 
@@ -419,21 +433,39 @@ def setUpAndDownRes(highPtl, lowPtl, hoursInPartOfDay):
     return upRes, downRes
 
 
-# If doing 5-min gen data, need to aggregate reserves to hourly level by
-# taking max reserve requirements for that hour
-# Inputs: 1d lists of up & down res, 1d list of correpsonding datetimes
-# Outputs: 1d lists of hourly up & down res
 def aggregateResToHourly(upRes, downRes, dts):
-    upResHourly, downResHourly = list(), list()
-    lastDate = datetime.datetime(1980, 1, 1, 1)  # some random date not in dts
-    for idx in range(len(upRes)):
-        if dts[idx].hour != lastDate.hour:  # new hour
-            upResHourly.append(upRes[idx])
-            downResHourly.append(downRes[idx])
-        elif dts[idx].hour == lastDate.hour:
-            if abs(upRes[idx]) > abs(upResHourly[-1]): upResHourly[-1] = upRes[idx]
-            if abs(downRes[idx]) > abs(downResHourly[-1]): downResHourly[-1] = downRes[idx]
-        lastDate = dts[idx]
+    """
+
+    If doing 5-min gen data, need to aggregate reserves to hourly level by taking max reserve requirements for that hour
+
+    :param upRes: 1d lists of up reserves
+    :param downRes: 1d lists of down reserves
+    :param dts: 1d list of correpsonding datetimes
+    :return: 1d lists of hourly up & down res
+    """
+
+    #start_time = time.time()
+    # create df of hours in year of data (to make sure final lists has all the hours of the year)
+    yrData = dts[0].year
+    start_day = dt.datetime(yrData, 1, 1, 0)
+    end_day = dt.datetime(yrData, 12, 31, 23)
+    hoursYear = pd.DataFrame({'dateFullHour': pd.date_range(start_day, end_day, freq='h')})
+
+    # create data frame with data
+    df = pd.DataFrame({'date': dts, 'upRes': upRes, 'downRes': downRes})
+    df['dateFullHour'] = df['date'].apply(lambda x: dt.datetime(x.year, x.month, x.day, x.hour))
+
+    # merge with data frame of complete hours of the year
+    df = pd.merge(hoursYear, df, on='dateFullHour', how='left').fillna(value=0).reset_index().filter(items=['dateFullHour', 'downRes', 'upRes'])
+
+    # group by hours of the year and compute max value for each hour
+    df = df.groupby('dateFullHour').max().reset_index()
+
+    # convert to list
+    upResHourly, downResHourly = df['upRes'].values.tolist(), df['downRes'].values.tolist()
+
+    #print(str_elapsedtime(start_time))
+
     return upResHourly, downResHourly
 
 

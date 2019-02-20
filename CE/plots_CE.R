@@ -177,7 +177,7 @@ plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand,
     left_join(lifetimes, by='PlantType') %>%
     select(Plant.Name, UniqueID_Final, PlantType, Region.Name, State.Name, County, 
            Capacity..MW., On.Line.Year, Retirement.Year, Lifetime.yrs., 
-           YearRetiredByAge) %>%
+           YearRetiredByAge, Modeled.Fuels) %>%
     mutate(YearRetiredByAge=set.year.retired.by.age(On.Line.Year, 
                                                     Lifetime.yrs.,
                                                     Retirement.Year)) %>%
@@ -189,9 +189,15 @@ plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand,
                                       Capacity..MW.)) %>%
     mutate(PlantType = as.character(PlantType)) %>%
     mutate(PlantType = ifelse(PlantType %in% otherTypes, 'Other', PlantType)) %>%
-    mutate(PlantType = ifelse(PlantType %in% ngTypes, 'Natural Gas', PlantType)) %>%
+    mutate(PlantType = ifelse(Modeled.Fuels %in% coal.types, 'Coal', PlantType)) %>%
+    mutate(PlantType = ifelse(grepl('Natural Gas', Modeled.Fuels), 
+                              'Natural Gas', PlantType)) %>%
+    mutate(PlantType = ifelse(grepl('Fuel Oil', Modeled.Fuels), 
+                              'Fuel Oil', PlantType)) %>%
     mutate(PlantType = ifelse(PlantType %in% c('Hydro', 'Pumped Storage'), 
-                              'Hydro', PlantType))
+                              'Hydro', PlantType)) %>%
+    mutate(PlantType = ifelse(PlantType == 'Solar PV', 'Solar', PlantType)) %>%
+    select(-Modeled.Fuels)
   
   years <- expand.grid(UniqueID_Final=unique(ini.gen.fleet.2$UniqueID_Final), 
                        currYear=seq(2020, 2050, by=5))
@@ -230,7 +236,7 @@ plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand,
            linetype=guide_legend(title=NULL, reverse=TRUE)) +
     facet_grid(Region.Name ~ ., scales = 'free_y') 
     
-  pdf(paste0(path.output.ce,"/supply_demand.pdf"), width=7*16/9, height=7)
+  pdf(paste0(path.out.plot,"/supply_demand.pdf"), width=7*16/9, height=7)
   print(g)
   dev.off()
   
@@ -239,14 +245,16 @@ plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand,
 
 plot.new.additions <- function(path.output.ce,
                                gamsSysDir='/Applications/GAMS24.7/sysdir/',
-                               path.rcps=paste0(path.output.ce, 
-                                                c('/rcp45/','/rcp85/')),
+                               path.rcps=c('RCP 4.5'=sprintf('%s/rcp45/',
+                                                             path.output.ce),
+                                           'RCP 8.5'=sprintf('%s/rcp85/',
+                                                             path.output.ce)),
                                yearIni=2020, yearEnd=2050,
                                path.out.plot=path.output.ce) {
   
   igdx(gamsSysDir)
-  serc.zones <- read.csv(paste0(path.output.ce,'zoneNamesToNumbers.csv'))
-  df.new.techs <- read.csv(paste0(path.output.ce,'newtechs.csv'))
+  df.new.techs <- read.csv(paste0(path.rcps[1],sprintf('newTechsCE%4d.csv',
+                                                       yearIni)))
   #df.new.techs <- read.csv(file='./newtechs.csv', header = TRUE, stringsAsFactors = FALSE)
   #names(df.new.techs) <- df.new.techs[1,]
   #df.new.techs <- df.new.techs[-1,]
@@ -268,7 +276,8 @@ plot.new.additions <- function(path.output.ce,
                                      stringsAsFactors = FALSE)
   
   for (rcp in path.rcps) {
-    case.name <- basename(rcp)
+    serc.zones <- read.csv(paste0(rcp,'zoneNamesToNumbers.csv'))
+    case.name <- names(which(path.rcps == rcp))
     for (y in seq(yearIni, yearEnd, by=5)) {
       # map cell to zone
       map.cell2zone <- rgdx.param(gdxName = paste0(rcp, 'gdxOutYear', y, 
@@ -343,17 +352,19 @@ plot.new.additions <- function(path.output.ce,
     select(case, year, Zone, Type, coolingType, ccs, value, capacity) %>%
     mutate(total.cap = value*capacity,
            Type = ifelse(Type == 'Combined Cycle', 'Natural Gas', Type)) %>%
+    mutate(Type = ifelse(Type == 'Coal Steam', 'Coal', Type)) %>%
+    mutate(Type = ifelse(Type == 'Solar PV', 'Solar', Type)) %>%
     mutate(Type=factor(Type, levels=rev(plant.types)))
   
-  list.cases <- unique(df.complete.decision.2$case)
+  list.cases <- names(path.rcps)
   ncases <- length(list.cases)
   if (ncases == 2) {
     width <- 1.5
-    offset <- data_frame(case=c('base', 'rcp45', 'rcp85'),
+    offset <- data_frame(case=list.cases,
                          off=c(-width/2, width/2))
   } else if (ncases == 3) {
     width <- 1
-    offset <- data_frame(case=c('base', 'rcp45', 'rcp85'),
+    offset <- data_frame(case=list.cases,
                          off=c(-1, 0, 1))
   }
   
@@ -381,8 +392,6 @@ plot.new.additions <- function(path.output.ce,
   df.top.axis <- df.complete.decision.3 %>%
     mutate(xpos=year) %>%
     select(case, xpos) %>%
-    mutate(case=ifelse(case=='rcp85', 'RCP 8.5',
-                       ifelse(case=='rcp45', 'RCP 4.5', 'Base'))) %>%
     distinct()
     
   g.top.axis <- ggplot(df.top.axis) + 
@@ -425,12 +434,14 @@ plot.new.additions <- function(path.output.ce,
 plot.updated.fleet <- function(df.fleet, df.new.additions, path.output.ce,
                                df.demand,
                                gamsSysDir='/Applications/GAMS24.7/sysdir/',
-                               path.rcps=paste0(path.output.ce, 
-                                                c('/rcp45/','/rcp85/')),
+                               path.rcps=c('RCP 4.5'=sprintf('%s/rcp45/',
+                                                             path.output.ce),
+                                           'RCP 8.5'=sprintf('%s/rcp85/',
+                                                             path.output.ce)),
                                yearIni=2020, yearEnd=2050,
                                path.out.plot=path.output.ce) {
   
-  list.cases <- unique(df.new.additions$case)
+  list.cases <- names(path.rcps)
   ncases <- length(list.cases)
   
   for (i in 1:ncases) {
@@ -464,11 +475,11 @@ plot.updated.fleet <- function(df.fleet, df.new.additions, path.output.ce,
 
   if (ncases == 2) {
     width <- 1.5
-    offset <- data_frame(case=c('base', 'rcp45', 'rcp85'),
+    offset <- data_frame(case=list.cases,
                          off=c(-width/2, width/2))
   } else if (ncases == 3) {
     width <- 1
-    offset <- data_frame(case=c('base', 'rcp45', 'rcp85'),
+    offset <- data_frame(case=list.cases,
                          off=c(-1, 0, 1))
   }
   
@@ -483,14 +494,15 @@ plot.updated.fleet <- function(df.fleet, df.new.additions, path.output.ce,
   g <- ggplot() + geom_col(data=df.aux1, 
                            aes(x=currYear, y=online.cap/1e3, fill=PlantType), 
                            width=width-0.1)
-  g <- g + geom_line(data=df.aux2, 
-                     aes(x=currYear, y=peak.load/1e3, linetype=case), 
-                     size=1)
+  
+  g <- g + geom_point(data=df.aux2, 
+                     aes(x=currYear, y=peak.load/1e3), shape=24, colour='black', 
+                     fill='white', size=2)
   
   g <- g + scale_fill_manual(limits = rev(plant.types), values = col.pallete) +
     theme_bw() + ylab('Capacity (GW)') +
     guides(fill=guide_legend(title=NULL),
-           linetype=guide_legend(title=NULL)) + theme_bw() +
+           shape=guide_legend(title=NULL)) + theme_bw() +
     theme(plot.margin = unit(c(0, 0.5, 0.5, 0.5), "lines"),
           axis.title.x = element_blank()) +
     facet_grid(Region.Name ~ ., scales = 'free_y')
@@ -502,8 +514,6 @@ plot.updated.fleet <- function(df.fleet, df.new.additions, path.output.ce,
   df.top.axis <- df.aux1 %>%
     mutate(xpos=currYear) %>%
     select(case, xpos) %>%
-    mutate(case=ifelse(case=='rcp85', 'RCP 8.5',
-                       ifelse(case=='rcp45', 'RCP 4.5', 'Base'))) %>%
     distinct()
   
   g.top.axis <- ggplot(df.top.axis) + 
@@ -543,8 +553,10 @@ plot.updated.fleet <- function(df.fleet, df.new.additions, path.output.ce,
 }
 
 get.demand <- function(path.output.ce, path.data.ce,
-                       path.rcps=paste0(path.output.ce, 
-                                        c('/rcp45/','/rcp85/'))) {
+                       path.rcps=c('RCP 4.5'=sprintf('%s/rcp45/',
+                                                     path.output.ce),
+                                   'RCP 8.5'=sprintf('%s/rcp85/',
+                                                     path.output.ce))) {
   
   df.demand <- data.frame(case=as.character(),
                           Region.Name=as.character(),
@@ -553,7 +565,7 @@ get.demand <- function(path.output.ce, path.data.ce,
                           peak.load=as.numeric(), stringsAsFactors = FALSE)
   
   for (rcp in path.rcps) {
-    case.name <- basename(rcp)
+    case.name <- names(which(path.rcps == rcp))
     for (y in seq(2020, 2050, by=5)){
       ok <- FALSE
       fname <- paste0(paste0(rcp, 'demandFullYrZonalCE', y,'.csv'))
@@ -580,4 +592,191 @@ get.demand <- function(path.output.ce, path.data.ce,
   return(df.demand)
   
   #ssh_disconnect(ssh.con)
+}
+
+plot_renewable_cfs <- function(path.output.ce,
+                          gamsSysDir='/Applications/GAMS24.7/sysdir/',
+                          path.rcps=c('RCP 4.5'=sprintf('%s/rcp45/',
+                                                        path.output.ce),
+                                      'RCP 8.5'=sprintf('%s/rcp85/',
+                                                        path.output.ce)),
+                          yearIni=2020, yearEnd=2050,
+                          path.out.plot=path.output.ce) {
+  
+  igdx(gamsSysDir)
+  
+  rcp <- path.rcps[2]
+  
+  df.out <- data.frame(year=as.numeric(),
+                       z=as.character(),
+                       techrenew=as.character(),
+                       hour.of.day=as.numeric(),
+                       type.CF=as.character(),
+                       value=as.numeric())
+  serc.zones <- read.csv(paste0(rcp,'zoneNamesToNumbers.csv'))
+  
+  for (y in seq(2020, 2050, by=5)) {
+    x <- rgdx.param(gdxName = paste0(rcp, '/gdxOutYear', y, '.gdx'), 
+                    symName = 'pCf') %>%
+      mutate(ZoneNum=as.numeric(as.factor(z))) %>%
+      left_join(serc.zones, by='ZoneNum') %>%
+      select(g, techrenew, h, pCf, Zone) %>%
+      mutate(Zone=as.character(Zone), techrenew=as.character(techrenew))
+    
+    x <- x %>% mutate(h = as.numeric(gsub('h', '', as.character(h)))-1) %>%
+      mutate(time=ymd_h(sprintf('%4d-01-01 %2d', y, 0), tz='EST') + hours(h)) %>%
+      mutate(hour.of.day=hour(time)) %>% group_by(Zone, techrenew, hour.of.day) %>%
+      summarize(CF=mean(pCf)) %>% mutate(year=y) %>%
+      select(year, Zone, techrenew, hour.of.day, CF) %>% as.data.frame() 
+    
+    w <- x %>% group_by(year, Zone, techrenew) %>% summarise(mean.CF=sum(CF)/24)
+    
+    x <- x %>% 
+      left_join(w, by=c('year'='year' , 'Zone'='Zone' , 'techrenew'='techrenew')) %>%
+      gather(key = "type.CF", value = "value", CF:mean.CF)
+      
+    
+    df.out <- rbind(df.out, x)
+  }
+  
+  
+  ggplot(df.out) + geom_line(aes(x=hour.of.day, y=value, color=as.factor(year),
+                                 linetype=type.CF)) + theme_bw() + 
+    facet_grid(rows = vars(Zone), cols = vars(techrenew))
+}
+
+
+plot.donut.chart <- function(fileGenfleet) {
+  
+  df.fleet <- read.csv(file=fileGenfleet, 
+                       stringsAsFactors = FALSE) %>%
+    mutate(PlantType = as.character(PlantType)) %>%
+    mutate(PlantType = ifelse(PlantType %in% otherTypes, 'Other', PlantType)) %>%
+    mutate(Modeled.Fuels = ifelse(PlantType == 'Other', 'Other', Modeled.Fuels)) %>%
+    mutate(PlantType = ifelse(Modeled.Fuels == 'Other', 'NA', PlantType)) %>%
+    mutate(Modeled.Fuels = ifelse(Modeled.Fuels %in% coal.types, 'Coal', Modeled.Fuels)) %>%
+    mutate(Modeled.Fuels = ifelse(Modeled.Fuels == 'Nuclear Fuel', 'Nuclear', Modeled.Fuels)) %>%
+    mutate(Modeled.Fuels = ifelse(grepl('Natural Gas', Modeled.Fuels), 'Natural Gas', Modeled.Fuels)) %>%
+    mutate(Modeled.Fuels = ifelse(grepl('Fuel Oil', Modeled.Fuels), 'Fuel Oil', Modeled.Fuels)) %>%
+    mutate(PlantType = ifelse(PlantType %in% c('Hydro', 'Pumped Storage'), 
+                              'Hydro', PlantType)) %>%
+    mutate(PlantType = ifelse(PlantType == 'Combustion Turbine', 'CT', PlantType)) %>%
+    mutate(Modeled.Fuels = ifelse(PlantType == 'Hydro', 'Hydro', Modeled.Fuels)) %>%
+    mutate(PlantType = ifelse(grepl('Hydro|Wind|Solar', PlantType), 'NA', PlantType)) %>%
+    mutate(cooling=ifelse(grepl('recirculating', Cooling.Tech),
+                          'RC',
+                          ifelse(grepl('once through', Cooling.Tech),
+                                 'OT',
+                                 ifelse(grepl('dry cooling', Cooling.Tech),
+                                        'DC', 'NA')))) %>%
+    mutate(cooling = ifelse(PlantType == 'Hydro', 'NA', cooling)) %>%
+    mutate(cooling = ifelse(Modeled.Fuels == 'Other', 'NA', cooling)) %>%
+    mutate(PlantType = ifelse(PlantType == 'NA', NA, PlantType)) %>%
+    mutate(cooling = ifelse(cooling == 'NA', NA, cooling)) %>%
+    select(Plant.Name, PlantType, Modeled.Fuels, Capacity..MW.,cooling)
+  
+  df.fleet <- df.fleet %>% group_by(Modeled.Fuels, PlantType, cooling) %>% summarize(sum=sum(Capacity..MW.)) %>% as.data.frame()
+  
+  total <- sum(df.fleet$sum)
+  
+  lvl0 <- data.frame(name = paste0("SERC\n", formatC(total, big.mark=',', 
+                                                     digits=0, 
+                                                     format = 'f'),
+                                   ' MW'), 
+                     value = total, level = 0, fill = NA) %>%
+    mutate(xmin=0, xmax=1, ymin=0, ymax=value) %>%
+    mutate(x.avg=0, y.avg=0, colour=FALSE, label=name)
+  
+  lvl1 <- df.fleet %>% group_by(Modeled.Fuels) %>% summarize(sum=sum(sum)) %>%
+    ungroup() %>%
+    mutate(name = Modeled.Fuels, value = sum, level = 1, fill = name) %>%
+    select(name, value, level, fill) %>%
+    arrange(fill, name) %>%
+    mutate(xmin=1.05, xmax=2, ymin=0, ymax=cumsum(value)) %>%
+    mutate(ymin=lag(ymax, default=0),
+           x.avg=(xmin+xmax)/2,
+           y.avg=(ymin+ymax)/2,
+           colour=TRUE) %>%
+    mutate(label=ifelse(value<700 | is.na(name), '', name))
+  
+  lvl2 <- df.fleet %>% group_by(Modeled.Fuels, PlantType) %>%
+    summarize(value=sum(sum)) %>%
+    ungroup() %>%
+    mutate(name=PlantType) %>%
+    mutate(fill=Modeled.Fuels) %>%
+    select(name, value, fill) %>% mutate(level = 2) %>%
+    select(name, value, level, fill) %>%
+    arrange(fill, name) %>%
+    mutate(fill=ifelse(is.na(name),paste0(fill, '_NA'), fill)) %>%
+    mutate(xmin=2.05, xmax=3, ymin=0, ymax=cumsum(value)) %>%
+    mutate(ymin=lag(ymax, default=0),
+           x.avg=(xmin+xmax)/2,
+           y.avg=(ymin+ymax)/2,
+           colour=ifelse(grepl('_NA', fill), FALSE, TRUE)) %>%
+    mutate(label=ifelse(value<700 | is.na(name), '', name))
+  
+  
+  lvl3 <- df.fleet %>% group_by(Modeled.Fuels, PlantType, cooling) %>%
+    summarize(value=sum(sum)) %>%
+    arrange(Modeled.Fuels, PlantType, cooling) %>%
+    ungroup() %>%
+    mutate(name=cooling) %>%
+    mutate(fill=Modeled.Fuels) %>%
+    select(name, value, fill) %>% mutate(level = 3) %>%
+    select(name, value, level, fill) %>%
+    mutate(fill=ifelse(is.na(name),paste0(fill, '_NA'), fill)) %>%
+    mutate(xmin=3.05, xmax=4, ymin=0, ymax=cumsum(value)) %>%
+    mutate(ymin=lag(ymax, default=0),
+           x.avg=(xmin+xmax)/2,
+           y.avg=(ymin+ymax)/2,
+           colour=ifelse(grepl('_NA', fill), FALSE, TRUE)) %>%
+    mutate(label=ifelse(value<400 | is.na(name), '', name))
+  
+  #col.pallete <- brewer.pal(9, 'YlOrBr')
+  
+  new.pallete <- rev(col.pallete)
+  names(new.pallete) <- plant.types
+  missing.cases <- rep("#FFFFFF00", length(new.pallete))
+  names(missing.cases) <- paste0(plant.types, '_NA')
+  
+  new.pallete.2 <- c(new.pallete, missing.cases)
+  
+  df.final <- bind_rows(lvl0, lvl1, lvl2, lvl3) %>%
+    mutate(name = as.factor(name)) %>%
+    arrange(fill, name) %>%
+    mutate(level = as.factor(level))
+  
+  # create column for adjusting hjust and vjust of labels
+  df.final <- df.final %>%
+    mutate(hjust=0.5, vjust=0.5) %>%
+    mutate(hjust=ifelse(name=='DC' & fill == 'Natural Gas', 0, hjust),
+           vjust=ifelse(name=='DC' & fill == 'Natural Gas', 1, vjust)) %>%
+    mutate(hjust=ifelse(name=='Other', 1, hjust),
+           vjust=ifelse(name=='Other', 0, vjust)) %>%
+    mutate(hjust=ifelse(name=='Solar', 0.2, hjust),
+           vjust=ifelse(name=='Solar', 0.9, vjust))
+  
+  g <- ggplot(data=df.final, aes(fill = fill)) +  
+    geom_rect(aes(ymax=ymax, ymin=ymin, xmax=xmax, xmin=xmin, color=colour), 
+              size = 0.1) +
+    scale_fill_manual(values = new.pallete.2, na.translate = FALSE) +
+    scale_color_manual(values = c('TRUE'='gray20', 'FALSE'='#FFFFFF00'), 
+                       guide = F, na.translate = FALSE) +
+    geom_text(aes(x = x.avg, y = y.avg, label = label, hjust=hjust, 
+                  vjust=vjust), size = rel(2.5)) +
+    scale_x_continuous(breaks = NULL, expand = c(0, 0)) +
+    scale_y_continuous(breaks = NULL, expand = c(0, 0)) +
+    labs(x = NULL, y = NULL) +
+    theme_minimal() + guides(fill=FALSE) +
+    theme(plot.margin = unit(c(0, 0, 0, 0), "lines"),
+          panel.grid = element_blank(),
+          legend.position = 'none') +
+    coord_polar(theta = "y")
+  
+#  pdf("~/CMU/RIPS/paperCE/longdraft/images/sunburst.pdf", width=5, height=5)
+#  print(g)
+#  dev.off()
+#  system('pdfcrop ~/CMU/RIPS/paperCE/longdraft/images/sunburst.pdf ~/CMU/RIPS/paperCE/longdraft/images/sunburst.pdf')
+  
+  return(g)
 }

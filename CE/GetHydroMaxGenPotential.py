@@ -10,6 +10,8 @@ from GAMSAuxFuncs import createGenSymbol
 from DemandFuncsCE import getHoursInMonths
 import pandas as pd
 import pickle as pk
+import datetime as dt
+import calendar
 
 
 def getHydroEPotential(fleet, demandZonal, repAndSpeHoursDict, currYear, genparam, curtailparam):
@@ -253,6 +255,64 @@ def getListOfDaysInMonth(m):
     listDays = [initialDay + d for d in range(daysPerMonth[m-1][1])]
 
     return listDays
+
+
+def getDailyHydroPotentialsUC(fleetUC, hydroData, daysUC, ucYear):
+    """ Compiles dict with daily hydro potentials
+
+    Compiles dict with daily hydro potentials for individual hydro gens for UC run from list with monthly potentials
+
+    :param fleetUC: 2d list with complete generator fleet
+    :param hydroData: 2d list with monthly hydro potentials for simulation year
+    :param daysUC: list with days of the year (1-365) that UC simulation will be performed
+    :return: dict with {genID: hydro energy MWh}
+    """
+
+    headers = fleetUC[0]
+    plantCol = headers.index('PlantType')
+    orisCol = headers.index('ORIS Plant Code')
+    capacityCol = headers.index('Capacity (MW)')
+    hydroFleet = [headers] + [row for row in fleetUC if row[plantCol] == 'Hydro']
+
+    hydroDailyPotential = dict()
+
+    for rowFleet in hydroFleet[1:]:
+
+        genSymbol = createGenSymbol(rowFleet, headers)
+
+        # get row in hydroFleet of this generator
+        rowHydroData = [row for row in hydroData[1:] if row[0] == rowFleet[orisCol]]
+
+        if len(rowHydroData) > 0:
+            rowHydroData = rowHydroData[0]
+
+            capacity = float(rowFleet[capacityCol])
+
+            hydroEnergyAux = 0
+            for d in daysUC:
+                date_aux = dt.date(ucYear, 1, 1) + dt.timedelta(days=d-1)
+                imonth = date_aux.month
+                ndays = calendar.monthrange(ucYear, imonth)[1]
+                hydroEnergyAux = hydroEnergyAux + float(rowHydroData[imonth])/ndays
+
+            hydroDailyPotential[genSymbol] = hydroEnergyAux
+            #hydroDailyPotential[genSymbol] = hydroEnergyAux/(capacity*len(daysUC)*24)
+
+        else:
+            hydroDailyPotential[genSymbol] = 0
+
+    return hydroDailyPotential
+
+
+
+
+
+
+
+
+    return listDays
+
+
 
 
 def compute_max_daily_hydro(fleet, currYear, dataRoot):
