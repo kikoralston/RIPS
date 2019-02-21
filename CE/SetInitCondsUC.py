@@ -5,32 +5,47 @@
 
 from GAMSAuxFuncs import *
 
-########### SET INITIAL CONDITION PARAMETERS FOR FIRST UC RUN ##################
-#For first UC run of year. Assume all plants initially off w/ no carried MDT
-#Inputs: gen fleet
-#Outputs: 1d list of initial on/off, gen above min (MWh), & carried MDT values
+
 def setInitCondsFirstUC(fleetUC):
+    """SET INITIAL CONDITION PARAMETERS FOR FIRST UC RUN
+
+    For first UC run of year. Assume all plants initially off w/ no carried MDT
+
+    :param fleetUC: 2d list with gen fleet
+    :return: 1d list of initial on/off, gen above min (MWh), & carried MDT values
+    """
     onOffInitial = [0 for i in range(1,len(fleetUC))]
     genAboveMinInitial = [0 for i in range(1,len(fleetUC))] #MW
     mdtCarriedInitial = [0 for i in range(1,len(fleetUC))]
     return (onOffInitial,genAboveMinInitial,mdtCarriedInitial)
             
-########### SET INITIAL CONDITION PARAMETERS PER PRIOR UC RUN ##################
-#Set values for init cond params based on prior UC run
-#Inputs: prior UC run results as GAMS object, gen fleet, hours for curr UC run, 
-#num days for optim horiz (i.e., keep those results), num days look ahead (need to skip these).
-#Outputs: 1d lists of initial on/off & gen above min (MWh) & carried MDT vals
-def setInitCondsPerPriorUC(ucModel,fleetUC,hoursForUC,daysOpt,daysLA,scaleMWtoGW):
+
+def setInitCondsPerPriorUC(ucModel, fleetUC, hoursForUC, daysOpt, daysLA, scaleMWtoGW):
+    """SET INITIAL CONDITION PARAMETERS PER PRIOR UC RUN
+
+    Set values for init cond params based on prior UC run
+
+    :param ucModel: prior UC run results as GAMS object
+    :param fleetUC: 2d list with gen fleet
+    :param hoursForUC: hours for curr UC run
+    :param daysOpt: num days for optim horiz (i.e., keep those results)
+    :param daysLA: num days look ahead (need to skip these)
+    :param scaleMWtoGW: scale factor MW to GW
+    :return: 1d lists of initial on/off & gen above min (MWh) & carried MDT vals
+    """
+
     #For genAboveMin & onOff, just need variable value in prior hour
     lastHourSymbolPriorUCRun = 'h' + str((min(hoursForUC) - 1))
-    onOffDict = extract2dVarResultsIntoDict(ucModel,'vOnoroff')
-    onOffInitial = getInitCondValues(onOffDict,fleetUC,lastHourSymbolPriorUCRun)
-    genAboveMinDict = extract2dVarResultsIntoDict(ucModel,'vGenabovemin')
-    genAboveMinInitial = getInitCondValues(genAboveMinDict,fleetUC,lastHourSymbolPriorUCRun,scaleMWtoGW) #MW
+    onOffDict = extract2dVarResultsIntoDict(ucModel, 'vOnoroff')
+    onOffInitial = getInitCondValues(onOffDict, fleetUC, lastHourSymbolPriorUCRun)
+    genAboveMinDict = extract2dVarResultsIntoDict(ucModel, 'vGenabovemin')
+    genAboveMinInitial = getInitCondValues(genAboveMinDict, fleetUC, lastHourSymbolPriorUCRun, 1/scaleMWtoGW) #MW
+
     #For mdtCarriedInitial, get last turnoff decision, subtract # hours from then
     #to end of last time period, and subtract that from MDT.
-    mdtCarriedInitial = getMdtCarriedInitial(onOffInitial,ucModel,fleetUC,hoursForUC,daysOpt,daysLA)
-    return (onOffInitial,genAboveMinInitial,mdtCarriedInitial)
+    mdtCarriedInitial = getMdtCarriedInitial(onOffInitial, ucModel, fleetUC, hoursForUC, daysOpt, daysLA)
+
+    return onOffInitial,genAboveMinInitial,mdtCarriedInitial
 
 #Determines carried MDT hours based on when unit turned off (if at all) in
 #prior UC run.
@@ -58,13 +73,24 @@ def getMdtCarriedInitial(onOffInitial,ucModel,fleetUC,hoursForUC,daysOpt,daysLA)
             if turnOff == 0: mdtCarriedInitial.append(0) #never turned off in last UC
     return mdtCarriedInitial
 
-#Convert dict of output UC values into 1d list
-#Inputs: dictionary of UC output (genID:val), gen fleet, last hour symbol of prior UC run
-#Outputs: 1d list of init cond values for curr UC run. For energy values, outputs in MW.
-def getInitCondValues(initCondDict,fleetUC,lastHourSymbolPriorUCRun,*args):
+
+def getInitCondValues(initCondDict, fleetUC, lastHourSymbolPriorUCRun, *args):
+    """Convert dict of output UC values into 1d list
+
+    :param initCondDict: dictionary of UC output (genID:val)
+    :param fleetUC: gen fleet
+    :param lastHourSymbolPriorUCRun: last hour symbol of prior UC run
+    :param args:
+    :return: 1d list of init cond values for curr UC run. For energy values, outputs in MW.
+    """
     initCondValues = []
-    if len(args)>0: scalar = args[0]
-    else: scalar = 1
-    for row in fleetUC[1:]:    
-        initCondValues.append(initCondDict[(createGenSymbol(row,fleetUC[0]),lastHourSymbolPriorUCRun)]*scalar)
+
+    if len(args) > 0:
+        scalar = args[0]
+    else:
+        scalar = 1
+
+    for row in fleetUC[1:]:
+        initCondValues.append(initCondDict[(createGenSymbol(row, fleetUC[0]), lastHourSymbolPriorUCRun)]*scalar)
+
     return initCondValues
