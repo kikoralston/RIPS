@@ -96,12 +96,12 @@ Positive Variables
          vFlex(egu,h)
          vCont(egu,h)
          vNse(z,h)                               "nonserved energy (GW)"
-         vTurnoff(egu,h)                         "indicates whether plant decides to turn off (1) or not (0) in hour h"
          vLineflow(l,h)                          "flow over lines per hour (GW)"
                  ;
 
 Binary Variables
          vTurnon(egu,h)                          "indicates whether plant decides to turn on (1) or not (0) in hour h"
+         vTurnoff(egu,h)                         "indicates whether plant decides to turn off (1) or not (0) in hour h"
          vOnoroff(egu,h)                         "indicates whether plant is up (1) or down (0) in hour h"
                  ;
 

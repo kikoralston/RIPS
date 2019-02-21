@@ -936,10 +936,10 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
 
     for dayIdx in range(0, len(daysForUC), daysOpt):
 
+        day = daysForUC[dayIdx]
+
         print('---------------------------------------------------------------')
         print('Starting UC simulation of day {0:4d}'.format(day))
-
-        day = daysForUC[dayIdx]
 
         daysForUCAux = list(range(day, day+daysOpt+daysLA))
 
