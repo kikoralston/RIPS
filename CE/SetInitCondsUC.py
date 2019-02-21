@@ -14,10 +14,11 @@ def setInitCondsFirstUC(fleetUC):
     :param fleetUC: 2d list with gen fleet
     :return: 1d list of initial on/off, gen above min (MWh), & carried MDT values
     """
-    onOffInitial = [0 for i in range(1,len(fleetUC))]
-    genAboveMinInitial = [0 for i in range(1,len(fleetUC))] #MW
-    mdtCarriedInitial = [0 for i in range(1,len(fleetUC))]
-    return (onOffInitial,genAboveMinInitial,mdtCarriedInitial)
+    onOffInitial = [0 for i in range(1, len(fleetUC))]
+    genAboveMinInitial = [0 for i in range(1, len(fleetUC))] #MW
+    mdtCarriedInitial = [0 for i in range(1, len(fleetUC))]
+
+    return onOffInitial, genAboveMinInitial, mdtCarriedInitial
             
 
 def setInitCondsPerPriorUC(ucModel, fleetUC, hoursForUC, daysOpt, daysLA, scaleMWtoGW):
@@ -45,15 +46,20 @@ def setInitCondsPerPriorUC(ucModel, fleetUC, hoursForUC, daysOpt, daysLA, scaleM
     #to end of last time period, and subtract that from MDT.
     mdtCarriedInitial = getMdtCarriedInitial(onOffInitial, ucModel, fleetUC, hoursForUC, daysOpt, daysLA)
 
-    return onOffInitial,genAboveMinInitial,mdtCarriedInitial
+    return onOffInitial, genAboveMinInitial, mdtCarriedInitial
 
-#Determines carried MDT hours based on when unit turned off (if at all) in
-#prior UC run.
-#Inputs: whether initially on/off in curr UC run, prior UC run results, 
-#gen fleet, hours included in curr UC run, num days in optimization horizon (i.e., to keep),
-#num days included as LA
-#Outputs: 1d list of carried MDT hours
-def getMdtCarriedInitial(onOffInitial,ucModel,fleetUC,hoursForUC,daysOpt,daysLA):
+
+def getMdtCarriedInitial(onOffInitial, ucModel, fleetUC, hoursForUC, daysOpt, daysLA):
+    """Determines carried MDT hours based on when unit turned off (if at all) in prior UC run
+
+    :param onOffInitial: whether initially on/off in curr UC run
+    :param ucModel: GAMS object with prior UC run results
+    :param fleetUC: 2d list with gen fleet
+    :param hoursForUC: hours included in curr UC run
+    :param daysOpt: num days in optimization horizon (i.e., to keep)
+    :param daysLA: num days included as LA
+    :return: 1d list of carried MDT hours
+    """
     mdtCarriedInitial = []
     fleetMDTCol = fleetUC[0].index('MinDownTime(hrs)')
     turnOffDict = extract2dVarResultsIntoDict(ucModel,'vTurnoff')
@@ -71,6 +77,7 @@ def getMdtCarriedInitial(onOffInitial,ucModel,fleetUC,hoursForUC,daysOpt,daysLA)
                     #Hr that turn off counts toward MDT; therefore +1 to hr. 
                     mdtCarriedInitial.append(max(0,genMDT - (lastHourPriorUCRun - hr + 1)))
             if turnOff == 0: mdtCarriedInitial.append(0) #never turned off in last UC
+
     return mdtCarriedInitial
 
 
