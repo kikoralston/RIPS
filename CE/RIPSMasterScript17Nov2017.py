@@ -23,7 +23,7 @@ from ForecastDemandWithRegression import forecastZonalDemandWithReg
 from UpdateFuelPriceFuncs import *
 from DemandFuncs import *
 from DemandFuncsCE import *
-from GetHydroMaxGenPotential import getHydroEPotential, importHydroPotentialGen
+from GetHydroMaxGenPotential import getHydroEPotential, importHydroPotentialGen, getDailyHydroPotentialsUC
 from CO2CapCalculations import getCo2Cap, interpolateCO2Cap
 from SetInitCondsUC import *
 from ImportNewTechs import getNewTechs

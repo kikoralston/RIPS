@@ -304,17 +304,6 @@ def getDailyHydroPotentialsUC(fleetUC, hydroData, daysUC, ucYear):
     return hydroDailyPotential
 
 
-
-
-
-
-
-
-    return listDays
-
-
-
-
 def compute_max_daily_hydro(fleet, currYear, dataRoot):
     """ Converts monthly hydro capacity for each plant to daily hydro capacity
 
