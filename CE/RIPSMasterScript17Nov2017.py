@@ -979,17 +979,25 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
         saveHourlySystemResults(sysResults, resultToRow, hourToColSys, ucModel, day, daysOpt)
         msAndSs.append([day, ms, ss])
 
-        # copy input and output GDX files to output folder and rename them
+        # check if file with flag to save GDX files exists in GAMS folder
         gamsFileDir = os.path.join(genparam.dataRoot, 'GAMS')
-        try:
-            shutil.copy(os.path.join(gamsFileDir, '_gams_py_gdb0.gdx'),
-                        os.path.join(resultsDir, 'gdxUCInYear{0:4d}Day{1:04d}.gdx'.format(ucYear, day)))
-            shutil.copy(os.path.join(gamsFileDir, '_gams_py_gdb1.gdx'),
-                        os.path.join(resultsDir, 'gdxUCOutYear{0:4d}Day{1:04d}.gdx'.format(ucYear, day)))
-        except IOError as e:
-            print("Unable to copy file. %s" % e)
-        except:
-            print("Unexpected error:", sys.exc_info())
+        if os.path.exists(os.path.join(gamsFileDir, 'saveGDX.flag')):
+
+            # read flag from file
+            with open(os.path.join(gamsFileDir, 'saveGDX.flag'), 'r') as flagFile:
+                saveGDX = (flagFile.readline().lower().strip() == 'true')
+
+            if saveGDX:
+                # copy input and output GDX files to output folder and rename them
+                try:
+                    shutil.copy(os.path.join(gamsFileDir, '_gams_py_gdb0.gdx'),
+                                os.path.join(resultsDir, 'gdxUCInYear{0:4d}Day{1:04d}.gdx'.format(ucYear, day)))
+                    shutil.copy(os.path.join(gamsFileDir, '_gams_py_gdb1.gdx'),
+                                os.path.join(resultsDir, 'gdxUCOutYear{0:4d}Day{1:04d}.gdx'.format(ucYear, day)))
+                except IOError as e:
+                    print("Unable to copy file. %s" % e)
+                except:
+                    print("Unexpected error:", sys.exc_info())
 
     writeHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant,
                               turnonByPlant, turnoffByPlant, onOffByPlant, resultsDir, ucYear, 'UC', 'Plant')
