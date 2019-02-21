@@ -935,6 +935,10 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     hydroPotentials = importHydroPotentialGen(ucYear, genparam, gcm)
 
     for dayIdx in range(0, len(daysForUC), daysOpt):
+
+        print('---------------------------------------------------------------')
+        print('Starting UC simulation of day {0:4d}'.format(day))
+
         day = daysForUC[dayIdx]
 
         daysForUCAux = list(range(day, day+daysOpt+daysLA))
@@ -964,6 +968,8 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
                                              reserveparam)
 
         print('Time (secs) for UC day ' + str(day) + ': ' + str(time.time() - t0))
+        print('---------------------------------------------------------------')
+        print()
 
         ucResultsByDay.append((day, ucModel))  # just saves GAMS model
         saveHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant,
