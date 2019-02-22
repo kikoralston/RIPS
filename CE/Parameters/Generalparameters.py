@@ -397,11 +397,15 @@ class Generalparameters:
     @staticmethod
     def readMaxCapacTechParam(s):
 
-        if s.find(':') > -1:
-            # data is a dictionary {type: maxCapacValue}
-            d = Generalparameters.string2dict(s)
+        if isinstance(s, str):
+            if s.find(':') > -1:
+                # data is a dictionary {type: maxCapacValue}
+                d = Generalparameters.string2dict(s)
+            else:
+                # data is a single value
+                d = float(s)
         else:
-            # data is a single value
+            # data is a single numeric value
             d = float(s)
 
         return d
