@@ -75,10 +75,13 @@ class Generalparameters:
 
         self.ucFilename = 'UCRIPS18April2017.gms'
         self.calculateCO2Price = True
-        self.daysOpt = 1
-        self.daysLA = 1
+        self.daysOpt = 1                    # number of days being optimized in each individual UC run
+        self.daysLA = 1                     # number of "Look Ahead Days"
         self.ocAdderMin = 0
-        self.ocAdderMax = 0.05  # $/MWh
+        self.ocAdderMax = 0.05              # $/MWh
+        self.ucDayInitial = 1               # initial day of the year for UC simulation
+        self.ucDayEnd = 365                 # final day of the year for UC simulation
+        self.coldStart = False              # "Cold Start". Read file with resulting UC from pickle file in first run
 
         self.phEff = 0.81
         self.phMaxSoc = 5
@@ -113,7 +116,7 @@ class Generalparameters:
     def __str__(self):
 
         outstr = '#\n# ------ PARAMETER FILE --------\n#\n# Description:\n#\n# End Description.\n#\n'
-        outstr = outstr + 'datadir = {}\n'.format(self.dataRoot)
+        outstr = outstr + 'dataRoot = {}\n'.format(self.dataRoot)
         outstr = outstr + 'pathSysGams = {}\n'.format(self.pathSysGams)
         outstr = outstr + 'runCE = {}\n'.format(self.runCE)
         outstr = outstr + 'runUC = {}\n'.format(self.runUC)
@@ -185,6 +188,10 @@ class Generalparameters:
         outstr = outstr + 'daysLA = {}\n'.format(self.daysLA)
         outstr = outstr + 'ocAdderMin = {}\n'.format(self.ocAdderMin)
         outstr = outstr + 'ocAdderMax = {} \t # $/MWh\n'.format(self.ocAdderMax)
+        outstr = outstr + 'ucDayInitial = {}\n'.format(self.ucDayInitial)
+        outstr = outstr + 'ucDayEnd = {}\n'.format(self.ucDayEnd)
+        outstr = outstr + 'coldStart = {}\n'.format(self.coldStart)
+
         outstr = outstr +  '#\n# -------- PUMPED HYDRO PARAMETERS --------\n#\n'
         outstr = outstr + 'phEff = {}\n'.format(self.phEff)
         outstr = outstr + 'phMaxSoc = {}\n'.format(self.phMaxSoc)
@@ -227,11 +234,11 @@ class Generalparameters:
         """
 
         i = 0
-        data = []
+        data = {}
         with open(os.path.expanduser(fname), 'r') as csvfile:
-            spamreader = csv.reader(csvfile, delimiter='=')
+            csvreader = csv.reader(csvfile, delimiter='=')
 
-            for row in spamreader:
+            for row in csvreader:
                 if len(row) > 0:
                     if row[0][0] != '#':
                         # remove inline comment and trim
@@ -239,88 +246,39 @@ class Generalparameters:
                             row[1] = (row[1][0:(row[1].find('#'))]).strip()
                         else:
                             row[1] = row[1].strip()
-                        data.append(row)
-                        # print('{0:3d} : {1}'.format(i, row))
-                        # i = i + 1
+
+                        key = row[0].strip()
+                        data[key] = row[1]
 
         # lev is an abbreviation for ast.literal_eval()
 
-        self.dataRoot = data[0][1]
-        self.pathSysGams = data[1][1]
-        self.runCE = lev(data[2][1])
-        self.runUC = lev(data[3][1])
-        self.runFirstUCYear = lev(data[4][1])
-        self.startYear = lev(data[5][1])
-        self.endYear = lev(data[6][1])
-        self.yearStepCE = lev(data[7][1])
-        self.daysPerSeason = lev(data[8][1])
-        self.analysisArea = data[9][1]
-        self.useLineLimits = lev(data[10][1])
+        for key in data:
+            print(key + ': ' + data[key])
+            if key in ['ptCurtailed', 'ptCurtailedRegs']:
+                setattr(self, key, set(map(str.strip, data[key].split(','))))
+            elif key == 'ptEligRetCF':
+                setattr(self, key, list(map(str.strip, data[key].split(','))))
+            elif key in ['dataRoot', 'resultsDir', 'pathSysGams']:
+                setattr(self, key, data[key])
+            else:
+                try:
+                    setattr(self, key, lev(data[key]))
+                except (ValueError, SyntaxError):
+                    setattr(self, key, data[key])
 
-        self.referenceCase = lev(data[11][1])
-
-        self.incCurtailments = lev(data[12][1])
-        self.incRegs = lev(data[13][1])
-        self.coolDesignT = data[14][1]
-
-        self.ptCurtailed = set(map(str.strip, data[15][1].split(',')))  # set
-        self.ptCurtailedRegs = set(map(str.strip, data[16][1].split(',')))  # set
-        self.ptCurtailedAll = self.ptCurtailed | self.ptCurtailedRegs
-
-        self.cellsEligibleForNewPlants = data[17][1]
-        self.cellNewTechCriteria = data[18][1]
-
-        self.compressFleet = lev(data[19][1])
-        self.co2CapScenario = data[20][1]
-        self.scenario = data[21][1]
-
-        self.fuelPricesTimeSeries = self.importFuelPrices(self.dataRoot, self.scenario)
-
-        self.resultsDir = data[22][1]
         folderName = ('Area' + self.analysisArea + 'Cells' + self.cellNewTechCriteria +
                       ('Curtail' if self.incCurtailments == True else 'NoCurtail') +
                       ('EnvRegs' if self.incRegs == True else 'NoRegs') +
                       'C' + self.co2CapScenario + 'S' + self.scenario[:3])
         self.resultsDir = os.path.join(self.resultsDir, folderName)
 
-        self.processRBMData = lev(data[23][1])
+        self.ptCurtailedAll = self.ptCurtailed | self.ptCurtailedRegs
 
-        self.tzAnalysis = data[24][1]
-        self.projectName = data[25][1]
-        self.windGenDataYr = lev(data[26][1])
-
-        self.capacExpFilename = data[27][1]
-        #self.maxAddedZonalCapacPerTech = lev(data[27][1])
-        self.maxAddedZonalCapacPerTech = self.readMaxCapacTechParam(data[28][1])
-        self.incITC = lev(data[29][1])
-        self.retirementCFCutoff = lev(data[30][1])
-        self.ptEligRetCF = list(map(str.strip, data[31][1].split(',')))  # list
-        self.selectCurtailDays = lev(data[32][1])
-        self.planningReserve = lev(data[33][1])
-        self.discountRate = lev(data[34][1])
-        self.allowCoalWithoutCCS = lev(data[35][1])
-        self.onlyNSPSUnits = lev(data[36][1])
-        self.permitOncethru = lev(data[37][1])
-
-        self.ucFilename = data[38][1]
-        self.calculateCO2Price = lev(data[39][1])
-        self.daysOpt = lev(data[40][1])
-        self.daysLA = lev(data[41][1])
-        self.ocAdderMin = lev(data[42][1])
-        self.ocAdderMax = lev(data[43][1])
-
-        self.phEff = lev(data[44][1])
-        self.phMaxSoc = lev(data[45][1])
-        self.phInitSoc = lev(data[46][1])
-
-        self.scaleMWtoGW = lev(data[47][1])
-        self.scaleDollarsToThousands = lev(data[48][1])
-        self.scaleLbToShortTon = lev(data[49][1])
-
-        self.ncores_py = lev(data[50][1])
-        self.ncores_gams = lev(data[51][1])
+        self.fuelPricesTimeSeries = self.importFuelPrices(self.dataRoot, self.scenario)
 
         self.setstates()
+
+        self.maxAddedZonalCapacPerTech = self.readMaxCapacTechParam(self.maxAddedZonalCapacPerTech)
 
         # get IPM polygons
         self.fipsToZones, self.fipsToPolys = getIPMPolys(self.dataRoot, self.ipmZones)
@@ -470,10 +428,3 @@ class Generalparameters:
         b = ((a.replace('{', '')).replace('}', '')).replace('\'', '')
 
         return b
-
-
-
-
-
-
-

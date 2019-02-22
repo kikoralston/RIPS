@@ -9,6 +9,7 @@ import multiprocessing as mp
 import shutil
 import gc
 import platform
+import pickle as pk
 
 try:
     from gams import *
@@ -905,6 +906,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
 
     # Set up results lists
     ucResultsByDay = []  # list of UC GAMS models
+
     (genByPlant, regUpByPlant, flexByPlant, contByPlant, turnonByPlant, turnoffByPlant, regDownByPlant,
      onOffByPlant, genToRow, hourToColPlant) = setupHourlyResultsByPlant(daysForUC, fleetUC)
 
@@ -957,7 +959,9 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
         print('---------------------------------------------------------------')
         print()
 
-        ucResultsByDay.append((day, ucModel))  # just saves GAMS model
+        # just saves GAMS model of current day to list
+        ucResultsByDay.append((day, ucModel))
+
         saveHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant,
                                  turnonByPlant, turnoffByPlant, onOffByPlant, genToRow, hourToColPlant, ucModel, day,
                                  daysOpt)
@@ -985,12 +989,24 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
                 except:
                     print("Unexpected error:", sys.exc_info())
 
+        if day % 10 == 0:
+            # write files with current results every 10 days
+            writeHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant,
+                                      turnonByPlant, turnoffByPlant, onOffByPlant, resultsDir, ucYear, 'UC', 'Plant')
+            write2dListToCSV(sysResults, os.path.join(resultsDir, 'systemResultsUC' + str(ucYear) + '.csv'))
+            write2dListToCSV(msAndSs, os.path.join(resultsDir, 'msAndSsUC' + str(ucYear) + '.csv'))
+
+            # save current UC model object as pickle file to allow "Cold start" in case of error
+            with open(os.path.join(resultsDir, "last_ucmodel.p"), "wb") as fp:
+                pk.dump(ucResultsByDay[-1], fp)
+
+    # write final total results
     writeHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant,
                               turnonByPlant, turnoffByPlant, onOffByPlant, resultsDir, ucYear, 'UC', 'Plant')
     write2dListToCSV(sysResults, os.path.join(resultsDir, 'systemResultsUC' + str(ucYear) + '.csv'))
     write2dListToCSV(msAndSs, os.path.join(resultsDir, 'msAndSsUC' + str(ucYear) + '.csv'))
 
-    return (ucResultsByDay, genByPlant)
+    return ucResultsByDay, genByPlant
 
 
 def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenUC, hydroPotentialUC, demandUC,
