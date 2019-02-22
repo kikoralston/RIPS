@@ -1,26 +1,27 @@
 from GAMSAuxFuncs import *
 
 
-def getHourlyCapacitiesForDays(fleetUC, hourlyCapacsCurtailedGens, hoursForUC):
+def getHourlyCapacitiesForDays(fleetUC, hourlyCapacsAllGens, hoursForUC):
     """GET HOURLY CAPACITY VALUES FOR PARTICULAR UC DAY
 
     Isolates hourly capacities for generators just to hours included in UC.
     Returns dict of gen:capacs
 
     :param fleetUC:
-    :param hourlyCapacsCurtailedGens:
+    :param hourlyCapacsAllGens:
     :param hoursForUC:
     :return:
     """
-    (hourlyCapacsUC, hourlyCapacsUCList) = (dict(),[])
+    (hourlyCapacsUC, hourlyCapacsUCList) = (dict(), [])
+
+    # In order to treat cases where the hours of the year extend beyond 8760
+    # repeat hours of last day of the year
+    hoursForUCAux = [((8760 - 24 + (hr % 24 if hr % 24 > 0 else 24)) if hr > 8760 else hr) for hr in hoursForUC]
+
     for row in fleetUC[1:]:
         genSymbol = createGenSymbol(row, fleetUC[0])
 
-        if genSymbol in hourlyCapacsCurtailedGens.keys():
-            hourlyCapacsDay = [hourlyCapacsCurtailedGens[genSymbol][hr-1] for hr in hoursForUC]
-        else:
-            # no simulation of curtailment for this gen (assume capacity = 100%)
-            hourlyCapacsDay = [1 for hr in hoursForUC]
+        hourlyCapacsDay = [hourlyCapacsAllGens[genSymbol][hr-1] for hr in hoursForUCAux]
 
         hourlyCapacsUC[genSymbol] = hourlyCapacsDay
         hourlyCapacsUCList.append([genSymbol] + hourlyCapacsDay)

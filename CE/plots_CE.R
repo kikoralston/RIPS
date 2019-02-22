@@ -650,6 +650,9 @@ plot.donut.chart <- function(fileGenfleet) {
   
   df.fleet <- read.csv(file=fileGenfleet, 
                        stringsAsFactors = FALSE) %>%
+    # remove plants retired
+    filter(YearRetiredByAge >= 2050 | is.na(YearRetiredByAge)) %>%
+    filter(is.na(YearRetiredByCE)) %>%
     mutate(PlantType = as.character(PlantType)) %>%
     mutate(PlantType = ifelse(PlantType %in% otherTypes, 'Other', PlantType)) %>%
     mutate(Modeled.Fuels = ifelse(PlantType == 'Other', 'Other', Modeled.Fuels)) %>%

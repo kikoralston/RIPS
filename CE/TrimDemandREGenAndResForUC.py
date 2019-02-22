@@ -75,7 +75,7 @@ def getResForUC(day, daysOpt, daysLA, hourlyRegUp, hourlyRegDown, hourlyFlex, ho
     return regUpUC, regDownUC, flexUC, contUC
 
 
-def getUCHours(day,daysOpt,daysLA):
+def getUCHours(day, daysOpt, daysLA):
     """ Get list with hours of year for UC model
 
     :param day: first day of UC

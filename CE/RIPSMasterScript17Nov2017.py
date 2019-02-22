@@ -118,20 +118,6 @@ def masterFunction(genparam, reserveparam, curtailparam):
                                                                                zonalDemandProfile, currYear, currCo2Cap,
                                                                                genparam, reserveparam, curtailparam)
 
-                                                                               # startYear, currYear,
-                                                                               # fuelPricesTimeSeries, states,
-                                                                               # statesAbbrev, scaleMWtoGW,
-                                                                               # scaleDollarsToThousands, currCo2Cap,
-                                                                               # calculateCO2Price, scaleLbToShortTon,
-                                                                               # daysForUC, daysOpt, daysLA, tzAnalysis,
-                                                                               # projectName, dataRoot, resultsDir,
-                                                                               # ocAdderMin, ocAdderMax, windGenDataYr,
-                                                                               # regLoadFrac, contLoadFrac,
-                                                                               # regErrorPercentile, flexErrorPercentile,
-                                                                               # rrToRegTime, rrToFlexTime, rrToContTime,
-                                                                               # copy.deepcopy(regUpCostCoeffs), xsedeRun,
-                                                                               # runCE, scenario, ucFilename, ipmZones,
-                                                                               # incCurtailments)
         print()
         print('Elapsed Time: ' + str_elapsedtime(t_year))
 
