@@ -253,7 +253,7 @@ class Generalparameters:
         # lev is an abbreviation for ast.literal_eval()
 
         for key in data:
-            print(key + ': ' + data[key])
+            #print(key + ': ' + data[key])
             if key in ['ptCurtailed', 'ptCurtailedRegs']:
                 setattr(self, key, set(map(str.strip, data[key].split(','))))
             elif key == 'ptEligRetCF':
