@@ -752,10 +752,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     :return:
     """
 
-    # daysForUC ????????????
-    # it has to be a list with the days that the UC model is going to be simulated (i think ....)
-
-    daysForUC = list(range(1, 366))
+    daysForUC = list(range(genparam.ucDayInitial, (genparam.ucDayEnd + 1)))
 
     (startYear, fuelPricesTimeSeries, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon,
      daysOpt,  daysLA, projectName, resultsDir, ocAdderMin, ocAdderMax,
