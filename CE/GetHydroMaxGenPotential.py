@@ -12,6 +12,8 @@ import pandas as pd
 import pickle as pk
 import datetime as dt
 import calendar
+import tarfile
+import shutil
 
 
 def getHydroEPotential(fleet, demandZonal, repAndSpeHoursDict, currYear, genparam, curtailparam):
@@ -490,5 +492,61 @@ def processHydroPotential(pathin, pathout):
 
 #    with open(os.path.join(pathout, 'monthlyhydropotential.pk'), 'rb') as f:
 #        x = pk.load(f)
+
+
+def processDailyReleases(pathin, pathout):
+    """
+    This routine processes the raw hydro release data created by Nathalie Voisin (PNNL) and Yifan Cheng (UW)
+
+    February 2019
+
+    :return:
+    """
+
+    # create tmp folder for processing data
+    os.mkdir(os.path.join(pathout, 'tmp'))
+
+    list_tarfiles = [f for f in os.listdir(pathin) if f[-4:] == '.tgz']
+
+    for i, f in enumerate(list_tarfiles):
+
+        print('{0:4d}. Processing daily releases file {1}'.format(i, f))
+
+        tar = tarfile.open(os.path.join(pathin, f), "r:gz")
+
+        # get list with names of txt files in tar
+        listfiles = tar.getnames()
+
+        # extract all files and close tar
+        tar.extractall(path=os.path.join(pathout, 'tmp'))
+        tar.close()
+
+        df_total = None
+
+        for f in listfiles:
+            fname = os.path.join(pathout, 'tmp', f)
+            df = pd.read_csv(fname)
+
+            gcm_rcp = df['gcm_rcp'].iloc[0]
+            del df['gcm_rcp']
+
+            if df_total is None:
+                df_total = pd.DataFrame(df)
+            else:
+                df_total = df_total.append(df, ignore_index=True)
+
+        # save df_total to pickle file
+        df_total.to_pickle(os.path.join(pathout, 'daily_releases_{}.pk'.format(gcm_rcp)))
+
+        # delete extracted data
+        shutil.rmtree(os.path.dirname(os.path.join(pathout, 'tmp', listfiles[0])))
+
+    os.rmdir(os.path.join(pathout, 'tmp'))
+
+
+
+
+
+
 
 
