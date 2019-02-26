@@ -5,20 +5,70 @@
 
 from AuxFuncs import *
 import os
+import json
 
 
-def getCo2Cap(co2CapScenario):
+def readInitialCondCO2(fname):
+    """ Reads file with initial conditions of CO2 emission
+
+    File should be a json with the following format
+
+    {
+       "startYr": "YYYY",
+       "startEms": "XXXX"
+    }
+
+    or
+
+    [
+       {
+          "startYr": "YYYY",
+          "startEms": "XXXX"
+       }
+    ]
+
+    :param fname: string with complete path to file
+    :return: tuple with Start year and total emissions in start year (in short tons)
+    """
+
+    if os.path.exists(fname):
+        with open(fname) as f:
+            data = json.load(f)
+
+        # check if it is a list
+        if isinstance(data, list):
+            data = data[0]
+
+        startYr = int(data['startYr'])
+        startEms = float(data['startEms'])
+    else:
+
+        startYr = 2015
+        startEms = 251929000
+
+        print()
+        print('File {0} not found!'.format(fname))
+        print('Setting default values for CO2 emissions parameters!')
+        print('Start Year: {0:4d}'.format(startYr))
+        print('Start Emission: {0:,d} short tons CO2'.format(startEms))
+        print()
+
+    return startYr, startEms
+
+
+def getCo2Cap(co2CapScenario, startEms=251929000):
     """
     Get CO2 cap for given scenario. Refs: For emissions limits, see: see Databases, CO2EmissionERCOT,
     UCBaseCase2015Output9April2017 folder, baseCaseCo2Emissions9April2017.xlsx.
 
     :param co2CapScenario: name of CO2 scenario
+    :param startEms: total emissions (in short tons) in initial year
     :return:
     """
     if co2CapScenario == 'cpp':
-        capYear, capEms = 2050, 87709115  # 50% redux
+        capYear, capEms = 2050, 0.5*startEms  # 50% redux
     elif co2CapScenario == 'deep':
-        capYear, capEms = 2050, 35083646  # 80% redux
+        capYear, capEms = 2050, 0.8*startEms  # 80% redux
     elif co2CapScenario == 'none':
         capYear, capEms = 2050, float('inf')  # set to arbitrarily large value so effectively no cap
 
@@ -35,9 +85,9 @@ def interpolateCO2Cap(currYear, genparam):
     :param genparam: object of class Generalparameters
     :return: projected co2 emissions cap for current year (short tons)
     """
-    startYr, startEms = 2015, 175418230
+    startYr, startEms = readInitialCondCO2(fname=os.path.join(genparam.dataRoot, 'co2values.json'))
 
-    endYr, endLimit = getCo2Cap(genparam.co2CapScenario)
+    endYr, endLimit = getCo2Cap(genparam.co2CapScenario, startEms)
 
     #if currYear == startYr: startEms *= 10  # if first year, don't want to enforce co2 cap, so just scale up
 
