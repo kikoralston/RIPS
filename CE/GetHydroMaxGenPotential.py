@@ -353,7 +353,7 @@ def compute_max_daily_hydro(fleet, currYear, dataRoot):
     return dailyPotentialDict
 
 
-def importHydroDailyReleases(currYear, dataRoot):
+def importHydroDailyReleases(currYear, dataRoot, gcm):
     """ Returns hydro daily releases for current year in 2d list w/ col 1 = plant IDs
 
     Read file with daily hydro releases created by PNNL (Assumes format is the same as the monthly file)
@@ -364,10 +364,9 @@ def importHydroDailyReleases(currYear, dataRoot):
     """
     dataDir = os.path.join(dataRoot, 'HydroMonthlyDataPNNL')
 
-    releasesAllYears = readCSVto2dList(os.path.join(dataDir, 'monhydrogen_1550.csv'))
+    with open(os.path.join(dataDir, 'daily_releases_{}.pk'.format(gcm)), 'rb') as f:
+        releasesAllYears = pk.load(f)
 
-    # First row in data is months listed w/out years; assign years to each col
-    startYr, endYr = [2015, 2050]
 
     yrIndex = (currYear - startYr) * 365 + 1  # +1 to account for first col = PlantID
 
@@ -529,6 +528,9 @@ def processDailyReleases(pathin, pathout):
 
             gcm_rcp = df['gcm_rcp'].iloc[0]
             del df['gcm_rcp']
+
+            # convert string to datetime
+            df['time'] = pd.to_datetime(df['time'], format='%Y-%m-%d')
 
             if df_total is None:
                 df_total = pd.DataFrame(df)
