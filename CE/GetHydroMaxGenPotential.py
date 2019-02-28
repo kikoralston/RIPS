@@ -306,7 +306,7 @@ def getDailyHydroPotentialsUC(fleetUC, hydroData, daysUC, ucYear):
     return hydroDailyPotential
 
 
-def compute_max_daily_hydro(fleet, currYear, dataRoot):
+def compute_max_daily_hydro(fleet, currYear, genparam, gcm):
     """ Converts monthly hydro capacity for each plant to daily hydro capacity
 
     This conversion follows a simple linear rule with simulated water releases simulated by PNNL
@@ -320,10 +320,10 @@ def compute_max_daily_hydro(fleet, currYear, dataRoot):
     """
 
     # reads monthly hydro potential for year currYear (in MWh)
-    hydroPotentials = importHydroPotentialGen(currYear, dataRoot)
+    hydroPotentials = importHydroPotentialGen(currYear, genparam, gcm=gcm)
 
     # reads daily water releases for year currYear
-    daily_releases = importHydroDailyReleases(currYear, dataRoot)
+    daily_releases = importHydroDailyReleases(currYear, genparam.dataRoot, gcm=gcm)
 
     plantCol, orisCol = fleet[0].index('PlantType'), fleet[0].index('ORIS Plant Code')
     zoneCol = fleet[0].index('Region Name')
@@ -333,8 +333,11 @@ def compute_max_daily_hydro(fleet, currYear, dataRoot):
 
     for row in hydroUnits:
 
+        # oris is a string value
         oris, zone, genSymbol = row[orisCol], row[zoneCol], createGenSymbol(row, fleet[0])
-        daily_releases_unit, hasData = getReleasesForUnit(oris, daily_releases)
+
+        # in daily releases oris code is an integer. So convert variable oris to integer here
+        daily_releases_unit = daily_releases[daily_releases['oris_id'] == int(oris)]
 
         dailyPotential = list()
 
@@ -342,11 +345,13 @@ def compute_max_daily_hydro(fleet, currYear, dataRoot):
         for m in range(1, 13):
             potMonth, hasData = getMonthsPotential(oris, hydroPotentials, [m])
 
-            daysInMonth = getListOfDaysInMonth(m)
+            # get release daily values for this unit in month m
+            values_in_month = daily_releases_unit[daily_releases_unit['time'].dt.month == m]['streamflow_cms'].values
 
-            monthlyReleasesTot = sum([daily_releases_unit[d] for d in daysInMonth])
+            # total accumulated releases for this unit in month m
+            monthlyReleasesTot = values_in_month.sum()
 
-            dailyPotential = dailyPotential + [potMonth * (daily_releases_unit[d]/monthlyReleasesTot) for d in daysInMonth]
+            dailyPotential = dailyPotential + [potMonth * (val/monthlyReleasesTot) for val in values_in_month]
 
         dailyPotentialDict[genSymbol] = dailyPotential
 
@@ -354,23 +359,27 @@ def compute_max_daily_hydro(fleet, currYear, dataRoot):
 
 
 def importHydroDailyReleases(currYear, dataRoot, gcm):
-    """ Returns hydro daily releases for current year in 2d list w/ col 1 = plant IDs
+    """ Returns hydro daily releases for current year
 
     Read file with daily hydro releases created by PNNL (Assumes format is the same as the monthly file)
 
     :param currYear: (integer)
     :param dataRoot: (string)
-    :return: 2d list w/ col 1 = plant IDs
+    :param gcm: (string) GCM_RCP
+    :return:
     """
     dataDir = os.path.join(dataRoot, 'HydroMonthlyDataPNNL')
 
     with open(os.path.join(dataDir, 'daily_releases_{}.pk'.format(gcm)), 'rb') as f:
         releasesAllYears = pk.load(f)
 
+    # convert string to datetime
+    releasesAllYears['time'] = pd.to_datetime(releasesAllYears['time'], format='%Y-%m-%d')
 
-    yrIndex = (currYear - startYr) * 365 + 1  # +1 to account for first col = PlantID
+    releasesCurrYear = releasesAllYears[releasesAllYears['time'].dt.year == currYear]
+    releasesCurrYear = releasesCurrYear.reset_index(drop=True)
 
-    return [[row[0]] + row[yrIndex:yrIndex + 365] for row in releasesAllYears]
+    return releasesCurrYear
 
 
 def getReleasesForUnit(oris, daily_releases):
