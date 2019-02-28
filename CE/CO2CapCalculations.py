@@ -44,7 +44,8 @@ def readInitialCondCO2(fname):
     else:
 
         startYr = 2015
-        startEms = 251929000
+        #startEms = 251929000
+        startEms = 380000000
 
         print()
         print('File {0} not found!'.format(fname))
