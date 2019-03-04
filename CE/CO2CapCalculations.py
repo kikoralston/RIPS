@@ -57,7 +57,7 @@ def readInitialCondCO2(fname):
     return startYr, startEms
 
 
-def getCo2Cap(co2CapScenario, startEms=251929000):
+def getCo2Cap(co2CapScenario, startEms=380000000):
     """
     Get CO2 cap for given scenario. Refs: For emissions limits, see: see Databases, CO2EmissionERCOT,
     UCBaseCase2015Output9April2017 folder, baseCaseCo2Emissions9April2017.xlsx.
