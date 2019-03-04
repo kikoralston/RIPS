@@ -457,7 +457,7 @@ def calculateSeasonalWeights(zonalDemandProfile, repHrsBySeason, regHrsBySeason)
             demand = sumZonalData(zonalDemandProfile[gcm])
             (repHrs, regHrs) = (repHrsBySeason[gcm][season], regHrsBySeason[gcm][season])
             repHourlyDemand = repHourlyDemand + sum([demand[hr - 1] for hr in repHrs])
-            regHourlyDemand = repHourlyDemand + sum([demand[hr - 1] for hr in regHrs])
+            regHourlyDemand = regHourlyDemand + sum([demand[hr - 1] for hr in regHrs])
 
         # average over all gcms
         seasonWeight = (regHourlyDemand + repHourlyDemand) / repHourlyDemand
