@@ -113,7 +113,7 @@ def masterFunction(genparam, reserveparam, curtailparam):
                 if currYear == genparam.startYear:
                     genFleetNoRetiredUnits = genFleet
                 else:
-                    genFleetNoRetiredUnits = loadCEFleet(currYear, resultsDir)
+                    genFleetNoRetiredUnits = loadCEFleet(currYear, genparam.resultsDir)
 
                 (ucResultsByDay, hourlyGenerationByPlants) = runUnitCommitment(genFleetNoRetiredUnits,
                                                                                zonalDemandProfile, currYear, currCo2Cap,
@@ -449,7 +449,7 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
     write2dListToCSV(genFleet, os.path.join(resultsDir, 'genFleetAfterCE' + str(currYear) + '.csv'))
 
     # Write gen fleet for UC to special folder for ease of transfer
-    ceUCDir = os.path.join(genparam.dataRoot, 'CEtoUC')
+    ceUCDir = os.path.join(genparam.resultsDir, 'CEtoUC')
 
     if not os.path.exists(ceUCDir): os.makedirs(ceUCDir)
     write2dListToCSV(genFleetNoRetiredUnits, os.path.join(ceUCDir, 'genFleetCEtoUC' + str(currYear) + '.csv'))
