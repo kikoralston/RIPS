@@ -43,16 +43,14 @@ Parameters
          pCapactech(tech)                               nameplate capacity of new builds for cost calculations [GW]
          pCapactechcurtailed(g,c,techcurtailed,h)       hourly capacity of new builds accounting for curtailments [GW]
 *TIME- AND SPACE-VARYING OP COSTS AND HEAT RATES [MMBtu/GWh]
-*         pHr(egu)                        heat rate of existing generators [MMBtu per GWh]
-*         pHrtech(tech)                   heat rate of new builds [MMBtu per GWh]
          pOpcost(egu)                    total operational cost [thousand USD per GWh] = VOM + FuelCost*HR + EmsCost*EmsRate*HR
          pOpcosttech(tech)               total operational cost [thousand USD per GWh] = VOM + FuelCost*HR + EmsCost*EmsRate*HR
 *NEW TECH FIXED COST PARAMETERS
          pFom(tech)                      fixed O&M cost [thousand USD per GW per yr]
          pOcc(tech)                      overnight capital cost [thousand USD per GW]
 *EMISSIONS RATES [short ton/MMBtu]
-         pCO2emrate(egu)                 CO2 emissions rate of existing generators [short ton per GWh]
-         pCO2emratetech(tech)            CO2 emissions rate of potential new generators [short ton per GWh]
+         pCO2emrate(egu)                 CO2 emissions rate of existing generators [10^3 short tons per GWh]
+         pCO2emratetech(tech)            CO2 emissions rate of potential new generators [10^3 short tons per GWh]
 *EMISSIONS CAP AND COST
          pCO2emcap                       CO2 annual emissions cap [10^3 short tons]
 *HOURLY CAPACITY FACTORS FOR RENEWABLES
