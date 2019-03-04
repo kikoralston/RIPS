@@ -106,7 +106,7 @@ $if not set gdxincname $abort 'no include file name for data file provided'
 $gdxin %gdxincname%
 $load egu, windegu, solaregu, hydroegu, pumphydroegu, type, tech, tech2d, techcurtailed, techrenew, technotcurtailed, c, g
 $load h, h2, springh, summerh, winterh, fallh, specialh, z, l, peakh
-$load pCapac, pCapactech, pCapactechcurtailed, pHr, pHrtech, pOpcost, pOpcosttech
+$load pCapac, pCapactech, pCapactechcurtailed, pOpcost, pOpcosttech
 $load pFom, pOcc, pCO2emrate, pCO2emratetech, pCO2emcap, pCf, pMaxgenwind, pMaxgensolar
 $load pMaxhydrogensum, pMaxhydrogenspr, pMaxhydrogenwin, pMaxhydrogenfal, pMaxhydrogenspe
 $load pDemand, pEguzones, pCellzones, pLinesources, pLinesinks, pLinecapacs
