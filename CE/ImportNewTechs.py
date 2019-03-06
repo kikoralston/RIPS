@@ -44,6 +44,16 @@ def getNewTechs(currYear, genparam, reserveparam):
 
     modCostsForCoolingTechs(newPlantDataDir, newTechsCE)
 
+    # add column with CO2 emissions in ton/GWh
+    newTechsCE[0] = newTechsCE[0] + ['CO2EmRate(ton/GWh)']
+
+    co2LbCol = newTechsCE[0].index('CO2EmissionsRate(lb/MMBtu)')
+    hrCol = newTechsCE[0].index('HR(Btu/kWh)')
+
+    for row in newTechsCE[1:]:
+        co2ratevalue, hrvalue = float(row[co2LbCol]), float(row[hrCol])
+        row.append((co2ratevalue/2000)*hrvalue)
+
     return newTechsCE
 
 

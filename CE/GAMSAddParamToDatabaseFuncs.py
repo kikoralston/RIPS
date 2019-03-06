@@ -70,13 +70,13 @@ def createDictIndexedByZone(dataDict, ipmZones, ipmZoneNums, *args):
 def addEguParams(db, genFleet, genSet, genSymbols, ipmZones, ipmZoneNums, scaleLbToShortTon, scaleMWtoGW):
 
     # Heat rate
-    scalarHrToMmbtuPerMwh = 1 / 1000
-    hrDict = getEguParamDict(genFleet, 'Heat Rate (Btu/kWh)', scalarHrToMmbtuPerMwh * scaleMWtoGW)
-    (hrName, hrDescrip) = ('pHr', 'heat rate (MMBtu/GWh)')
-    hrParam = add1dParam(db, hrDict, genSet, genSymbols, hrName, hrDescrip)
+    #scalarHrToMmbtuPerMwh = 1 / 1000
+    #hrDict = getEguParamDict(genFleet, 'Heat Rate (Btu/kWh)', scalarHrToMmbtuPerMwh * scaleMWtoGW)
+    #(hrName, hrDescrip) = ('pHr', 'heat rate (MMBtu/GWh)')
+    #hrParam = add1dParam(db, hrDict, genSet, genSymbols, hrName, hrDescrip)
 
     # Emissions rate
-    emRateDict = getEguParamDict(genFleet, 'CO2EmRate(lb/MMBtu)', 1 / scaleLbToShortTon)
+    emRateDict = getEguParamDict(genFleet, 'CO2EmRate(ton/GWh)', 1)
     (emRateName, emRateDescrip) = ('pCO2emrate', 'emissions rate (short ton/MMBtu)')
     emRateParam = add1dParam(db, emRateDict, genSet, genSymbols, emRateName, emRateDescrip)
 
@@ -278,61 +278,82 @@ def addTechParams(db, newTechsCE, techSet, techSymbols, hourSet, hourSymbols,
                                  1 / scaleMWtoGW)
     (capacName, capacDescrip) = ('pCapactech', 'capacity (GW) of techs')
     techCapacParam = add1dParam(db, capacDict, techSet, techSymbols, capacName, capacDescrip)
+
     # Heat rate
-    scalarHrToMmbtuPerMwh = 1 / 1000
-    hrDict = getTechParamDict(newTechsCE, techSymbols, 'HR(Btu/kWh)', ptCurtailed,
-                              scalarHrToMmbtuPerMwh * scaleMWtoGW)
-    (hrName, hrDescrip) = ('pHrtech', 'heat rate (MMBtu/GWh)')
-    techHrParam = add1dParam(db, hrDict, techSet, techSymbols, hrName, hrDescrip)
+    #scalarHrToMmbtuPerMwh = 1 / 1000
+    #hrDict = getTechParamDict(newTechsCE, techSymbols, 'HR(Btu/kWh)', ptCurtailed,
+    #                          scalarHrToMmbtuPerMwh * scaleMWtoGW)
+    #(hrName, hrDescrip) = ('pHrtech', 'heat rate (MMBtu/GWh)')
+    #techHrParam = add1dParam(db, hrDict, techSet, techSymbols, hrName, hrDescrip)
+
     # Op cost
     ocDict = getTechOpCostDict(newTechsCE, ptCurtailed, scaleMWtoGW / scaleDollarsToThousands)
     (ocName, ocDescrip) = ('pOpcosttech', 'op cost for tech (thousand$/GWh)')
     ocParam = add1dParam(db, ocDict, techSet, techSymbols, ocName, ocDescrip)
+
     # Fixed O&M
     fixedomDict = getTechParamDict(newTechsCE, techSymbols, 'FOM(2012$/MW/yr)', ptCurtailed,
                                    scaleMWtoGW * 1 / scaleDollarsToThousands)
     for tech in fixedomDict: fixedomDict[tech] = convertCostToTgtYr('fom', fixedomDict[tech])
     (fixedomName, fixedomDescrip) = ('pFom', 'fixed O&M (thousand$/GW/yr)')
     techFixedomParam = add1dParam(db, fixedomDict, techSet, techSymbols, fixedomName, fixedomDescrip)
+
     # Overnight capital cost
     occDict = getTechParamDict(newTechsCE, techSymbols, 'CAPEX(2012$/MW)', ptCurtailed,
                                scaleMWtoGW * 1 / scaleDollarsToThousands)
     for tech in occDict: occDict[tech] = convertCostToTgtYr('occ', occDict[tech])
     (occName, occDescrip) = ('pOcc', 'overnight capital cost (thousand$/GW)')
     techOccParam = add1dParam(db, occDict, techSet, techSymbols, occName, occDescrip)
+
     # Emissions rate
-    emRateDict = getTechParamDict(newTechsCE, techSymbols, 'CO2EmissionsRate(lb/MMBtu)', ptCurtailed,
-                                  1 / scaleLbToShortTon)
-    (emRateName, emRateDescrip) = ('pCO2emratetech', 'co2 emissions rate (short ton/MMBtu)')
+    emRateDict = getTechParamDict(newTechsCE, techSymbols, 'CO2EmRate(ton/GWh)', ptCurtailed)
+    (emRateName, emRateDescrip) = ('pCO2emratetech', 'co2 emissions rate (short ton/GWh)')
     techEmRateParam = add1dParam(db, emRateDict, techSet, techSymbols, emRateName, emRateDescrip)
+
     # Lifetime
     lifetimeDict = getTechParamDict(newTechsCE, techSymbols, 'Lifetime(years)', ptCurtailed)
     (lifetimeName, lifetimeDescrip) = ('pLife', 'years')
     techLifetimeParam = add1dParam(db, lifetimeDict, techSet, techSymbols, lifetimeName, lifetimeDescrip)
 
 
-# Creates dict of (techSymbol:paramVal) for given parameter name
 def getTechParamDict(newTechsCE, techSymbols, paramColName, ptCurtailed, *scalar):
+    """Creates dict of (techSymbol:paramVal) for given parameter name
+
+    :param newTechsCE:
+    :param techSymbols:
+    :param paramColName:
+    :param ptCurtailed:
+    :param scalar:
+    :return:
+    """
     techCol = newTechsCE[0].index('TechnologyType')
     paramCol = newTechsCE[0].index(paramColName)
     techSymbolsInNewTechsCE = [createTechSymbol(row, newTechsCE[0], ptCurtailed) for row in newTechsCE]
     paramDict = dict()
+
     for techSymbol in techSymbols:
         rowIdx = techSymbolsInNewTechsCE.index(techSymbol)
         if len(scalar) > 0:
             paramDict[techSymbol] = float(newTechsCE[rowIdx][paramCol]) * scalar[0]
         else:
             paramDict[techSymbol] = float(newTechsCE[rowIdx][paramCol])
+
     return paramDict
 
 
-# Takes in techs and returns dictionary of (tech:opCost)
 def getTechOpCostDict(newTechs, ptCurtailed, scalar):
+    """Takes in techs and returns dictionary of (tech:opCost)
+
+    :param newTechs:
+    :param ptCurtailed:
+    :param scalar:
+    :return:
+    """
     opCosts = calcOpCostsTech(newTechs)
     paramDict = dict()
     for idx in range(1, len(newTechs)):
-        paramDict[createTechSymbol(newTechs[idx], newTechs[0], ptCurtailed)] = opCosts[
-                                                                                   idx - 1] * scalar  # op costs = 1d list of vals, so offset by 1
+        # op costs = 1d list of vals, so offset by 1
+        paramDict[createTechSymbol(newTechs[idx], newTechs[0], ptCurtailed)] = opCosts[idx-1]*scalar
     return paramDict
 
 
@@ -817,8 +838,10 @@ def add3dParam(db, param3dDict, idxSet1, idxSet2, idxSet3, paramName, paramDescr
 def getEguParamDict(genFleet, paramColName, *scalar):
     paramCol = genFleet[0].index(paramColName)
     paramDict = dict()
+
     for row in genFleet[1:]:
         paramDict[createGenSymbol(row, genFleet[0])] = float(row[paramCol]) * scalar[0]
+
     return paramDict
 
 

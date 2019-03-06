@@ -80,6 +80,16 @@ def setupGeneratorFleet(currYear, genparam, reserveparam):
         else:
             row.append('NA')
 
+    # add column with CO2 emissions in ton/GWh
+    baseGenFleet[0] = baseGenFleet[0] + ['CO2EmRate(ton/GWh)']
+
+    co2LbCol = baseGenFleet[0].index('CO2EmRate(lb/MMBtu)')
+    hrCol = baseGenFleet[0].index('Heat Rate (Btu/kWh)')
+
+    for row in baseGenFleet[1:]:
+        co2ratevalue, hrvalue = float(row[co2LbCol]), float(row[hrCol])
+        row.append((co2ratevalue/2000)*hrvalue)
+
     return baseGenFleet
 
 
