@@ -27,11 +27,17 @@ def combineWindOrSolarPlants(fleetUC, zone, dataRoot, fuelType, plantType):
         for idx in reversed(rowIdxs): fleetUC.pop(idx)
 
 
-# Adds parameters to new wind or solar row
-# Inputs: gen fleet, new gen row (fill values in), row indices of units
-# that are being combined into new gen row, fuel & plant type of units being
-# combined.
 def addParametersToNewWindOrSolarRow(fleetUC, newRow, rowIdxs, fuelType, plantType, zone, dataRoot):
+    """ Adds parameters to new wind or solar row
+
+    :param fleetUC: gen fleet
+    :param newRow: new gen row (fill values in)
+    :param rowIdxs: row indices of units that are being combined into new gen row
+    :param fuelType: fuel & plant type of units being combined.
+    :param plantType: fuel & plant type of units being combined.
+    :param zone:
+    :param dataRoot:
+    """
     addStateZoneOrisFuelOnlineYearAndPlantType(fleetUC, newRow, fuelType, plantType, zone)
     addRegEligAndCost(fleetUC, newRow, rowIdxs[0])
     (capacCol, hrCol) = (fleetUC[0].index('Capacity (MW)'), fleetUC[0].index('Heat Rate (Btu/kWh)'))
@@ -42,6 +48,7 @@ def addParametersToNewWindOrSolarRow(fleetUC, newRow, rowIdxs, fuelType, plantTy
                                 fleetUC[0].index('SO2EmRate(lb/MMBtu)'),
                                 fleetUC[0].index('CO2EmRate(lb/MMBtu)'))
     (newRow[noxCol], newRow[so2Col], newRow[co2Col]) = (0, 0, 0)
+
     # Fill in rand adder col w/ average of other rows
     randAdderCol = fleetUC[0].index('RandOpCostAdder($/MWh)')
     randAdders = [float(fleetUC[idx][randAdderCol]) for idx in rowIdxs]
@@ -49,11 +56,16 @@ def addParametersToNewWindOrSolarRow(fleetUC, newRow, rowIdxs, fuelType, plantTy
     capacFracs = [val / sum(capacs) for val in capacs]
     avgRandAdder = sum([randAdders[idx] * capacFracs[idx] for idx in range(len(randAdders))])
     newRow[randAdderCol] = avgRandAdder
+
     # Add UC, VOM & FOM parameters
     tempFleet = [fleetUC[0], newRow]
     ucHeaders = ['MinDownTime(hrs)', 'RampRate(MW/hr)', 'MinLoad(MW)', 'StartCost($)']
     addUCValues(tempFleet, ucHeaders, importPhorumData(dataRoot))
     addVomAndFomValues(tempFleet, importVomAndFomData(dataRoot))
+
+    # fill in CO2 emission value (ton/GWh)
+    co2TonGwhCol = fleetUC[0].index('CO2EmRate(ton/GWh)')
+    newRow[co2TonGwhCol] = 0
 
 
 # Copy down reg eligibility & cost from first wind and solar row
