@@ -68,8 +68,8 @@ def addNewBuildsToList(newTech, capacExpBuilds, newCol, rowLabels):
             capacExpBuilds.append([symbol] + ['']*(newCol-1) + [value])
                 
 
-def addNewGensToFleet(genFleet,newCurtTech,newRETech,newNotCurtTech,newTechsCE,
-        currYear,ipmZones,ipmZoneNums,ocAdderMin,ocAdderMax,cellsToZone,ptCurtailed,statePolys):
+def addNewGensToFleet(genFleet, newCurtTech, newRETech, newNotCurtTech, newTechsCE, currYear, ipmZones, ipmZoneNums,
+                      ocAdderMin, ocAdderMax, cellsToZone, ptCurtailed, statePolys):
     """ADD CAPACITY EXPANSION BUILD DECISIONS TO FLEET
 
     Inputs: gen fleet (2d list), list of new builds (list of tuples of (techtype,#builds)),
@@ -146,6 +146,8 @@ def addGeneratorsToFleet(genFleetWithCEResults, newCurtTech, newRETech, newNotCu
                          'On Line Year','Retirement Year', 'Latitude','Longitude','RandOpCostAdder($/MWh)',
                          'RegOfferCost($/MW)','RegOfferElig','Cooling Tech', 'Region Name', 'coolingDesignT')
 
+    fleetCO2EmsTonGwhCol = genFleetWithCEResults[0].index('CO2EmRate(ton/GWh)')
+
     #Get tech values
     techSymbols = [createTechSymbol(row,newTechsCE[0],ptCurtailed) for row in newTechsCE]
     techTechs = [row[techTypeCol] for row in newTechsCE]
@@ -167,17 +169,18 @@ def addGeneratorsToFleet(genFleetWithCEResults, newCurtTech, newRETech, newNotCu
     #Get max ORIS ID
     newOrisID = max([int(row[fleetOrisCol]) for row in genFleetWithCEResults[1:]])+1
     # (state,unitID) = ('Texas','1')
+
     #For each candidate tech, check if any added, and if so add to fleet
     for newGenerators in [newCurtTech,newRETech,newNotCurtTech]:
         for (techAndLoc,newBuilds) in newGenerators:
             loc,techAndCT = techAndLoc[0],techAndLoc[1]
             techRow = techSymbols.index(techAndCT)        
-            if newBuilds>0: 
+            if newBuilds > 0:
                 tech = techTechs[techRow]
                 techCapac = techCapacs[techRow]
                 techHr = techHrs[techRow]
-                techVom = convertCostToTgtYr('vom',float(techVoms[techRow]))
-                techFom = convertCostToTgtYr('fom',float(techFoms[techRow]))
+                techVom = convertCostToTgtYr('vom', float(techVoms[techRow]))
+                techFom = convertCostToTgtYr('fom', float(techFoms[techRow]))
                 techCO2Em = techCO2Ems[techRow]
                 techFuel = techFuels[techRow]
                 techMinDown = techMinDowns[techRow]
@@ -186,14 +189,17 @@ def addGeneratorsToFleet(genFleetWithCEResults, newCurtTech, newRETech, newNotCu
                 techRegCost = techRegCosts[techRow]
                 techRegOffer = techRegOffers[techRow]
                 techCoolTech = techCoolTechs[techRow]
-                techStartCost = convertCostToTgtYr('startup',float(techStartCosts[techRow]))
+                techStartCost = convertCostToTgtYr('startup',cfloat(techStartCosts[techRow]))
 
                 techcoolDesignT = techcoolDesignTs[techRow]
 
-                #Check
+                techCO2EmTonGwh = (techCO2Em/2000) * techHr
+
+                # Check
                 if 'OT' in techAndCT or 'RC' in techAndCT or 'DC' in techAndCT:
-                    techCheck,coolCheck = getTechAndCoolFromTechSymbol(techAndCT)
-                    print(techCheck,coolCheck,techAndCT,tech,techCoolTech)
+                    techCheck, coolCheck = getTechAndCoolFromTechSymbol(techAndCT)
+                    print(techCheck, coolCheck, techAndCT, tech, techCoolTech)
+
                 for i in range(int(newBuilds)):
                     genFleetWithCEResults.append(['']*len(genFleetWithCEResults[0]))
                     #Tech info
@@ -214,11 +220,13 @@ def addGeneratorsToFleet(genFleetWithCEResults, newCurtTech, newRETech, newNotCu
                     genFleetWithCEResults[-1][fleetRampCol] = techRamp
                     genFleetWithCEResults[-1][fleetMinLoadCol] = techMinLoad
                     genFleetWithCEResults[-1][fleetStartCostCol] = techStartCost
-                    genFleetWithCEResults[-1][fleetRandAdderCol] = random.uniform(ocAdderMin,ocAdderMax)
+                    genFleetWithCEResults[-1][fleetRandAdderCol] = random.uniform(ocAdderMin, ocAdderMax)
                     genFleetWithCEResults[-1][fleetRegCostCol] = techRegCost
                     genFleetWithCEResults[-1][fleetRegOfferCol] = techRegOffer
                     genFleetWithCEResults[-1][fleetCoolCol] = techCoolTech
                     genFleetWithCEResults[-1][fleetcoolDesignTCol] = techcoolDesignT
+
+                    genFleetWithCEResults[-1][fleetCO2EmsTonGwhCol] = techCO2EmTonGwh
 
                     #Location info (either z1,z2,... for RE/not curtailed or cell lat_lon for curtailed tech)
                     if loc in [createZoneSymbol(zoneNum) for zoneNum in ipmZoneNums]: 
