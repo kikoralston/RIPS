@@ -189,7 +189,7 @@ def addGeneratorsToFleet(genFleetWithCEResults, newCurtTech, newRETech, newNotCu
                 techRegCost = techRegCosts[techRow]
                 techRegOffer = techRegOffers[techRow]
                 techCoolTech = techCoolTechs[techRow]
-                techStartCost = convertCostToTgtYr('startup',cfloat(techStartCosts[techRow]))
+                techStartCost = convertCostToTgtYr('startup', float(techStartCosts[techRow]))
 
                 techcoolDesignT = techcoolDesignTs[techRow]
 
