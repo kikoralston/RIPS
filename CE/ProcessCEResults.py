@@ -193,7 +193,7 @@ def addGeneratorsToFleet(genFleetWithCEResults, newCurtTech, newRETech, newNotCu
 
                 techcoolDesignT = techcoolDesignTs[techRow]
 
-                techCO2EmTonGwh = (techCO2Em/2000) * techHr
+                techCO2EmTonGwh = (float(techCO2Em)/2000) * float(techHr)
 
                 # Check
                 if 'OT' in techAndCT or 'RC' in techAndCT or 'DC' in techAndCT:
