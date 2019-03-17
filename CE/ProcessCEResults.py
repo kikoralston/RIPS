@@ -128,6 +128,8 @@ def addGeneratorsToFleet(genFleetWithCEResults, newCurtTech, newRETech, newNotCu
     :param ptCurtailed:
     :param statePolys:
     """
+
+    # get column positions in list of New techs
     (techTypeCol,techCapacCol,techHrCol,techVomCol,techFomCol,techCo2EmsCol,techFuelCol, techMinDownCol,techRampCol,
      techMinLoadCol,techStartCostCol,techRegCostCol, techRegOfferCol,techCoolCol, techcoolDesignTCol) = \
         get2dListColNums(newTechsCE, 'TechnologyType', 'Capacity(MW)', 'HR(Btu/kWh)','VOM(2012$/MWh)',
@@ -135,6 +137,7 @@ def addGeneratorsToFleet(genFleetWithCEResults, newCurtTech, newRETech, newNotCu
                          'RampRate(MW/hr)', 'MinLoad(MW)', 'StartCost($2011)', 'RegOfferCost($/MW)', 'RegOfferElig',
                          'Cooling Tech', 'coolingDesignT')
 
+    # get column positions in list of existing generator fleet
     (fleetOrisCol,fleetUnitCol,fleetStateCol,fleetYearCol,fleetPlantTypeCol,fleetCapacCol,
      fleetHrCol,fleetVomCol,fleetFomCol,fleetFuelCol,fleetCO2EmsCol,fleetMinDownCol,fleetRampCol,
      fleetMinLoadCol,fleetStartCostCol,fleetOnlineYrCol,fleetIPMRetirementCol,fleetLatCol,
@@ -147,6 +150,7 @@ def addGeneratorsToFleet(genFleetWithCEResults, newCurtTech, newRETech, newNotCu
                          'RegOfferCost($/MW)','RegOfferElig','Cooling Tech', 'Region Name', 'coolingDesignT')
 
     fleetCO2EmsTonGwhCol = genFleetWithCEResults[0].index('CO2EmRate(ton/GWh)')
+    fleetCO2RandErrCol = genFleetWithCEResults[0].index('CO2EmRandErr(ton/GWh)')
 
     #Get tech values
     techSymbols = [createTechSymbol(row,newTechsCE[0],ptCurtailed) for row in newTechsCE]
@@ -227,6 +231,7 @@ def addGeneratorsToFleet(genFleetWithCEResults, newCurtTech, newRETech, newNotCu
                     genFleetWithCEResults[-1][fleetcoolDesignTCol] = techcoolDesignT
 
                     genFleetWithCEResults[-1][fleetCO2EmsTonGwhCol] = techCO2EmTonGwh
+                    genFleetWithCEResults[-1][fleetCO2RandErrCol] = random.uniform(ocAdderMin, ocAdderMax)
 
                     #Location info (either z1,z2,... for RE/not curtailed or cell lat_lon for curtailed tech)
                     if loc in [createZoneSymbol(zoneNum) for zoneNum in ipmZoneNums]: 

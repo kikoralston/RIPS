@@ -62,6 +62,9 @@ def masterFunction(genparam, reserveparam, curtailparam):
     """MASTER FUNCTION
 
     """
+    # initialize random number generator with fixed value (for 'reproducibility')
+    random.seed(a=27081979)
+
     if not os.path.exists(genparam.resultsDir):
         os.makedirs(genparam.resultsDir)
 
@@ -697,8 +700,7 @@ def addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySo
                               ptCurtailedAll, pumpHydroGenSet, pumpHydroGenSymbols, phEff, phMaxSoc, phInitSoc,
                               typeSet, gcmSet):
 
-    addTechParams(db, newTechsCE, techSet, techSymbols, hourSet, hourSymbols,
-                  scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon, ptCurtailedAll)
+    addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon, ptCurtailedAll)
 
     addEguParams(db, genFleetForCE, genSet, genSymbols, ipmZones, ipmZoneNums, scaleLbToShortTon, scaleMWtoGW)
     addPumpHydroParams(db, genFleetForCE, phEff, phMaxSoc, phInitSoc, pumpHydroGenSet, pumpHydroGenSymbols, scaleMWtoGW)

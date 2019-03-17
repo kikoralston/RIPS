@@ -28,10 +28,25 @@ def calcBaseOpCost(fpCol,hrCol,vomCol,fleetOrTechs):
     voms = [float(row[vomCol]) for row in fleetOrTechs[1:]] #$/mwh
     return (list(map(add,voms,map(mul,hrs,fuelPrices))),hrs) #$/mwh
 
-#Calculate op costs for new techs
-def calcOpCostsTech(newTechs):
+
+def calcOpCostsTech(newTechs, dict_out=False):
+    """Calculate op costs for new techs
+
+    :param newTechs:
+    :param dict_out:
+    :return:
+    """
     fuelPriceCol = newTechs[0].index('FuelCost($/MMBtu)')
     hrCol = newTechs[0].index('HR(Btu/kWh)')
     vomCol = newTechs[0].index('VOM(2012$/MWh)')
+    typeCol = newTechs[0].index('TechnologyType')
+
     baseOpCosts = calcBaseOpCost(fuelPriceCol,hrCol,vomCol,newTechs)[0] #just op costs
-    return [val+.05 for val in baseOpCosts]
+
+    if dict_out:
+        keys = [row[typeCol] for row in newTechs[1:]]
+        result_out = dict(zip(keys, baseOpCosts))
+    else:
+        result_out = baseOpCosts
+
+    return result_out

@@ -80,15 +80,20 @@ def setupGeneratorFleet(currYear, genparam, reserveparam):
         else:
             row.append('NA')
 
-    # add column with CO2 emissions in ton/GWh
-    baseGenFleet[0] = baseGenFleet[0] + ['CO2EmRate(ton/GWh)']
+    # add columns with CO2 emissions in ton/GWh and random error over original value
+    baseGenFleet[0] = baseGenFleet[0] + ['CO2EmRate(ton/GWh)'] + ['CO2EmRandErr(ton/GWh)']
 
     co2LbCol = baseGenFleet[0].index('CO2EmRate(lb/MMBtu)')
     hrCol = baseGenFleet[0].index('Heat Rate (Btu/kWh)')
 
     for row in baseGenFleet[1:]:
         co2ratevalue, hrvalue = float(row[co2LbCol]), float(row[hrCol])
-        row.append((co2ratevalue/2000)*hrvalue)
+
+        co2rateTonvalue = (co2ratevalue / 2000) * hrvalue
+        co2emRandomError = random.uniform(0, 0.05)
+
+        row.append(co2rateTonvalue)
+        row.append(co2emRandomError)
 
     return baseGenFleet
 
@@ -963,7 +968,9 @@ def addRandomOpCostAdder(baseGenFleet, ocAdderMin, ocAdderMax):
     randValHeader = 'RandOpCostAdder($/MWh)'
     addHeaders(baseGenFleet, [randValHeader])
     randValCol = baseGenFleet[0].index(randValHeader)
-    random.seed()
+
+    #random.seed()
+
     for row in baseGenFleet[1:]: row.append(random.uniform(ocAdderMin, ocAdderMax))
 
 

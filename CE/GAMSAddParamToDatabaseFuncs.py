@@ -75,12 +75,18 @@ def addEguParams(db, genFleet, genSet, genSymbols, ipmZones, ipmZoneNums, scaleL
     #(hrName, hrDescrip) = ('pHr', 'heat rate (MMBtu/GWh)')
     #hrParam = add1dParam(db, hrDict, genSet, genSymbols, hrName, hrDescrip)
 
-    # Emissions rate
+    # Emissions rate ----------------
     emRateDict = getEguParamDict(genFleet, 'CO2EmRate(ton/GWh)', 1)
-    (emRateName, emRateDescrip) = ('pCO2emrate', 'emissions rate (short ton/MMBtu)')
+    emRateRandErrDict = getEguParamDict(genFleet, 'CO2EmRandErr(ton/GWh)', 1)
+
+    # update Emmision rate with random error value
+    for egu in emRateDict:
+        emRateDict[egu] = emRateDict[egu] + emRateRandErrDict[egu]
+
+    (emRateName, emRateDescrip) = ('pCO2emrate', 'emissions rate (short ton/GWh)')
     emRateParam = add1dParam(db, emRateDict, genSet, genSymbols, emRateName, emRateDescrip)
 
-    # Zone
+    # Zone ----------------
     zoneDict = getEguParamZoneDict(genFleet, 'Region Name', ipmZones, ipmZoneNums)
     (zoneName, zoneDesc) = ('pEguzones', 'zone for each egu')
     zoneParam = add1dParam(db, zoneDict, genSet, genSymbols, zoneName, zoneDesc)
@@ -271,46 +277,126 @@ def getSocDict(genFleetForCE, phMaxSoc, pumpHydroGenSymbols, scaleMWtoGW):
 ##################### CAPACITY EXPANSION PARAMETERS ############################
 ################################################################################
 ##### ADD NEW TECH PARAMS FOR CE
-def addTechParams(db, newTechsCE, techSet, techSymbols, hourSet, hourSymbols,
-                  scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon, ptCurtailed):
+def addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon, ptCurtailed):
+
+    # get sets written to data base
+    cellSet = db.get_set('c')
+    zoneSet = db.get_set('z')
+    techSet = db.get_set('tech')
+    techCurtailedSet = db.get_set('techcurtailed')
+    techNotCurtailedSet = db.get_set('technotcurtailed')
+    renewTechSet = db.get_set('techrenew')
+    hourSet = db.get_set('h')
+
+    # get lists with symbols for each set
+    cellSymbols = [c.keys[0] for c in cellSet.__iter__()]
+    zoneSymbols = [z.keys[0] for z in zoneSet.__iter__()]
+    techSymbols = [t.keys[0] for t in techSet.__iter__()]
+    techCurtailedSymbols = [t.keys[0] for t in techCurtailedSet.__iter__()]
+    techNotCurtailedSymbols = [t.keys[0] for t in techNotCurtailedSet.__iter__()]
+    renewTechSymbols = [t.keys[0] for t in renewTechSet.__iter__()]
+    hourSymbols = [h.keys[0] for h in hourSet.__iter__()]
+
     # Nameplate capacity (for cost calculations)
     capacDict = getTechParamDict(newTechsCE, techSymbols, 'Capacity(MW)', ptCurtailed,
                                  1 / scaleMWtoGW)
     (capacName, capacDescrip) = ('pCapactech', 'capacity (GW) of techs')
     techCapacParam = add1dParam(db, capacDict, techSet, techSymbols, capacName, capacDescrip)
 
-    # Heat rate
-    #scalarHrToMmbtuPerMwh = 1 / 1000
-    #hrDict = getTechParamDict(newTechsCE, techSymbols, 'HR(Btu/kWh)', ptCurtailed,
-    #                          scalarHrToMmbtuPerMwh * scaleMWtoGW)
-    #(hrName, hrDescrip) = ('pHrtech', 'heat rate (MMBtu/GWh)')
-    #techHrParam = add1dParam(db, hrDict, techSet, techSymbols, hrName, hrDescrip)
+    # Op cost ---------------
+    # write dictionaries of op. costs for new techs (differentiate costs by zone/cell)
 
-    # Op cost
-    ocDict = getTechOpCostDict(newTechsCE, ptCurtailed, scaleMWtoGW / scaleDollarsToThousands)
-    (ocName, ocDescrip) = ('pOpcosttech', 'op cost for tech (thousand$/GWh)')
-    ocParam = add1dParam(db, ocDict, techSet, techSymbols, ocName, ocDescrip)
+    # 1d list or dictionary with operating costs for each plant type (without adding random error)
+    opCosts = getTechOpCostDict(newTechsCE, ptCurtailed, 1)
 
-    # Fixed O&M
+    # techs that can be curtailed
+    dict_techcurt_ocError = dict()
+    dict_techcurt_oc = dict()
+    for c in cellSymbols:
+        for t in techCurtailedSymbols:
+            dict_techcurt_ocError[(c, t)] = random.uniform(0, 0.05)
+            dict_techcurt_oc[(c, t)] = opCosts[t] + dict_techcurt_ocError[(c, t)]
+            dict_techcurt_oc[(c, t)] = dict_techcurt_oc[(c, t)]*(scaleMWtoGW / scaleDollarsToThousands)
+
+    (ocName, ocDescrip) = ('pOpcosttechcurt', 'op cost for curt. tech (thousand$/GWh)')
+    ocParam = add_NdParam(db, dict_techcurt_oc, [cellSet, techCurtailedSet], ocName, ocDescrip)
+
+    # techs that cannot be curtailed
+    dict_technotcurt_ocError = dict()
+    dict_technotcurt_oc = dict()
+    for z in zoneSymbols:
+        for t in techNotCurtailedSymbols:
+            dict_technotcurt_ocError[(z, t)] = random.uniform(0, 0.05)
+            dict_technotcurt_oc[(z, t)] = opCosts[t] + dict_technotcurt_ocError[(z, t)]
+            dict_technotcurt_oc[(z, t)] = dict_technotcurt_oc[(z, t)]*(scaleMWtoGW / scaleDollarsToThousands)
+
+    (ocName, ocDescrip) = ('pOpcosttechnotcurt', 'op cost for techs not curt. (thousand$/GWh)')
+    ocParam = add_NdParam(db, dict_technotcurt_oc, [zoneSet, techNotCurtailedSet], ocName, ocDescrip)
+
+    # renewable techs
+    dict_techrenew_ocError = dict()
+    dict_techrenew_oc = dict()
+    for z in zoneSymbols:
+        for t in renewTechSymbols:
+            dict_techrenew_ocError[(z, t)] = random.uniform(0, 0.05)
+            dict_techrenew_oc[(z, t)] = opCosts[t] + dict_techrenew_ocError[(z, t)]
+            dict_techrenew_oc[(z, t)] = dict_techrenew_oc[(z, t)]*(scaleMWtoGW / scaleDollarsToThousands)
+
+    (ocName, ocDescrip) = ('pOpcosttechrenew', 'op cost for renew tech (thousand$/GWh)')
+    ocParam = add_NdParam(db, dict_techrenew_oc, [zoneSet, renewTechSet], ocName, ocDescrip)
+
+    # Fixed O&M ---------------
     fixedomDict = getTechParamDict(newTechsCE, techSymbols, 'FOM(2012$/MW/yr)', ptCurtailed,
                                    scaleMWtoGW * 1 / scaleDollarsToThousands)
     for tech in fixedomDict: fixedomDict[tech] = convertCostToTgtYr('fom', fixedomDict[tech])
     (fixedomName, fixedomDescrip) = ('pFom', 'fixed O&M (thousand$/GW/yr)')
     techFixedomParam = add1dParam(db, fixedomDict, techSet, techSymbols, fixedomName, fixedomDescrip)
 
-    # Overnight capital cost
+    # Overnight capital cost ---------------
     occDict = getTechParamDict(newTechsCE, techSymbols, 'CAPEX(2012$/MW)', ptCurtailed,
                                scaleMWtoGW * 1 / scaleDollarsToThousands)
     for tech in occDict: occDict[tech] = convertCostToTgtYr('occ', occDict[tech])
     (occName, occDescrip) = ('pOcc', 'overnight capital cost (thousand$/GW)')
     techOccParam = add1dParam(db, occDict, techSet, techSymbols, occName, occDescrip)
 
-    # Emissions rate
-    emRateDict = getTechParamDict(newTechsCE, techSymbols, 'CO2EmRate(ton/GWh)', ptCurtailed)
-    (emRateName, emRateDescrip) = ('pCO2emratetech', 'co2 emissions rate (short ton/GWh)')
-    techEmRateParam = add1dParam(db, emRateDict, techSet, techSymbols, emRateName, emRateDescrip)
+    # Emissions rate ---------------
+    # write dictionaries of co2 emission rates for new techs (differentiate rates by zone/cell)
+    co2EmRates = getTechParamDict(newTechsCE, techSymbols, 'CO2EmRate(ton/GWh)', ptCurtailed)
 
-    # Lifetime
+    # techs that can be curtailed
+    dict_techcurt_emRateError = dict()
+    dict_techcurt_emRate = dict()
+    for c in cellSymbols:
+        for t in techCurtailedSymbols:
+            dict_techcurt_emRateError[(c, t)] = random.uniform(0, 0.05)
+            dict_techcurt_emRate[(c, t)] = co2EmRates[t] + dict_techcurt_emRateError[(c, t)]
+
+    (emRateName, emRateDescrip) = ('pCO2emratetechcurt', 'co2 emissions rate for curtailed techs (short ton/GWh)')
+    techEmRateParam = add_NdParam(db, dict_techcurt_emRate, [cellSet, techCurtailedSet], emRateName, emRateDescrip)
+
+    # techs that cannot be curtailed
+    dict_technotcurt_emRateError = dict()
+    dict_technotcurt_emRate = dict()
+    for z in zoneSymbols:
+        for t in techNotCurtailedSymbols:
+            dict_technotcurt_emRateError[(z, t)] = random.uniform(0, 0.05)
+            dict_technotcurt_emRate[(z, t)] = co2EmRates[t] + dict_technotcurt_emRateError[(z, t)]
+
+    (emRateName, emRateDescrip) = ('pCO2emratetechnotcurt', 'co2 emissions rate for techs not curtailed (short ton/GWh)')
+    techEmRateParam = add_NdParam(db, dict_technotcurt_emRate, [zoneSet, techNotCurtailedSet], emRateName, emRateDescrip)
+
+    # renewable techs
+    dict_techrenew_emRateError = dict()
+    dict_techrenew_emRate = dict()
+    for z in zoneSymbols:
+        for t in renewTechSymbols:
+            dict_techrenew_emRateError[(z, t)] = random.uniform(0, 0.05)
+            dict_techrenew_emRate[(z, t)] = co2EmRates[t] + dict_techrenew_emRateError[(z, t)]
+
+    (emRateName, emRateDescrip) = ('pCO2emratetechrenew', 'co2 emissions rate for renewable techs (short ton/GWh)')
+    techEmRateParam = add_NdParam(db, dict_techrenew_oc, [zoneSet, renewTechSet], emRateName, emRateDescrip)
+
+    # Lifetime ---------------------
     lifetimeDict = getTechParamDict(newTechsCE, techSymbols, 'Lifetime(years)', ptCurtailed)
     (lifetimeName, lifetimeDescrip) = ('pLife', 'years')
     techLifetimeParam = add1dParam(db, lifetimeDict, techSet, techSymbols, lifetimeName, lifetimeDescrip)
@@ -815,7 +901,7 @@ def add_NdParam(db, paramDict, list_idxSet, paramName, paramDescrip):
 
     :param db: database object
     :param paramDict: simple dictionary with data. keys must be a tuple with N values
-    :param list_idxSet: list with sets for domain of parameters (must be in the correct orders)
+    :param list_idxSet: 1d list of size N with GAMS sets for domain of parameters (must be in the correct orders)
     :param paramName: (string)
     :param paramDescrip: (string)
     :return:

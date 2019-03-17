@@ -43,16 +43,20 @@ Parameters
          pCapactech(tech)                               nameplate capacity of new builds for cost calculations [GW]
          pCapactechcurtailed(g,c,techcurtailed,h)       hourly capacity of new builds accounting for curtailments [GW]
 *TIME- AND SPACE-VARYING OP COSTS AND HEAT RATES [MMBtu/GWh]
-         pOpcost(egu)                    total operational cost [thousand USD per GWh] = VOM + FuelCost*HR + EmsCost*EmsRate*HR
-         pOpcosttech(tech)               total operational cost [thousand USD per GWh] = VOM + FuelCost*HR + EmsCost*EmsRate*HR
+         pOpcost(egu)                                   total operational cost [thousand USD per GWh] = VOM + FuelCost*HR + EmsCost*EmsRate*HR
+         pOpcosttechcurt(c, techcurtailed)              total operational cost [thousand USD per GWh] = VOM + FuelCost*HR + EmsCost*EmsRate*HR
+         pOpcosttechnotcurt(z, technotcurtailed)        total operational cost [thousand USD per GWh] = VOM + FuelCost*HR + EmsCost*EmsRate*HR
+         pOpcosttechrenew(z, techrenew)                 total operational cost [thousand USD per GWh] = VOM + FuelCost*HR + EmsCost*EmsRate*HR
 *NEW TECH FIXED COST PARAMETERS
          pFom(tech)                      fixed O&M cost [thousand USD per GW per yr]
          pOcc(tech)                      overnight capital cost [thousand USD per GW]
-*EMISSIONS RATES [short ton/MMBtu]
-         pCO2emrate(egu)                 CO2 emissions rate of existing generators [10^3 short tons per GWh]
-         pCO2emratetech(tech)            CO2 emissions rate of potential new generators [10^3 short tons per GWh]
+*EMISSIONS RATES [short ton/GWh]
+         pCO2emrate(egu)                                CO2 emissions rate of existing generators [short tons per GWh]
+         pCO2emratetechcurt(c, techcurtailed)           CO2 emissions rate of potential new generators [short tons per GWh]
+         pCO2emratetechnotcurt(z, technotcurtailed)     CO2 emissions rate of potential new generators [short tons per GWh]
+         pCO2emratetechrenew(z, techrenew)              CO2 emissions rate of potential new generators [short tons per GWh]
 *EMISSIONS CAP AND COST
-         pCO2emcap                       CO2 annual emissions cap [10^3 short tons]
+         pCO2emcap                       CO2 annual emissions cap [short tons]
 *HOURLY CAPACITY FACTORS FOR RENEWABLES
          pCf(g,z,techrenew,h)              hourly capacity factors for potential new renewables in each zone
          pMaxgenwind(g,z,h)                max hourly generation for existing wind [GWh]
@@ -104,9 +108,9 @@ $if not set gdxincname $abort 'no include file name for data file provided'
 $gdxin %gdxincname%
 $load egu, windegu, solaregu, hydroegu, pumphydroegu, type, tech, tech2d, techcurtailed, techrenew, technotcurtailed, c, g
 $load h, h2, springh, summerh, winterh, fallh, specialh, z, l, peakh
-$load pCapac, pCapactech, pCapactechcurtailed, pOpcost, pOpcosttech
-$load pFom, pOcc, pCO2emrate, pCO2emratetech, pCO2emcap, pCf, pMaxgenwind, pMaxgensolar
-$load pMaxhydrogensum, pMaxhydrogenspr, pMaxhydrogenwin, pMaxhydrogenfal, pMaxhydrogenspe
+$load pCapac, pCapactech, pCapactechcurtailed, pOpcost, pOpcosttechcurt, pOpcosttechnotcurt, pOpcosttechrenew
+$load pFom, pOcc, pCO2emrate, pCO2emratetechcurt, pCO2emratetechnotcurt, pCO2emratetechrenew, pCO2emcap, pCf
+$load pMaxgenwind, pMaxgensolar, pMaxhydrogensum, pMaxhydrogenspr, pMaxhydrogenwin, pMaxhydrogenfal, pMaxhydrogenspe
 $load pDemand, pEguzones, pCellzones, pLinesources, pLinesinks, pLinecapacs
 $load pR, pLife, pNmax, pPlanningreserve, pWeightspring, pWeightsummer, pWeightfall, pWeightwinter
 $load pInitsoc, pMaxsoc, pEfficiency
@@ -239,30 +243,30 @@ investmentcost..         vIc =e= sum((c,techcurtailed),vNcurtailed(c,techcurtail
 *Variable costs = electricity generation costs by new and existing plants
 varcosttotal..      vVc =e= vVcspring + vVcsummer + vVcwinter + vVcfall + vVcspecial;
 
-varcostspring..     vVcspring =e= (pWeightspring/pNgcm)*sum((g,h)$[springh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttech(techcurtailed))
-                                                                                 + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttech(technotcurtailed))
-                                                                                 + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttech(techrenew))
+varcostspring..     vVcspring =e= (pWeightspring/pNgcm)*sum((g,h)$[springh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttechcurt(c, techcurtailed))
+                                                                                 + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttechnotcurt(z, technotcurtailed))
+                                                                                 + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttechrenew(z, techrenew))
                                                                                  + sum(egu,vPegu(g,egu,h)*pOpcost(egu)));
 
-varcostsummer..     vVcsummer =e= (pWeightsummer/pNgcm)*sum((g,h)$[summerh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttech(techcurtailed))
-                                                                                 + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttech(technotcurtailed))
-                                                                                 + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttech(techrenew))
+varcostsummer..     vVcsummer =e= (pWeightsummer/pNgcm)*sum((g,h)$[summerh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttechcurt(c, techcurtailed))
+                                                                                 + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttechnotcurt(z, technotcurtailed))
+                                                                                 + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttechrenew(z, techrenew))
                                                                                  + sum(egu,vPegu(g,egu,h)*pOpcost(egu)));
 
-varcostwinter..     vVcwinter =e= (pWeightwinter/pNgcm)*sum((g,h)$[winterh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttech(techcurtailed))
-                                                                                 + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttech(technotcurtailed))
-                                                                                 + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttech(techrenew))
+varcostwinter..     vVcwinter =e= (pWeightwinter/pNgcm)*sum((g,h)$[winterh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttechcurt(c, techcurtailed))
+                                                                                 + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttechnotcurt(z, technotcurtailed))
+                                                                                 + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttechrenew(z, techrenew))
                                                                                  + sum(egu,vPegu(g,egu,h)*pOpcost(egu)));
 
-varcostfall..       vVcfall =e= (pWeightfall/pNgcm)*sum((g,h)$[fallh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttech(techcurtailed))
-                                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttech(technotcurtailed))
-                                                                           + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttech(techrenew))
+varcostfall..       vVcfall =e= (pWeightfall/pNgcm)*sum((g,h)$[fallh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttechcurt(c, techcurtailed))
+                                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttechnotcurt(z, technotcurtailed))
+                                                                           + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttechrenew(z, techrenew))
                                                                            + sum((egu),vPegu(g,egu,h)*pOpcost(egu)));
 
-varcostspecial..    vVcspecial =e= (1/pNgcm)*sum((g,h)$[specialh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttech(techcurtailed))
-                                                                            + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttech(technotcurtailed))
-                                                                            + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttech(techrenew))
-                                                                            + sum(egu,vPegu(g,egu,h)*pOpcost(egu)));
+varcostspecial..    vVcspecial =e= (1/pNgcm)*sum((g,h)$[specialh(g,h)],sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pOpcosttechcurt(c, techcurtailed))
+                                                                        + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pOpcosttechnotcurt(z, technotcurtailed))
+                                                                        + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pOpcosttechrenew(z, techrenew))
+                                                                        + sum(egu,vPegu(g,egu,h)*pOpcost(egu)));
 ***************************************************
 
 ******************SYSTEM-WIDE GENERATION AND CAPACITY CONSTRAINTS******************
@@ -339,29 +343,29 @@ hydrogenspe(g,hydroegu)..   pMaxhydrogenspe(g,hydroegu) =g= sum(h$specialh(g,h),
 co2emsannual..   vCO2emsannual =e= vCO2emsspring + vCO2emssummer + vCO2emswinter + vCO2emsfall + vCO2emsspecial;
 
 co2emsspring..   vCO2emsspring =e= (pWeightspring/pNgcm)*sum((g,h)$[springh(g,h)],sum(egu,vPegu(g,egu,h)*pCO2emrate(egu))
-                                                           + sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pCO2emratetech(techcurtailed))
-                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pCO2emratetech(technotcurtailed))
-                                                           + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pCO2emratetech(techrenew)));
+                                                           + sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pCO2emratetechcurt(c, techcurtailed))
+                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pCO2emratetechnotcurt(z, technotcurtailed))
+                                                           + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pCO2emratetechrenew(z, techrenew)));
 
 co2emssummer..   vCO2emssummer =e= (pWeightsummer/pNgcm)*sum((g,h)$[summerh(g,h)],sum(egu,vPegu(g,egu,h)*pCO2emrate(egu))
-                                                           + sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pCO2emratetech(techcurtailed))
-                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pCO2emratetech(technotcurtailed))
-                                                           + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pCO2emratetech(techrenew)));
+                                                           + sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pCO2emratetechcurt(c, techcurtailed))
+                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pCO2emratetechnotcurt(z, technotcurtailed))
+                                                           + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pCO2emratetechrenew(z, techrenew)));
 
 co2emswinter..   vCO2emswinter =e= (pWeightwinter/pNgcm)*sum((g,h)$[winterh(g,h)],sum(egu,vPegu(g,egu,h)*pCO2emrate(egu))
-                                                           + sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pCO2emratetech(techcurtailed))
-                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pCO2emratetech(technotcurtailed))
-                                                           + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pCO2emratetech(techrenew)));
+                                                           + sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pCO2emratetechcurt(c, techcurtailed))
+                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pCO2emratetechnotcurt(z, technotcurtailed))
+                                                           + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pCO2emratetechrenew(z, techrenew)));
 
 co2emsfall..     vCO2emsfall =e= (pWeightfall/pNgcm)*sum((g,h)$[fallh(g,h)],sum(egu,vPegu(g,egu,h)*pCO2emrate(egu))
-                                                     + sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pCO2emratetech(techcurtailed))
-                                                     + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pCO2emratetech(technotcurtailed))
-                                                     + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pCO2emratetech(techrenew)));
+                                                           + sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pCO2emratetechcurt(c, techcurtailed))
+                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pCO2emratetechnotcurt(z, technotcurtailed))
+                                                           + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pCO2emratetechrenew(z, techrenew)));
 
 co2emsspecial..  vCO2emsspecial =e= (1/pNgcm)*sum((g,h)$[specialh(g,h)],sum(egu,vPegu(g,egu,h)*pCO2emrate(egu))
-                                              + sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pCO2emratetech(techcurtailed))
-                                              + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pCO2emratetech(technotcurtailed))
-                                              + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pCO2emratetech(techrenew)));
+                                                           + sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pCO2emratetechcurt(c, techcurtailed))
+                                                           + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pCO2emratetechnotcurt(z, technotcurtailed))
+                                                           + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pCO2emratetechrenew(z, techrenew)));
 
 *Meet emissions cap
 enforceco2emissionscap.. vCO2emsannual =l= pCO2emcap;

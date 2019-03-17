@@ -3,6 +3,7 @@
 # Function imports data for new technologies eligible for construction in capacity expansion model
 
 import os
+import random
 from AuxFuncs import *
 
 
@@ -44,7 +45,7 @@ def getNewTechs(currYear, genparam, reserveparam):
 
     modCostsForCoolingTechs(newPlantDataDir, newTechsCE)
 
-    # add column with CO2 emissions in ton/GWh
+    # add columns with CO2 emissions in ton/GWh
     newTechsCE[0] = newTechsCE[0] + ['CO2EmRate(ton/GWh)']
 
     co2LbCol = newTechsCE[0].index('CO2EmissionsRate(lb/MMBtu)')
@@ -52,7 +53,8 @@ def getNewTechs(currYear, genparam, reserveparam):
 
     for row in newTechsCE[1:]:
         co2ratevalue, hrvalue = float(row[co2LbCol]), float(row[hrCol])
-        row.append((co2ratevalue/2000)*hrvalue)
+        co2rateTonvalue = (co2ratevalue / 2000) * hrvalue
+        row.append(co2rateTonvalue)
 
     return newTechsCE
 
