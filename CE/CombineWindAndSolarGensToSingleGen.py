@@ -67,6 +67,14 @@ def addParametersToNewWindOrSolarRow(fleetUC, newRow, rowIdxs, fuelType, plantTy
     co2TonGwhCol = fleetUC[0].index('CO2EmRate(ton/GWh)')
     newRow[co2TonGwhCol] = 0
 
+    # Fill in random added error of emission col w/ average of other rows
+    randAdderEmCol = fleetUC[0].index('CO2EmRandErr(ton/GWh)')
+    randAdderEm = [float(fleetUC[idx][randAdderEmCol]) for idx in rowIdxs]
+    capacs = [float(fleetUC[idx][capacCol]) for idx in rowIdxs]
+    capacFracs = [val / sum(capacs) for val in capacs]
+    avgRandAdder = sum([randAdderEm[idx] * capacFracs[idx] for idx in range(len(randAdderEm))])
+    newRow[randAdderEmCol] = avgRandAdder
+
 
 # Copy down reg eligibility & cost from first wind and solar row
 def addRegEligAndCost(fleetUC, newRow, firstOtherRow):
