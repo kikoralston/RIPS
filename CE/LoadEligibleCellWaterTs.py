@@ -21,7 +21,7 @@ from PreProcessRBM import createBaseFilenameToReadOrWrite
 # cellsEligibleForNewPlants, genFleet, rbmOutputDir, locPrecision, zones, fipsToZones, fipsToPolys, currYear
 
 
-def loadEligibleCellWaterTs(genFleet, currYear, genparam, curtailparam):
+def loadEligibleCellWaterTs(genFleet, currYear, genparam, curtailparam, netcdf=True, n_cells=100):
     """GET DAILY AVERAGE WATER TS FOR CELLS FOR ALL YEARS
 
     Current options for which cells can hsot new plants: 'All' (get all cell data)
@@ -31,9 +31,12 @@ def loadEligibleCellWaterTs(genFleet, currYear, genparam, curtailparam):
     :param currYear:
     :param genparam:
     :param curtailparam:
+    :param netcdf: True if files are in netcdf format
+    :param n_cells: number of cells to load in 'max_flow' option
     :return: dict of {cell folder name : [[Datetime],[AverageWaterT(degC)], [AirT], [flow]]}
     """
-    allCellFoldersInZone, eligibleCellFolders = setCellFolders(genFleet, currYear, genparam, curtailparam)
+    allCellFoldersInZone, eligibleCellFolders = setCellFolders(genFleet, currYear, genparam, curtailparam,
+                                                               netcdf=netcdf, n_cells=n_cells)
 
     dict_out = dict()
     for gcm in curtailparam.listgcms:
@@ -42,10 +45,7 @@ def loadEligibleCellWaterTs(genFleet, currYear, genparam, curtailparam):
     return dict_out
 
 
-# rbmOutputDir, cellsEligibleForNewPlants, genFleet, locPrecision, zones, fipsToZones, fipsToPolys
-# rbmOutputDir, cellsEligibleForNewPlants, genFleet, locPrecision, zones, fipsToZones, fipsToPolys, netcdf=True
-
-def setCellFolders(genFleet, currYear, genparam, curtailparam, netcdf=True):
+def setCellFolders(genFleet, currYear, genparam, curtailparam, netcdf=True, n_cells=100):
     """Get list of folders with future data for 1 cell each
 
     :param genFleet: 2d list with generator fleet
@@ -74,15 +74,18 @@ def setCellFolders(genFleet, currYear, genparam, curtailparam, netcdf=True):
         best_cells_zone_dict = order_cells_by_flow(genparam, curtailparam, currYear, sys.maxsize)
 
         # get list of cells with existing generators in it (including build decisions from previous CE runs)
-        cellLatLongToGenDict = getGenToCellAndCellToGenDictionaries(genFleet)[1]
-        cells_list = list(cellLatLongToGenDict.keys())
-        cells_list_str = list(map(lambda x: createBaseFilenameToReadOrWrite(curtailparam.locPrecision, x[0], x[1]),
-                                  cells_list))
+        if genFleet is not None:
+            cellLatLongToGenDict = getGenToCellAndCellToGenDictionaries(genFleet)[1]
+            cells_list = list(cellLatLongToGenDict.keys())
+            cells_list_str = list(map(lambda x: createBaseFilenameToReadOrWrite(curtailparam.locPrecision, x[0], x[1]),
+                                      cells_list))
+        else:
+            cells_list_str = []
 
-        # for each zone remove cells that already have a generator in it and keep only 100 best cells
+        # for each zone remove cells that already have a generator in it and keep only 'n_cells' best cells
         for z in best_cells_zone_dict:
             auxList = [x for x in best_cells_zone_dict[z] if x not in cells_list_str]
-            auxList = auxList[:100]
+            auxList = auxList[:n_cells]
             best_cells_zone_dict[z] = auxList
 
         # combine into one single list with all eligible cells

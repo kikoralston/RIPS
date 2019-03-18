@@ -164,6 +164,8 @@ if __name__ == '__main__':
 
     n_cells = 400
 
+    list_rcps = ['rcp45', 'rcp85']
+
     curtailparam.listgcms=['bcc-csm1-1_rcp45', 'bcc-csm1-1_rcp85', 'bcc-csm1-1-m_rcp45', 'bcc-csm1-1-m_rcp85',
                            'BNU-ESM_rcp45', 'BNU-ESM_rcp85', 'CanESM2_rcp45', 'CanESM2_rcp85', 'CCSM4_rcp45',
                            'CCSM4_rcp85', 'CNRM-CM5_rcp45', 'CNRM-CM5_rcp85', 'CSIRO-Mk3-6-0_rcp45',
@@ -175,68 +177,79 @@ if __name__ == '__main__':
                            'MIROC-ESM-CHEM_rcp85', 'MIROC5_rcp45', 'MIROC5_rcp85', 'MRI-CGCM3_rcp45',
                            'MRI-CGCM3_rcp85', 'NorESM1-M_rcp45', 'NorESM1-M_rcp85']
 
-    curtailparam.listgcms = ['NorESM1-M_rcp85', 'CSIRO-Mk3-6-0_rcp85']
+    # curtailparam.listgcms = ['NorESM1-M_rcp85', 'CSIRO-Mk3-6-0_rcp85']
 
     curtailparam.rbmRootDir ='/Users/kiko/Documents/UW_data/'
 
     genFleet = getInitialFleetAndDemand(genparam, reserveparam)
 
+    scp_command1 = ('scp ' +
+                    'pi@128.2.70.151:/home/pi/seagate/UWdata/forcing_maca_hourly_*_{0}_{1:4d}0101-{1:4d}1231.nc {2}')
+
     for currYear in range(genparam.startYear, genparam.endYear, genparam.yearStepCE):
 
-        newTechsCE = getNewTechs(currYear, genparam, reserveparam)
+        for rcp in list_rcps:
 
-        updateFuelPrices(genFleet, newTechsCE, currYear, genparam.fuelPricesTimeSeries)
+            # first copy all GCM files from my external disk to resultsDir
+            os.system(scp_command1.format(rcp, currYear, genparam.resultsDir))
 
-        start_time = time.time()
-        print('Computing hourly demand for each zone in year {0:4d}...'.format(currYear), flush=True)
+            newTechsCE = getNewTechs(currYear, genparam, reserveparam)
 
-        list_args = []
-        for g in curtailparam.listgcms:
-            cp = copy.deepcopy(curtailparam)
-            cp.listgcms = [g]
+            updateFuelPrices(genFleet, newTechsCE, currYear, genparam.fuelPricesTimeSeries)
 
-            list_args.append([currYear, genparam, cp])
+            start_time = time.time()
+            print('Computing hourly demand for each zone in year {0:4d}...'.format(currYear), flush=True)
 
-        with mp.Pool(processes=3) as pool:
-            list_demand = pool.map(wrapper_forecast_demand, list_args)
+            list_args = []
+            for g in curtailparam.listgcms:
+                cp = copy.deepcopy(curtailparam)
+                cp.listgcms = [g]
 
-        # list_demand is a list where each element is a dictionary with the projections of zonal hourly demand
-        # for one GCM. Convert this list to a pandas DF with columns [GCM, zone, hour, demand]
-        print('Converting results to panda data frame')
-        dem_final = pd.DataFrame()
-        for d in list_demand:
-            # get gcm name
-            gcm_name = list(d.keys())[0]
+                list_args.append([currYear, genparam, cp])
 
-            # get dictionary with zonal demand and convert to pandas data frame with zones as column names
-            dem_aux = pd.DataFrame(d[gcm_name])
-            dem_aux['hour'] = dem_aux.index
-            dem_aux = dem_aux.melt(id_vars=['hour'], var_name='zone', value_name='demand')
-            dem_aux['gcm'] = gcm_name
-            dem_aux = dem_aux[['gcm', 'zone', 'hour', 'demand']]
+            with mp.Pool(processes=3) as pool:
+                list_demand = pool.map(wrapper_forecast_demand, list_args)
 
-            # downcast to categorical
-            dem_aux['gcm'] = pd.Categorical(dem_aux['gcm'], categories=curtailparam.listgcms)
-            dem_aux['zone'] = dem_aux['zone'].astype('category')
+            # list_demand is a list where each element is a dictionary with the projections of zonal hourly demand
+            # for one GCM. Convert this list to a pandas DF with columns [GCM, zone, hour, demand]
+            print('Converting results to panda data frame')
+            dem_final = pd.DataFrame()
+            for d in list_demand:
+                # get gcm name
+                gcm_name = list(d.keys())[0]
 
-            dem_final = dem_final.append(dem_aux, ignore_index=True)
+                # get dictionary with zonal demand and convert to pandas data frame with zones as column names
+                dem_aux = pd.DataFrame(d[gcm_name])
+                dem_aux['hour'] = dem_aux.index
+                dem_aux = dem_aux.melt(id_vars=['hour'], var_name='zone', value_name='demand')
+                dem_aux['gcm'] = gcm_name
+                dem_aux = dem_aux[['gcm', 'zone', 'hour', 'demand']]
 
-        pd.to_pickle(dem_final, path=os.path.join(genparam.resultsDir, 'df_demand_{}.pk'.format(currYear)))
+                # downcast to categorical
+                dem_aux['gcm'] = pd.Categorical(dem_aux['gcm'], categories=curtailparam.listgcms)
+                dem_aux['zone'] = dem_aux['zone'].astype('category')
 
-        print('Done! Elapsed time: ' + str_elapsedtime(start_time))
-        print('-----------------------------------------------------')
+                dem_final = dem_final.append(dem_aux, ignore_index=True)
 
-        start_time = time.time()
-        print('Computing hourly curtailments for new generators...', flush=True)
-        eligibleCellWaterTs = loadEligibleCellWaterTs(genFleet=None, currYear=currYear, genparam=genparam,
-                                                      curtailparam=curtailparam, n_cells=n_cells)
+            pd.to_pickle(dem_final, path=os.path.join(genparam.resultsDir, 'df_demand_{}.pk'.format(currYear)))
 
-        # hrlyCurtailmentsAllTechsInTgtYr is a dict of (tech,cell):[hourlycapac]
-        df_curtail = processCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam,
-                                                    curtailparam, '')
+            print('Done! Elapsed time: ' + str_elapsedtime(start_time))
+            print('-----------------------------------------------------')
 
-        pd.to_pickle(df_curtail, path=os.path.join(genparam.resultsDir, 'curtailments_{}.pk'.format(currYear)))
+            start_time = time.time()
+            print('Computing hourly curtailments for new generators...', flush=True)
+            eligibleCellWaterTs = loadEligibleCellWaterTs(genFleet=None, currYear=currYear, genparam=genparam,
+                                                          curtailparam=curtailparam, n_cells=n_cells)
 
-        print('Done! Elapsed time: ' + str_elapsedtime(start_time))
-        print('-----------------------------------------------------')
-        print()
+            # hrlyCurtailmentsAllTechsInTgtYr is a dict of (tech,cell):[hourlycapac]
+            df_curtail = processCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam,
+                                                        curtailparam, '')
+
+            pd.to_pickle(df_curtail, path=os.path.join(genparam.resultsDir, 'curtailments_{}.pk'.format(currYear)))
+
+            print('Done! Elapsed time: ' + str_elapsedtime(start_time))
+            print('-----------------------------------------------------')
+            print()
+
+            # delete GCM files to free up space
+            os.system('rm {0}/forcing_maca_hourly*'.format(genparam.resultsDir))
