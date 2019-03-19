@@ -153,7 +153,7 @@ if __name__ == '__main__':
     # change cells eligible for new plants to 'all' (will compute for ALL grid cells that are not MASKED)
     genparam.cellsEligibleForNewPlants = 'maxflow'
     genparam.cellNewTechCriteria = 'all'
-    genparam.resultsDir = '/Users/kiko/Documents/CE/'
+    genparam.resultsDir = '/sharedstorage/user/fralston/UWData/'
 
     genparam.endYear = 2021
     genparam.ncores_py = 4
@@ -166,32 +166,37 @@ if __name__ == '__main__':
 
     list_rcps = ['rcp45', 'rcp85']
 
-    curtailparam.listgcms=['bcc-csm1-1_rcp45', 'bcc-csm1-1_rcp85', 'bcc-csm1-1-m_rcp45', 'bcc-csm1-1-m_rcp85',
-                           'BNU-ESM_rcp45', 'BNU-ESM_rcp85', 'CanESM2_rcp45', 'CanESM2_rcp85', 'CCSM4_rcp45',
-                           'CCSM4_rcp85', 'CNRM-CM5_rcp45', 'CNRM-CM5_rcp85', 'CSIRO-Mk3-6-0_rcp45',
-                           'CSIRO-Mk3-6-0_rcp85', 'GFDL-ESM2G_rcp45', 'GFDL-ESM2G_rcp85', 'GFDL-ESM2M_rcp45',
-                           'GFDL-ESM2M_rcp85', 'HadGEM2-CC365_rcp45', 'HadGEM2-CC365_rcp85', 'HadGEM2-ES365_rcp45',
-                           'HadGEM2-ES365_rcp85', 'inmcm4_rcp45', 'inmcm4_rcp85', 'IPSL-CM5A-LR_rcp45',
-                           'IPSL-CM5A-LR_rcp85', 'IPSL-CM5A-MR_rcp45', 'IPSL-CM5A-MR_rcp85', 'IPSL-CM5B-LR_rcp45',
-                           'IPSL-CM5B-LR_rcp85', 'MIROC-ESM_rcp45', 'MIROC-ESM_rcp85', 'MIROC-ESM-CHEM_rcp45',
-                           'MIROC-ESM-CHEM_rcp85', 'MIROC5_rcp45', 'MIROC5_rcp85', 'MRI-CGCM3_rcp45',
-                           'MRI-CGCM3_rcp85', 'NorESM1-M_rcp45', 'NorESM1-M_rcp85']
+    listgcms_total=['bcc-csm1-1_rcp45', 'bcc-csm1-1_rcp85', 'bcc-csm1-1-m_rcp45', 'bcc-csm1-1-m_rcp85',
+                    'BNU-ESM_rcp45', 'BNU-ESM_rcp85', 'CanESM2_rcp45', 'CanESM2_rcp85', 'CCSM4_rcp45',
+                    'CCSM4_rcp85', 'CNRM-CM5_rcp45', 'CNRM-CM5_rcp85', 'CSIRO-Mk3-6-0_rcp45',
+                    'CSIRO-Mk3-6-0_rcp85', 'GFDL-ESM2G_rcp45', 'GFDL-ESM2G_rcp85', 'GFDL-ESM2M_rcp45',
+                    'GFDL-ESM2M_rcp85', 'HadGEM2-CC365_rcp45', 'HadGEM2-CC365_rcp85', 'HadGEM2-ES365_rcp45',
+                    'HadGEM2-ES365_rcp85', 'inmcm4_rcp45', 'inmcm4_rcp85', 'IPSL-CM5A-LR_rcp45',
+                    'IPSL-CM5A-LR_rcp85', 'IPSL-CM5A-MR_rcp45', 'IPSL-CM5A-MR_rcp85', 'IPSL-CM5B-LR_rcp45',
+                    'IPSL-CM5B-LR_rcp85', 'MIROC-ESM_rcp45', 'MIROC-ESM_rcp85', 'MIROC-ESM-CHEM_rcp45',
+                    'MIROC-ESM-CHEM_rcp85', 'MIROC5_rcp45', 'MIROC5_rcp85', 'MRI-CGCM3_rcp45',
+                    'MRI-CGCM3_rcp85', 'NorESM1-M_rcp45', 'NorESM1-M_rcp85']
 
     # curtailparam.listgcms = ['NorESM1-M_rcp85', 'CSIRO-Mk3-6-0_rcp85']
 
-    curtailparam.rbmRootDir ='/Users/kiko/Documents/UW_data/'
+    curtailparam.rbmRootDir ='/sharedstorage/user/fralston/UWData/'
 
     genFleet = getInitialFleetAndDemand(genparam, reserveparam)
 
-    scp_command1 = ('scp ' +
+    scp_command1 = ('rsync -avhe ssh --progress ' +
                     'pi@128.2.70.151:/home/pi/seagate/UWdata/forcing_maca_hourly_*_{0}_{1:4d}0101-{1:4d}1231.nc {2}')
 
     for currYear in range(genparam.startYear, genparam.endYear, genparam.yearStepCE):
 
         for rcp in list_rcps:
 
+            curtailparam.listgcms = [g for g in listgcms_total if rcp in g]
+
             # first copy all GCM files from my external disk to resultsDir
+            start_time = time.time()
+            print('Downloading weather files...')
             os.system(scp_command1.format(rcp, currYear, genparam.resultsDir))
+            print('Done' + str_elapsedtime(start_time))
 
             newTechsCE = getNewTechs(currYear, genparam, reserveparam)
 
@@ -207,7 +212,7 @@ if __name__ == '__main__':
 
                 list_args.append([currYear, genparam, cp])
 
-            with mp.Pool(processes=3) as pool:
+            with mp.Pool(processes=genparam.ncores_py) as pool:
                 list_demand = pool.map(wrapper_forecast_demand, list_args)
 
             # list_demand is a list where each element is a dictionary with the projections of zonal hourly demand
@@ -231,7 +236,7 @@ if __name__ == '__main__':
 
                 dem_final = dem_final.append(dem_aux, ignore_index=True)
 
-            pd.to_pickle(dem_final, path=os.path.join(genparam.resultsDir, 'df_demand_{}.pk'.format(currYear)))
+            pd.to_pickle(dem_final, path=os.path.join(genparam.resultsDir, 'df_demand_{0}_{1}.pk'.format(rcp, currYear)))
 
             print('Done! Elapsed time: ' + str_elapsedtime(start_time))
             print('-----------------------------------------------------')
@@ -245,11 +250,14 @@ if __name__ == '__main__':
             df_curtail = processCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam,
                                                         curtailparam, '')
 
-            pd.to_pickle(df_curtail, path=os.path.join(genparam.resultsDir, 'curtailments_{}.pk'.format(currYear)))
+            pd.to_pickle(df_curtail, path=os.path.join(genparam.resultsDir, 'curtailments_{0}_{1}.pk'.format(rcp, currYear)))
 
             print('Done! Elapsed time: ' + str_elapsedtime(start_time))
             print('-----------------------------------------------------')
             print()
 
             # delete GCM files to free up space
+            print('Removing weather files...')
             os.system('rm {0}/forcing_maca_hourly*'.format(genparam.resultsDir))
+            print('Done')
+            print()
