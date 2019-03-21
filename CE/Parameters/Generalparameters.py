@@ -204,7 +204,7 @@ class Generalparameters:
 
         outstr = outstr + '#\n# -------- OTHER PARAMETERS --------\n#\n'
         outstr = outstr + 'ncores_py = {} \t    # number of cores to use for parallel simulation in python\n'.format(self.ncores_py)
-        outstr = outstr + 'ncores_gams = {} \t  # number of cores to use for parallel simulation in gams'.format(self.ncores_gams)
+        outstr = outstr + 'ncores_gams = {} \t  # number of cores to use for parallel simulation in gams\n'.format(self.ncores_gams)
         outstr = outstr + 'coldStart = {}\n'.format(self.coldStart)
 
         return outstr
