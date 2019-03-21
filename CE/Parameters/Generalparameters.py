@@ -81,7 +81,6 @@ class Generalparameters:
         self.ocAdderMax = 0.05              # $/MWh
         self.ucDayInitial = 1               # initial day of the year for UC simulation
         self.ucDayEnd = 365                 # final day of the year for UC simulation
-        self.coldStart = False              # "Cold Start". Read file with resulting UC from pickle file in first run
 
         self.phEff = 0.81
         self.phMaxSoc = 5
@@ -109,6 +108,7 @@ class Generalparameters:
         # OTHER
         self.ncores_py = 1      # number of cores to use for parallel simulation in python
         self.ncores_gams = 1    # number of cores to use for parallel simulation in gams
+        self.coldStart = False  # "Cold Start" for CE and UC models. Read files with initial conditions in first run
 
         # OLD VARIABLES
         self.testModel = False  # use dummy test system; not currently working
@@ -190,20 +190,22 @@ class Generalparameters:
         outstr = outstr + 'ocAdderMax = {} \t # $/MWh\n'.format(self.ocAdderMax)
         outstr = outstr + 'ucDayInitial = {}\n'.format(self.ucDayInitial)
         outstr = outstr + 'ucDayEnd = {}\n'.format(self.ucDayEnd)
-        outstr = outstr + 'coldStart = {}\n'.format(self.coldStart)
 
         outstr = outstr +  '#\n# -------- PUMPED HYDRO PARAMETERS --------\n#\n'
         outstr = outstr + 'phEff = {}\n'.format(self.phEff)
         outstr = outstr + 'phMaxSoc = {}\n'.format(self.phMaxSoc)
         outstr = outstr + 'phInitSoc = {} \t # max soc as multiple of capacity; init SOC as fraction ' \
                           'of max soc\n'.format(self.phInitSoc)
+
         outstr = outstr + '#\n# -------- CONVERSION PARAMETERS --------\n#\n'
         outstr = outstr + 'scaleMWtoGW = {}\n'.format(self.scaleMWtoGW)
         outstr = outstr + 'scaleDollarsToThousands = {}\n'.format(self.scaleDollarsToThousands)
         outstr = outstr + 'scaleLbToShortTon = {}\n'.format(self.scaleLbToShortTon)
+
         outstr = outstr + '#\n# -------- OTHER PARAMETERS --------\n#\n'
         outstr = outstr + 'ncores_py = {} \t    # number of cores to use for parallel simulation in python\n'.format(self.ncores_py)
         outstr = outstr + 'ncores_gams = {} \t  # number of cores to use for parallel simulation in gams'.format(self.ncores_gams)
+        outstr = outstr + 'coldStart = {}\n'.format(self.coldStart)
 
         return outstr
 
