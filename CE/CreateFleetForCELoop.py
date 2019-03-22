@@ -132,9 +132,9 @@ def onlineAndNotRetired(genRow, headers, currYear):
         return False  # some units don't come online until 2020
     elif int(genRow[ipmRetiredCol]) < currYear:
         return False  # units flagged as retiring by IPM
-    elif genRow[retiredByAgeCol] != '' and genRow[retiredByAgeCol] <= currYear:
+    elif genRow[retiredByAgeCol] != '' and int(genRow[retiredByAgeCol]) <= currYear:
         return False  # units retired due to age
-    elif genRow[ceRetiredCol] != '' and genRow[ceRetiredCol] <= currYear:
+    elif genRow[ceRetiredCol] != '' and int(genRow[ceRetiredCol]) <= currYear:
         return False  # units retired by CE
     else:
         return True
