@@ -9,16 +9,16 @@ import pandas as pd
 import numpy as np
 
 
-def retireUnitsCFPriorCE(genFleet, genFleetPriorCE, retirementCFCutoff, priorCapacExpModel, priorHoursCE, scaleMWtoGW,
+def retireUnitsCFPriorCE(genFleet, genFleetPriorCE, retirementCFCutoff, priorCEout_db, priorHoursCE, scaleMWtoGW,
                          ptEligRetireCF, currYear):
 
     unitsRetireCF = markAndSaveRetiredUnitsFromPriorCE(retirementCFCutoff, genFleet, genFleetPriorCE,
-                                                       priorCapacExpModel, priorHoursCE, scaleMWtoGW, ptEligRetireCF,
+                                                       priorCEout_db, priorHoursCE, scaleMWtoGW, ptEligRetireCF,
                                                        currYear)
     return unitsRetireCF
 
 
-def markAndSaveRetiredUnitsFromPriorCE(retirementCFCutoff, genFleet, genFleetPriorCE, priorCapacExpModel,
+def markAndSaveRetiredUnitsFromPriorCE(retirementCFCutoff, genFleet, genFleetPriorCE, priorCEout_db,
                                        priorHoursCE, scaleMWtoGW, ptEligRetireCF, currYear):
     """RETIRE UNITS BASED ON CF IN PRIOR CE RUN
 
@@ -28,21 +28,21 @@ def markAndSaveRetiredUnitsFromPriorCE(retirementCFCutoff, genFleet, genFleetPri
     :param retirementCFCutoff: Retirement CF cutoff
     :param genFleet: generator fleet
     :param genFleetPriorCE:
-    :param priorCapacExpModel: GAMS CE model output from prior CE run
+    :param priorCEout_db: GAMS CE model output db from prior CE run
     :param priorHoursCE: hours included in CE
     :param scaleMWtoGW: scale MW to GW
     :param ptEligRetireCF: 1d list of plant types eligible to retire based on CFs
     :param currYear:
     :return: 1d list w/ units that retire due to CF
     """
-    unitsRetireCF = getUnitsRetireByCF(retirementCFCutoff, genFleet, genFleetPriorCE, priorCapacExpModel,
+    unitsRetireCF = getUnitsRetireByCF(retirementCFCutoff, genFleet, genFleetPriorCE, priorCEout_db,
                                        priorHoursCE, scaleMWtoGW, ptEligRetireCF)
     markRetiredUnitsFromCE(genFleet, unitsRetireCF, currYear)
 
     return unitsRetireCF
 
 
-def getUnitsRetireByCF(retirementCFCutoff, genFleet, genFleetPriorCE, priorCapacExpModel, priorHoursCE,
+def getUnitsRetireByCF(retirementCFCutoff, genFleet, genFleetPriorCE, priorCEout_db, priorHoursCE,
                        scaleMWtoGW, ptEligRetireCF):
     """Determines which units retire due to CF in prior CE run
 
@@ -55,7 +55,7 @@ def getUnitsRetireByCF(retirementCFCutoff, genFleet, genFleetPriorCE, priorCapac
     :param retirementCFCutoff: CF cutoff retirement
     :param genFleet:
     :param genFleetPriorCE:
-    :param priorCapacExpModel:
+    :param priorCEout_db:
     :param priorHoursCE:
     :param scaleMWtoGW:
     :param ptEligRetireCF:
@@ -63,7 +63,7 @@ def getUnitsRetireByCF(retirementCFCutoff, genFleet, genFleetPriorCE, priorCapac
     """
     # (gcm,genID,hr):hourly gen [GW]
     hourlyGenByGens = dict()
-    for rec in priorCapacExpModel.out_db['vPegu']:
+    for rec in priorCEout_db['vPegu']:
         hourlyGenByGens[tuple(rec.keys)] = float(rec.level) * scaleMWtoGW
 
     # convert to list

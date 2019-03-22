@@ -217,7 +217,7 @@ def assignPotentialsToMissingUnits(unitsNoData, fleet, seasonDict, repHrs):
     capacCol = fleet[0].index('Capacity (MW)')
     hydroUnits = [row for row in fleet[1:] if row[plantCol] == 'Hydro']
     genSymbols = [createGenSymbol(row, fleet[0]) for row in hydroUnits]
-    capacs = [row[capacCol] for row in hydroUnits]
+    capacs = [float(row[capacCol]) for row in hydroUnits]
     fleetAvgCF = getFleetAverageCF(genSymbols, capacs, seasonDict, repHrs)
     for genSymbol in unitsNoData:
         seasonDict[genSymbol] = capacs[genSymbols.index(genSymbol)] * len(repHrs) * fleetAvgCF

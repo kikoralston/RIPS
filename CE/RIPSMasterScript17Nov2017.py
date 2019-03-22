@@ -98,16 +98,56 @@ def masterFunction(genparam, reserveparam, curtailparam):
 
         zonalDemandProfile, zonalTempDfs = forecastZonalDemandWithReg(currYear, genparam, curtailparam)
 
-        if currYear > genparam.startYear and genparam.runCE:
-            if currYear == genparam.startYear + genparam.yearStepCE:
-                priorCapacExpModel, priorHoursCE, genFleetPriorCE = None, None, None  # first CE run
+        if genparam.runCE:
+            # run capacity expansion model
 
-            (genFleet, genFleetNoRetiredUnits, genFleetPriorCE, priorCapacExpModel,
-             priorHoursCE) = runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
-                                                  capacExpModelsEachYear, capacExpBuilds, capacExpGenByGens,
-                                                  capacExpRetiredUnitsByCE, capacExpRetiredUnitsByAge,
-                                                  genFleetPriorCE, priorCapacExpModel, priorHoursCE,
-                                                  genparam, reserveparam, curtailparam)
+            if genparam.coldStart and currYear == genparam.startYear:
+                # if it is cold start and curr year is start year, read results from previous run
+                # (this was created to treat cases when simulation crashes in the middle)
+
+                priorYearCE = genparam.startYear - genparam.yearStepCE
+
+                genFleet = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
+                                                        'genFleetAfterCE{0}.csv'.format(priorYearCE)))
+                genFleetNoRetiredUnits = readCSVto2dList(os.path.join(genparam.resultsDir, 'CEtoUC',
+                                                                      'genFleetCEtoUC{0}.csv'.format(priorYearCE)))
+                genFleetPriorCE = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
+                                                               'genFleetForCE{0}.csv'.format(priorYearCE)))
+
+                priorCEout_db = GamsWorkspace().add_database_from_gdx(os.path.join(genparam.resultsDir, 'CE',
+                                                                                   'gdxOutYear{}.gdx'.format(priorYearCE)))
+
+                capacExpBuilds = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
+                                                              'genAdditionsCE{0}.csv'.format(priorYearCE)))
+                capacExpGenByGens = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
+                                                                 'genByGensCE{0}.csv'.format(priorYearCE)))
+                capacExpRetiredUnitsByCE = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
+                                                                        'genRetirementsEconCE{0}.csv'.format(priorYearCE)))
+                capacExpRetiredUnitsByAge = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
+                                                                         'genRetirementsAgeCE{0}.csv'.format(priorYearCE)))
+
+                with open(os.path.join(genparam.resultsDir, 'CE', 'hoursCE_{0}.pkl'.format(priorYearCE)), 'rb') as f:
+                    priorHoursCE = pk.load(f)
+
+            elif (not genparam.coldStart) and (currYear == genparam.startYear + genparam.yearStepCE):
+                # not cold start and first CE run
+                priorCEout_db, priorHoursCE, genFleetPriorCE = None, None, None  # first CE run
+
+            # only run model in genparam.startYear if it is a cold start
+            if genparam.coldStart or currYear > genparam.startYear:
+                (genFleet, genFleetNoRetiredUnits, genFleetPriorCE, priorCEout_db,
+                 priorHoursCE) = runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
+                                                      capacExpModelsEachYear, capacExpBuilds, capacExpGenByGens,
+                                                      capacExpRetiredUnitsByCE, capacExpRetiredUnitsByAge,
+                                                      genFleetPriorCE, priorCEout_db, priorHoursCE,
+                                                      genparam, reserveparam, curtailparam)
+
+                # write hours for CE to pickle file
+                with open(os.path.join(genparam.resultsDir, 'CE', 'hoursCE_{0}.pkl'.format(currYear)), 'wb') as f:
+                    pk.dump(priorHoursCE, f, pk.HIGHEST_PROTOCOL)
+
+            # since model was executed set coldStart to False before running next year
+            genparam.coldStart = False
 
         if genparam.runUC:
             # Either only runs 2015, or runs in all but 2015
@@ -168,7 +208,7 @@ def getInitialFleetAndDemand(genparam, reserveparam):
 
 def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, capacExpModelsEachYear, capacExpBuilds,
                          capacExpGenByGens, capacExpRetiredUnitsByCE, capacExpRetiredUnitsByAge, genFleetPriorCE,
-                         priorCapacExpModel, priorHoursCE, genparam, reserveparam, curtailparam):
+                         priorCEout_db, priorHoursCE, genparam, reserveparam, curtailparam):
     """RUN CAPACITY EXPANSION
 
     This function does all the reading and preprocessing before executing optimization
@@ -185,7 +225,7 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
     :param capacExpRetiredUnitsByAge:
     :param genFleetPriorCE: 2d list with existing generator fleet in current year of simulation
                             (including prior additions)
-    :param priorCapacExpModel:
+    :param priorCEout_db:
     :param priorHoursCE:
     :param genparam: object of class Generalparameters
     :param reserveparam: object of class Reserveparameters
@@ -206,9 +246,9 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
 
     write2dListToCSV(newTechsCE, os.path.join(resultsDir, 'newTechsCE' + str(currYear) + '.csv'))
 
-    if priorCapacExpModel is not None:  # if not in first CE loop
+    if priorCEout_db is not None:  # if not in first CE loop
         unitsRetireCFPriorCE = retireUnitsCFPriorCE(genFleet, genFleetPriorCE, genparam.retirementCFCutoff,
-                                                    priorCapacExpModel, priorHoursCE, genparam.scaleMWtoGW,
+                                                    priorCEout_db, priorHoursCE, genparam.scaleMWtoGW,
                                                     genparam.ptEligRetCF, currYear)
         print('Units that retire due to econ from prior CE ' + str(currYear) + ':', unitsRetireCFPriorCE)
         write2dListToCSV([unitsRetireCFPriorCE],
@@ -457,7 +497,7 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
     if not os.path.exists(ceUCDir): os.makedirs(ceUCDir)
     write2dListToCSV(genFleetNoRetiredUnits, os.path.join(ceUCDir, 'genFleetCEtoUC' + str(currYear) + '.csv'))
 
-    return genFleet, genFleetNoRetiredUnits, genFleetForCE, capacExpModel, hoursForCE
+    return genFleet, genFleetNoRetiredUnits, genFleetForCE, capacExpModel.out_db, hoursForCE
 
 
 def importHourlyThermalCurtailments(genFleet, currYear, modelName, resultsDir, genparam, curtailparam):
