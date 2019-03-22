@@ -67,9 +67,18 @@ def createDictIndexedByZone(dataDict, ipmZones, ipmZoneNums, *args):
     return zoneDict
 
 
-##### ADD EXISTING GENERATOR PARAMETERS: CO2 ems rate, zone
 def addEguParams(db, genFleet, genSet, genSymbols, ipmZones, ipmZoneNums, scaleLbToShortTon, scaleMWtoGW):
+    """ ADD EXISTING GENERATOR PARAMETERS
 
+    :param db: data base object
+    :param genFleet: 2d list with gen fleet
+    :param genSet: gams set variable with existing generators
+    :param genSymbols: symbols of generators
+    :param ipmZones: symbols of ipm zones (symbols follow gams model nomenclature)
+    :param ipmZoneNums: indexes of ipm zones
+    :param scaleLbToShortTon: (float) conversion factor (pounds to short tons)
+    :param scaleMWtoGW: (float) conversions factor (MW to GW)
+    """
     # Heat rate
     #scalarHrToMmbtuPerMwh = 1 / 1000
     #hrDict = getEguParamDict(genFleet, 'Heat Rate (Btu/kWh)', scalarHrToMmbtuPerMwh * scaleMWtoGW)
@@ -80,11 +89,11 @@ def addEguParams(db, genFleet, genSet, genSymbols, ipmZones, ipmZoneNums, scaleL
     emRateDict = getEguParamDict(genFleet, 'CO2EmRate(ton/GWh)', 1)
     emRateRandErrDict = getEguParamDict(genFleet, 'CO2EmRandErr(ton/GWh)', 1)
 
-    # update Emmision rate with random error value
+    # update Emission rate with random error value and divide by 1000
     for egu in emRateDict:
-        emRateDict[egu] = emRateDict[egu] + emRateRandErrDict[egu]
+        emRateDict[egu] = (emRateDict[egu] + emRateRandErrDict[egu])/1e3
 
-    (emRateName, emRateDescrip) = ('pCO2emrate', 'emissions rate (short ton/GWh)')
+    (emRateName, emRateDescrip) = ('pCO2emrate', 'emissions rate (10^3 short ton/GWh)')
     emRateParam = add1dParam(db, emRateDict, genSet, genSymbols, emRateName, emRateDescrip)
 
     # Zone ----------------
@@ -93,8 +102,15 @@ def addEguParams(db, genFleet, genSet, genSymbols, ipmZones, ipmZoneNums, scaleL
     zoneParam = add1dParam(db, zoneDict, genSet, genSymbols, zoneName, zoneDesc)
 
 
-# Return dict of genSymbol:zone num
 def getEguParamZoneDict(genFleet, zoneCol, ipmZones, ipmZoneNums):
+    """ Return dict of {genSymbol:zone num}
+
+    :param genFleet: 2d list with gen fleet
+    :param zoneCol:
+    :param ipmZones:
+    :param ipmZoneNums:
+    :return:
+    """
     zoneCol = genFleet[0].index(zoneCol)
     zoneDict = dict()
     for row in genFleet[1:]:
@@ -102,9 +118,19 @@ def getEguParamZoneDict(genFleet, zoneCol, ipmZones, ipmZoneNums):
     return zoneDict
 
 
-# Add op cost parameter for existing gens
 def addEguOpCostParam(db, genFleet, genSet, genSymbols, scaleLbToShortTon, scaleMWtoGW, scaleDollarsToThousands,
                       *co2Price):
+    """Add op cost parameter for existing gens
+
+    :param db: data base object
+    :param genFleet: 2d list with gen fleet
+    :param genSet:
+    :param genSymbols:
+    :param scaleLbToShortTon:
+    :param scaleMWtoGW:
+    :param scaleDollarsToThousands:
+    :param co2Price:
+    """
     ocDict = getEguOpCostDict(genFleet, scaleLbToShortTon, scaleMWtoGW, scaleDollarsToThousands, co2Price)
     (ocName, ocDescrip) = ('pOpcost', 'op cost (thousand$/GWh)')
     ocParam = add1dParam(db, ocDict, genSet, genSymbols, ocName, ocDescrip)
@@ -370,9 +396,10 @@ def addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbT
     for c in cellSymbols:
         for t in techCurtailedSymbols:
             dict_techcurt_emRateError[(c, t)] = random.uniform(0, 0.05)
-            dict_techcurt_emRate[(c, t)] = co2EmRates[t] + dict_techcurt_emRateError[(c, t)]
+            dict_techcurt_emRate[(c, t)] = (co2EmRates[t] + dict_techcurt_emRateError[(c, t)])/1e3
 
-    (emRateName, emRateDescrip) = ('pCO2emratetechcurt', 'co2 emissions rate for curtailed techs (short ton/GWh)')
+    (emRateName, emRateDescrip) = ('pCO2emratetechcurt',
+                                   'co2 emissions rate for curtailed techs (10^3 short ton/GWh)')
     techEmRateParam = add_NdParam(db, dict_techcurt_emRate, [cellSet, techCurtailedSet], emRateName, emRateDescrip)
 
     # techs that cannot be curtailed
@@ -381,9 +408,10 @@ def addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbT
     for z in zoneSymbols:
         for t in techNotCurtailedSymbols:
             dict_technotcurt_emRateError[(z, t)] = random.uniform(0, 0.05)
-            dict_technotcurt_emRate[(z, t)] = co2EmRates[t] + dict_technotcurt_emRateError[(z, t)]
+            dict_technotcurt_emRate[(z, t)] = (co2EmRates[t] + dict_technotcurt_emRateError[(z, t)])/1e3
 
-    (emRateName, emRateDescrip) = ('pCO2emratetechnotcurt', 'co2 emissions rate for techs not curtailed (short ton/GWh)')
+    (emRateName, emRateDescrip) = ('pCO2emratetechnotcurt',
+                                   'co2 emissions rate for techs not curtailed (10^3 short ton/GWh)')
     techEmRateParam = add_NdParam(db, dict_technotcurt_emRate, [zoneSet, techNotCurtailedSet], emRateName, emRateDescrip)
 
     # renewable techs
@@ -392,9 +420,10 @@ def addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbT
     for z in zoneSymbols:
         for t in renewTechSymbols:
             dict_techrenew_emRateError[(z, t)] = random.uniform(0, 0.05)
-            dict_techrenew_emRate[(z, t)] = co2EmRates[t] + dict_techrenew_emRateError[(z, t)]
+            dict_techrenew_emRate[(z, t)] = (co2EmRates[t] + dict_techrenew_emRateError[(z, t)])/1e3
 
-    (emRateName, emRateDescrip) = ('pCO2emratetechrenew', 'co2 emissions rate for renewable techs (short ton/GWh)')
+    (emRateName, emRateDescrip) = ('pCO2emratetechrenew',
+                                   'co2 emissions rate for renewable techs (10^3 short ton/GWh)')
     techEmRateParam = add_NdParam(db, dict_techrenew_oc, [zoneSet, renewTechSet], emRateName, emRateDescrip)
 
     # Lifetime ---------------------
@@ -573,13 +602,21 @@ def addRenewTechCFParams(db, renewTechSet, renewTechSymbols, gcmSet, zoneSet, ho
                                    renewtechCFDescrip)
 
 
-##### ADD CO2 EMISSIONS CAP
 def addCppEmissionsCap(db, co2CppSercCurrYearLimit):
-    add0dParam(db, 'pCO2emcap', 'CPP co2 emissions cap [short tons]', co2CppSercCurrYearLimit)
+    """ADD CO2 EMISSIONS CAP FOR CE MODEL
+
+    :param db: data base object
+    :param co2CppSercCurrYearLimit: annual co2 upper bound (in short tons)
+    """
+    add0dParam(db, 'pCO2emcap', 'CPP co2 emissions cap [10^3 short tons]', co2CppSercCurrYearLimit/1e3)
 
 
-##### ADD WEIGHTS TO SCALE REPRESENTATIVE SEASONAL DEMAND UP
 def addSeasonDemandWeights(db, seasonDemandWeights):
+    """ADD WEIGHTS TO SCALE REPRESENTATIVE SEASONAL DEMAND UP TO COMPLETE SEASON PERIOD
+
+    :param db: data base object
+    :param seasonDemandWeights: dictionary with season weights
+    """
     for season in seasonDemandWeights:
         add0dParam(db, 'pWeight' + season, 'weight on rep. seasonal demand', seasonDemandWeights[season])
 
