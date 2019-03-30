@@ -89,11 +89,11 @@ def addEguParams(db, genFleet, genSet, genSymbols, ipmZones, ipmZoneNums, scaleL
     emRateDict = getEguParamDict(genFleet, 'CO2EmRate(ton/GWh)', 1)
     emRateRandErrDict = getEguParamDict(genFleet, 'CO2EmRandErr(ton/GWh)', 1)
 
-    # update Emission rate with random error value and divide by 1000
+    # update Emission rate with random error value and divide by 1e6
     for egu in emRateDict:
-        emRateDict[egu] = (emRateDict[egu] + emRateRandErrDict[egu])/1e3
+        emRateDict[egu] = (emRateDict[egu] + emRateRandErrDict[egu])/1e6
 
-    (emRateName, emRateDescrip) = ('pCO2emrate', 'emissions rate (10^3 short ton/GWh)')
+    (emRateName, emRateDescrip) = ('pCO2emrate', 'emissions rate (10^6 short ton/GWh)')
     emRateParam = add1dParam(db, emRateDict, genSet, genSymbols, emRateName, emRateDescrip)
 
     # Zone ----------------
@@ -396,10 +396,10 @@ def addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbT
     for c in cellSymbols:
         for t in techCurtailedSymbols:
             dict_techcurt_emRateError[(c, t)] = random.uniform(0, 0.05)
-            dict_techcurt_emRate[(c, t)] = (co2EmRates[t] + dict_techcurt_emRateError[(c, t)])/1e3
+            dict_techcurt_emRate[(c, t)] = (co2EmRates[t] + dict_techcurt_emRateError[(c, t)])/1e6
 
     (emRateName, emRateDescrip) = ('pCO2emratetechcurt',
-                                   'co2 emissions rate for curtailed techs (10^3 short ton/GWh)')
+                                   'co2 emissions rate for curtailed techs (10^6 short ton/GWh)')
     techEmRateParam = add_NdParam(db, dict_techcurt_emRate, [cellSet, techCurtailedSet], emRateName, emRateDescrip)
 
     # techs that cannot be curtailed
@@ -408,10 +408,10 @@ def addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbT
     for z in zoneSymbols:
         for t in techNotCurtailedSymbols:
             dict_technotcurt_emRateError[(z, t)] = random.uniform(0, 0.05)
-            dict_technotcurt_emRate[(z, t)] = (co2EmRates[t] + dict_technotcurt_emRateError[(z, t)])/1e3
+            dict_technotcurt_emRate[(z, t)] = (co2EmRates[t] + dict_technotcurt_emRateError[(z, t)])/1e6
 
     (emRateName, emRateDescrip) = ('pCO2emratetechnotcurt',
-                                   'co2 emissions rate for techs not curtailed (10^3 short ton/GWh)')
+                                   'co2 emissions rate for techs not curtailed (10^6 short ton/GWh)')
     techEmRateParam = add_NdParam(db, dict_technotcurt_emRate, [zoneSet, techNotCurtailedSet], emRateName, emRateDescrip)
 
     # renewable techs
@@ -420,11 +420,11 @@ def addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbT
     for z in zoneSymbols:
         for t in renewTechSymbols:
             dict_techrenew_emRateError[(z, t)] = random.uniform(0, 0.05)
-            dict_techrenew_emRate[(z, t)] = (co2EmRates[t] + dict_techrenew_emRateError[(z, t)])/1e3
+            dict_techrenew_emRate[(z, t)] = (co2EmRates[t] + dict_techrenew_emRateError[(z, t)])/1e6
 
     (emRateName, emRateDescrip) = ('pCO2emratetechrenew',
-                                   'co2 emissions rate for renewable techs (10^3 short ton/GWh)')
-    techEmRateParam = add_NdParam(db, dict_techrenew_oc, [zoneSet, renewTechSet], emRateName, emRateDescrip)
+                                   'co2 emissions rate for renewable techs (10^6 short ton/GWh)')
+    techEmRateParam = add_NdParam(db, dict_techrenew_emRate, [zoneSet, renewTechSet], emRateName, emRateDescrip)
 
     # Lifetime ---------------------
     lifetimeDict = getTechParamDict(newTechsCE, techSymbols, 'Lifetime(years)', ptCurtailed)
@@ -608,7 +608,7 @@ def addCppEmissionsCap(db, co2CppSercCurrYearLimit):
     :param db: data base object
     :param co2CppSercCurrYearLimit: annual co2 upper bound (in short tons)
     """
-    add0dParam(db, 'pCO2emcap', 'CPP co2 emissions cap [10^3 short tons]', co2CppSercCurrYearLimit/1e3)
+    add0dParam(db, 'pCO2emcap', 'CPP co2 emissions cap [10^6 short tons]', co2CppSercCurrYearLimit/1e6)
 
 
 def addSeasonDemandWeights(db, seasonDemandWeights):
