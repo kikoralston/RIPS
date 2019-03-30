@@ -94,7 +94,7 @@ def masterFunction(genparam, reserveparam, curtailparam):
             file_curtailment = 'curtailments_rcp85_{0:4d}.pk'.format(currYear)
 
             # read demand file
-            with open(os.path.join(path_data, file_demand), 'rb') as f:
+            with open(os.path.join(curtailparam.rbmDataDir, file_demand), 'rb') as f:
                 df_demand = pk.load(f)
 
             # compute total hourly system demand
