@@ -89,6 +89,32 @@ def masterFunction(genparam, reserveparam, curtailparam):
     # begin loop
     for currYear in range(genparam.startYear, genparam.endYear, genparam.yearStepCE):
 
+        if not genparam.referenceCase:
+            file_demand = 'df_demand_rcp85_{0:4d}.pk'.format(currYear)
+            file_curtailment = 'curtailments_rcp85_{0:4d}.pk'.format(currYear)
+
+            # read demand file
+            with open(os.path.join(path_data, file_demand), 'rb') as f:
+                df_demand = pk.load(f)
+
+            # compute total hourly system demand
+            df_demand = df_demand.groupby(['gcm', 'hour']).agg({'demand': sum}).reset_index()
+
+            df_demand = df_demand.groupby(['gcm']).agg({'demand': max}).reset_index().sort_values(by=['demand']).reset_index(drop=True)
+
+            # get names of GCms in 20%, 50%, 80%
+            gcms_chosen = list(df_demand.iloc[[3, 9, 15], ]['gcm'].astype('str'))
+
+            print('GCMs used in year {}:'.format(currYear))
+            print(gcms_chosen)
+            print()
+
+            # make copy of curtail param and update list of GCMs
+            curtparam_year = copy.deepcopy(curtailparam)
+            curtparam_year.list_gcms = gcms_chosen
+        else:
+            curtparam_year = copy.deepcopy(curtailparam)
+
         t_year = time.time()
         print('\n----------------------------------------------------------------\n')
         print('Starting loop for year {0:4d}\n'.format(currYear))
@@ -96,7 +122,7 @@ def masterFunction(genparam, reserveparam, curtailparam):
 
         print('CO2 cap in year {1:4d}: {0:,.3f} million tons'.format(currCo2Cap/1e6, currYear))
 
-        zonalDemandProfile, zonalTempDfs = forecastZonalDemandWithReg(currYear, genparam, curtailparam)
+        zonalDemandProfile, zonalTempDfs = forecastZonalDemandWithReg(currYear, genparam, curtparam_year)
 
         if genparam.runCE:
             # run capacity expansion model
@@ -140,13 +166,13 @@ def masterFunction(genparam, reserveparam, curtailparam):
                                                       capacExpModelsEachYear, capacExpBuilds, capacExpGenByGens,
                                                       capacExpRetiredUnitsByCE, capacExpRetiredUnitsByAge,
                                                       genFleetPriorCE, priorCEout_db, priorHoursCE,
-                                                      genparam, reserveparam, curtailparam)
+                                                      genparam, reserveparam, curtparam_year)
 
                 # write hours for CE to pickle file
                 with open(os.path.join(genparam.resultsDir, 'CE', 'hoursCE_{0}.pkl'.format(currYear)), 'wb') as f:
                     pk.dump(priorHoursCE, f, pk.HIGHEST_PROTOCOL)
 
-            # since model was executed set coldStart to False before running next year
+            # since model was executed successfully, set coldStart to False before running next year
             genparam.coldStart = False
 
         if genparam.runUC:
