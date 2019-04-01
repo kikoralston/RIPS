@@ -56,7 +56,7 @@ Parameters
          pCO2emratetechnotcurt(z, technotcurtailed)     CO2 emissions rate of potential new generators [short tons per GWh]
          pCO2emratetechrenew(z, techrenew)              CO2 emissions rate of potential new generators [short tons per GWh]
 *EMISSIONS CAP AND COST
-         pCO2emcap                       CO2 annual emissions cap [short tons]
+         pCO2emcap                       CO2 annual emissions cap [10^3 short tons]
 *HOURLY CAPACITY FACTORS FOR RENEWABLES
          pCf(g,z,techrenew,h)              hourly capacity factors for potential new renewables in each zone
          pMaxgenwind(g,z,h)                max hourly generation for existing wind [GWh]
@@ -141,7 +141,7 @@ Alias(h, hh);
 pPreviousHourSpecial(g, h) = smax(hh$[specialh(g,hh) and ord(hh) < ord(h)], ord(hh));
 
 Variable
-         vZ                              obj func [thousand USD per yr]
+         vZ                              obj func [billion $ per yr]
          vIc                             total investment costs for new plants = fixed O&M + overnight capital costs [thousand USD per yr]
          vVc                             total variable costs for new and existing plants = variable O&M + fuel + emission costs [thousand USD per yr]
          vVcspring                       variable costs for spring hours
@@ -157,12 +157,12 @@ Positive variables
          vPtechnotcurtailed(g,z,technotcurtailed,h)                hourly electricity generation by new plants [GWh]
          vPegu(g,egu,h)                                            hourly electricity generation by existing plants [GWh]
          vLineflow(g,l,h)                                          flow over lines per hour (GW)
-         vCO2emsannual                                           co2 emissions in entire year from new and existing plants [short ton]
-         vCO2emssummer                                           co2 emissions in summer from new and existing plants [short ton]
-         vCO2emsspring                                           co2 emissions in spring from new and existing plants [short ton]
-         vCO2emswinter                                           co2 emissions in winter from new and existing plants [short ton]
-         vCO2emsfall                                             co2 emissions in fall from new and existing plants [short ton]
-         vCO2emsspecial                                          co2 emissions in special hours from new and existing plants [short ton]
+         vCO2emsannual                                           co2 emissions in entire year from new and existing plants [10^3 short ton]
+         vCO2emssummer                                           co2 emissions in summer from new and existing plants [10^3 short ton]
+         vCO2emsspring                                           co2 emissions in spring from new and existing plants [10^3 short ton]
+         vCO2emswinter                                           co2 emissions in winter from new and existing plants [10^3 short ton]
+         vCO2emsfall                                             co2 emissions in fall from new and existing plants [10^3 short ton]
+         vCO2emsspecial                                          co2 emissions in special hours from new and existing plants [10^3 short ton]
          vSoc(g,pumphydroegu,h)                                    state of charge of pumped hydro units [GWh]
          vCharge(g,pumphydroegu,h)                                 charging by pumped hydro units [GWh]
          ;
@@ -230,8 +230,8 @@ display pNgcm;
 ******************************************************
 
 ******************OBJECTIVE FUNCTION******************
-*Objective: minimize fixed + variable costs
-objfunc..                vZ =e= vIc + vVc;
+*Objective: minimize fixed + variable costs (vIc and vVc are in thousands $ per year. vZ is in billion $ per year.)
+objfunc..                vZ =e= vIc/1e6 + vVc/1e6;
 ******************************************************
 
 ******************CALCULATE COSTS******************
@@ -340,7 +340,8 @@ hydrogenspe(g,hydroegu)..   pMaxhydrogenspe(g,hydroegu) =g= sum(h$specialh(g,h),
 
 ******************CO2 EMISSIONS CONSTRAINT******************
 *Co2 emissions = electricity generation * co2 emissions rate
-co2emsannual..   vCO2emsannual =e= vCO2emsspring + vCO2emssummer + vCO2emswinter + vCO2emsfall + vCO2emsspecial;
+*(each seasonal component is in thousands tons. Convert vCO2emsannual to million short tons)
+co2emsannual..   vCO2emsannual =e= 1e-3 * (vCO2emsspring + vCO2emssummer + vCO2emswinter + vCO2emsfall + vCO2emsspecial);
 
 co2emsspring..   vCO2emsspring =e= (pWeightspring/pNgcm)*sum((g,h)$[springh(g,h)],sum(egu,vPegu(g,egu,h)*pCO2emrate(egu))
                                                            + sum((techcurtailed,c),vPtechcurtailed(g,c,techcurtailed,h)*pCO2emratetechcurt(c, techcurtailed))
@@ -367,8 +368,8 @@ co2emsspecial..  vCO2emsspecial =e= (1/pNgcm)*sum((g,h)$[specialh(g,h)],sum(egu,
                                                            + sum((technotcurtailed,z),vPtechnotcurtailed(g,z,technotcurtailed,h)*pCO2emratetechnotcurt(z, technotcurtailed))
                                                            + sum((techrenew,z),vPtechrenew(g,z,techrenew,h)*pCO2emratetechrenew(z, techrenew)));
 
-*Meet emissions cap
-enforceco2emissionscap.. vCO2emsannual =l= pCO2emcap;
+*Meet emissions cap (change RHS to million short tons)
+enforceco2emissionscap.. vCO2emsannual =l= pCO2emcap/1e3;
 ************************************************************
 
 ******************STORAGE CONSTRAINTS******************
