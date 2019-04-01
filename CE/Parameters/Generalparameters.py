@@ -109,6 +109,7 @@ class Generalparameters:
         self.ncores_py = 1      # number of cores to use for parallel simulation in python
         self.ncores_gams = 1    # number of cores to use for parallel simulation in gams
         self.coldStart = False  # "Cold Start" for CE and UC models. Read files with initial conditions in first run
+        self.gcmranking = []    # list with ranking of GCMs that will be chosen in each CE year (e.g. [3, 9, 15])
 
         # OLD VARIABLES
         self.testModel = False  # use dummy test system; not currently working
@@ -203,9 +204,10 @@ class Generalparameters:
         outstr = outstr + 'scaleLbToShortTon = {}\n'.format(self.scaleLbToShortTon)
 
         outstr = outstr + '#\n# -------- OTHER PARAMETERS --------\n#\n'
-        outstr = outstr + 'ncores_py = {} \t    # number of cores to use for parallel simulation in python\n'.format(self.ncores_py)
-        outstr = outstr + 'ncores_gams = {} \t  # number of cores to use for parallel simulation in gams\n'.format(self.ncores_gams)
-        outstr = outstr + 'coldStart = {}\n'.format(self.coldStart)
+        outstr = outstr + 'ncores_py = {}   # number of cores to use for parallel simulation in python\n'.format(self.ncores_py)
+        outstr = outstr + 'ncores_gams = {} # number of cores to use for parallel simulation in gams\n'.format(self.ncores_gams)
+        outstr = outstr + 'coldStart = {}   # "Cold Start" for CE and UC models. Read files with initial conditions in first run\n'.format(self.coldStart)
+        outstr = outstr + 'gcmranking = {}  # list with ranking of GCMs that will be chosen in each CE year (e.g. [3, 9, 15])\n'.format(self.list2string(self.gcmranking))
 
         return outstr
 
@@ -258,7 +260,7 @@ class Generalparameters:
             #print(key + ': ' + data[key])
             if key in ['ptCurtailed', 'ptCurtailedRegs']:
                 setattr(self, key, set(map(str.strip, data[key].split(','))))
-            elif key == 'ptEligRetCF':
+            elif key == ['ptEligRetCF', 'gcmranking']:
                 setattr(self, key, list(map(str.strip, data[key].split(','))))
             elif key in ['dataRoot', 'resultsDir', 'pathSysGams']:
                 setattr(self, key, data[key])

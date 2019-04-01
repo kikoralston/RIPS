@@ -90,20 +90,25 @@ def masterFunction(genparam, reserveparam, curtailparam):
     for currYear in range(genparam.startYear, genparam.endYear, genparam.yearStepCE):
 
         if not genparam.referenceCase:
-            file_demand = 'df_demand_rcp85_{0:4d}.pk'.format(currYear)
-            file_curtailment = 'curtailments_rcp85_{0:4d}.pk'.format(currYear)
 
-            # read demand file
-            with open(os.path.join(curtailparam.rbmDataDir, file_demand), 'rb') as f:
-                df_demand = pk.load(f)
+            if len(genparam.gcmranking) > 0:
+                file_demand = 'df_demand_rcp85_{0:4d}.pk'.format(currYear)
+                file_curtailment = 'curtailments_rcp85_{0:4d}.pk'.format(currYear)
 
-            # compute total hourly system demand
-            df_demand = df_demand.groupby(['gcm', 'hour']).agg({'demand': sum}).reset_index()
+                # read demand file
+                with open(os.path.join(curtailparam.rbmDataDir, file_demand), 'rb') as f:
+                    df_demand = pk.load(f)
 
-            df_demand = df_demand.groupby(['gcm']).agg({'demand': max}).reset_index().sort_values(by=['demand']).reset_index(drop=True)
+                # compute total hourly system demand
+                df_demand = df_demand.groupby(['gcm', 'hour']).agg({'demand': sum}).reset_index()
 
-            # get names of GCms in 20%, 50%, 80%
-            gcms_chosen = list(df_demand.iloc[[3, 9, 15], ]['gcm'].astype('str'))
+                df_demand = df_demand.groupby(['gcm']).agg({'demand': max}).reset_index().sort_values(by=['demand']).reset_index(drop=True)
+
+                # get names of GCms in according to given ranking in genparam
+                gcms_chosen = list(df_demand.iloc[genparam.gcmranking, ]['gcm'].astype('str'))
+            else:
+                # if no ranking was given, just use list of gcms in curtailparam
+                gcms_chosen = list(curtailparam.list_gcms)
 
             print('GCMs used in year {}:'.format(currYear))
             print(gcms_chosen)
