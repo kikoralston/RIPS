@@ -91,9 +91,10 @@ def masterFunction(genparam, reserveparam, curtailparam):
 
         if not genparam.referenceCase:
 
-            if len(genparam.gcmranking) > 0:
-                file_demand = 'df_demand_rcp85_{0:4d}.pk'.format(currYear)
-                file_curtailment = 'curtailments_rcp85_{0:4d}.pk'.format(currYear)
+            if genparam.gcmranking is not None:
+
+                file_demand = 'df_demand_{1:}_{0:4d}.pk'.format(currYear, genparam.rcp)
+                file_curtailment = 'curtailments_{1}_{0:4d}.pk'.format(currYear, genparam.rcp)
 
                 # read demand file
                 with open(os.path.join(curtailparam.rbmDataDir, file_demand), 'rb') as f:

@@ -110,6 +110,7 @@ class Generalparameters:
         self.ncores_gams = 1    # number of cores to use for parallel simulation in gams
         self.coldStart = False  # "Cold Start" for CE and UC models. Read files with initial conditions in first run
         self.gcmranking = []    # list with ranking of GCMs that will be chosen in each CE year (e.g. [3, 9, 15])
+        self.rcp = ''           # name of rcp being simulated (rcp45 or rcp85)
 
         # OLD VARIABLES
         self.testModel = False  # use dummy test system; not currently working
@@ -208,6 +209,7 @@ class Generalparameters:
         outstr = outstr + 'ncores_gams = {} # number of cores to use for parallel simulation in gams\n'.format(self.ncores_gams)
         outstr = outstr + 'coldStart = {}   # "Cold Start" for CE and UC models. Read files with initial conditions in first run\n'.format(self.coldStart)
         outstr = outstr + 'gcmranking = {}  # list with ranking of GCMs that will be chosen in each CE year (e.g. [3, 9, 15])\n'.format(self.list2string(self.gcmranking))
+        outstr = outstr + 'rcp = {}  # name of rcp being simulated (rcp45 or rcp85)\n'.format(self.rcp)
 
         return outstr
 
@@ -225,8 +227,11 @@ class Generalparameters:
     @staticmethod
     def list2string(ll):
 
-        a = str(ll)
-        b = ((a.replace('[', '')).replace(']', '')).replace('\'', '')
+        if ll is None:
+            b = ''
+        else:
+            a = str(ll)
+            b = ((a.replace('[', '')).replace(']', '')).replace('\'', '')
 
         return b
 
@@ -260,7 +265,7 @@ class Generalparameters:
             #print(key + ': ' + data[key])
             if key in ['ptCurtailed', 'ptCurtailedRegs']:
                 setattr(self, key, set(map(str.strip, data[key].split(','))))
-            elif key == ['ptEligRetCF', 'gcmranking']:
+            elif key in ['ptEligRetCF', 'gcmranking']:
                 setattr(self, key, list(map(str.strip, data[key].split(','))))
             elif key in ['dataRoot', 'resultsDir', 'pathSysGams']:
                 setattr(self, key, data[key])
@@ -269,6 +274,14 @@ class Generalparameters:
                     setattr(self, key, lev(data[key]))
                 except (ValueError, SyntaxError):
                     setattr(self, key, data[key])
+
+        # convert ranking of gcms to expected format
+        if self.gcmranking == ['']:
+            # change empty list to None
+            self.gcmranking = None
+        else:
+            # change string values to integer
+            self.gcmranking = list(map(int, self.gcmranking))
 
         folderName = ('Area' + self.analysisArea + 'Cells' + self.cellNewTechCriteria +
                       ('Curtail' if self.incCurtailments == True else 'NoCurtail') +
