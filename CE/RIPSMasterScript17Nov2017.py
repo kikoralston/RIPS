@@ -109,7 +109,7 @@ def masterFunction(genparam, reserveparam, curtailparam):
                 gcms_chosen = list(df_demand.iloc[genparam.gcmranking, ]['gcm'].astype('str'))
             else:
                 # if no ranking was given, just use list of gcms in curtailparam
-                gcms_chosen = list(curtailparam.list_gcms)
+                gcms_chosen = list(curtailparam.listgcms)
 
             print('GCMs used in year {}:'.format(currYear))
             print(gcms_chosen)
@@ -117,7 +117,7 @@ def masterFunction(genparam, reserveparam, curtailparam):
 
             # make copy of curtail param and update list of GCMs
             curtparam_year = copy.deepcopy(curtailparam)
-            curtparam_year.list_gcms = gcms_chosen
+            curtparam_year.listgcms = gcms_chosen
         else:
             curtparam_year = copy.deepcopy(curtailparam)
 
