@@ -91,7 +91,8 @@ def addEguParams(db, genFleet, genSet, genSymbols, ipmZones, ipmZoneNums, scaleL
 
     # update Emission rate with random error value and divide by 1e3
     for egu in emRateDict:
-        emRateDict[egu] = (emRateDict[egu] + emRateRandErrDict[egu])/1e3
+        if emRateDict[egu] > 0:
+            emRateDict[egu] = (emRateDict[egu] + emRateRandErrDict[egu]) / 1e3
 
     (emRateName, emRateDescrip) = ('pCO2emrate', 'emissions rate (10^3 short ton/GWh)')
     emRateParam = add1dParam(db, emRateDict, genSet, genSymbols, emRateName, emRateDescrip)
@@ -396,7 +397,10 @@ def addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbT
     for c in cellSymbols:
         for t in techCurtailedSymbols:
             dict_techcurt_emRateError[(c, t)] = random.uniform(0, 0.05)
-            dict_techcurt_emRate[(c, t)] = (co2EmRates[t] + dict_techcurt_emRateError[(c, t)])/1e3
+            if co2EmRates[t] == 0:
+                dict_techcurt_emRate[(c, t)] = 0
+            else:
+                dict_techcurt_emRate[(c, t)] = (co2EmRates[t] + dict_techcurt_emRateError[(c, t)]) / 1e3
 
     (emRateName, emRateDescrip) = ('pCO2emratetechcurt',
                                    'co2 emissions rate for curtailed techs (10^3 short ton/GWh)')
@@ -408,7 +412,10 @@ def addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbT
     for z in zoneSymbols:
         for t in techNotCurtailedSymbols:
             dict_technotcurt_emRateError[(z, t)] = random.uniform(0, 0.05)
-            dict_technotcurt_emRate[(z, t)] = (co2EmRates[t] + dict_technotcurt_emRateError[(z, t)])/1e3
+            if co2EmRates[t] == 0:
+                dict_technotcurt_emRate[(z, t)] = 0
+            else:
+                dict_technotcurt_emRate[(z, t)] = (co2EmRates[t] + dict_technotcurt_emRateError[(z, t)])/1e3
 
     (emRateName, emRateDescrip) = ('pCO2emratetechnotcurt',
                                    'co2 emissions rate for techs not curtailed (10^3 short ton/GWh)')
@@ -420,7 +427,10 @@ def addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbT
     for z in zoneSymbols:
         for t in renewTechSymbols:
             dict_techrenew_emRateError[(z, t)] = random.uniform(0, 0.05)
-            dict_techrenew_emRate[(z, t)] = (co2EmRates[t] + dict_techrenew_emRateError[(z, t)])/1e3
+            if co2EmRates[t] == 0:
+                dict_techrenew_emRate[(z, t)] = 0
+            else:
+                dict_techrenew_emRate[(z, t)] = (co2EmRates[t] + dict_techrenew_emRateError[(z, t)]) / 1e3
 
     (emRateName, emRateDescrip) = ('pCO2emratetechrenew',
                                    'co2 emissions rate for renewable techs (10^3 short ton/GWh)')
