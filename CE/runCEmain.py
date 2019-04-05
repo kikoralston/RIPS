@@ -32,6 +32,8 @@ def runCEmain(cwd=os.getcwd(), case=None):
 
         genparam.co2CapScenario = df['co2CapScenario'].iloc[case].lower().strip()
 
+        genparam.rcp = df['rcp'].iloc[case].lower().strip()
+
     # BASE LINE CASE
     if genparam.referenceCase:
         genparam.incCurtailments = False
@@ -53,6 +55,7 @@ def runCEmain(cwd=os.getcwd(), case=None):
     print('selectCurtailDays: {}'.format(genparam.selectCurtailDays))
     print('incRegs: {}'.format(genparam.incRegs))
     print('CO2 Cap Scenario: {}'.format(genparam.co2CapScenario))
+    print('RCP: {}'.format(genparam.rcp))
 
     print('------------------------------------------')
 
