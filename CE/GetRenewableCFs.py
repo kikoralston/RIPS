@@ -253,7 +253,7 @@ def getWindOrSolarIdsInZonesDecreasingCF(metadata, capacInZone, cfCol, capacCol,
         if len(cfs) == 0:
             fleetCapac = capacInZone - currZoneCapac
             siteName = 'NoMoreSites'
-            idAndCapacs.append([siteName, fleetCapac, fleetCapac])
+            idAndCapacs.append([siteName, fleetCapac, fleetCapac, fleetCapac])
             currZoneCapac += fleetCapac
         else:
 
