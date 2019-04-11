@@ -34,7 +34,15 @@ def runCEmain(cwd=os.getcwd(), case=None):
         genparam.co2CapScenario = df['co2CapScenario'].iloc[case].lower().strip()
         genparam.rcp = df['rcp'].iloc[case].lower().strip()
         genparam.useLineLimits = df['useLineLimits'].iloc[case]
+
         genparam.gcmranking = list(map(str.strip, df['gcmranking'].iloc[case].split(';')))
+        # convert ranking of gcms to expected format
+        if self.gcmranking == ['']:
+            # change empty list to None
+            self.gcmranking = None
+        else:
+            # change string values to integer
+            self.gcmranking = list(map(int, self.gcmranking))
 
     # BASE LINE CASE
     if genparam.referenceCase:
