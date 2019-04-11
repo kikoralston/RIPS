@@ -88,5 +88,5 @@ Icon?
 curtailmentparameters.txt
 generalparameters.txt
 reserveparameters.txt
-list_cases.csv
+*list_cases.csv
 *.dat
