@@ -27,12 +27,11 @@ def runCEmain(cwd=os.getcwd(), case=None):
 
         genparam.resultsDir = df['resultsDir'].iloc[case].strip()
         genparam.referenceCase = df['referenceCase'].iloc[case]
-
         curtailparam.listgcms = list(map(str.strip, df['listgcms'].iloc[case].split(';')))
-
         genparam.co2CapScenario = df['co2CapScenario'].iloc[case].lower().strip()
-
         genparam.rcp = df['rcp'].iloc[case].lower().strip()
+        genparam.useLineLimits = df['useLineLimits'].iloc[case]
+        genparam.gcmranking = list(map(str.strip, df['gcmranking'].iloc[case].split(';')))
 
     # BASE LINE CASE
     if genparam.referenceCase:
