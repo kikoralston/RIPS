@@ -23,7 +23,10 @@ def runCEmain(cwd=os.getcwd(), case=None):
 
         case = int(case) - 1
 
-        df = pd.read_csv(os.path.join(cwd, 'list_cases.csv'), comment='#', sep=',', skipinitialspace=True)
+        df = pd.read_csv(os.path.join(cwd, 'list_cases.csv'), comment='#', sep=',', skipinitialspace=True,
+                         dtype={'case': int, 'resultsDir': object, 'listgcms': object, 'referenceCase': bool,
+                                'co2CapScenario': object, 'rcp': object, 'useLineLimits': bool,
+                                'gcmranking': object})
 
         genparam.resultsDir = df['resultsDir'].iloc[case].strip()
         genparam.referenceCase = df['referenceCase'].iloc[case]
