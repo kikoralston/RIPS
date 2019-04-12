@@ -68,6 +68,23 @@ def masterFunction(genparam, reserveparam, curtailparam):
     if not os.path.exists(genparam.resultsDir):
         os.makedirs(genparam.resultsDir)
 
+    # create new folder to store GAMS models for this instance
+    if not os.path.exists(os.path.join(genparam.resultsDir, 'GAMS')):
+        os.makedirs(os.path.join(genparam.resultsDir, 'GAMS'))
+
+    # copy GAMS files to GAMS dir in results folder
+    try:
+        shutil.copy(os.path.join(genparam.dataRoot, 'GAMS', genparam.capacExpFilename),
+                    os.path.join(genparam.resultsDir, 'GAMS', genparam.capacExpFilename))
+        shutil.copy(os.path.join(genparam.dataRoot, 'GAMS', genparam.ucFilename),
+                    os.path.join(genparam.resultsDir, 'GAMS', genparam.ucFilename))
+        # eg. src and dest are the same file
+    except shutil.Error as e:
+        print('Error: {}'.format(e))
+        # eg. source or destination doesn't exist
+    except IOError as e:
+        print('Error: {}'.format(e.strerror))
+
     write2dListToCSV([['Zone', 'ZoneNum']] + rotate([genparam.ipmZones, genparam.ipmZoneNums]),
                      os.path.join(genparam.resultsDir, 'zoneNamesToNumbers.csv'))
 
@@ -472,7 +489,7 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
     print('Time (secs) for CE year {0:4d}: {1:.2f}'.format(currYear, (time.time() - t0)))
 
     # copy input and output GDX files to output folder and rename them
-    gamsFileDir = os.path.join(genparam.dataRoot, 'GAMS')
+    gamsFileDir = os.path.join(genparam.resultsDir, 'GAMS')
     try:
         shutil.copy(os.path.join(gamsFileDir, '_gams_py_gdb0.gdx'),
                     os.path.join(resultsDir, 'gdxInYear{}.gdx'.format(currYear)))
@@ -603,7 +620,8 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
                                     genparam.lineList, genparam.lineCapacs, genparam.ipmZoneNums,
                                     genparam.ptCurtailedAll,  genparam.phEff, genparam.phMaxSoc, genparam.phInitSoc)
 
-    gamsFileDir = os.path.join(dataRoot, 'GAMS')
+    # folder with gams file for this instance (this is why this is set to resultsdir)
+    gamsFileDir = os.path.join(genparam.resultsDir, 'GAMS')
     gamsSysDir = pathSysGams.strip()
 
     if not gamsSysDir == '':
@@ -1041,7 +1059,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
         msAndSs.append([day, ms, ss])
 
         # check if file with flag to save GDX files exists in GAMS folder
-        gamsFileDir = os.path.join(genparam.dataRoot, 'GAMS')
+        gamsFileDir = os.path.join(genparam.resultsDir, 'GAMS')
         if os.path.exists(os.path.join(gamsFileDir, 'saveGDX.flag')):
 
             # read flag from file
@@ -1111,7 +1129,7 @@ def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenU
      scaleLbToShortTon) = (genparam.ucFilename, genparam.dataRoot, genparam.scaleMWtoGW,
                            genparam.scaleDollarsToThousands, genparam.scaleLbToShortTon)
 
-    gamsFileDir = os.path.join(dataRoot, 'GAMS')
+    gamsFileDir = os.path.join(genparam.resultsDir, 'GAMS')
     gamsSysDir = genparam.pathSysGams.strip()
 
     if not gamsSysDir == '':
