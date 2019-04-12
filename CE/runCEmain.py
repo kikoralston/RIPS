@@ -42,7 +42,7 @@ def runCEmain(cwd=os.getcwd(), case=None):
             genparam.gcmranking = None
         else:
             # change string values to integer
-            genparam.gcmranking = list(map(int, self.gcmranking))
+            genparam.gcmranking = list(map(int, genparam.gcmranking))
 
     # BASE LINE CASE
     if genparam.referenceCase:
