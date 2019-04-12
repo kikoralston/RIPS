@@ -26,7 +26,7 @@ def runCEmain(cwd=os.getcwd(), case=None):
         df = pd.read_csv(os.path.join(cwd, 'list_cases.csv'), comment='#', sep=',', skipinitialspace=True,
                          dtype={'case': int, 'resultsDir': object, 'listgcms': object, 'referenceCase': bool,
                                 'co2CapScenario': object, 'rcp': object, 'useLineLimits': bool,
-                                'gcmranking': object})
+                                'gcmranking': object}, keep_default_na=False)
 
         genparam.resultsDir = df['resultsDir'].iloc[case].strip()
         genparam.referenceCase = df['referenceCase'].iloc[case]
