@@ -37,12 +37,12 @@ def runCEmain(cwd=os.getcwd(), case=None):
 
         genparam.gcmranking = list(map(str.strip, df['gcmranking'].iloc[case].split(';')))
         # convert ranking of gcms to expected format
-        if self.gcmranking == ['']:
+        if genparam.gcmranking == ['']:
             # change empty list to None
-            self.gcmranking = None
+            genparam.gcmranking = None
         else:
             # change string values to integer
-            self.gcmranking = list(map(int, self.gcmranking))
+            genparam.gcmranking = list(map(int, self.gcmranking))
 
     # BASE LINE CASE
     if genparam.referenceCase:
