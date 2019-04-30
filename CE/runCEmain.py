@@ -1,5 +1,6 @@
 import os, sys
 import pandas as pd
+from memory_profiler import profile
 from RIPSMasterScript17Nov2017 import *
 from Parameters import *
 sys.stdout.flush()
