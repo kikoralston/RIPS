@@ -4,21 +4,32 @@
 #run of entire year using assumed values or based on last values in prior run.
 
 from GAMSAuxFuncs import *
+from GAMSAddSetToDatabaseFuncs import isolateGenSymbols
+from GAMSAddParamToDatabaseFuncs import getSocDict
 
 
-def setInitCondsFirstUC(fleetUC):
+def setInitCondsFirstUC(fleetUC, genparam):
     """SET INITIAL CONDITION PARAMETERS FOR FIRST UC RUN
 
     For first UC run of year. Assume all plants initially off w/ no carried MDT
 
+
     :param fleetUC: 2d list with gen fleet
-    :return: 1d list of initial on/off, gen above min (MWh), & carried MDT values
+    :param genparam: general parameters
+    :return: 1d list of initial on/off, gen above min (MWh), & carried MDT values,
+             Dict with initial state of charge for pumped hydro
     """
     onOffInitial = [0 for i in range(1, len(fleetUC))]
     genAboveMinInitial = [0 for i in range(1, len(fleetUC))] #MW
     mdtCarriedInitial = [0 for i in range(1, len(fleetUC))]
 
-    return onOffInitial, genAboveMinInitial, mdtCarriedInitial
+    # initial state of charge in day 1 is defined as a fraction of max SOC
+    # max SOC is defined as phMaxSoc * Capacity
+    pumpHydroGenSymbols = isolateGenSymbols(fleetUC, 'Pumped Storage')
+    socDict = getSocDict(fleetUC, genparam.phMaxSoc, pumpHydroGenSymbols, genparam.scaleMWtoGW)
+    initSocDict = {gen: socDict[gen] * genparam.phInitSoc for gen in socDict}
+
+    return onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSocDict
             
 
 def setInitCondsPerPriorUC(ucModel, fleetUC, hoursForUC, daysOpt, daysLA, scaleMWtoGW):
@@ -32,7 +43,8 @@ def setInitCondsPerPriorUC(ucModel, fleetUC, hoursForUC, daysOpt, daysLA, scaleM
     :param daysOpt: num days for optim horiz (i.e., keep those results)
     :param daysLA: num days look ahead (need to skip these)
     :param scaleMWtoGW: scale factor MW to GW
-    :return: 1d lists of initial on/off & gen above min (MWh) & carried MDT vals
+    :return: 1d lists of initial on/off & gen above min (MWh) & carried MDT vals.
+             Dict with initial state of charge for pumped hydro
     """
 
     #For genAboveMin & onOff, just need variable value in prior hour
@@ -46,7 +58,11 @@ def setInitCondsPerPriorUC(ucModel, fleetUC, hoursForUC, daysOpt, daysLA, scaleM
     #to end of last time period, and subtract that from MDT.
     mdtCarriedInitial = getMdtCarriedInitial(onOffInitial, ucModel, fleetUC, hoursForUC, daysOpt, daysLA)
 
-    return onOffInitial, genAboveMinInitial, mdtCarriedInitial
+    # initial state of charge for pumped storage
+    socDict = extract2dVarResultsIntoDict(ucModel, 'vSoc')
+    initSocDict = {key[0]: socDict[key] for key in socDict if key[1] == lastHourSymbolPriorUCRun}
+
+    return onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSocDict
 
 
 def getMdtCarriedInitial(onOffInitial, ucModel, fleetUC, hoursForUC, daysOpt, daysLA):

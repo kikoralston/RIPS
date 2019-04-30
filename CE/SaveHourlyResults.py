@@ -7,8 +7,8 @@ from GAMSAuxFuncs import createHourSymbol
 
 ############ SAVE HOURLY X PLANT RESULTS #######################################
 #Adds results from curr UC run to input 2d lists
-def saveHourlyResultsByPlant(genByPlant,regUpByPlant,regDownByPlant,flexByPlant,contByPlant,
-            turnonByPlant,turnoffByPlant,onOffByPlant,genToRow,hourToColPlant,ucModel,ucDay,daysOpt):
+def saveHourlyResultsByPlant(genByPlant,regUpByPlant,regDownByPlant,flexByPlant,contByPlant, turnonByPlant,
+                             turnoffByPlant,onOffByPlant,genToRow,hourToColPlant,ucModel,ucDay,daysOpt):
     saveHourByPlantVar(genByPlant,genToRow,hourToColPlant,ucModel,ucDay,daysOpt,'vGen')
     saveHourByPlantVar(regUpByPlant,genToRow,hourToColPlant,ucModel,ucDay,daysOpt,'vRegup')
     # saveHourByPlantVar(regDownByPlant,genToRow,hourToColPlant,ucModel,ucDay,daysOpt,'vRegdown')
@@ -34,6 +34,30 @@ def getHoursInOptimHorizon(day,daysOpt):
     (firstHour,lastHour) = ((day-1)*24+1,((day-1)+daysOpt)*24) 
     return set([createHourSymbol(hr) for hr in range(firstHour,lastHour+1)])
 ################################################################################    
+
+
+def saveHourlyPumpedHydroResults(pumphydroSoc, pumphydroCharge, ucModel, ucDay, daysOpt):
+    hoursForOptSet = getHoursInOptimHorizon(ucDay, daysOpt)
+
+    # get ordered hours
+    hoursColTot = [h for h in pumphydroSoc[0][1:]]
+
+    #get ordered pumped hydro genIds
+    phIDs = [row[0] for row in pumphydroSoc[1:]]
+
+    for rec in ucModel.out_db['vSoc']:
+        (gen,hour) = (rec.key(0), rec.key(1)) #Vars are indexed as egu,h
+        if hour in hoursForOptSet:
+            (rowIdx, colIdx) = (phIDs.index(gen), hoursColTot.index(hour))
+            pumphydroSoc[rowIdx+1][colIdx+1] = rec.level
+
+    for rec in ucModel.out_db['vCharge']:
+        (gen,hour) = (rec.key(0), rec.key(1)) #Vars are indexed as egu,h
+        if hour in hoursForOptSet:
+            (rowIdx, colIdx) = (phIDs.index(gen), hoursColTot.index(hour))
+            pumphydroCharge[rowIdx+1][colIdx+1] = rec.level
+
+
 
 ############ SAVE HOURLY SYSTEM RESULTS ########################################
 def saveHourlySystemResults(sysResults,resultToRow,hourToColSys,ucModel,ucDay,daysOpt):

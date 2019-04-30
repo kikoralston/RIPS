@@ -21,6 +21,7 @@ Sets
          windegu(egu)                            "wind electricity generators"
          solaregu(egu)                           "solar electricity generators"
          hydroegu(egu)                           "hydroelectric generators"
+         pumphydroegu(egu)                       "Pumped Storage generators"
          ;
 
 alias(h,hh);
@@ -65,6 +66,10 @@ Parameters
          pMaxcontoffer(egu)
          pCnse                                   "cost of non-served energy (thousands$/GWh)"
          pCO2price                               "cost of CO2"
+*Pumped Hydro Parameters
+         pInitsoc(pumphydroegu)                  "initial state of charge of each pumped hydro unit [GWh]"
+         pMaxsoc(pumphydroegu)                   "max state of charge of each pumped hydro unit [GWh]"
+         pEfficiency(pumphydroegu)               "efficiency of each pumped hydro unit"
 *Diagnostic parameters
          pModelstat
          pSolvestat
@@ -72,12 +77,13 @@ Parameters
 
 $if not set gdxincname $abort 'no include file name for data file provided'
 $gdxin %gdxincname%
-$load z, l, h, egu, windegu, solaregu, hydroegu
+$load z, l, h, egu, windegu, solaregu, hydroegu, pumphydroegu
 $load pDemand, pEguzones, pCapac, pOpcost, pMinload, pRamprate, pStartupfixedcost, pMindowntime
 $load pOnoroffinitial, pMdtcarriedhours, pGenabovemininitial, pRegeligible, pFlexeligible, pConteligible
 $load pMaxgensolar, pMaxgenwind, pMaxgenhydro, pRampratetoregreservescalar, pRegupreserves, pRegdownreserves
 $load pRampratetoflexreservescalar, pFlexreserves, pRampratetocontreservescalar, pContreserves
 $load pCnse, pCO2price, pLinecapacs, pLinesources, pLinesinks
+$load pInitsoc, pMaxsoc, pEfficiency
 $gdxin
 
 *DEFINE PARAMETERS
@@ -95,9 +101,11 @@ Positive Variables
          vRegup(egu,h)                           "regulation up reserves provided (GW)"
          vFlex(egu,h)
          vCont(egu,h)
-         vNse(z,h)                               "nonserved energy (GW)"
-         vLineflow(l,h)                          "flow over lines per hour (GW)"
-                 ;
+         vNse(z,h)                              "nonserved energy (GW)"
+         vSoc(pumphydroegu,h)                    "state of charge for pumped hydro (GW)"
+         vCharge(pumphydroegu,h)                 "charged energy for pumped hydro (GW)"
+         vLineflow(l,h)                         "Line Flow in GW"
+         ;
 
 Binary Variables
          vTurnon(egu,h)                          "indicates whether plant decides to turn on (1) or not (0) in hour h"
@@ -107,12 +115,12 @@ Binary Variables
 
 Equations
          objfunc                                 "define objective function to be minimized"
-         meetdemand(z,h)                               "must meet electric demand"
-         meetflexreserves(z,h)                     "meet hourly spinning reserve requirements"
+         meetdemand(z,h)                         "must meet electric demand"
+         meetflexreserves(z,h)                   "meet hourly spinning reserve requirements"
          meetcontreserves(z,h)
-         meetregupreserves(z,h)                      "meet hourly regulation reserve requirements"
-         maxwindgen(z,h)                           "restrict wind generation to maximum aggregate output"
-         maxsolargen(z,h)                          "restrict solar generation to maxmimum aggregate output"
+         meetregupreserves(z,h)                  "meet hourly regulation reserve requirements"
+         maxwindgen(z,h)                         "restrict wind generation to maximum aggregate output"
+         maxsolargen(z,h)                        "restrict solar generation to maxmimum aggregate output"
          maxdailyhydrogen(hydroegu)
          definegenabovemin(egu,h)                "establish relationship between Gen (total gen) and Genabovemin (gen just above min stable load)"
          rampconstraintup(egu,h)                 "ramping up constraint for t>1"
@@ -125,12 +133,19 @@ Equations
          enforcemindowntimecarryover(egu,h)      "enforce MDT from turn off decisions in prior optimization"
          flexreservelimit(egu,h)                 "limit spin reserves provided by generator to multiple of ramp rate"
          contreservelimit(egu,h)
-         regupreservelimit(egu,h)                  "limit reg reserves provided by generator to multiple of ramp rate"
-         genplusresuplimit(egu,h)                 "limit generation + spin reserves to max capac"
-                  ;
+         regupreservelimit(egu,h)                "limit reg reserves provided by generator to multiple of ramp rate"
+         genplusresuplimit(egu,h)                "limit generation + spin reserves to max capac"
+         genandsoc(pumphydroegu,h)               "restrict gen by pump hydro to state of charge"
+         maxsto(pumphydroegu,h)                  "set max soc limit"
+         limitcharging(pumphydroegu,h)           "limit charging to capacity times efficiency"
+         defsoc(pumphydroegu,h)                  "link state of charge and charging and discharging"
+         ;
 
 * PRINT ZONES SET IN LST FILE IN ORDER TO CHECK IF ORDER IS CORRECT!
 display z;
+
+* PRINT h SET IN LST FILE IN ORDER TO CHECK IF ORDER IS CORRECT!
+display h;
 
 ******************OBJECTIVE FUNCTION******************
 *Minimize total operational cost
@@ -140,8 +155,10 @@ objfunc .. vTotalopcost =e= sum((z,h),pCnse*vNse(z,h))
 
 ******************ZONAL DEMAND AND RESERVE CONSTRAINTS******************
 *Demand requirement
-meetdemand(z,h).. sum(egu$[pEguzones(egu)=ORD(z)],vGen(egu,h)) - sum(l$[pLinesources(l)=ORD(z)],vLineflow(l,h))
-         + sum(l$[pLinesinks(l)=ORD(z)],vLineflow(l,h)) + vNse(z,h) =e= pDemand(z,h);
+meetdemand(z,h).. sum(egu$[pEguzones(egu)=ORD(z)],vGen(egu,h))
+                  - sum(pumphydroegu$[pEguzones(pumphydroegu)=ORD(z)],vCharge(pumphydroegu,h))
+                  - sum(l$[pLinesources(l)=ORD(z)],vLineflow(l,h))
+                  + sum(l$[pLinesinks(l)=ORD(z)],vLineflow(l,h)) + vNse(z,h) =e= pDemand(z,h);
 
 *Reserve requirements
 meetflexreserves(z,h)  .. sum(egu$[pEguzones(egu)=ORD(z)],vFlex(egu,h)) =g= pFlexreserves(z,h);
@@ -203,6 +220,23 @@ enforcemindowntime(egu,h)$[ORD(h)>pMdtcarriedhours(egu)] .. 1-vOnoroff(egu,h) =g
 
 *Enforce MDT hours carried over from last optimization
 enforcemindowntimecarryover(egu,h)$[ORD(h)<=pMdtcarriedhours(egu)] .. vOnoroff(egu,h) =l= 0;
+******************************************************
+
+******************STORAGE CONSTRAINTS******************
+*Limit generation to state of charge
+genandsoc(pumphydroegu,h).. vGen(pumphydroegu,h) =l= vSoc(pumphydroegu,h);
+*
+*Link state of charge, charging, and discharging
+defsoc(pumphydroegu,h).. vSoc(pumphydroegu,h) =e= pInitsoc(pumphydroegu)$[ord(h)=1]
+                                                  + vSoc(pumphydroegu,h-1)$[ord(h)>1]
+                                                  - vGen(pumphydroegu,h)
+                                                  + pEfficiency(pumphydroegu) * vCharge(pumphydroegu,h);
+*
+*Limit state of charge to maximum storage capacity
+maxsto(pumphydroegu,h).. vSoc(pumphydroegu,h) =l= pMaxsoc(pumphydroegu);
+*
+*Limit rate of charging to capacity times efficiency
+limitcharging(pumphydroegu,h).. vCharge(pumphydroegu,h) =l= pCapac(pumphydroegu,h);
 ******************************************************
 
 model ripsUC /all/;

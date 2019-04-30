@@ -10,9 +10,9 @@ import copy
 #Outputs empty 2d lists that will store gen-by-hour results
 #Inputs: days included in UC, fleet UC
 #Outputs: empty 2d lists of gens x hours, dict mapping gen to row # and hour to col #
-def setupHourlyResultsByPlant(daysForUC,fleetUC):
+def setupHourlyResultsByPlant(daysForUC, fleetUC):
     hourSymbolsForUC = getHourSymbolsForUC(daysForUC)
-    (genByPlant,genToRow,hourToCol) = setupHourlyGenByPlant(hourSymbolsForUC,fleetUC)
+    (genByPlant, genToRow, hourToCol) = setupHourlyGenByPlant(hourSymbolsForUC, fleetUC)
     regUpByPlant = copy.deepcopy(genByPlant)
     regDownByPlant = copy.deepcopy(genByPlant)
     flexByPlant = copy.deepcopy(genByPlant)
@@ -20,8 +20,8 @@ def setupHourlyResultsByPlant(daysForUC,fleetUC):
     turnonByPlant = copy.deepcopy(genByPlant)
     turnoffByPlant = copy.deepcopy(genByPlant)
     onOffByPlant = copy.deepcopy(genByPlant)
-    return (genByPlant,regUpByPlant,flexByPlant,contByPlant,turnonByPlant,
-        turnoffByPlant,regDownByPlant,onOffByPlant,genToRow,hourToCol) #
+    return (genByPlant, regUpByPlant, flexByPlant, contByPlant, turnonByPlant, turnoffByPlant, regDownByPlant,
+            onOffByPlant, genToRow, hourToCol)
 
 #Inputs: days included in UC, fleet UC
 #Outputs: empty 2d list of gens x hours, dict mapping gen to row # and hour to col #
@@ -56,6 +56,29 @@ def getHourSymbolsForUC(daysForUC):
         (firstHour,lastHour) = ((day-1)*24+1,day*24) 
         hourSymbols += [createHourSymbol(hr) for hr in range(firstHour,lastHour+1)]
     return hourSymbols
+
+
+def setupHourlyPHResults(genByPlant, fleetUC):
+    """Create empty 2d list for pumped hydro variables using genByPlant as a template
+
+    :param genByPlant: empty 2d list template with all generators
+    :param fleetUC: 2d list with gen data
+    :return: Empty 2d lists for pumphydroSoc (state of charge) and pumphydroCharge (charge)
+    """
+
+    # get list of Ids of Pumped Hydro Plants
+    plantTypeCol = fleetUC[0].index('PlantType')
+    phIDs = [createGenSymbol(row, fleetUC[0]) for row in fleetUC[1:] if row[plantTypeCol] == 'Pumped Storage']
+
+    # state of charge
+    pumphydroSoc = [copy.deepcopy(genByPlant[0])] + [copy.deepcopy(row) for row in genByPlant if row[0] in phIDs]
+
+    # charge
+    pumphydroCharge = [copy.deepcopy(genByPlant[0])] + [copy.deepcopy(row) for row in genByPlant if row[0] in phIDs]
+
+    return pumphydroSoc, pumphydroCharge
+
+
 ################################################################################
 
 ############ SETUP HOURLY RESULT LISTS #########################################

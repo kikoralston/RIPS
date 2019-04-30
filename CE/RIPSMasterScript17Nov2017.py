@@ -44,8 +44,8 @@ from TrimDemandREGenAndResForUC import getDemandAndREGenForUC, getResForUC
 from GAMSAddSetToDatabaseFuncs import *
 from GAMSAddParamToDatabaseFuncs import *
 from ConvertCO2CapToPrice import convertCo2CapToPrice
-from SetupResultLists import setupHourlyResultsByPlant, setupHourlySystemResults
-from SaveHourlyResults import saveHourlyResultsByPlant, saveHourlySystemResults
+from SetupResultLists import setupHourlyResultsByPlant, setupHourlySystemResults, setupHourlyPHResults
+from SaveHourlyResults import saveHourlyResultsByPlant, saveHourlySystemResults, saveHourlyPumpedHydroResults
 from WriteUCResults import writeHourlyResultsByPlant, writeHourlyStoResults
 from ReservesWWSIS import calcWWSISReserves
 from SaveCEOperationalResults import saveCapacExpOperationalData
@@ -55,6 +55,7 @@ from PreProcessRBM import processRBMDataIntoIndividualCellFiles
 from ModifyNewTechCapacityWithWaterTData import determineHrlyCurtailmentsForNewTechs
 
 from Parameters import *
+
 sys.stdout.flush()
 
 
@@ -120,10 +121,11 @@ def masterFunction(genparam, reserveparam, curtailparam):
                 # compute total hourly system demand
                 df_demand = df_demand.groupby(['gcm', 'hour']).agg({'demand': sum}).reset_index()
 
-                df_demand = df_demand.groupby(['gcm']).agg({'demand': max}).reset_index().sort_values(by=['demand']).reset_index(drop=True)
+                df_demand = df_demand.groupby(['gcm']).agg({'demand': max}).reset_index().sort_values(
+                    by=['demand']).reset_index(drop=True)
 
                 # get names of GCms in according to given ranking in genparam
-                gcms_chosen = list(df_demand.iloc[genparam.gcmranking, ]['gcm'].astype('str'))
+                gcms_chosen = list(df_demand.iloc[genparam.gcmranking,]['gcm'].astype('str'))
             else:
                 # if no ranking was given, just use list of gcms in curtailparam
                 gcms_chosen = list(curtailparam.listgcms)
@@ -143,7 +145,7 @@ def masterFunction(genparam, reserveparam, curtailparam):
         print('Starting loop for year {0:4d}\n'.format(currYear))
         currCo2Cap = interpolateCO2Cap(currYear, genparam)
 
-        print('CO2 cap in year {1:4d}: {0:,.3f} million tons'.format(currCo2Cap/1e6, currYear))
+        print('CO2 cap in year {1:4d}: {0:,.3f} million tons'.format(currCo2Cap / 1e6, currYear))
 
         zonalDemandProfile, zonalTempDfs = forecastZonalDemandWithReg(currYear, genparam, curtparam_year)
 
@@ -164,16 +166,19 @@ def masterFunction(genparam, reserveparam, curtailparam):
                                                                'genFleetForCE{0}.csv'.format(priorYearCE)))
 
                 priorCEout_db = GamsWorkspace().add_database_from_gdx(os.path.join(genparam.resultsDir, 'CE',
-                                                                                   'gdxOutYear{}.gdx'.format(priorYearCE)))
+                                                                                   'gdxOutYear{}.gdx'.format(
+                                                                                       priorYearCE)))
 
                 capacExpBuilds = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
                                                               'genAdditionsCE{0}.csv'.format(priorYearCE)))
                 capacExpGenByGens = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
                                                                  'genByGensCE{0}.csv'.format(priorYearCE)))
                 capacExpRetiredUnitsByCE = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
-                                                                        'genRetirementsEconCE{0}.csv'.format(priorYearCE)))
+                                                                        'genRetirementsEconCE{0}.csv'.format(
+                                                                            priorYearCE)))
                 capacExpRetiredUnitsByAge = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
-                                                                         'genRetirementsAgeCE{0}.csv'.format(priorYearCE)))
+                                                                         'genRetirementsAgeCE{0}.csv'.format(
+                                                                             priorYearCE)))
 
                 with open(os.path.join(genparam.resultsDir, 'CE', 'hoursCE_{0}.pkl'.format(priorYearCE)), 'rb') as f:
                     priorHoursCE = pk.load(f)
@@ -500,7 +505,6 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
     except:
         print("Unexpected error:", sys.exc_info())
 
-
     # Write and Save resulting data
     print()
     print('Writing resulting decision variables to csv files... ', end='', flush=True)
@@ -582,9 +586,9 @@ def importHourlyThermalCurtailments(genFleet, currYear, modelName, resultsDir, g
 
 
 def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapacsCE, hourlyWindGenCEZonal,
-                          hourlySolarGenCEZonal, demandCEZonal, newTechsCE, planningReserveZonal,  hoursForCE,
-                          newWindCFsCEZonal, newSolarCFsCEZonal,  currCo2Cap,  seasonDemandWeights, repHrsBySeason,
-                          specialHrs, peakDemandHourZonal,  cellsToZones,  hydroPotPerSeason, genparam):
+                          hourlySolarGenCEZonal, demandCEZonal, newTechsCE, planningReserveZonal, hoursForCE,
+                          newWindCFsCEZonal, newSolarCFsCEZonal, currCo2Cap, seasonDemandWeights, repHrsBySeason,
+                          specialHrs, peakDemandHourZonal, cellsToZones, hydroPotPerSeason, genparam):
     """CALL CAPACITY EXPANSION
 
     :param genFleetForCE:
@@ -616,9 +620,9 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
      maxAddedZonalCapacPerTech, pathSysGams, ipmZones, lineList, lineCapacs, ipmZoneNums, ptCurtailedAll,
      phEff, phMaxSoc, phInitSoc) = (genparam.discountRate, genparam.scaleMWtoGW, genparam.scaleDollarsToThousands,
                                     genparam.capacExpFilename, genparam.scaleLbToShortTon, genparam.dataRoot,
-                                    genparam.maxAddedZonalCapacPerTech, genparam.pathSysGams,  genparam.ipmZones,
+                                    genparam.maxAddedZonalCapacPerTech, genparam.pathSysGams, genparam.ipmZones,
                                     genparam.lineList, genparam.lineCapacs, genparam.ipmZoneNums,
-                                    genparam.ptCurtailedAll,  genparam.phEff, genparam.phMaxSoc, genparam.phInitSoc)
+                                    genparam.ptCurtailedAll, genparam.phEff, genparam.phMaxSoc, genparam.phInitSoc)
 
     # folder with gams file for this instance (this is why this is set to resultsdir)
     gamsFileDir = os.path.join(genparam.resultsDir, 'GAMS')
@@ -720,7 +724,6 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
 ################################### ADD SETS
 def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeason, specialHrs, peakDemandHourZonal,
                         cellsToZones, genparam):
-
     ipmZoneNums, lineList, ptCurtailedAll = genparam.ipmZoneNums, genparam.lineList, genparam.ptCurtailedAll
 
     zoneSet, zoneSymbols = addZoneSets(db, ipmZoneNums)  # create string for set IDs
@@ -789,7 +792,6 @@ def addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySo
                               cellSet, peakDemandHourZonal, peakHourSet, peakHrSymbols, hydroPotPerSeason,
                               ptCurtailedAll, pumpHydroGenSet, pumpHydroGenSymbols, phEff, phMaxSoc, phInitSoc,
                               typeSet, gcmSet):
-
     addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon, ptCurtailedAll)
 
     addEguParams(db, genFleetForCE, genSet, genSymbols, ipmZones, ipmZoneNums, scaleLbToShortTon, scaleMWtoGW)
@@ -808,7 +810,7 @@ def addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySo
     addDemandParam(db, demandCEZonal, zoneSet, hourSet, gcmSet, hoursForCE, ipmZones, ipmZoneNums, scaleMWtoGW)
 
     addPlanningReserveParam(db, planningReserveZonal, ipmZones, ipmZoneNums, zoneSet, zoneSymbols, scaleMWtoGW)
-#    addPeakHourToZoneParam(db, peakDemandHourZonal, peakHourSet, peakHrSymbols, ipmZones, ipmZoneNums)
+    #    addPeakHourToZoneParam(db, peakDemandHourZonal, peakHourSet, peakHrSymbols, ipmZones, ipmZoneNums)
 
     addExistingRenewableMaxGenParams(db, gcmSet, zoneSet, ipmZones, ipmZoneNums, hourSet, hoursForCE,
                                      hourlySolarGenCEZonal, hourlyWindGenCEZonal, scaleMWtoGW)
@@ -847,7 +849,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     daysForUC = list(range(genparam.ucDayInitial, (genparam.ucDayEnd + 1)))
 
     (startYear, fuelPricesTimeSeries, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon,
-     daysOpt,  daysLA, projectName, resultsDir, ocAdderMin, ocAdderMax,
+     daysOpt, daysLA, projectName, resultsDir, ocAdderMin, ocAdderMax,
      windGenDataYr) = (genparam.startYear, genparam.fuelPricesTimeSeries, genparam.scaleMWtoGW,
                        genparam.scaleDollarsToThousands, genparam.scaleLbToShortTon, genparam.daysOpt, genparam.daysLA,
                        genparam.projectName, genparam.resultsDir, genparam.ocAdderMin, genparam.ocAdderMax,
@@ -888,12 +890,14 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
         if windCFs is not None:
             write2dListToCSV(windCFs, os.path.join(resultsDir, 'windCFsFullYrCE' + zone + str(ucYear) + '.csv'))
             write2dListToCSV(windCfsDtHr, os.path.join(resultsDir, 'windCFsDtFullYrCE' + zone + str(ucYear) + '.csv'))
-            write2dListToCSV(windCfsDtSubhr,os.path.join(resultsDir,'windCFsDtSubhrFullYrCE' + zone + str(ucYear) + '.csv'))
+            write2dListToCSV(windCfsDtSubhr,
+                             os.path.join(resultsDir, 'windCFsDtSubhrFullYrCE' + zone + str(ucYear) + '.csv'))
             write2dListToCSV(windIdAndCapac, os.path.join(resultsDir, 'windIdAndCapacCE' + zone + str(ucYear) + '.csv'))
         if solarCFs is not None:
             write2dListToCSV(solarCFs, os.path.join(resultsDir, 'solarCFsFullYrCE' + zone + str(ucYear) + '.csv'))
             write2dListToCSV(solarCfsDtHr, os.path.join(resultsDir, 'solarCFsDtFullYrCE' + zone + str(ucYear) + '.csv'))
-            write2dListToCSV(solarCfsDtSubhr,os.path.join(resultsDir,'solarCFsDtSubhrFullYrCE' + zone + str(ucYear) + '.csv'))
+            write2dListToCSV(solarCfsDtSubhr,
+                             os.path.join(resultsDir, 'solarCFsDtSubhrFullYrCE' + zone + str(ucYear) + '.csv'))
             write2dListToCSV(solarFilenameAndCapac,
                              os.path.join(resultsDir, 'solarIdAndCapacCE' + zone + str(ucYear) + '.csv'))
 
@@ -905,23 +909,22 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
                                                                                        solarCFs, solarFilenameAndCapac,
                                                                                        nhours_year)
 
-
-#    (windCFs, windCfsDtHr, windCfsDtSubhr, windIdAndCapac, solarCFs, solarCfsDtHr, solarCfsDtSubhr,
-#     solarFilenameAndCapac) = getRenewableCFs(fleetUC, startWindCapacForCFs, startSolarCapacForCFs, tzAnalysis, dataRoot,
-#                                              windGenDataYr, z)
-#     write2dListToCSV([zonalDemandProfile], os.path.join(resultsDir, 'demandUC' + str(ucYear) + '.csv'))
-#     write2dListToCSV(windCFs, os.path.join(resultsDir, 'windCFsUC' + str(ucYear) + '.csv'))
-#     write2dListToCSV(windCfsDtHr, os.path.join(resultsDir, 'windCFsDtUC' + str(ucYear) + '.csv'))
-#     write2dListToCSV(windCfsDtSubhr, os.path.join(resultsDir, 'windCFsDtSubhrUC' + str(ucYear) + '.csv'))
-#     write2dListToCSV(windIdAndCapac, os.path.join(resultsDir, 'windIdAndCapacUC' + str(ucYear) + '.csv'))
-#     write2dListToCSV(solarCFs, os.path.join(resultsDir, 'solarCFsUC' + str(ucYear) + '.csv'))
-#     write2dListToCSV(solarCfsDtHr, os.path.join(resultsDir, 'solarCFsDtUC' + str(ucYear) + '.csv'))
-#     write2dListToCSV(solarCfsDtSubhr, os.path.join(resultsDir, 'solarCFsDtSubhrUC' + str(ucYear) + '.csv'))
-#     write2dListToCSV(solarFilenameAndCapac, os.path.join(resultsDir, 'solarIdAndCapacUC' + str(ucYear) + '.csv'))
+    #    (windCFs, windCfsDtHr, windCfsDtSubhr, windIdAndCapac, solarCFs, solarCfsDtHr, solarCfsDtSubhr,
+    #     solarFilenameAndCapac) = getRenewableCFs(fleetUC, startWindCapacForCFs, startSolarCapacForCFs, tzAnalysis, dataRoot,
+    #                                              windGenDataYr, z)
+    #     write2dListToCSV([zonalDemandProfile], os.path.join(resultsDir, 'demandUC' + str(ucYear) + '.csv'))
+    #     write2dListToCSV(windCFs, os.path.join(resultsDir, 'windCFsUC' + str(ucYear) + '.csv'))
+    #     write2dListToCSV(windCfsDtHr, os.path.join(resultsDir, 'windCFsDtUC' + str(ucYear) + '.csv'))
+    #     write2dListToCSV(windCfsDtSubhr, os.path.join(resultsDir, 'windCFsDtSubhrUC' + str(ucYear) + '.csv'))
+    #     write2dListToCSV(windIdAndCapac, os.path.join(resultsDir, 'windIdAndCapacUC' + str(ucYear) + '.csv'))
+    #     write2dListToCSV(solarCFs, os.path.join(resultsDir, 'solarCFsUC' + str(ucYear) + '.csv'))
+    #     write2dListToCSV(solarCfsDtHr, os.path.join(resultsDir, 'solarCFsDtUC' + str(ucYear) + '.csv'))
+    #     write2dListToCSV(solarCfsDtSubhr, os.path.join(resultsDir, 'solarCFsDtSubhrUC' + str(ucYear) + '.csv'))
+    #     write2dListToCSV(solarFilenameAndCapac, os.path.join(resultsDir, 'solarIdAndCapacUC' + str(ucYear) + '.csv'))
 
     (contResHourly, regUpHourly, regDownHourly, flexResHourly, allRes, regUpWind, regDownWind, regUpSolar,
-    regDownSolar, flexWind, flexSolar) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(),
-                                          dict(), dict())
+     regDownSolar, flexWind, flexSolar) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(),
+                                           dict(), dict())
 
     for gcm in curtailparam.listgcms:
 
@@ -967,11 +970,11 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     writeDictToCSV(regDownHourly, os.path.join(resultsDir, 'reservesRegDownUC' + str(ucYear) + '.csv'))
     writeDictToCSV(flexResHourly, os.path.join(resultsDir, 'reservesFlexUC' + str(ucYear) + '.csv'))
 
-    #(hourlyWindGen, hourlySolarGen) = getAggregateSolarAndWind(windCFs, ewdIdAndCapac, solarCFs, solarFilenameAndCapac)
-    #netDemand = getNetDemand(zonalDemandProfile, hourlyWindGen, hourlySolarGen)
+    # (hourlyWindGen, hourlySolarGen) = getAggregateSolarAndWind(windCFs, ewdIdAndCapac, solarCFs, solarFilenameAndCapac)
+    # netDemand = getNetDemand(zonalDemandProfile, hourlyWindGen, hourlySolarGen)
 
-    #write2dListToCSV([[val] for val in hourlyWindGen], os.path.join(resultsDir, 'windGenUC' + str(ucYear) + '.csv'))
-    #write2dListToCSV([[val] for val in hourlySolarGen], os.path.join(resultsDir, 'solarGenUC' + str(ucYear) + '.csv'))
+    # write2dListToCSV([[val] for val in hourlyWindGen], os.path.join(resultsDir, 'windGenUC' + str(ucYear) + '.csv'))
+    # write2dListToCSV([[val] for val in hourlySolarGen], os.path.join(resultsDir, 'solarGenUC' + str(ucYear) + '.csv'))
 
     updateFuelPricesExistingGens(fleetUC, ucYear, fuelPricesTimeSeries)
     combineWindAndSolarToSinglePlant(fleetUC, genparam.ipmZones, genparam.dataRoot)
@@ -999,11 +1002,12 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     (genByPlant, regUpByPlant, flexByPlant, contByPlant, turnonByPlant, turnoffByPlant, regDownByPlant,
      onOffByPlant, genToRow, hourToColPlant) = setupHourlyResultsByPlant(daysForUC, fleetUC)
 
+    pumphydroSoc, pumphydroCharge = setupHourlyPHResults(genByPlant, fleetUC)
+
     (sysResults, resultToRow, hourToColSys) = setupHourlySystemResults(daysForUC)
 
     msAndSs = [['day', 'ms', 'ss']]  # store modelstat & solvestat from GAMS
 
-    # TODO: Change this
     # *******************************************************
     # ------- FOR NOW JUST USE A SINGLE GCM ----------------
     # *******************************************************
@@ -1018,7 +1022,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
         print('---------------------------------------------------------------')
         print('Starting UC simulation of day {0:4d}'.format(day))
 
-        daysForUCAux = list(range(day, day+daysOpt+daysLA))
+        daysForUCAux = list(range(day, day + daysOpt + daysLA))
 
         (demandUC, hourlyWindGenUC, hourlySolarGenUC, hoursForUC) = getDemandAndREGenForUC(day, daysOpt, daysLA,
                                                                                            zonalDemandProfile[gcm],
@@ -1033,16 +1037,16 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
         hydroPotentialUC = getDailyHydroPotentialsUC(fleetUC, hydroPotentials, daysForUCAux, ucYear)
 
         if daysForUC[0] == day:  # first day, therefore no initial conditions defined. MW energy values
-            (onOffInitial, genAboveMinInitial, mdtCarriedInitial) = setInitCondsFirstUC(fleetUC)
+            (onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSocDict) = setInitCondsFirstUC(fleetUC, genparam)
         else:  # other days. MW energy values
-            (onOffInitial, genAboveMinInitial, mdtCarriedInitial) = setInitCondsPerPriorUC(ucModel, fleetUC,
-                                                                                           hoursForUC, daysOpt, daysLA,
-                                                                                           scaleMWtoGW)
+            (onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSocDict) = setInitCondsPerPriorUC(ucModel, fleetUC,
+                                                                                                        hoursForUC, daysOpt, daysLA,
+                                                                                                        scaleMWtoGW)
         t0 = time.time()
         ucModel, ms, ss = callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenUC,
                                              hydroPotentialUC, demandUC, hoursForUC, onOffInitial, genAboveMinInitial,
-                                             mdtCarriedInitial, co2Price, regUpUC, regDownUC, flexUC, contUC, genparam,
-                                             reserveparam)
+                                             mdtCarriedInitial, initSocDict, co2Price, regUpUC, regDownUC, flexUC,
+                                             contUC, genparam, reserveparam)
 
         print('Time (secs) for UC day ' + str(day) + ': ' + str(time.time() - t0))
         print('---------------------------------------------------------------')
@@ -1051,9 +1055,10 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
         # just saves GAMS model of current day to list
         ucResultsByDay.append((day, ucModel))
 
-        saveHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant,
-                                 turnonByPlant, turnoffByPlant, onOffByPlant, genToRow, hourToColPlant, ucModel, day,
-                                 daysOpt)
+        saveHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant, turnonByPlant,
+                                 turnoffByPlant, onOffByPlant, genToRow, hourToColPlant, ucModel, day, daysOpt)
+
+        saveHourlyPumpedHydroResults(pumphydroSoc, pumphydroCharge, ucModel, day, daysOpt)
 
         saveHourlySystemResults(sysResults, resultToRow, hourToColSys, ucModel, day, daysOpt)
         msAndSs.append([day, ms, ss])
@@ -1078,20 +1083,23 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
                 except:
                     print("Unexpected error:", sys.exc_info())
 
-        if day % 10 == 0:
-            # write files with current results every 10 days
+        if day % 5 == 0:
+            # write files with current results every 5 days
             writeHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant,
                                       turnonByPlant, turnoffByPlant, onOffByPlant, resultsDir, ucYear, 'UC', 'Plant')
+            writeHourlyStoResults(pumphydroCharge, pumphydroSoc, resultsDir, ucYear)
+
             write2dListToCSV(sysResults, os.path.join(resultsDir, 'systemResultsUC' + str(ucYear) + '.csv'))
             write2dListToCSV(msAndSs, os.path.join(resultsDir, 'msAndSsUC' + str(ucYear) + '.csv'))
 
-            # save current UC model object as pickle file to allow "Cold start" in case of error
-            with open(os.path.join(resultsDir, "last_ucmodel.p"), "wb") as fp:
-                pk.dump(ucResultsByDay[-1], fp)
+            # save results of current UC model object to GDX file to allow "Cold start" in case of error
+            write2dListToCSV([[day]], os.path.join(resultsDir, 'lastdayUC' + str(ucYear) + '.csv'))
+            ucModel.get_out_db().export(os.path.join(resultsDir, "last_ucmodel.gdx"))
 
     # write final total results
     writeHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant,
                               turnonByPlant, turnoffByPlant, onOffByPlant, resultsDir, ucYear, 'UC', 'Plant')
+    writeHourlyStoResults(pumphydroCharge, pumphydroSoc, resultsDir, ucYear)
     write2dListToCSV(sysResults, os.path.join(resultsDir, 'systemResultsUC' + str(ucYear) + '.csv'))
     write2dListToCSV(msAndSs, os.path.join(resultsDir, 'msAndSsUC' + str(ucYear) + '.csv'))
 
@@ -1099,9 +1107,8 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
 
 
 def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenUC, hydroPotentialUC, demandUC,
-                       hoursForUC, onOffInitial, genAboveMinInitial, mdtCarriedInitial,  co2Price,  regUpUC, regDownUC,
-                       flexUC, contUC, genparam, reserveparam):
-
+                       hoursForUC, onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSoc, co2Price, regUpUC,
+                       regDownUC, flexUC, contUC, genparam, reserveparam):
     """RUN UNIT COMMITMENT MODEL
 
     :param fleetUC:
@@ -1147,8 +1154,8 @@ def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenU
 
     addParametersToDatabaseUC(dbUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenUC, hydroPotentialUC, demandUC,
                               fleetUC, genSet, genSymbols, hydroGenSet, hydroGenSymbols, hourSet, hourSymbols, zoneSet,
-                              zoneSymbols, lineSet, cnse, onOffInitial, genAboveMinInitial, mdtCarriedInitial, co2Price,
-                              hoursForUC, flexUC, contUC, regUpUC, regDownUC, genparam, reserveparam)
+                              zoneSymbols, lineSet, cnse, onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSoc,
+                              co2Price, hoursForUC, flexUC, contUC, regUpUC, regDownUC, genparam, reserveparam)
 
     # Load and run GAMS model
     ucModel = wsUC.add_job_from_file(ucFilename)
@@ -1185,35 +1192,42 @@ def addSetsToDatabaseUC(db, fleetUC, hoursForUC, genparam):
 
 def addParametersToDatabaseUC(db, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenUC, hydroPotentialUC, demandUC,
                               fleetUC, genSet, genSymbols, hydroGenSet, hydroGenSymbols, hourSet, hourSymbols, zoneSet,
-                              zoneSymbols, lineSet, cnse, onOffInitial, genAboveMinInitial, mdtCarriedInitial, co2Price,
-                              hoursForUC, flexUC, contUC, regUpUC, regDownUC, genparam, reserveparam):
-
+                              zoneSymbols, lineSet, cnse, onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSoc,
+                              co2Price, hoursForUC, flexUC, contUC, regUpUC, regDownUC, genparam, reserveparam):
     """ADD PARAMETERS
-    
-    :param db: 
-    :param hourlyCapacsUC: 
-    :param hourlyWindGenUC: 
-    :param hourlySolarGenUC: 
-    :param demandUC: 
-    :param fleetUC: 
-    :param genSet: 
-    :param genSymbols: 
-    :param hydroGenSet: 
-    :param hydroGenSymbols: 
-    :param hourSet: 
-    :param hourSymbols: 
-    :param cnse: 
-    :param onOffInitial: 
-    :param genAboveMinInitial: 
-    :param mdtCarriedInitial: 
-    :param co2Price: 
-    :param hoursForUC: 
-    :param flexUC: 
+
+    :param db:
+    :param hourlyCapacsUC:
+    :param hourlyWindGenUC:
+    :param hourlySolarGenUC:
+    :param hydroPotentialUC:
+    :param demandUC:
+    :param fleetUC:
+    :param genSet:
+    :param genSymbols:
+    :param hydroGenSet:
+    :param hydroGenSymbols:
+    :param hourSet:
+    :param hourSymbols:
+    :param zoneSet:
+    :param zoneSymbols:
+    :param lineSet:
+    :param cnse:
+    :param onOffInitial:
+    :param genAboveMinInitial:
+    :param mdtCarriedInitial:
+    :param initSoc: initial state of charge for pumped storage
+    :param co2Price:
+    :param hoursForUC:
+    :param flexUC:
     :param contUC:
-    :param regUpUC: 
-    :param regDownUC:      
-    :param genparam: 
-    :param reserveparam: 
+    :param regUpUC:
+    :param regDownUC:
+    :param genparam: general parameters
+    :param reserveparam: reserve parameters
+
+
+    
     """
 
     (rrToRegTime, rrToFlexTime, rrToContTime) = (reserveparam.rampRateToRegReserveScalar,
@@ -1247,7 +1261,6 @@ def addParametersToDatabaseUC(db, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGe
 
     addRegReserveParameters(db, regUpUC, regDownUC, rrToRegTime, hourSet, hoursForUC, zoneSet, 'UC', genparam)
 
-
     # TODO: What was this function used for??? Check with Michael (so far i am ignoring it)
     # addEguRegCostParam(db, fleetUC, genSet, genSymbols, genparam.scaleMWtoGW, genparam.scaleDollarsToThousands)
 
@@ -1261,6 +1274,22 @@ def addParametersToDatabaseUC(db, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGe
     # Add transmission line constraints
     addLineCapacs(db, genparam.lineCapacs, lineSet, genparam.lineList, genparam.scaleMWtoGW)
     addLineSourceAndSink(db, lineSet, genparam.lineList, genparam.ipmZones, genparam.ipmZoneNums)
+
+    # add pumped hydro parameters to database
+    pumpHydroGenSet = db.get_set('pumphydroegu')
+    pumpHydroGenSymbols = [symb.keys[0] for symb in pumpHydroGenSet.__iter__()]
+
+    effDict = dict()
+    for symb in pumpHydroGenSymbols: effDict[symb] = genparam.phEff
+    (effname, effdesc) = ('pEfficiency', 'efficiency')
+    effParam = add1dParam(db, effDict, pumpHydroGenSet, pumpHydroGenSymbols, effname, effdesc)
+
+    socDict = getSocDict(fleetUC, genparam.phMaxSoc, pumpHydroGenSymbols, genparam.scaleMWtoGW)
+    (socname, socdesc) = ('pMaxsoc', 'max state of charge (GWh)')
+    socparam = add1dParam(db, socDict, pumpHydroGenSet, pumpHydroGenSymbols, socname, socdesc)
+
+    (socname, socdesc) = ('pInitsoc', 'initial state of charge (GWh)')
+    initsocparam = add1dParam(db, initSoc, pumpHydroGenSet, pumpHydroGenSymbols, socname, socdesc)
 
 
 def create_description_file(genparam, curtailparam):
@@ -1311,7 +1340,6 @@ def create_description_file(genparam, curtailparam):
 
     with open(fname, 'w') as f:
         f.write(outstr)
-
 
 
 ########### TESTING PURPOSES ONLY ####################################

@@ -278,9 +278,11 @@ def addPumpHydroParams(db, genFleetForCE, phEff, phMaxSoc, phInitSoc, pumpHydroG
     for symb in pumpHydroGenSymbols: effDict[symb] = phEff
     (effname, effdesc) = ('pEfficiency', 'efficiency')
     effParam = add1dParam(db, effDict, pumpHydroGenSet, pumpHydroGenSymbols, effname, effdesc)
+
     socDict = getSocDict(genFleetForCE, phMaxSoc, pumpHydroGenSymbols, scaleMWtoGW)
     (socname, socdesc) = ('pMaxsoc', 'max state of charge (GWh)')
     socparam = add1dParam(db, socDict, pumpHydroGenSet, pumpHydroGenSymbols, socname, socdesc)
+
     initSocDict = dict()
     for gen in socDict: initSocDict[gen] = socDict[gen] * phInitSoc  # given as fraction of max SOC
     (socname, socdesc) = ('pInitsoc', 'initial state of charge (GWh)')
