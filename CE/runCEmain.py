@@ -25,7 +25,7 @@ def runCEmain(cwd=os.getcwd(), case=None, runUC=False):
         # I will add this to the list_cases file eventually
 
         genparam.referenceCase = True
-        curtailparam.listgcms = curtailparam.listgcms[0]
+        curtailparam.listgcms = [curtailparam.listgcms[0]]
         genparam.rcp = 'rcp45'
 
         genparam.incCurtailments = False
