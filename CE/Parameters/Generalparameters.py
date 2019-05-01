@@ -283,11 +283,11 @@ class Generalparameters:
             # change string values to integer
             self.gcmranking = list(map(int, self.gcmranking))
 
-        folderName = ('Area' + self.analysisArea + 'Cells' + self.cellNewTechCriteria +
-                      ('Curtail' if self.incCurtailments == True else 'NoCurtail') +
-                      ('EnvRegs' if self.incRegs == True else 'NoRegs') +
-                      'C' + self.co2CapScenario + 'S' + self.scenario[:3])
-        self.resultsDir = os.path.join(self.resultsDir, folderName)
+#        folderName = ('Area' + self.analysisArea + 'Cells' + self.cellNewTechCriteria +
+#                      ('Curtail' if self.incCurtailments == True else 'NoCurtail') +
+#                      ('EnvRegs' if self.incRegs == True else 'NoRegs') +
+#                      'C' + self.co2CapScenario + 'S' + self.scenario[:3])
+#        self.resultsDir = os.path.join(self.resultsDir, folderName)
 
         self.ptCurtailedAll = self.ptCurtailed | self.ptCurtailedRegs
 
