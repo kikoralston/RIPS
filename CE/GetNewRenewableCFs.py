@@ -16,16 +16,16 @@ def getNewWindAndSolarCFs(genFleet, currYear, modelName, tzAnalysis, dataRoot, r
     Determines hourly CFs for potential new wind & solar plants by getting average CF of input assumed incremental
     capacity of wind & solar.
 
-    :param genFleet: gen fleet (2d list), net demand (1d list), list of state & state abbrevs,
+    :param genFleet: gen fleet (2d list) (possibly already filtered to a single zone)
     :param currYear: curr year of CE run,
     :param modelName: name of model (UC or CE)
-    :param tzAnalysis:
-    :param dataRoot:
-    :param resultsDir:
-    :param windGenDataYr:
+    :param tzAnalysis: time zone of analysis
+    :param dataRoot: path to folder with data
+    :param resultsDir: path to folder with results
+    :param windGenDataYr: year of wind data to be used
     :param currZone: current zone
-    :param fipsToZones:
-    :param fipsToPolys:
+    :param fipsToZones: dictionary mapping FIPS to zones
+    :param fipsToPolys: dictionary mapping FIPS to county polygons
     :return: hourly CFs for new wind and solar builds (1d list)
     """
     windCapacInCurrFleet = getPlantTypeCapacInFleet(genFleet, 'Wind')
