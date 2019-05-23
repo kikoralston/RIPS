@@ -50,7 +50,8 @@ def runCEmain(cwd=os.getcwd(), case=None, runUC=False):
             df = pd.read_csv(os.path.join(cwd, 'list_cases.csv'), comment='#', sep=',', skipinitialspace=True,
                              dtype={'case': int, 'resultsDir': object, 'listgcms': object, 'referenceCase': bool,
                                     'co2CapScenario': object, 'rcp': object, 'useLineLimits': bool,
-                                    'gcmranking': object}, keep_default_na=False)
+                                    'gcmranking': object, 'ncores_py': int, 'ncores_gams': int},
+                             keep_default_na=False)
 
             genparam.resultsDir = df['resultsDir'].iloc[case].strip()
             genparam.referenceCase = df['referenceCase'].iloc[case]
@@ -67,6 +68,9 @@ def runCEmain(cwd=os.getcwd(), case=None, runUC=False):
             else:
                 # change string values to integer
                 genparam.gcmranking = list(map(int, genparam.gcmranking))
+
+            genparam.ncores_py = df['ncores_py'].iloc[case]
+            genparam.ncores_gams = df['ncores_gams'].iloc[case]
 
         # BASE LINE CASE
         if genparam.referenceCase:
