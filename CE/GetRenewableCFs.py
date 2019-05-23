@@ -22,7 +22,7 @@ def getRenewableCFs(genFleet, startWindCapacForCFs, startSolarCapacForCFs, desir
     Function takes in generator fleet that has already been isolated to a single zone and maps data to CFs for
     RE sites in same zone.
 
-    :param genFleet:
+    :param genFleet: gen fleet (2d list) (possibly already filtered to a single zone)
     :param startWindCapacForCFs:
     :param startSolarCapacForCFs:
     :param desiredTz:
@@ -246,8 +246,8 @@ def getWindOrSolarIdsInZonesDecreasingCF(metadata, capacInZone, cfCol, capacCol,
     :return:
     """
     idAndCapacs = [['Id', 'DatasetCapacity', 'FleetCapacity', 'OriginalDatasetCap']]
-    (cfs, capacs, siteNumbers) = getPlantInfoInZone(metadata, startRECapacForCFs, cfCol, capacCol, siteNumberOrFileCol,
-                                                    fipsToZones, fipsToPolys, currZone)
+    (cfs, capacs, siteNumbers) = getPlantInfoInZone(metadata, cfCol, capacCol, siteNumberOrFileCol, fipsToZones,
+                                                    fipsToPolys, currZone)
     currZoneCapac = 0
     while currZoneCapac < capacInZone:
         if len(cfs) == 0:
@@ -284,21 +284,21 @@ def getWindOrSolarIdsInZonesDecreasingCF(metadata, capacInZone, cfCol, capacCol,
     return idAndCapacs
 
 
-def getPlantInfoInZone(metadata, startRECapacForCFs, cfCol, capacCol, siteNumberOrFileCol, fipsToZones, fipsToPolys,
-                       currZone, *args):
+def getPlantInfoInZone(metadata, cfCol, capacCol, siteNumberOrFileCol, fipsToZones, fipsToPolys, currZone,
+                       return_df=False):
     """
 
     Match by zone
 
     :param metadata:
-    :param startRECapacForCFs:
     :param cfCol:
     :param capacCol:
     :param siteNumberOrFileCol:
     :param fipsToZones:
     :param fipsToPolys:
     :param currZone:
-    :param args:
+    :param return_df: if True return data frame as output with columns cfs, capacs, sitenumbers.
+                      If False returns tuple with three 1-d lists cfs, capacs, sitenumbers.
     :return:
     """
 
@@ -319,7 +319,12 @@ def getPlantInfoInZone(metadata, startRECapacForCFs, cfCol, capacCol, siteNumber
     capacs = [float(row[capacCol]) for row in plantsInRegionOrZone]
     siteNumbers = [row[siteNumberOrFileCol] for row in plantsInRegionOrZone]
 
-    return cfs, capacs, siteNumbers
+    if return_df:
+        out = pd.DataFrame({'cfs': cfs, 'capacs': capacs, 'sitenumbers': siteNumbers})
+    else:
+        out = (cfs, capacs, siteNumbers)
+
+    return out
 
 
 def calcCapacWtdFleetCf(idAndCapac, siteCfsHr, siteCfsSubhr):
