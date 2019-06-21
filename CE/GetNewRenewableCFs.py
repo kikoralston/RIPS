@@ -145,10 +145,18 @@ def trimNewRECFsToCEHours(zonalNewWindCFs, zonalNewSolarCFs, hoursForCE):
     newWindCFsCEZonal, newSolarCFsCEZonal = dict(), dict()
 
     for gcm in hoursForCE:
-            # (hr - 1) b/c hours in year start @ 1, not 0 like Python idx
-        newWindCFsCEZonal[gcm] = {zone: [zonalNewWindCFs[zone][hr - 1] for hr in hoursForCE[gcm]]
-                                  for zone in zonalNewWindCFs}
-        newSolarCFsCEZonal[gcm] = {zone: [zonalNewSolarCFs[zone][hr - 1] for hr in hoursForCE[gcm]]
-                                   for zone in zonalNewWindCFs}
+        # (hr - 1) b/c hours in year start @ 1, not 0 like Python idx
+        newWindCFsCEZonal[gcm] = {zone: {'Wind+{0:02d}'.format(int(i)): [zonalNewWindCFs[zone][i][hr - 1]
+                                                                         for hr in hoursForCE[gcm]]
+                                         for i in zonalNewWindCFs[zone]} for zone in zonalNewWindCFs}
+
+        newSolarCFsCEZonal[gcm] = {zone: {'Solar PV+{0:02d}'.format(int(i)): [zonalNewSolarCFs[zone][i][hr - 1]
+                                                                              for hr in hoursForCE[gcm]]
+                                          for i in zonalNewSolarCFs[zone]} for zone in zonalNewSolarCFs}
+
+    #        newWindCFsCEZonal[gcm] = {zone: [zonalNewWindCFs[zone][i][hr - 1] for hr in hoursForCE[gcm]]
+    #                                  for zone in zonalNewWindCFs}
+    #        newSolarCFsCEZonal[gcm] = {zone: [zonalNewSolarCFs[zone][i][hr - 1] for hr in hoursForCE[gcm]]
+    #                                   for zone in zonalNewSolarCFs}
 
     return newWindCFsCEZonal, newSolarCFsCEZonal

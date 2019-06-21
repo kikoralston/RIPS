@@ -16,6 +16,7 @@ from AssignCellsToIPMZones import mapCellToIPMZone
 from ModifyGeneratorCapacityWithWaterTData import getGenToCellAndCellToGenDictionaries
 from AuxCurtailmentFuncs import get_all_cells_from_netcdf, order_cells_by_flow, get_all_cells_in_zone, loadCellWaterTs
 from PreProcessRBM import createBaseFilenameToReadOrWrite
+import pandas as pd
 
 # genparam.cellsEligibleForNewPlants, genFleet, curtailparam.rbmOutputDir, curtailparam.locPrecision, genparam.ipmZones, genparam.fipsToZones, genparam.fipsToPolys, currYear
 # cellsEligibleForNewPlants, genFleet, rbmOutputDir, locPrecision, zones, fipsToZones, fipsToPolys, currYear
@@ -103,8 +104,46 @@ def setCellFolders(genFleet, currYear, genparam, curtailparam, netcdf=True, n_ce
         for (cellLat, cellLong) in cellLatLongToGenDict:
             eligibleCellFolders.append(createBaseFilenameToReadOrWrite(curtailparam.locPrecision, cellLat, cellLong))
 
+    elif genparam.cellsEligibleForNewPlants == 'macrocell':
+        # uses definition of macro cells
+
+        # read csv file previously compiled in R assigning cells to "macro cells" (larger group of neighboring cells)
+        df_macro = pd.read_csv(os.path.join(curtailparam.rbmRootDir, 'macrocells.csv'))
+
+        # create column with lat_lon name of grid cell
+        df_macro['cell'] = df_macro.apply(lambda row: createBaseFilenameToReadOrWrite(curtailparam.locPrecision,
+                                                                                      row['lat'], row['lon']), axis=1)
+
+        best_cells_zone_dict = order_cells_by_flow(genparam, curtailparam, currYear, sys.maxsize, output_list=False)
+
+        eligibleCellFolders = []
+
+        df_total = None
+
+        # for each zone, choose cell in each macro cell with greatest annual flow in current year
+        for z in genparam.ipmZones:
+            df_zone_1 = df_macro[df_macro['zone'] == z]
+            df_zone_2 = best_cells_zone_dict[z]
+
+            # merge both dfs
+            df_zone = pd.merge(df_zone_1, df_zone_2, how='left', on='cell')
+
+            df_zone = df_zone.groupby('allocated.cell').agg(np.max).reset_index()
+
+            print('Number of candidate sites for {0}: {1:4d}'.format(z, df_zone.shape[0]))
+            print(list(df_zone['cell']))
+
+            if df_total is None:
+                df_total = df_zone
+            else:
+                df_total = pd.concat([df_total, df_zone])
+
+            # combine into one single list with all eligible cells among all zones
+            eligibleCellFolders = eligibleCellFolders + list(df_zone['cell'])
+
     else:
-        print('Parameter \'cellsEligibleForNewPlants\' must be either \'all\' or \'maxflow\' or \'withGens\'....')
+        print('Parameter \'cellsEligibleForNewPlants\' must be either \'all\' or \'maxflow\' or \'withGens\' or '
+              '\'macrocell\'....')
         print('Ending simulation!')
         sys.exit()
 
@@ -121,7 +160,9 @@ def isolateCellsInZones(allCellFolders, genparam):
     :return:
     """
     allCellFoldersInZone = list()
+
     for cell in allCellFolders:
         cellZone = mapCellToIPMZone(cell, genparam.fipsToZones, genparam.fipsToPolys)
         if cellZone in genparam.impZones: allCellFoldersInZone.append(cell)
+
     return allCellFoldersInZone

@@ -30,7 +30,7 @@ from SetInitCondsUC import *
 from ImportNewTechs import getNewTechs
 from RetireUnitsCFPriorCE import retireUnitsCFPriorCE
 from CreateFleetForCELoop import createFleetForCurrentCELoop, onlineAndNotRetired
-from GetRenewableCFs import getRenewableCFs
+from GetRenewableCFs import getRenewableCFData
 from GetNewRenewableCFs import getNewWindAndSolarCFs, trimNewRECFsToCEHours
 from AssignCellsToIPMZones import getIPMPolys, assignCellsToIPMZones
 from AssignCellsToStates import getStatePolys
@@ -328,52 +328,37 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
     for zone in genparam.ipmZones:
         print('Zone ', zone)
 
-        start_time = time.time()
-        # Check 5/18/17: next 2 lines are working properly!
         zonalGenFleet = [genFleetForCE[0]] + [row for row in genFleetForCE if row[zoneCol] == zone]
 
-        (windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac, solarCFs, solarCfsDtHr, solarCfsDtSubhr,
-         solarFilenameAndCapac) = getRenewableCFs(zonalGenFleet, startWindCapacForCFs, startSolarCapacForCFs,
-                                                  genparam.tzAnalysis, genparam.dataRoot, genparam.windGenDataYr,
-                                                  zone, genparam.fipsToZones, genparam.fipsToPolys,
-                                                  ncores_py=genparam.ncores_py)
-        print('Got RE CFs. Elapsed time: ' + str_elapsedtime(start_time))
+        capacCol = zonalGenFleet[0].index('Capacity (MW)')
+        plantTypeCol = zonalGenFleet[0].index('PlantType')
 
-        start_time = time.time()
-        if windCFs is not None:
-            write2dListToCSV(windCFs, os.path.join(resultsDir, 'windCFsFullYrCE' + zone + str(currYear) + '.csv'))
-            write2dListToCSV(windCfsDtHr, os.path.join(resultsDir, 'windCFsDtFullYrCE' + zone + str(currYear) + '.csv'))
-            # write2dListToCSV(windCfsDtSubhr,os.path.join(resultsDir,'windCFsDtSubhrFullYrCE' + zone + str(currYear) + '.csv'))
-            write2dListToCSV(ewdIdAndCapac,
-                             os.path.join(resultsDir, 'windIdAndCapacCE' + zone + str(currYear) + '.csv'))
-        if solarCFs is not None:
-            write2dListToCSV(solarCFs, os.path.join(resultsDir, 'solarCFsFullYrCE' + zone + str(currYear) + '.csv'))
-            write2dListToCSV(solarCfsDtHr,
-                             os.path.join(resultsDir, 'solarCFsDtFullYrCE' + zone + str(currYear) + '.csv'))
-            # write2dListToCSV(solarCfsDtSubhr,os.path.join(resultsDir,'solarCFsDtSubhrFullYrCE' + zone + str(currYear) + '.csv'))
-            write2dListToCSV(solarFilenameAndCapac,
-                             os.path.join(resultsDir, 'solarIdAndCapacCE' + zone + str(currYear) + '.csv'))
+        windCapacInZone = sum([float(row[capacCol]) for row in zonalGenFleet[1:] if row[plantTypeCol] == 'Wind'])
+        solarCapacInZone = sum([float(row[capacCol]) for row in zonalGenFleet[1:] if row[plantTypeCol] == 'Solar PV'])
 
-        (newWindCFs, newWindCFsSubhr, newSolarCFs, newSolarCFsSubhr, newWindCfsDtHr, newWindCfsDtSubhr,
-         newWindIdAndCapac, newSolarCfsDtHr, newSolarCfsDtSubhr, newSolarFilenameAndCapac,
-         addedWindCapac, addedSolarCapac) = getNewWindAndSolarCFs(zonalGenFleet, currYear, 'CE', genparam.tzAnalysis,
-                                                                  genparam.dataRoot, resultsDir, genparam.windGenDataYr,
-                                                                  zone, genparam.fipsToZones, genparam.fipsToPolys,
-                                                                  ncores_py=genparam.ncores_py)
-        print('Got new RE CFs. Elapsed time: ' + str_elapsedtime(start_time))
+        print('Existing Wind: ')
+        windCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=70, capacInCurrFleet=windCapacInZone,
+                                     type='wind', existing=True)
 
-        write2dListToCSV(newWindIdAndCapac,
-                         os.path.join(resultsDir, 'windNewIdAndCapacCE' + zone + str(currYear) + '.csv'))
-        write2dListToCSV(newSolarFilenameAndCapac,
-                         os.path.join(resultsDir, 'solarNewIdAndCapacCE' + zone + str(currYear) + '.csv'))
+        print('Existing Solar: ')
+        solarCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=12, capacInCurrFleet=solarCapacInZone,
+                                      type='solar', existing=True)
 
-        # get number of hours in year (assume that is the same over all gcms)
-        gcm = curtailparam.listgcms[0]
-        nhours_year = len(zonalDemandProfile[gcm][zone])
+        print('Got Existing RE CFs.')
 
-        zonalHourlyWindGen[zone], zonalHourlySolarGen[zone] = getAggregateSolarAndWind(windCFs, ewdIdAndCapac,
-                                                                                       solarCFs, solarFilenameAndCapac,
-                                                                                       nhours_year)
+        print('New Wind: ')
+        newWindCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=70, capacInCurrFleet=windCapacInZone,
+                                        type='wind', existing=False)
+
+        print('New Solar: ')
+        newSolarCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=12, capacInCurrFleet=solarCapacInZone,
+                                         type='solar', existing=False)
+
+        print('Got new RE CFs.')
+
+        # store renewables CFs for each zone in dictionaries
+        zonalHourlyWindGen[zone], zonalHourlySolarGen[zone] = windCFs, solarCFs
+
         zonalNewWindCFs[zone], zonalNewSolarCFs[zone] = newWindCFs, newSolarCFs
 
     zonalNetDemand = dict()
@@ -635,12 +620,28 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
 
     db = ws.add_database()
 
+    # create lists with names of types of winds and solar (aggregated in block according to CF)
+    # (these will be needed to create GAMS sets)
+    #
+    # pick name of first GCM (needed to get list of keys)
+    g = list(newWindCFsCEZonal.keys())[0]
+
+    # get longest list of types of wind and sort
+    blocksWind = [[b for b in newWindCFsCEZonal[g][z]] for z in newWindCFsCEZonal[g]]
+    blocksWind = [b for b in blocksWind if len(b) == max([len(b) for b in blocksWind])][0]
+    blocksWind.sort()
+
+    # get longest list of types of solar and sort
+    blocksSolar = [[b for b in newSolarCFsCEZonal[g][z]] for z in newSolarCFsCEZonal[g]]
+    blocksSolar = [b for b in blocksSolar if len(b) == max([len(b) for b in blocksSolar])][0]
+    blocksSolar.sort()
+
     # Add sets and parameters to database
     (genSet, genSymbols, hourSet, hourSymbols, techSet, techSymbols, techCurtailedSet, techCurtailedSymbols,
      renewTechSet, renewTechSymbols, techNotCurtailedSymbols, hydroGenSet, hydroGenSymbols, zoneSet, zoneSymbols,
-     lineSet, cellSet, peakHourSet, peakHrSymbols, pumpHydroGenSet, pumpHydroGenSymbols, typeSet, gcmSet) = \
+     lineSet, cellSet, peakHourSet, peakHrSymbols, pumpHydroGenSet, pumpHydroGenSymbols, gcmSet) = \
         addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeason, specialHrs, peakDemandHourZonal,
-                            cellsToZones, genparam)
+                            cellsToZones, genparam, blocksWind=blocksWind, blocksSolar=blocksSolar)
 
     addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySolarGenCEZonal, demandCEZonal,
                               newTechsCE, genFleetForCE, genSet, genSymbols, hydroGenSet, hoursForCE, hourSet,
@@ -651,7 +652,7 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
                               maxAddedZonalCapacPerTech, zoneSet, zoneSymbols, lineSet, ipmZones, ipmZoneNums,
                               lineList, lineCapacs, cellsToZones, cellSet, peakDemandHourZonal, peakHourSet,
                               peakHrSymbols, hydroPotPerSeason, ptCurtailedAll, pumpHydroGenSet, pumpHydroGenSymbols,
-                              phEff, phMaxSoc, phInitSoc, typeSet, gcmSet)
+                              phEff, phMaxSoc, phInitSoc, gcmSet)
     # Load GAMS model
     capacExpFile = capacExpFilename
     capacExpModel = ws.add_job_from_file(capacExpFile)
@@ -667,6 +668,7 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
     file.write("mipdisplay 4\n")
     file.write("mipinterval 10\n")
     file.write("threads {}\n".format(n_cores))
+    file.write("parallelmode -1\n")
     file.close()
     opt.optfile = 1
 
@@ -723,7 +725,7 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
 
 ################################### ADD SETS
 def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeason, specialHrs, peakDemandHourZonal,
-                        cellsToZones, genparam):
+                        cellsToZones, genparam, blocksWind=None, blocksSolar=None):
     ipmZoneNums, lineList, ptCurtailedAll = genparam.ipmZoneNums, genparam.lineList, genparam.ptCurtailedAll
 
     zoneSet, zoneSymbols = addZoneSets(db, ipmZoneNums)  # create string for set IDs
@@ -756,29 +758,30 @@ def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeaso
     addHourSpecialSubset(db, specialHrs)
 
     (techSet, techSymbols, techCurtailedSet, techCurtailedSymbols, renewTechSet, renewTechSymbols,
-     techNotCurtailedSet, techNotCurtailedSymbols) = addNewTechsSets(db, newTechsCE, ptCurtailedAll)
+     techNotCurtailedSet, techNotCurtailedSymbols) = addNewTechsSets(db, newTechsCE, ptCurtailedAll,
+                                                                     blocksWind=blocksWind, blocksSolar=blocksSolar)
 
     # create additional set with type of plant (no cooling info)
-    typeSymbols = set(map(lambda x: x.split('+')[0], techSymbols))
-    (typeSetName, typeSetDescrip, typeSetDim) = ('type', 'set with types of new plants (no cooling info)', 1)
-    typeSet = addSet(db, typeSymbols, typeSetName, typeSetDescrip, typeSetDim)
+    # typeSymbols = set(map(lambda x: x.split('+')[0], techSymbols))
+    # (typeSetName, typeSetDescrip, typeSetDim) = ('type', 'set with types of new plants (no cooling info)', 1)
+    # typeSet = addSet(db, typeSymbols, typeSetName, typeSetDescrip, typeSetDim)
 
     # create additional 2d set mapping type of plant to plant+cooling
-    typeList = list(map(lambda x: x.split('+')[0], techSymbols))
-    (tech2dSetName, tech2dSetDescrip, tech2dSetDim) = ('tech2d', '2d set mapping types to techs', 2)
-    techSet2 = db.add_set(tech2dSetName, tech2dSetDim, tech2dSetDescrip)
-    for t1 in typeSymbols:
-        idx = [i for i, x in enumerate(typeList) if x == t1]
-        list_techs = [techSymbols[i] for i in idx]
-        for t2 in list_techs:
-            techSet2.add_record([t1, t2])
+    # typeList = list(map(lambda x: x.split('+')[0], techSymbols))
+    # (tech2dSetName, tech2dSetDescrip, tech2dSetDim) = ('tech2d', '2d set mapping types to techs', 2)
+    # techSet2 = db.add_set(tech2dSetName, tech2dSetDim, tech2dSetDescrip)
+    # for t1 in typeSymbols:
+    #     idx = [i for i, x in enumerate(typeList) if x == t1]
+    #     list_techs = [techSymbols[i] for i in idx]
+    #    for t2 in list_techs:
+    #        techSet2.add_record([t1, t2])
 
     peakHourSet, peakHrSymbols = addPeakHourSubset(db, peakDemandHourZonal, genparam)
 
     return (genSet, genSymbols, hourSet, hourSymbols, techSet, techSymbols, techCurtailedSet,
             techCurtailedSymbols, renewTechSet, renewTechSymbols, techNotCurtailedSymbols,
             hydroGenSet, hydroGenSymbols, zoneSet, zoneSymbols, lineSet, cellSet, peakHourSet,
-            peakHrSymbols, pumpHydroGenSet, pumpHydroGenSymbols, typeSet, gcmSet)
+            peakHrSymbols, pumpHydroGenSet, pumpHydroGenSymbols, gcmSet)
 
 
 ################################### ADD PARAMETERS
@@ -791,8 +794,35 @@ def addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySo
                               zoneSymbols, lineSet, ipmZones, ipmZoneNums, lineList, lineCapacs, cellsToZones,
                               cellSet, peakDemandHourZonal, peakHourSet, peakHrSymbols, hydroPotPerSeason,
                               ptCurtailedAll, pumpHydroGenSet, pumpHydroGenSymbols, phEff, phMaxSoc, phInitSoc,
-                              typeSet, gcmSet):
-    addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon, ptCurtailedAll)
+                              gcmSet):
+
+    # update newTechsCE to account for blocks of Wind and Solar with different CF
+    newTechsCEcopy = copy.deepcopy(newTechsCE)
+    techCol = newTechsCEcopy[0].index('TechnologyType')
+
+    # wind
+    windTechs = [t for t in renewTechSymbols if 'Wind' in t]
+    windRow = [row for row in newTechsCEcopy if row[techCol] == 'Wind'][0]
+    windRowNumber = newTechsCEcopy.index(windRow)
+    x = newTechsCEcopy.pop(windRowNumber)
+
+    for t in windTechs:
+        row = copy.deepcopy(windRow)
+        row[techCol] = t
+        newTechsCEcopy.append(row)
+
+    # solar
+    solarTechs = [t for t in renewTechSymbols if 'Solar PV' in t]
+    solarRow = [row for row in newTechsCEcopy if row[techCol] == 'Solar PV'][0]
+    solarRowNumber = newTechsCEcopy.index(solarRow)
+    x = newTechsCEcopy.pop(solarRowNumber)
+
+    for t in solarTechs:
+        row = copy.deepcopy(solarRow)
+        row[techCol] = t
+        newTechsCEcopy.append(row)
+
+    addTechParams(db, newTechsCEcopy, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon, ptCurtailedAll)
 
     addEguParams(db, genFleetForCE, genSet, genSymbols, ipmZones, ipmZoneNums, scaleLbToShortTon, scaleMWtoGW)
     addPumpHydroParams(db, genFleetForCE, phEff, phMaxSoc, phInitSoc, pumpHydroGenSet, pumpHydroGenSymbols, scaleMWtoGW)
@@ -800,8 +830,10 @@ def addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySo
     addCppEmissionsCap(db, currCo2Cap)
     addSeasonDemandWeights(db, seasonDemandWeights)
 
-    addMaxNumNewBuilds(db, newTechsCE, zoneSet, ipmZones, ipmZoneNums, typeSet, maxAddedZonalCapacPerTech,
-                       ptCurtailedAll)
+#    addMaxNumNewBuilds(db, newTechsCE, zoneSet, ipmZones, ipmZoneNums, typeSet, maxAddedZonalCapacPerTech,
+#                       ptCurtailedAll)
+
+    addMaxNumNewRenew(db, newWindCFsCEZonal, newSolarCFsCEZonal, ipmZones, ipmZoneNums)
 
     # Add hydro max gen per time block
     addHydroMaxGenPerSeason(db, hydroGenSet, gcmSet, hydroPotPerSeason, scaleMWtoGW)
@@ -972,7 +1004,6 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
 
     # (hourlyWindGen, hourlySolarGen) = getAggregateSolarAndWind(windCFs, ewdIdAndCapac, solarCFs, solarFilenameAndCapac)
     # netDemand = getNetDemand(zonalDemandProfile, hourlyWindGen, hourlySolarGen)
-
     # write2dListToCSV([[val] for val in hourlyWindGen], os.path.join(resultsDir, 'windGenUC' + str(ucYear) + '.csv'))
     # write2dListToCSV([[val] for val in hourlySolarGen], os.path.join(resultsDir, 'solarGenUC' + str(ucYear) + '.csv'))
 
@@ -1349,3 +1380,55 @@ def removeHydroForTesting(fleetUC):
     idxs = []
     for idx in range(len(fleetUC) - 1, 0, -1):
         if fleetUC[idx][fuelTypeCol] == 'Hydro': fleetUC.pop(idx)
+
+
+# for zone in genparam.ipmZones:
+#     print('Zone ', zone)
+#
+#     start_time = time.time()
+#     # Check 5/18/17: next 2 lines are working properly!
+#     zonalGenFleet = [genFleetForCE[0]] + [row for row in genFleetForCE if row[zoneCol] == zone]
+#
+#     (windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac, solarCFs, solarCfsDtHr, solarCfsDtSubhr,
+#      solarFilenameAndCapac) = getRenewableCFs(zonalGenFleet, startWindCapacForCFs, startSolarCapacForCFs,
+#                                               genparam.tzAnalysis, genparam.dataRoot, genparam.windGenDataYr,
+#                                               zone, genparam.fipsToZones, genparam.fipsToPolys,
+#                                               ncores_py=genparam.ncores_py)
+#     print('Got RE CFs. Elapsed time: ' + str_elapsedtime(start_time))
+#
+#     start_time = time.time()
+#     if windCFs is not None:
+#         write2dListToCSV(windCFs, os.path.join(resultsDir, 'windCFsFullYrCE' + zone + str(currYear) + '.csv'))
+#         write2dListToCSV(windCfsDtHr, os.path.join(resultsDir, 'windCFsDtFullYrCE' + zone + str(currYear) + '.csv'))
+#         # write2dListToCSV(windCfsDtSubhr,os.path.join(resultsDir,'windCFsDtSubhrFullYrCE' + zone + str(currYear) + '.csv'))
+#         write2dListToCSV(ewdIdAndCapac,
+#                          os.path.join(resultsDir, 'windIdAndCapacCE' + zone + str(currYear) + '.csv'))
+#     if solarCFs is not None:
+#         write2dListToCSV(solarCFs, os.path.join(resultsDir, 'solarCFsFullYrCE' + zone + str(currYear) + '.csv'))
+#         write2dListToCSV(solarCfsDtHr,
+#                          os.path.join(resultsDir, 'solarCFsDtFullYrCE' + zone + str(currYear) + '.csv'))
+#         # write2dListToCSV(solarCfsDtSubhr,os.path.join(resultsDir,'solarCFsDtSubhrFullYrCE' + zone + str(currYear) + '.csv'))
+#         write2dListToCSV(solarFilenameAndCapac,
+#                          os.path.join(resultsDir, 'solarIdAndCapacCE' + zone + str(currYear) + '.csv'))
+#
+#     (newWindCFs, newWindCFsSubhr, newSolarCFs, newSolarCFsSubhr, newWindCfsDtHr, newWindCfsDtSubhr,
+#      newWindIdAndCapac, newSolarCfsDtHr, newSolarCfsDtSubhr, newSolarFilenameAndCapac,
+#      addedWindCapac, addedSolarCapac) = getNewWindAndSolarCFs(zonalGenFleet, currYear, 'CE', genparam.tzAnalysis,
+#                                                               genparam.dataRoot, resultsDir, genparam.windGenDataYr,
+#                                                               zone, genparam.fipsToZones, genparam.fipsToPolys,
+#                                                               ncores_py=genparam.ncores_py)
+#     print('Got new RE CFs. Elapsed time: ' + str_elapsedtime(start_time))
+#
+#     write2dListToCSV(newWindIdAndCapac,
+#                      os.path.join(resultsDir, 'windNewIdAndCapacCE' + zone + str(currYear) + '.csv'))
+#     write2dListToCSV(newSolarFilenameAndCapac,
+#                      os.path.join(resultsDir, 'solarNewIdAndCapacCE' + zone + str(currYear) + '.csv'))
+#
+#     # get number of hours in year (assume that is the same over all gcms)
+#     gcm = curtailparam.listgcms[0]
+#     nhours_year = len(zonalDemandProfile[gcm][zone])
+#
+#     zonalHourlyWindGen[zone], zonalHourlySolarGen[zone] = getAggregateSolarAndWind(windCFs, ewdIdAndCapac,
+#                                                                                    solarCFs, solarFilenameAndCapac,
+#                                                                                    nhours_year)
+#     zonalNewWindCFs[zone], zonalNewSolarCFs[zone] = newWindCFs, newSolarCFs

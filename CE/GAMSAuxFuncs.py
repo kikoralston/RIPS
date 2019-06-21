@@ -21,8 +21,8 @@ def createTechSymbol(row, headers, ptCurtailed):
     """CREATE COOLING TECH SYMBOLS
 
     :param row: row of genFleet 2d list with data of single generator
-    :param headers: list of headers
-    :param ptCurtailed: set of curtailed technologies
+    :param headers: 1-d list with header
+    :param ptCurtailed: 1-d list with curtailed technologies
     :return:
     """
     techCol = headers.index('TechnologyType')

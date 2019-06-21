@@ -105,8 +105,7 @@ def nested_dict_to_dict(dict_in):
 def writeDictToCSV(dictWrite, fileNameWithDir):
     """ Writes a dictionary to a csv file
 
-    Works with a 2 level nested dictionary. **Will not work with deeper dictionaries**. For 1 level dictionaries,
-    the first column are the keys. For 2 level nested dictionaries, the first two columns are the keys.
+    Works with a N level nested dictionary. The first N columns are the keys.
 
     :param dictWrite: dictionary to write
     :param fileNameWithDir: string with file name

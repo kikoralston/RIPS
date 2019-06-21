@@ -176,7 +176,7 @@ def addCellSet(db,cellsToZones):
     return cellset
 
 
-def addNewTechsSets(db, newTechsCE, plantTypesCurtailed):
+def addNewTechsSets(db, newTechsCE, plantTypesCurtailed, blocksWind=None, blocksSolar=None):
     """ADD NEW TECH SETS
 
     Inputs: GAMS db, new techs (2d list)
@@ -187,7 +187,8 @@ def addNewTechsSets(db, newTechsCE, plantTypesCurtailed):
     :return:
     """
     (techSymbols, techCurtailedSymbols,
-     renewTechSymbols, techNotCurtailedSymbols) = isolateTechSymbols(newTechsCE, plantTypesCurtailed)
+     renewTechSymbols, techNotCurtailedSymbols) = isolateTechSymbols(newTechsCE, plantTypesCurtailed, blocksWind,
+                                                                     blocksSolar)
 
     #Add all techs
     (techSetName, techSetDescrip, techSetDim) = ('tech', 'techs for expansion', 1)
@@ -209,20 +210,33 @@ def addNewTechsSets(db, newTechsCE, plantTypesCurtailed):
             techNotCurtailedSet, techNotCurtailedSymbols)
 
 
-def isolateTechSymbols(newTechsCE, ptCurtailed):
+def isolateTechSymbols(newTechsCE, ptCurtailed, blocksWind=None, blocksSolar=None):
     """Takes in new techs (2d list), and returns tech types as: all types, renew (wind or solar) types, or types
     that can be curtailed
 
-    :param newTechsCE:
-    :param ptCurtailed:
+    :param newTechsCE: 2d list with new techs data
+    :param ptCurtailed: 1-d list with plant types that are curtailed
+    :param blocksWind: 1-d list with indexes of blocks of wind
+    :param blocksSolar: 1-d list with indexes of blocks of solar
     :return:
     """
-    techSymbols = [createTechSymbol(row,newTechsCE[0], ptCurtailed) for row in newTechsCE[1:]]
+    techSymbols = [createTechSymbol(row, newTechsCE[0], ptCurtailed) for row in newTechsCE[1:]]
+
+    # create different wind and solar tech types according to aggregated block
+
+    if blocksWind is not None:
+        techre = techSymbols.pop(techSymbols.index('Wind'))
+        techSymbols = techSymbols + blocksWind
+
+    if blocksSolar is not None:
+        techre = techSymbols.pop(techSymbols.index('Solar PV'))
+        techSymbols = techSymbols + blocksSolar
 
     # Get RE as marked as RE
-    renewCol = newTechsCE[0].index('ThermalOrRenewable')
-    techRenewSymbols = [createTechSymbol(row, newTechsCE[0], ptCurtailed)
-                        for row in newTechsCE[1:] if row[renewCol] == 'renewable']
+    #renewCol = newTechsCE[0].index('ThermalOrRenewable')
+    #techRenewSymbols = [createTechSymbol(row, newTechsCE[0], ptCurtailed)
+    #                    for row in newTechsCE[1:] if row[renewCol] == 'renewable']
+    techRenewSymbols = [t for t in techSymbols if 'Solar PV' in t or 'Wind' in t]
 
     # Get curtailed as eligible to be curtailed
     techCol = newTechsCE[0].index('TechnologyType')

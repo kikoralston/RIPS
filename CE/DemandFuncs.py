@@ -21,8 +21,7 @@ def scaleDemandForGrowthAndEE(baseDemand, annualDemandGrowth, demandYear, currYe
     return [val * demandScalar for val in baseDemand]
 
 
-def getAggregateSolarAndWind(windCFs, ewdIdAndCapac, solarCFs, solarFilenameAndCapac,
-                             nhours_year=8760):
+def getAggregateSolarAndWind(windCFs, ewdIdAndCapac, solarCFs, solarFilenameAndCapac, nhours_year=8760):
     """ Aggregates existing solar and wind generation by zone
 
     These aggregated values will be used to compute a net demand value

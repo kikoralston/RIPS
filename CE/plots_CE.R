@@ -15,6 +15,8 @@ library(lubridate)
 library(maptools)
 library(gridExtra)
 library(grid)
+library(mapdata)
+library(sf)
 
 
 # General Parameters ----
@@ -33,6 +35,8 @@ coal.types <- c('Bituminous', 'Bituminous& Subbituminous', 'Lignite',
 
 col.pallete <- rev(c('#8c510a','#bf812d','#dfc27d','#f6e8c3','#c7eae5','#80cdc1',
                      '#35978f','#01665e'))
+
+shapes.pallete <- c(21, 22, 23, 24, 25, 15, 16, 17, 18, 19)
 
 # Auxiliary Functions ----
 
@@ -112,17 +116,93 @@ get.capacity.tech <- function(type, ccs, cool, df.new.techs) {
 
 # Main Functions ----
 
-plot.map.serc <- function(path.data.ce, path.output.ce) {
+plot.map.serc <- function(path.data.ce, path.plot){
+  
+  g <- get.map.serc(path.data.ce)
+  
+  pdf(paste0(path.plot, "/sercmap.pdf"), width=7*16/9, height=7)
+  print(g)
+  dev.off()
+  
+  system(sprintf('pdfcrop %s %s', paste0(path.plot, "/sercmap.pdf"), 
+                 paste0(path.plot, "/sercmap.pdf")))
+}
+
+plot.map.serc.with.plants <- function(path.data.ce, path.plot, 
+                                      gen.fleet=NULL, show.points=TRUE){
+  
+  g <- get.map.serc(path.data.ce)
+
+  if (is.null(gen.fleet)) {
+    gen.fleet <- read.csv(file=paste0(path.output.ce, '/base_case/genFleetInitial.csv'))  
+  }
+  
+  gen.fleet.2 <- gen.fleet %>% 
+    select(Plant.Name, UniqueID_Final, PlantType, Region.Name, State.Name, County, 
+           Capacity..MW., On.Line.Year, Retirement.Year,
+           YearRetiredByAge, Modeled.Fuels, Longitude, Latitude) %>%
+    mutate(PlantType = as.character(PlantType)) %>%
+    mutate(PlantType = ifelse(PlantType %in% otherTypes, 'Other', PlantType)) %>%
+    mutate(PlantType = ifelse(Modeled.Fuels %in% coal.types, 'Coal', PlantType)) %>%
+    mutate(PlantType = ifelse(grepl('Natural Gas', Modeled.Fuels), 
+                              'Natural Gas', PlantType)) %>%
+    mutate(PlantType = ifelse(grepl('Fuel Oil', Modeled.Fuels), 
+                              'Fuel Oil', PlantType)) %>%
+    mutate(PlantType = ifelse(PlantType %in% c('Hydro', 'Pumped Storage'), 
+                              'Hydro', PlantType)) %>%
+    mutate(PlantType = ifelse(PlantType == 'Solar PV', 'Solar', PlantType)) %>%
+    mutate(Plant.Name = ifelse(Plant.Name == '', paste0(Longitude, '_', Latitude), 
+                               Plant.Name)) %>%
+    filter(Plant.Name != '' & Plant.Name != 'NA_NA') %>%
+    select(-Modeled.Fuels) %>% group_by(Plant.Name) %>%
+    summarise(PlantType=PlantType[1], Capacity..MW.=sum(Capacity..MW., na.rm = TRUE),
+              Longitude=Longitude[1], Latitude=Latitude[1])
+
+  if (show.points) {
+    g_plants <- g + 
+      geom_point(data=gen.fleet.2, aes(x=Longitude, y=Latitude, shape=PlantType), 
+                 fill='yellow')
+  } else {
+    g_plants <- g + 
+      geom_point(data=gen.fleet.2, aes(x=Longitude, y=Latitude, shape=PlantType), 
+                 fill='yellow', alpha=0.0)
+  } 
+  
+  g_plants <- g_plants +
+    scale_shape_manual(values = shapes.pallete) + 
+    theme(legend.position = "top", legend.title=element_blank(),
+          legend.margin=margin(), legend.spacing=unit(0, 'points'),
+          plot.margin=margin(),legend.box.spacing=unit(0.1, 'points')) +
+    theme(axis.title.x=element_blank(), axis.title.y=element_blank())
+  
+  if (!show.points) {
+    g_plants <- g_plants + theme(legend.text = element_text(colour = 'white'))
+  }
+  
+  pdf(paste0(path.plot, "/sercmap_fleet.pdf"), width=7*16/9, height=7)
+  print(g_plants)
+  dev.off()
+  system(sprintf('pdfcrop %s %s', paste0(path.plot, "/sercmap_fleet.pdf"), 
+                 paste0(path.plot, "/sercmap_fleet.pdf")))
+  
+  return(g_plants)
+}
+
+
+get.map.serc <- function(path.data.ce) {
+  
+  bounds.longitude <- c(-91, -76)
+  bounds.latitude <- c(29, 39)
+  
+  serc.zones <- c('S_SOU', 'S_C_TVA', 'S_VACA', 'S_C_KY')
   
   s1 <- readOGR(paste0(path.data.ce, 'IPMRegionsShapeFile/'), 
                 'IPM_Regions_20121023_US')
   
-  serc.zones <- read.csv(paste0(path.output.ce, 'zoneNamesToNumbers.csv'))
-  
-  zones.map <- ifelse(s1@data$IPM_Region %in% serc.zones$Zone, 
+  zones.map <- ifelse(s1@data$IPM_Region %in% serc.zones, 
                       s1@data$IPM_Region, NA)
   
-  s1.union.serc <- unionSpatialPolygons(s1 ,zones.map)
+  s1.union.serc <- unionSpatialPolygons(s1, zones.map)
   
   df.ipm.counties <- s1@data %>% 
     mutate(FIPS=as.numeric(as.character(FIPS)))
@@ -136,14 +216,35 @@ plot.map.serc <- function(path.data.ce, path.output.ce) {
   
   map.us.counties <- map.us.counties %>% 
     mutate(IPM_Region = as.character(IPM_Region)) %>%
-    mutate(IPM_Region = ifelse(IPM_Region %in% serc.zones$Zone,
+    mutate(IPM_Region = ifelse(IPM_Region %in% serc.zones,
                                IPM_Region,
                                NA))
   
-  state_map <- map_data('state')
-  
-  # state boundaries
+  # state boundaries & rivers
   state_map <- map_data("state")
+  path.rivers <- "~/CMU/RIPS/paperCE/rivers/"
+  rivers <- readOGR(path.rivers)
+  rivers2 <- subset(rivers, COUNTRY == "USA")
+  rivers3 <- st_transform(st_as_sf(rivers2), 
+                          crs='+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0')
+  rivers4 <- st_crop(x=rivers3, 
+                     c(xmin=bounds.longitude[1], xmax=bounds.latitude[2], 
+                       ymin=bounds.latitude[1], ymax=bounds.latitude[2]))
+  
+  labels_regions <- data.frame(x=as.numeric(),
+                               y=as.numeric(),
+                               label=as.character())
+  
+  for (p in s1.union.serc@polygons) {
+    x <- p@labpt[1]
+    y <- p@labpt[2]
+    label <- levels(df.ipm.counties$IPM_Region)[as.integer(p@ID)]
+    
+    labels_regions <- rbind(labels_regions,
+                            data.frame(x=x,
+                                       y=y,
+                                       label=label))
+  }
   
   pal <- c('#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c',
            '#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928')
@@ -153,19 +254,18 @@ plot.map.serc <- function(path.data.ce, path.output.ce) {
                  colour='gray80') +
     geom_polygon(data=map.us.counties, aes(x=long, y=lat, group=group, 
                                            fill=IPM_Region)) +
-    geom_path(data=state_map, aes(x=long, y=lat, group=group)) +
-    coord_map("polyconic", xlim=c(-95, -75), ylim=c(27.5, 40)) + 
-    scale_fill_manual(breaks=serc.zones$Zone, values=pal, na.value="gray90") +
-    theme_bw() + theme(axis.title.x=element_blank(), 
-                       axis.title.y=element_blank()) + 
-    guides(fill=guide_legend(title=NULL))
+    geom_sf(data=rivers4, colour='blue') +
+    coord_sf(xlim=bounds.longitude, ylim = bounds.latitude) +
+    geom_label(data=labels_regions, aes(x=x, y=y, label=label)) +
+#    coord_map("polyconic", xlim=bounds.longitude, ylim=bounds.latitude) + 
+    scale_fill_manual(breaks=serc.zones, values=pal, na.value="gray95") +
+    theme(axis.title.x=element_blank(), axis.title.y=element_blank()) + 
+    theme_bw() + guides(fill=FALSE)
   
-  pdf("./slides/sercmap.pdf", width=7*16/9, height=7)
-  print(g)
-  dev.off()
+  return(g)
 }
 
-plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand, 
+plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand=NULL, 
                               path.out.plot=path.output.ce) {
   
   ini.gen.fleet.raw <- read.csv(file=paste0(path.output.ce, '/genFleetInitial.csv'))
@@ -217,30 +317,98 @@ plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand,
     mutate(PlantType=factor(PlantType, levels=rev(plant.types))) %>%
     mutate(Region.Name == as.character(Region.Name))
   
-  df.demand.aux <- df.demand %>% gather(key = "type", value = "value", 
-                                    mean.load:peak.load)
-
-  list.cases <- unique(df.demand$case)
+  list.cases <- NULL
+  df.demand.aux <- NULL
+  if(!is.null(df.demand)) {
+    df.demand.aux <- df.demand %>% gather(key = "type", value = "value", 
+                                          mean.load:peak.load)
+    list.cases <- unique(df.demand$case)
+  }
   ncases <- length(list.cases)
   
   g <- ggplot() + geom_col(data=df.fleet.time.2,
                            aes(x=currYear, y=online.cap/1e3, fill=PlantType),
-                           width=2) +
-    geom_line(data=df.demand.aux, aes(x=currYear, y=value/1e3, linetype=case,
-                                      color=type), size=1)
+                           width=2)
   
   g <- g + scale_fill_manual(values = col.pallete) + theme_bw() +
     xlab('Year') + ylab('Installed Capacity (GW)') +
     scale_x_continuous(breaks = seq(2020, 2050, 5)) +
-    guides(fill=guide_legend(title=NULL),
-           linetype=guide_legend(title=NULL, reverse=TRUE)) +
-    facet_grid(Region.Name ~ ., scales = 'free_y') 
+    guides(fill=guide_legend(title=NULL))
     
+  if (!is.null(df.demand.aux)) {
+    g <- g + geom_line(data=df.demand.aux, 
+                       aes(x=currYear, y=value/1e3, linetype=case, color=type), 
+                       size=1) + 
+      guides(linetype=guide_legend(title=NULL, reverse=TRUE))
+  }
+  
+  g <- g + facet_grid(Region.Name ~ ., scales = 'free_y') 
+  
   pdf(paste0(path.out.plot,"/supply_demand.pdf"), width=7*16/9, height=7)
   print(g)
   dev.off()
   
   return(df.fleet.time.2)
+}
+
+get.new.additions <- function(y, path.gdx) {
+  
+  serc.zones <- read.csv(paste0(path.gdx,'zoneNamesToNumbers.csv'))
+  
+  # map cell to zone
+  map.cell2zone <- rgdx.param(gdxName = paste0(path.gdx, 'gdxOutYear', y, 
+                                               '.gdx'), 'pCellzones')
+  map.cell2zone$c <- as.character(map.cell2zone$c)
+  
+  tech.not.curtailed <- rgdx(gdxName = paste0(path.gdx, '/gdxOutYear', y, '.gdx'), 
+                             requestList = list(name="vNnotcurtailed", 
+                                                form='full', 
+                                                field=c('l')))
+  
+  df.tech.not.curtailed <- data.frame(zone=tech.not.curtailed$uels$z,
+                                      tech.not.curtailed$val, 
+                                      row.names = NULL) %>%
+    mutate(ZoneNum=as.numeric(as.factor(zone))) %>%
+    select(-zone) %>%
+    gather(key='type', value='value', Nuclear) %>%
+    left_join(serc.zones, by='ZoneNum') %>%
+    arrange(ZoneNum) %>% mutate(year=y) %>%
+    select(year, Zone, type, value) %>% as.data.frame()
+  
+  tech.curtailed <- rgdx(gdxName = paste0(path.gdx, '/gdxOutYear', y, '.gdx'), 
+                         requestList = list(name="vNcurtailed", 
+                                            form='full',field=c('l')))
+  
+  df.tech.curtailed <- data.frame(cells=rownames(tech.curtailed$val),
+                                  tech.curtailed$val, row.names = NULL,
+                                  stringsAsFactors = FALSE) %>%
+    left_join(map.cell2zone, by=c("cells" = "c")) %>%
+    mutate(ZoneNum=pCellzones) %>% select(-pCellzones) %>%
+    left_join(serc.zones, by='ZoneNum') %>%
+    gather(key='type', value='value', -c(cells, ZoneNum, Zone)) %>% 
+    arrange(ZoneNum) %>% mutate(year=y)
+  
+  df.tech.curtailed.zone <- df.tech.curtailed %>% group_by(Zone, type) %>%
+    summarise(value=sum(value, na.rm=TRUE)) %>% mutate(year=y) %>%
+    select(year, Zone, type, value) %>% as.data.frame()
+  
+  tech.renew <- rgdx(gdxName = paste0(path.gdx, '/gdxOutYear', y, '.gdx'), 
+                     requestList = list(name="vNrenew", 
+                                        form='full',field=c('l')))
+  
+  df.tech.renew <- data.frame(zone=tech.renew$uels$z,
+                              tech.renew$val, row.names = NULL) %>%
+    mutate(ZoneNum=as.numeric(as.factor(zone))) %>%
+    select(-zone) %>%
+    gather(key='type', value='value', -ZoneNum) %>%
+    left_join(serc.zones, by='ZoneNum') %>%
+    arrange(ZoneNum) %>% mutate(year=y) %>%
+    select(year, Zone, type, value) %>% as.data.frame()
+  
+  df.complete.decision <- rbind(df.tech.curtailed.zone, df.tech.not.curtailed, 
+                                df.tech.renew)
+  
+  return(df.complete.decision)
 }
 
 plot.new.additions <- function(path.output.ce,
@@ -783,3 +951,132 @@ plot.donut.chart <- function(fileGenfleet) {
   
   return(g)
 }
+
+
+levelized.cost.energy <- function(y, path.output.ce,
+                                  gamsSysDir='/Applications/GAMS24.7/sysdir/',
+                                  path.out.plot=path.output.ce) {
+  
+  rate <- 0.07
+  igdx(gamsSysDir, silent=TRUE)
+  
+  lifetimes <- rgdx.param(gdxName = paste0(path.output.ce, '/gdxOutYear', y, '.gdx'), 
+                          'pLife')
+  
+#  lifetimes <- read.csv(paste0(path.data.ce, '/NewPlantData/',
+#                               'LifetimeValuesExistingPlants4Aug2016.csv'))  
+  
+  df.new.techs <- read.csv(paste0(path.output.ce,sprintf('newTechsCE%4d.csv', y)))
+  df.new.techs <- df.new.techs %>%
+    transmute(Type=TechnologyType, Fuel=FuelType,
+              Cooling=as.character(Cooling.Tech),
+              CAPEX=as.numeric(CAPEX.2012..MW.)/1e3,
+              FixedOM=as.numeric(FOM.2012..MW.yr.)/1e3) %>%
+    arrange(Type, Cooling) %>%
+    mutate(Cooling=ifelse(Type %in% c('Nuclear', 'Solar PV', 'Wind'), 'other', Cooling)) %>%
+    mutate(cool2=ifelse(Cooling == 'other', '',
+                        ifelse(Cooling=='dry cooling', 'DC',
+                               ifelse(Cooling=='recirculating', 'RC',
+                                      ifelse(Cooling == 'once through',
+                                             'OT', ''))))) %>%
+    mutate(type.2=ifelse(Cooling == 'other',
+                         gsub(' ', '.', Type),
+                         gsub(' ', '.', paste0(Type, '.', cool2)))) %>%
+    mutate(type.3=ifelse(cool2 != '', paste0(Type,'+',cool2), as.character(Type))) %>%
+    left_join(lifetimes, by=c('type.3' = 'tech')) %>%
+    select(-type.3) %>% dplyr::rename(n=pLife)
+
+  # Fixed annualized costs of new plants
+  vFixNew <- rgdx(gdxName = paste0(path.output.ce, 'gdxOutYear', y, '.gdx'), 
+                  requestList = list(name="vIc", form='full', field=c('l')))$val
+  # Variable annualized costs of ALL plants (existing and new)
+  vVarTotal <- rgdx(gdxName = paste0(path.output.ce, 'gdxOutYear', y, '.gdx'), 
+                    requestList = list(name="vVc", form='full', field=c('l')))$val
+  
+  fname <- paste0(path.output.ce, 'demandFullYrZonalCE', y,'.csv')
+  df.dem <- read.csv(file=fname, stringsAsFactors = FALSE, header = FALSE) %>%
+    select(-V1) %>% gather('hour', 'demand', -V2) %>% 
+    mutate(hour=as.numeric(gsub('V', '', hour))-2) %>% arrange(V2, hour) %>%
+    dplyr::rename(Region.Name=V2)
+  
+  annual.demand <- sum(df.dem$demand)
+  
+  # get existing generators
+  fname <- paste0(path.output.ce, 'genFleetAfterCE', y,'.csv')
+  df.egu <- read.csv(file=fname, stringsAsFactors = FALSE, header = TRUE) %>%
+    select(Plant.Name, UniqueID_Final, ORIS.Plant.Code, Unit.ID, PlantType, Region.Name, 
+           State.Name, Capacity..MW., Heat.Rate..Btu.kWh., Cooling.Tech, On.Line.Year, 
+           Retirement.Year, Modeled.Fuels, FOM...MW.yr., VOM...MWh., YearAddedCE, 
+           YearRetiredByCE, YearRetiredByAge) %>%
+    mutate(Cooling.Tech=ifelse(grepl('once through', Cooling.Tech), 'once through',
+                               ifelse(grepl('recirculating', Cooling.Tech), 'recirculating',
+                                      ifelse(grepl('dry cooling', Cooling.Tech), 'dry cooling', 'other')))) %>%
+    mutate(YearAddedCE=ifelse(is.na(YearAddedCE), 9999, YearAddedCE),
+           YearRetiredByCE=ifelse(is.na(YearRetiredByCE), 9999, YearRetiredByCE),
+           YearRetiredByAge=ifelse(is.na(YearRetiredByAge), 9999, YearRetiredByAge)) %>%
+    # remove those retired by the model in years <= y
+    filter(YearRetiredByCE > y & YearRetiredByAge > y)
+  
+  # existing generators not added by the model
+  df.egu.original <- df.egu %>% filter(YearAddedCE == 9999) %>%
+    mutate(annual.fix.cost=Capacity..MW.*(FOM...MW.yr.)/1e3)
+    
+  # existing generators added by the model (add capital costs)
+  df.egu.added.ce <- df.egu %>% filter(YearAddedCE != 9999) %>% 
+    left_join(df.new.techs, by=c('PlantType' = 'Type', 'Cooling.Tech' = 'Cooling')) %>% 
+    mutate(annual.fix.cost=Capacity..MW.*(CAPEX*(rate*(1+rate)^n/((1+rate)^n-1))+FixedOM))
+  
+  # "annualized" levelized cost of energy of total fleet in year y
+  
+  df.out <-  data.frame(year=y,
+                        type=c('Fixed Costs', 'Variable Costs'),
+                        absolute.value=c(vFixNew+sum(df.egu.original$annual.fix.cost)+sum(df.egu.added.ce$annual.fix.cost), vVarTotal),
+                        annual.demand=annual.demand) %>%
+    mutate(value.per.MWh=absolute.value*1e3/annual.demand)
+  
+  return(df.out)
+}
+
+#
+# lifetimes <- read.csv(paste0(path.data.ce, '/NewPlantData/',
+#                              'LifetimeValuesExistingPlants4Aug2016.csv'))
+# 
+# df.new.techs <- read.csv(paste0(path.rcps[1],sprintf('newTechsCE%4d.csv', y)))
+# df.new.techs <- df.new.techs %>% 
+#   transmute(Type=TechnologyType, Fuel=FuelType, 
+#             Cooling=as.character(Cooling.Tech),
+#             Capacity=as.numeric(Capacity.MW.), 
+#             CAPEX=as.numeric(CAPEX.2012..MW.)/1e3,
+#             FixedOM=as.numeric(FOM.2012..MW.yr.)/1e3, 
+#             VarOM=as.numeric(VOM.2012..MWh.)) %>%
+#   arrange(Type, Cooling) %>%
+#   mutate(Cooling=ifelse(Type == 'Nuclear', NA, Cooling)) %>%
+#   mutate(cool2=ifelse(is.na(Cooling), '',
+#                       ifelse(Cooling=='dry cooling', 'DC',
+#                              ifelse(Cooling=='recirculating', 'RC',
+#                                     ifelse(Cooling == 'once-through', 
+#                                            'OT', ''))))) %>%
+#   mutate(type.2=ifelse(is.na(Cooling),
+#                        gsub(' ', '.', Type),
+#                        gsub(' ', '.', paste0(Type, '.', cool2)))) 
+# 
+# 
+# df <- get.new.additions(2050, paste0(path.output.ce, '/rcp45/')) %>%
+#   mutate(type2=trimws(gsub('\\.',' ', gsub('DC|RC', '', type, perl = TRUE),
+#                            perl = TRUE))) %>% 
+#   left_join(lifetimes, by=c('type2' = 'PlantType'))
+# 
+# df.2 <- df %>% left_join(df.new.techs, by=c('type' = 'type.2')) %>%
+#   select(year, Zone, type, value, Fuel, Capacity, CAPEX, FixedOM, VarOM, Lifetime.yrs.) %>%
+#   group_by(year, type, Fuel) %>%
+#   summarise(value=sum(value),
+#             Capacity=mean(Capacity),
+#             CAPEX=mean(CAPEX),
+#             FixedOM=mean(FixedOM),
+#             VarOM=mean(VarOM),
+#             n=mean(Lifetime.yrs.)) %>%
+#   mutate(Total.MW = value*Capacity) %>%
+#   mutate(annual.fix.cost=Total.MW*(CAPEX*(rate*(1+rate)^n/((1+rate)^n-1))+FixedOM))
+# 
+# 
+# 

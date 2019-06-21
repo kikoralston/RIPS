@@ -413,8 +413,16 @@ def read_waterdata_netcdf(fname, varname, curryear):
     return data_values, date_array, lons, lats
 
 
-def order_cells_by_flow(genparam, curtailparam, currYear, n=100):
+def order_cells_by_flow(genparam, curtailparam, currYear, n=100, output_list=True):
+    """
 
+    :param genparam:
+    :param curtailparam:
+    :param currYear:
+    :param n:
+    :param output_list: Type of output by zone. If True output is list of cells. If false, output is dataframe with cells and annual flows
+    :return: dictionary with a list/dataframe for each zone (depending on output_list)
+    """
     gcm = curtailparam.listgcms[0]
     allCellFolders = get_all_cells_from_netcdf(curtailparam, gcm)
 
@@ -465,7 +473,10 @@ def order_cells_by_flow(genparam, curtailparam, currYear, n=100):
 
         df = df.head(n)
 
-        best_cells = list(df['cell'])
+        if output_list:
+            best_cells = list(df['cell'])
+        else:
+            best_cells = df
 
         best_cells_by_zone[z] = best_cells
 

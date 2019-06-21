@@ -13,7 +13,7 @@ from AssignCellsToStates import getStateOfPt
 import pandas as pd
 
 
-def saveCapacExpBuilds(capacExpBuilds,capacExpModel,currYear):
+def saveCapacExpBuilds(capacExpBuilds, capacExpModel, currYear):
     """STORE BUILD DECISIONS FROM CAPACITY EXPANSION
 
     Inputs: running list of CE builds (2d list), CE model output as GAMS object,
@@ -33,7 +33,7 @@ def saveCapacExpBuilds(capacExpBuilds,capacExpModel,currYear):
     return newCurtTech,newRETech,newNotCurtTech
 
 
-def addNewTechTo2dList(newCurtTech,newRETech,newNotCurtTech,capacExpBuilds,newColHeader):
+def addNewTechTo2dList(newCurtTech, newRETech, newNotCurtTech, capacExpBuilds, newColHeader):
     """Adds new column of results to a 2d list, maintaining even 2d list & backfilling empty cells if necessary for
     newly added rows.
 
@@ -177,8 +177,13 @@ def addGeneratorsToFleet(genFleetWithCEResults, newCurtTech, newRETech, newNotCu
     #For each candidate tech, check if any added, and if so add to fleet
     for newGenerators in [newCurtTech,newRETech,newNotCurtTech]:
         for (techAndLoc,newBuilds) in newGenerators:
-            loc,techAndCT = techAndLoc[0],techAndLoc[1]
-            techRow = techSymbols.index(techAndCT)        
+            loc, techAndCT = techAndLoc[0],techAndLoc[1]
+
+            # Solar and Wind: remove info of CF block
+            if 'Solar PV' in techAndCT or 'Wind' in techAndCT:
+                techAndCT = techAndCT.split('+')[0]
+
+            techRow = techSymbols.index(techAndCT)
             if newBuilds > 0:
                 tech = techTechs[techRow]
                 techCapac = techCapacs[techRow]
@@ -511,12 +516,17 @@ def sumFleetCapac(genFleetUpdated, demand, hourlyWindGen, hourlySolarGen, newWin
     peakDemandHour = demand.index(max(demand))
 
     existWindGenAtPeak,existSolarGenAtPeak = hourlyWindGen[peakDemandHour], hourlySolarGen[peakDemandHour]
-    newWindCFAtPeak,newSolarCFAtPeak = newWindCFs[peakDemandHour],newSolarCFs[peakDemandHour]
-    newWindRows = getNewRERows('Wind',genFleetUpdated,currYear)
-    newSolarRows = getNewRERows('Solar PV',genFleetUpdated,currYear)
+
+    # For now use capacity factors of first block
+    newWindCFAtPeak, newSolarCFAtPeak = (newWindCFs['Wind+00'][peakDemandHour],
+                                         newSolarCFs['Solar PV+00'][peakDemandHour])
+
+    newWindRows = getNewRERows('Wind', genFleetUpdated, currYear)
+    newSolarRows = getNewRERows('Solar PV', genFleetUpdated, currYear)
+
     newWindCapac = sum([float(row[capacCol]) for row in newWindRows])
     newSolarCapac = sum([float(row[capacCol]) for row in newSolarRows])
-    otherRows = [row for row in genFleetUpdated[1:] if (row[plantTypeCol] not in ('Wind','Solar PV'))]
+    otherRows = [row for row in genFleetUpdated[1:] if (row[plantTypeCol] not in ('Wind', 'Solar PV'))]
     nonRECapacs = sum([float(row[capacCol]) for row in otherRows])
 
     return (nonRECapacs + existWindGenAtPeak + existSolarGenAtPeak +

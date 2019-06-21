@@ -76,12 +76,14 @@ def locInZone(lat, lon, tgtZone, fipsToZones, fipsToPolys):
     :param fipsToPolys:
     :return:
     """
-    p = Point(lon, lat)
+
     fips = getFIPSOfPt(fipsToPolys, lat, lon)
+
     if fips in fipsToZones:
         zone = fipsToZones[fips]
     else:
         zone = None  # several lat/lons on coast are not included in IPM zones
+
     return zone == tgtZone
 
 

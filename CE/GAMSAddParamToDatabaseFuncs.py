@@ -596,17 +596,26 @@ def addRenewTechCFParams(db, renewTechSet, renewTechSymbols, gcmSet, zoneSet, ho
     :param ipmZoneNums:
     """
     renewtechCfDict = dict()
-    for gcm in newWindCFsCEZonal:
-        for renewtech in renewTechSymbols:
-            if renewtech == 'Wind':
-                relevantCfs = copy.deepcopy(newWindCFsCEZonal[gcm])
-            elif renewtech == 'Solar PV':
-                relevantCfs = copy.deepcopy(newSolarCFsCEZonal[gcm])
 
-            for zone in relevantCfs:
+    # Wind
+    for gcm in newWindCFsCEZonal:
+        relevantCfs = copy.deepcopy(newWindCFsCEZonal[gcm])
+
+        for zone in relevantCfs:
+            for renewtech in relevantCfs[zone]:
                 for idx, h in enumerate(hoursForCE[gcm]):
                     renewtechCfDict[(gcm, createZoneSymbol(ipmZoneNums[ipmZones.index(zone)]),
-                                     renewtech, createHourSymbol(h))] = relevantCfs[zone][idx]
+                                     renewtech, createHourSymbol(h))] = relevantCfs[zone][renewtech][idx]
+
+    # Solar
+    for gcm in newSolarCFsCEZonal:
+        relevantCfs = copy.deepcopy(newSolarCFsCEZonal[gcm])
+
+        for zone in relevantCfs:
+            for renewtech in relevantCfs[zone]:
+                for idx, h in enumerate(hoursForCE[gcm]):
+                    renewtechCfDict[(gcm, createZoneSymbol(ipmZoneNums[ipmZones.index(zone)]),
+                                     renewtech, createHourSymbol(h))] = relevantCfs[zone][renewtech][idx]
 
     (renewtechCFName, renewtechCFDescrip) = ('pCf', 'capacity factors for new wind and solar')
 
@@ -631,6 +640,46 @@ def addSeasonDemandWeights(db, seasonDemandWeights):
     """
     for season in seasonDemandWeights:
         add0dParam(db, 'pWeight' + season, 'weight on rep. seasonal demand', seasonDemandWeights[season])
+
+
+def addMaxNumNewRenew(db, newWindCFsCEZonal, newSolarCFsCEZonal, ipmZones, ipmZoneNums):
+    """ ADD LIMIT ON MAX NUMBER OF NEW RENEWABLE BUILDS (Wind and Solar) per zone and aggregated block
+
+    :param db: GAMS database object
+    """
+
+    # get sets written to data base
+    zoneSet = db.get_set('z')
+    renewTechSet = db.get_set('techrenew')
+
+    # get lists with symbols for each set
+    renewTechSymbols = [t.keys[0] for t in renewTechSet.__iter__()]
+
+    d = dict()
+    name = 'pNmaxReBlock'
+    desc = 'max number of build for each block of wind and solar'
+
+    solarCfs = newSolarCFsCEZonal[list(newSolarCFsCEZonal.keys())[0]]
+
+    for z in solarCfs:
+        zoneSymbol = createZoneSymbol(ipmZoneNums[ipmZones.index(z)])
+        solarblocks = list(solarCfs[z])
+        solarblocks.sort()
+        for b in solarblocks[:-1]:
+            d[(zoneSymbol, b)] = 1000 // 30
+        d[(zoneSymbol, solarblocks[-1])] = 10000
+
+    windCfs = newWindCFsCEZonal[list(newWindCFsCEZonal.keys())[0]]
+
+    for z in windCfs:
+        zoneSymbol = createZoneSymbol(ipmZoneNums[ipmZones.index(z)])
+        windblocks = list(windCfs[z])
+        windblocks.sort()
+        for b in windblocks[:-1]:
+            d[(zoneSymbol, b)] = 1000 // 70
+        d[(zoneSymbol, windblocks[-1])] = 10000
+
+    maxGenParam = add_NdParam(db, d, [zoneSet, renewTechSet], name, desc)
 
 
 def addMaxNumNewBuilds(db, newTechsCE, zoneSet, ipmZones, ipmZoneNums, typeSet, maxAddedZonalCapacPerTech, ptCurtailed):
