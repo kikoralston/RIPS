@@ -155,7 +155,8 @@ if __name__ == '__main__':
     genparam.cellNewTechCriteria = 'all'
     genparam.resultsDir = '/sharedstorage/user/fralston/UWData/'
 
-    genparam.endYear = 2021
+    genparam.startYear = 2045
+    genparam.endYear = 2051
     genparam.ncores_py = 4
 
     genparam.referenceCase = False
