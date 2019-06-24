@@ -4,9 +4,14 @@ This script adds FIPS codes and IPM zone names to the metadata csv files for win
 This way this assignment will not have to be recomputed everytime by the function getPlantInfoInZone
 """
 
+import sys
+import os
+
+sys.path.insert(0, os.path.dirname(os.getcwd()))
+
+import time
 import pandas as pd
 import numpy as np
-import os
 from Parameters import *
 from AuxFuncs import str_elapsedtime
 from AssignCellsToIPMZones import getFIPSOfPt
@@ -27,6 +32,8 @@ def g(row):
     return zone
 
 
+cwd = os.getcwd()
+os.chdir(os.path.dirname(cwd))
 cwd = os.getcwd()
 
 genparam = Generalparameters.Generalparameters()
