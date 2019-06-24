@@ -44,8 +44,13 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
 
     ncores = min(len(curtailparam.listgcms), genparam.ncores_py)
 
-    with mp.Pool(processes=ncores) as pool:
-        list_curtailments = pool.map(worker_new_tech_curtailments, args_list)
+    if ncores == 1:
+        # do normal map instead of pool.map to avoid overhead
+        list_curtailments = list(map(worker_new_tech_curtailments, args_list))
+    else:
+        # if ncores > 1, use multiprocessing
+        with mp.Pool(processes=ncores) as pool:
+            list_curtailments = pool.map(worker_new_tech_curtailments, args_list)
 
     # create nested dictionary
     hrlyCurtailmentsAllTechsInTgtYr = dict(zip(curtailparam.listgcms, list_curtailments))
