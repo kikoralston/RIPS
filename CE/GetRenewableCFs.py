@@ -62,7 +62,7 @@ def wrappersolar(site):
 
 def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacInCurrFleet=0, type='wind',
                        existing=False):
-    """main function to read wind/solar sites, combine them and output average hourly CFs
+    """
 
     :param currZone:
     :param genparam:
@@ -72,8 +72,6 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
     :param type:
     :param existing: (boolean) If True process data for existing power plants. If False process data for new
                      candidate plants
-    :return: For existing plants [1-d list with hourly Cfs].
-             For candidate plants dict of {block: [1-d list of Cfs]}
 
     """
     t_start = time.time()
@@ -86,26 +84,22 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
 
     if type.lower() == 'wind':
         renewableDir = os.path.join(genparam.dataRoot, 'WINDSERCData')
-        metadata = readCSVto2dList(os.path.join(renewableDir, 'toolkit_sites_v7_SERC.csv'))
-        cfCol = metadata[0].index('capacity_factor')
-        capacCol = metadata[0].index('capacity')
-        siteNumberOrFileCol = metadata[0].index('site_id')
+        metadata = pd.read_csv(os.path.join(renewableDir, 'toolkit_sites_v7_SERC_zones.csv'),
+                               dtype={'sitenumbers': np.int})
+        metadata.rename(columns={'capacity_factor': 'cfs', 'capacity': 'capacs', 'sitenumbers': 'site_id'},
+                        inplace=True)
     else:
         renewableDir = os.path.join(genparam.dataRoot, 'NRELSolarPVData', 'SERC')
-        metadata = readCSVto2dList(os.path.join(renewableDir, 'SolarCapacityFactorsNRELSERC.csv'))
-        cfCol = metadata[0].index('CF')
-        capacCol = metadata[0].index('PlantSize')
-        siteNumberOrFileCol = metadata[0].index('File')
+        metadata = pd.read_csv(os.path.join(renewableDir, 'SolarCapacityFactorsNRELSERC_zones.csv'))
+        metadata.rename(columns={'CF': 'cfs', 'PlantSize': 'capacs', 'File': 'site_id'},
+                        inplace=True)
 
     fipsToZones, fipsToPolys = genparam.fipsToZones, genparam.fipsToPolys
 
-    # read metada data of all sites
-    t = time.time()
-    df_cfs = getPlantInfoInZone(metadata, cfCol, capacCol, siteNumberOrFileCol, fipsToZones, fipsToPolys, currZone,
-                                return_df=True)
-    print(str_elapsedtime(t))
+    # read metada data of all sites in this zone and keep only relevant columns
+    df_cfs = metadata[metadata['zone'] == currZone]
+    df_cfs = df_cfs[['site_id', 'capacs', 'cfs']]
 
-    t_step = time.time()
     # add column with size of site to be considered for the fleet computation
     df_cfs.loc[:, 'fleetCapac'] = fleetCap
 
@@ -153,14 +147,14 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
     gc.collect()
 
     if type.lower() == 'wind':
-        list_args = [[renewableDir, site[1]['sitenumbers'], site[1]['capacs'], site[1]['fleetCapac'], site[1]['segment'],
+        list_args = [[renewableDir, str(int(site[1]['site_id'])), site[1]['capacs'], site[1]['fleetCapac'], site[1]['segment'],
                       desiredTz, windGenDataYr, subHour] for site in df_cfs.iterrows()]
         with mp.Pool(processes=ncores) as pool:
             list_cfs = pool.map(wrapperwind, list_args)
 
     else:
-        list_args = [[renewableDir, site[1]['sitenumbers'], site[1]['capacs'], site[1]['fleetCapac'], site[1]['segment'],
-                      timezoneOfSolarSite(site[1]['sitenumbers'], currZone), desiredTz, subHour]
+        list_args = [[renewableDir, site[1]['site_id'], site[1]['capacs'], site[1]['fleetCapac'], site[1]['segment'],
+                      timezoneOfSolarSite(site[1]['site_id'], currZone), desiredTz, subHour]
                      for site in df_cfs.iterrows()]
         with mp.Pool(processes=ncores) as pool:
             list_cfs = pool.map(wrappersolar, list_args)
@@ -221,6 +215,7 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
     print('    FINISHED: ' + str_elapsedtime(t_start))
 
     return cfs_out
+
 
 
 def getPlantInfoInZone(metadata, cfCol, capacCol, siteNumberOrFileCol, fipsToZones, fipsToPolys, currZone,
