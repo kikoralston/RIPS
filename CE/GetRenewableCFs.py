@@ -107,13 +107,34 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
     df_cfs = df_cfs.sort_values(by='cfs', ascending=False).reset_index(drop=True)
     df_cfs.loc[:, 'totalCapac'] = df_cfs['fleetCapac'].cumsum()
 
-    if existing:
-        # only keep sites that belong to existing plants
-        df_cfs.loc[:, 'totalCapac'] = df_cfs['totalCapac'] - capacInCurrFleet
-        df_cfs = df_cfs[df_cfs['totalCapac'] < fleetCap]
+    # first define last block
+    df_cfs_inv = df_cfs.sort_values(by=['cfs'], ascending=True)
+    df_cfs_inv.loc[:, 'totalCapac'] = df_cfs_inv['fleetCapac'].cumsum()
+    df_cfs_inv = df_cfs_inv[df_cfs_inv['totalCapac'] < sizeSegment]
+    df_cfs_inv = df_cfs_inv.sort_values(by=['cfs'], ascending=False)
 
-        # adjust capacity of last site
-        df_cfs.iloc[-1, df_cfs.columns.get_loc('fleetCapac')] = fleetCap - df_cfs['totalCapac'].iloc[-1]
+    if existing:
+
+        # Subtract existing capacity from cumulative capacity in data set
+        df_cfs.loc[:, 'totalCapac'] = df_cfs['totalCapac'] - capacInCurrFleet
+
+        if df_cfs.iloc[-1, df_cfs.columns.get_loc('totalCapac')] < 0:
+            # if total capacity of existing sites is greater than capacity in dataset
+            # fill up this delta value with CFs from last block of sites
+            # (the idea is that additional sites will be built using CFs form this last block)
+
+            deltaCapac = -1*df_cfs.iloc[-1, df_cfs.columns.get_loc('totalCapac')]
+            df_cfs_inv['fleetCapac'] = deltaCapac/df_cfs_inv.shape[0]
+
+            df_cfs = pd.concat([df_cfs, df_cfs_inv])
+            df_cfs.loc[:, 'totalCapac'] = df_cfs['fleetCapac'].cumsum()
+
+        else:
+            # only keep sites that belong to existing plants
+            df_cfs = df_cfs[df_cfs['totalCapac'] < fleetCap]
+
+            # adjust capacity of last site
+            df_cfs.iloc[-1, df_cfs.columns.get_loc('fleetCapac')] = fleetCap - df_cfs['totalCapac'].iloc[-1]
 
         # assign all sites to single block/segment
         df_cfs['segment'] = 0
@@ -123,11 +144,16 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
         df_cfs.loc[:, 'totalCapac'] = df_cfs['totalCapac'] - capacInCurrFleet
         df_cfs = df_cfs[df_cfs['totalCapac'] > 0]
 
-        # adjust capacity of first site
-        df_cfs.iloc[0, df_cfs.columns.get_loc('fleetCapac')] = df_cfs['totalCapac'].iloc[0]
+        if df_cfs.shape[0] > 0:
+            # adjust capacity of first site
+            df_cfs.iloc[0, df_cfs.columns.get_loc('fleetCapac')] = df_cfs['totalCapac'].iloc[0]
 
-        # assign sites to blocks/segments
-        df_cfs['segment'] = df_cfs['totalCapac'].apply(lambda x: x // sizeSegment)
+            # assign sites to blocks/segments
+            df_cfs['segment'] = df_cfs['totalCapac'].apply(lambda x: x // sizeSegment)
+        else:
+            # no more new sites, just use capacity factors of last block
+            df_cfs = df_cfs_inv
+            df_cfs['segment'] = 0
 
     print('    Finished reading site CF data: ' + str_elapsedtime(t_step))
 
@@ -149,15 +175,21 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
     if type.lower() == 'wind':
         list_args = [[renewableDir, str(int(site[1]['site_id'])), site[1]['capacs'], site[1]['fleetCapac'], site[1]['segment'],
                       desiredTz, windGenDataYr, subHour] for site in df_cfs.iterrows()]
-        with mp.Pool(processes=ncores) as pool:
-            list_cfs = pool.map(wrapperwind, list_args)
+        if ncores == 1:
+            list_cfs = list(map(wrapperwind, list_args))
+        else:
+            with mp.Pool(processes=ncores) as pool:
+                list_cfs = pool.map(wrapperwind, list_args)
 
     else:
         list_args = [[renewableDir, site[1]['site_id'], site[1]['capacs'], site[1]['fleetCapac'], site[1]['segment'],
                       timezoneOfSolarSite(site[1]['site_id'], currZone), desiredTz, subHour]
                      for site in df_cfs.iterrows()]
-        with mp.Pool(processes=ncores) as pool:
-            list_cfs = pool.map(wrappersolar, list_args)
+        if ncores == 1:
+            list_cfs = list(map(wrappersolar, list_args))
+        else:
+            with mp.Pool(processes=ncores) as pool:
+                list_cfs = pool.map(wrappersolar, list_args)
 
     gc.collect()
 
@@ -197,7 +229,6 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
 
     t_step = time.time()
     # just to make sure order of hours is correct is correct
-    #df_total = df_total.sort_values(by=['segment', 'datetime'])
     df_total2 = df_total2.sort_values(by=['segment', 'datetime'])
 
     if existing:
@@ -215,7 +246,6 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
     print('    FINISHED: ' + str_elapsedtime(t_start))
 
     return cfs_out
-
 
 
 def getPlantInfoInZone(metadata, cfCol, capacCol, siteNumberOrFileCol, fipsToZones, fipsToPolys, currZone,
