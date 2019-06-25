@@ -90,3 +90,6 @@ generalparameters.txt
 reserveparameters.txt
 *list_cases.csv
 *.dat
+
+# scratches and test scripts
+_scratch*
