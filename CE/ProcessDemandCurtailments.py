@@ -135,7 +135,7 @@ def processCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, ge
     return df_out
 
 
-if __name__ == '__main__':
+def preProcessAll():
 
     cwd = os.getcwd()
 

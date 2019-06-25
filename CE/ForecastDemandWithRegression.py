@@ -53,21 +53,37 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
             sys.exit()
 
     else:
-        for (idx_gcm, gcm) in enumerate(curtailparam.listgcms):
-            zonalDemand, zonalTempDfs = OrderedDict(), OrderedDict()
+        if genparam.referenceCase:
 
-            for zone in genparam.ipmZones:
+            df_demand_reference = getDemandReference(genparam, list_percent=(0.2, 0.5, 0.8), yearFixed=2015)
 
-                (dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept,
-                 holidays) = loadRegData(genparam, yr, zone, curtailparam, idx_gcm, netcdf=True)
+            for yr in df_demand_reference['yearorig'].unique():
 
-                addTimeDummies(dataYr, str(yr), holidays)
-                predictDemand(dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, yr)
-                #dataYr.to_csv(os.path.join(genparam.resultsDir, 'demandAndMetDf' + zone + str(yr) + '.csv'))
+                df_year = df_demand_reference[df_demand_reference['yearorig'] == yr]
+                zonalDemand, zonalTempDfs = OrderedDict(), OrderedDict()
 
-                zonalDemand[zone], zonalTempDfs[zone] = list(dataYr['load(MW)'].values), dataYr
+                for zone in genparam.ipmZones:
+                    zonalDemand[zone] = list(df_year.loc[df_year['zone'] == zone, 'load(MW)'].values)
+                    zonalTempDfs[zone] = df_year.loc[df_year['zone'] == zone]
 
-            totalDemandDict[gcm], totalDemandDictDf[gcm] = zonalDemand, zonalTempDfs
+                totalDemandDict[yr], totalDemandDictDf[yr] = zonalDemand, zonalTempDfs
+
+        else:
+            for (idx_gcm, gcm) in enumerate(curtailparam.listgcms):
+                zonalDemand, zonalTempDfs = OrderedDict(), OrderedDict()
+
+                for zone in genparam.ipmZones:
+
+                    (dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept,
+                     holidays) = loadRegData(genparam, yr, zone, curtailparam, idx_gcm, netcdf=True)
+
+                    addTimeDummies(dataYr, str(yr), holidays)
+                    predictDemand(dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, yr)
+                    #dataYr.to_csv(os.path.join(genparam.resultsDir, 'demandAndMetDf' + zone + str(yr) + '.csv'))
+
+                    zonalDemand[zone], zonalTempDfs[zone] = list(dataYr['load(MW)'].values), dataYr
+
+                totalDemandDict[gcm], totalDemandDictDf[gcm] = zonalDemand, zonalTempDfs
 
     return totalDemandDict, totalDemandDictDf
 
@@ -86,54 +102,14 @@ def loadRegData(genparam, currYear, zone, curtailparam, idx_gcm, netcdf=False):
 
     dataDir = os.path.join(genparam.dataRoot, 'DemandData')
 
-    if genparam.referenceCase:
-        # import data for BASELINE case
-
-        # get location of representative stations for zone
+    if netcdf:
         cellLat, cellLon = getCellForZone(dataDir, zone)
         cellLat, cellLon = find125GridMaurerLatLong(cellLat, cellLon)
-
-        # get file name from NREL with TMY for this location
-        a = pd.read_csv(os.path.join(dataDir, 'alltmy3a', 'TMY3_StationsMeta.csv'))
-        a['cellLat'] = find125GridMaurerLatLong(a['Latitude'], a['Longitude'])[0]
-        a['cellLon'] = find125GridMaurerLatLong(a['Latitude'], a['Longitude'])[1]
-        a = a[(a['cellLon'] == cellLon) & (a['cellLat'] == cellLat)]
-        fname = os.path.join(dataDir, 'alltmy3a', '{}TYA.CSV'.format(a['USAF'].iloc[0]))
-
-        # read file with TMY info (we are interested in the historical dates of the TMY)
-        b = pd.read_csv(fname, skiprows=1)
-        # b = b[['Date (MM/DD/YYYY)', 'Time (HH:MM)', 'Dry-bulb (C)', 'Dew-point (C)', 'RHum (%)']]
-        b = b[['Date (MM/DD/YYYY)', 'Time (HH:MM)']]
-        b['Time (HH:MM)'] = b['Time (HH:MM)'].apply(lambda x: '{0:02d}:00'.format(int(x.split(':')[0]) - 1))
-        b['datetime'] = b['Date (MM/DD/YYYY)'] + ' ' + b['Time (HH:MM)']
-        b['datetime'] = pd.to_datetime(b['datetime'])
-
-        # training data set only has data between 1979 and 2016. Typical Meteorological Year (TMY) uses data between
-        # 1976 and 2005. So assume that years 1978, 1977 and 1976 are 1979.
-        b['datetime'] = b['datetime'].apply(lambda x: x.replace(year=1979) if x.year < 1979 else x)
-
-        # Now read historical data for these locations that is "coherent" with GCM projections
-        # this is the data set used for training the demand model
-        # (see demand paper for more on this)
-        city = getStationForZone(dataDir, zone)
-        c = pd.read_csv(os.path.join(dataDir, 'training', 'RH_airT_19790101_20161231.{}.csv'.format(city)))
-        c = c.rename(columns={c.columns[0]: 'datetime'})
-        c['datetime'] = pd.to_datetime(c['datetime'])
-
-        # merge two DFs to get historical observations from our training data set for the dates in the TMY
-        data = pd.merge(b, c, on='datetime', how='left')
-        data = data[['datetime', 'air_T', 'rel_humid']]
-        data = data.rename(index=str, columns={'datetime': 'date', 'air_T': 'airT', 'rel_humid': 'rh'})
+        data = read_netcdf(cellLat, cellLon, currYear, curtailparam, idx_gcm)
 
     else:
-        if netcdf:
-            cellLat, cellLon = getCellForZone(dataDir, zone)
-            cellLat, cellLon = find125GridMaurerLatLong(cellLat, cellLon)
-            data = read_netcdf(cellLat, cellLon, currYear, curtailparam, idx_gcm)
-
-        else:
-            data = pd.read_table(os.path.join(dataDir, 'meteo_memphis'), names=['precip', 'sh', 'rh', 'tC', 'p'])
-            data = isolateYrData(data, currYear)
+        data = pd.read_table(os.path.join(dataDir, 'meteo_memphis'), names=['precip', 'sh', 'rh', 'tC', 'p'])
+        data = isolateYrData(data, currYear)
 
     # a few negative values of RH have appeared in the past. To avoid errors when computing demand set negative
     # values to 0.1%
@@ -286,6 +262,7 @@ def getTempVals(dataYr, tempCoefs):
     bins = bins[:-1]
 
     tempBins = createTempComponents(temps, bins)
+
     return np.dot(tempBins, np.array(tempCoefs['value']))
 
 
@@ -333,5 +310,114 @@ def getFixEffYrVal(yr, fixEffYr, dataYr):
         val = fixEffYr.tail(1).iloc[0]['value']
 
     return np.repeat(np.array(val), dataYr.shape[0])
+
+
+def getDemandReference(genparam, list_percent=(0.2, 0.5, 0.8), yearFixed=2015):
+
+    df_dem_total = None
+
+    for zone in genparam.ipmZones:
+
+        start_time = time.time()
+        print('Computing reference hourly demand for zone {} ...'.format(zone), flush=True)
+
+        dataDir = os.path.join(genparam.dataRoot, 'DemandData')
+
+        city = getStationForZone(dataDir, zone)
+        c = pd.read_csv(os.path.join(dataDir, 'training', 'RH_airT_19790101_20161231.{}.csv'.format(city)))
+        c = c.rename(columns={c.columns[0]: 'datetime'})
+        c = c.rename(index=str, columns={'datetime': 'date', 'air_T': 'airT', 'rel_humid': 'rh'})
+        c['date'] = pd.to_datetime(c['date'])
+        c['yearorig'] = c['date'].dt.year
+        c['year'] = yearFixed
+
+        tempCoefs = pd.read_csv(os.path.join(dataDir, 'temp_coef_{}.csv'.format(zone)))
+        fixEffHr = pd.read_csv(os.path.join(dataDir, 'fix_eff_hour_{}.csv'.format(zone)))
+        fixEffYr = pd.read_csv(os.path.join(dataDir, 'fix_eff_year_{}.csv'.format(zone)))
+        intercept = float(readCSVto2dList(os.path.join(dataDir, 'intercept_{}.csv'.format(zone)))[1][0])
+
+        intCoefs = None
+
+        holidays = pd.read_csv(os.path.join(dataDir, 'holiday_nerc.csv'))
+
+        addTimeDummies(c, str(yearFixed), holidays)
+
+        tempVals = getTempVals(c, tempCoefs)
+
+        interactionVals = 0
+
+        interceptVals = np.repeat(np.array(intercept), c.shape[0])
+        fixEffHrVals = getFixEffHrVals(c, fixEffHr)
+        fixEffYrVals = getFixEffYrVal(yearFixed, fixEffYr, c)
+
+        c['load(MW)'] = tempVals + interactionVals + interceptVals + fixEffHrVals + fixEffYrVals
+        c['zone'] = zone
+
+        if df_dem_total is None:
+            df_dem_total = c
+        else:
+            df_dem_total = pd.concat([df_dem_total, c])
+
+        print('Done! Elapsed time: {}'.format(str_elapsedtime(start_time)))
+
+    # downcast strings to categorical
+    df_dem_total['zone'].astype('category')
+
+    df_dem_total = df_dem_total[['date', 'zone', 'rh', 'airT', 'yearorig', 'year', 'load(MW)']]
+
+    df_dem_total_2 = df_dem_total.groupby(['date']).agg({'load(MW)': np.sum}).reset_index()
+    df_dem_total_2['year'] = df_dem_total_2['date'].dt.year
+
+    df_dem_total_3 = df_dem_total_2.groupby(['year']).apply(lambda x: x[x['load(MW)'] == np.max(x['load(MW)'])]).reset_index(drop=True)
+
+    # get quantiles of demand
+    load_quantiles = df_dem_total_3['load(MW)'].quantile(list_percent, interpolation='nearest').values
+
+    df_dem_total_4 = df_dem_total_3[df_dem_total_3['load(MW)'].isin(load_quantiles)]
+
+    df_dem_total_5 = df_dem_total[df_dem_total['yearorig'].isin(df_dem_total_4['year'].values)]
+
+    return df_dem_total_5
+
+
+def readReferenceDataTMY(dataDir, zone):
+
+    # get location of representative stations for zone
+    cellLat, cellLon = getCellForZone(dataDir, zone)
+    cellLat, cellLon = find125GridMaurerLatLong(cellLat, cellLon)
+
+    # get file name from NREL with TMY for this location
+    a = pd.read_csv(os.path.join(dataDir, 'alltmy3a', 'TMY3_StationsMeta.csv'))
+    a['cellLat'] = find125GridMaurerLatLong(a['Latitude'], a['Longitude'])[0]
+    a['cellLon'] = find125GridMaurerLatLong(a['Latitude'], a['Longitude'])[1]
+    a = a[(a['cellLon'] == cellLon) & (a['cellLat'] == cellLat)]
+    fname = os.path.join(dataDir, 'alltmy3a', '{}TYA.CSV'.format(a['USAF'].iloc[0]))
+
+    # read file with TMY info (we are interested in the historical dates of the TMY)
+    b = pd.read_csv(fname, skiprows=1)
+    # b = b[['Date (MM/DD/YYYY)', 'Time (HH:MM)', 'Dry-bulb (C)', 'Dew-point (C)', 'RHum (%)']]
+    b = b[['Date (MM/DD/YYYY)', 'Time (HH:MM)']]
+    b['Time (HH:MM)'] = b['Time (HH:MM)'].apply(lambda x: '{0:02d}:00'.format(int(x.split(':')[0]) - 1))
+    b['datetime'] = b['Date (MM/DD/YYYY)'] + ' ' + b['Time (HH:MM)']
+    b['datetime'] = pd.to_datetime(b['datetime'])
+
+    # training data set only has data between 1979 and 2016. Typical Meteorological Year (TMY) uses data between
+    # 1976 and 2005. So assume that years 1978, 1977 and 1976 are 1979.
+    b['datetime'] = b['datetime'].apply(lambda x: x.replace(year=1979) if x.year < 1979 else x)
+
+    # Now read historical data for these locations that is "coherent" with GCM projections
+    # this is the data set used for training the demand model
+    # (see demand paper for more on this)
+    city = getStationForZone(dataDir, zone)
+    c = pd.read_csv(os.path.join(dataDir, 'training', 'RH_airT_19790101_20161231.{}.csv'.format(city)))
+    c = c.rename(columns={c.columns[0]: 'datetime'})
+    c['datetime'] = pd.to_datetime(c['datetime'])
+
+    # merge two DFs to get historical observations from our training data set for the dates in the TMY
+    data = pd.merge(b, c, on='datetime', how='left')
+    data = data[['datetime', 'air_T', 'rel_humid']]
+    data = data.rename(index=str, columns={'datetime': 'date', 'air_T': 'airT', 'rel_humid': 'rh'})
+
+    return data
 
 # forecastZonalDemandWithReg(2015,'pc',['S_C_TVA'],'C:\\Users\\mtcraig\\Desktop\\EPP Research\\PythonRIPSProject')
