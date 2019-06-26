@@ -139,6 +139,7 @@ def masterFunction(genparam, reserveparam, curtailparam):
             curtparam_year.listgcms = gcms_chosen
         else:
             curtparam_year = copy.deepcopy(curtailparam)
+            curtparam_year.listgcms = ['ref00', 'ref01', 'ref02']
 
         t_year = time.time()
         print('\n----------------------------------------------------------------\n')

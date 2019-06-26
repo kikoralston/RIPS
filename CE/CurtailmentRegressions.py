@@ -144,13 +144,14 @@ def calcCurtailmentForGenOrTech(plantType, fuelAndCoalType, coolType, state, cap
     :return: 1d numpy array
     """
 
-    # add interaction term used by Aviva's regressions
-    metAndWaterData['airF:rh'] = metAndWaterData['airF'] * metAndWaterData['rh']
+    if metAndWaterData is not None:
+        # add interaction term used by Aviva's regressions
+        metAndWaterData['airF:rh'] = metAndWaterData['airF'] * metAndWaterData['rh']
 
     hourlyCurtailments = runCurtailRegression(metAndWaterData, coeffs, genparam.incCurtailments, plantType,
                                               coolType, genparam.ptCurtailed)
 
-    if state in curtailparam.envRegMaxT.keys():
+    if state in curtailparam.envRegMaxT.keys() and genparam.incRegs:
         # create numpy array with max share of stream flow available in each hour
         streamAvailFrac = np.array([curtailparam.maxFracFlow[str(d.month)] for d in metAndWaterData['date']])
 
@@ -159,7 +160,7 @@ def calcCurtailmentForGenOrTech(plantType, fuelAndCoalType, coolType, state, cap
         hourlyCurtailmentsRegs = setEnvRegCurtailments(coolType, capac, plantType, coolDesignT, metAndWaterData,
                                                        envRegMaxT, streamAvailFrac, genparam)
     else:
-        # if state is not on list. assume no regulatory curtailment
+        # if state is not on list or not doing regulatory curtailments. assume no regulatory curtailment
         hourlyCurtailmentsRegs = len(hourlyCurtailments) * [1]
 
     # get the more restrictive one
@@ -181,7 +182,10 @@ def runCurtailRegression(metAndWaterData, coeffs, incCurtailments, pt, coolType,
     :return:
     """
 
-    hrlyCurts = np.ones(metAndWaterData.shape[0])
+    if metAndWaterData is None:
+        hrlyCurts = np.ones(8760)
+    else:
+        hrlyCurts = np.ones(metAndWaterData.shape[0])
 
     if incCurtailments and pt in ptCurtailed:
         hrlyCurts = setAvivaCurtailments(coeffs, metAndWaterData)

@@ -57,7 +57,7 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
 
             df_demand_reference = getDemandReference(genparam, list_percent=(0.2, 0.5, 0.8), yearFixed=2015)
 
-            for yr in df_demand_reference['yearorig'].unique():
+            for i, yr in enumerate(df_demand_reference['yearorig'].unique()):
 
                 df_year = df_demand_reference[df_demand_reference['yearorig'] == yr]
                 zonalDemand, zonalTempDfs = OrderedDict(), OrderedDict()
@@ -66,7 +66,8 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
                     zonalDemand[zone] = list(df_year.loc[df_year['zone'] == zone, 'load(MW)'].values)
                     zonalTempDfs[zone] = df_year.loc[df_year['zone'] == zone]
 
-                totalDemandDict[yr], totalDemandDictDf[yr] = zonalDemand, zonalTempDfs
+                key = 'ref{0:02d}'.format(i)
+                totalDemandDict[key], totalDemandDictDf[key] = zonalDemand, zonalTempDfs
 
         else:
             for (idx_gcm, gcm) in enumerate(curtailparam.listgcms):

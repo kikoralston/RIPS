@@ -149,11 +149,15 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, currYear, genFleet, gen
 
     allCellFoldersInZone = get_all_cells_in_zone(allCellFolders, genparam, curtailparam)
 
-    cellWaterTsForGens = loadCellWaterTs(allCellFolders, allCellFoldersInZone, curtailparam, gcm, currYear)
+    if genparam.referenceCase:
+        cellWaterTsForGens = None
+        meteodata = None
+    else:
+        cellWaterTsForGens = loadCellWaterTs(allCellFolders, allCellFoldersInZone, curtailparam, gcm, currYear)
 
-    fname_meteo = curtailparam.basenamemeteo
-    fname_meteo = os.path.join(curtailparam.rbmDataDir, fname_meteo.format(gcm, currYear))
-    meteodata = read_netcdf_full(currYear, fname_meteo, curtailparam)
+        fname_meteo = curtailparam.basenamemeteo
+        fname_meteo = os.path.join(curtailparam.rbmDataDir, fname_meteo.format(gcm, currYear))
+        meteodata = read_netcdf_full(currYear, fname_meteo, curtailparam)
 
     # this maps gen lat/lon to gen IDs; cell data may not exist
     for (cellLat, cellLong) in bar(cellLatLongToGenDict):
@@ -162,8 +166,11 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, currYear, genFleet, gen
 
         if cellFoldername in allCellFoldersInZone:
 
-            metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam,
-                                                  metdatatot=meteodata, waterDatatot=cellWaterTsForGens)
+            if genparam.referenceCase:
+                metAndWaterData = None
+            else:
+                metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam,
+                                                      metdatatot=meteodata, waterDatatot=cellWaterTsForGens)
 
             gensInCell = cellLatLongToGenDict[(cellLat, cellLong)]  # list of ORIS-UNITID in cell
 

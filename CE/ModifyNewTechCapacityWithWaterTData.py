@@ -88,12 +88,15 @@ def calculateTechsCurtailments(cellWaterTsForNewTechs, newTechsCE, currYear, gen
     (hrlyCurtailmentsAllTechsInTgtYr, hrlyTechCurtailmentsList) = (dict(), [])
     regCoeffs = loadRegCoeffs(genparam.dataRoot, 'capacity.json')  # dict of cooling type: reg coeffs
 
-    # read full meteo data for current year (full water data is already loaded)
-    fname = curtailparam.basenamemeteo
-    name_gcm = gcm
+    if genparam.referenceCase:
+        meteodata = None
+    else:
+        # read full meteo data for current year (full water data is already loaded)
+        fname = curtailparam.basenamemeteo
+        name_gcm = gcm
 
-    fname = os.path.join(curtailparam.rbmDataDir, fname.format(name_gcm, currYear))
-    meteodata = read_netcdf_full(currYear, fname, curtailparam)
+        fname = os.path.join(curtailparam.rbmDataDir, fname.format(name_gcm, currYear))
+        meteodata = read_netcdf_full(currYear, fname, curtailparam)
 
     if pbar:
         ProgressBar = progressbar.ProgressBar
@@ -111,8 +114,11 @@ def calculateTechsCurtailments(cellWaterTsForNewTechs, newTechsCE, currYear, gen
 
         #print('  Got state. ' + str_elapsedtime(t0))
 
-        metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam, metdatatot=meteodata,
-                                              waterDatatot=cellWaterTsForNewTechs)
+        if genparam.referenceCase:
+            metAndWaterData = None
+        else:
+            metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam,
+                                                  metdatatot=meteodata, waterDatatot=cellWaterTsForNewTechs)
 
         #print('  Got met data. ' + str_elapsedtime(t0))
 
@@ -154,8 +160,12 @@ def getWaterTsInCurrYear(currYear, eligibleCellWaterTs):
         auxDict = {}
         for cell in eligibleCellWaterTs[gcm]:
             cellWaterTs = eligibleCellWaterTs[gcm][cell]
-            dateCol = cellWaterTs[0].index('date')
-            auxDict[cell] = [cellWaterTs[0]] + [row for row in cellWaterTs[1:] if str(currYear) in str(row[dateCol])]
+            if cellWaterTs is not None:
+                dateCol = cellWaterTs[0].index('date')
+                auxDict[cell] = [cellWaterTs[0]] + [row for row in cellWaterTs[1:] if str(currYear) in str(row[dateCol])]
+            else:
+                auxDict[cell] = None
+
         eligibleCellWaterTsCurrYear[gcm] = auxDict
 
     return eligibleCellWaterTsCurrYear

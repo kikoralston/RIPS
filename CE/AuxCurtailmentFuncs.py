@@ -118,18 +118,23 @@ def loadCellWaterTs(eligibleCellFolders, allCellFoldersInZone, curtailparam, gcm
         for cellFolder in eligibleCellFolders:
             if cellFolder in allCellFoldersInZone:
 
-                cellLat, cellLon = getCellLatAndLongFromFolderName(cellFolder)
+                if waterT is not None and streamflow is not None:
 
-                ix = np.argwhere(lats == cellLat).flatten()[0]
-                iy = np.argwhere(lons == cellLon).flatten()[0]
+                    cellLat, cellLon = getCellLatAndLongFromFolderName(cellFolder)
 
-                cellAvgWaterTCurrYear = [['date', 'waterT', 'flow']]
+                    ix = np.argwhere(lats == cellLat).flatten()[0]
+                    iy = np.argwhere(lons == cellLon).flatten()[0]
 
-                for i, d in enumerate(date):
-                    cellAvgWaterTCurrYear = cellAvgWaterTCurrYear + \
-                                            [[date[i], waterT[i, ix, iy], streamflow[i, ix, iy]]]
+                    cellAvgWaterTCurrYear = [['date', 'waterT', 'flow']]
 
-                eligibleCellWaterTs[cellFolder] = cellAvgWaterTCurrYear
+                    for i, d in enumerate(date):
+                        cellAvgWaterTCurrYear = cellAvgWaterTCurrYear + \
+                                                [[date[i], waterT[i, ix, iy], streamflow[i, ix, iy]]]
+
+                    eligibleCellWaterTs[cellFolder] = cellAvgWaterTCurrYear
+
+                else:
+                    eligibleCellWaterTs[cellFolder] = None
 
     else:
         for cellFolder in eligibleCellFolders:
@@ -370,45 +375,50 @@ def read_waterdata_netcdf(fname, varname, curryear):
             lons: 1d array with longitude values
             lats: 1d array with latitude values
     """
-    dataset1 = nc.Dataset(fname)
 
-    lats = dataset1.variables['lat'][:]
-    lons = dataset1.variables['lon'][:]
+    if os.path.isfile(fname):
+        dataset1 = nc.Dataset(fname)
 
-    # Variables to read:
-    #       - 'T_stream'
-    #       - 'streamflow'
+        lats = dataset1.variables['lat'][:]
+        lons = dataset1.variables['lon'][:]
 
-    # get reference date of data and number of days of data
-    strdate = dataset1.variables['time'].units.replace('days since', '').strip()
+        # Variables to read:
+        #       - 'T_stream'
+        #       - 'streamflow'
 
-    ref_date = dt.datetime.strptime(strdate, '%Y-%m-%d %H:%M:%S').date()
-    n_days = dataset1.variables['time'].shape[0]
+        # get reference date of data and number of days of data
+        strdate = dataset1.variables['time'].units.replace('days since', '').strip()
 
-    # create array with dates
-    date_array = pd.date_range(start=ref_date, periods=n_days, freq='D')
-    idx_year = None
+        ref_date = dt.datetime.strptime(strdate, '%Y-%m-%d %H:%M:%S').date()
+        n_days = dataset1.variables['time'].shape[0]
 
-    if curryear is not None:
-        # get indexes of days for year == 'curryear'
+        # create array with dates
+        date_array = pd.date_range(start=ref_date, periods=n_days, freq='D')
+        idx_year = None
 
-        year = curryear
-        idx_year = np.where(date_array.year == year)[0]
+        if curryear is not None:
+            # get indexes of days for year == 'curryear'
 
-        # slice data for this year
-        if varname == 'T_stream':
-            data_values = dataset1.variables[varname][idx_year, :, :, :]
+            year = curryear
+            idx_year = np.where(date_array.year == year)[0]
+
+            # slice data for this year
+            if varname == 'T_stream':
+                data_values = dataset1.variables[varname][idx_year, :, :, :]
+            else:
+                data_values = dataset1.variables[varname][idx_year, :, :]
         else:
-            data_values = dataset1.variables[varname][idx_year, :, :]
+            data_values = dataset1.variables[varname][:]
+
+        date_array = date_array[idx_year]
+
+        if varname == 'T_stream':
+            # for T_stream average data of multiple segments for each day
+            pos_no_seg = dataset1.variables['T_stream'].dimensions.index('no_seg')
+            data_values = np.mean(data_values, axis=pos_no_seg)
     else:
-        data_values = dataset1.variables[varname][:]
-
-    date_array = date_array[idx_year]
-
-    if varname == 'T_stream':
-        # for T_stream average data of multiple segments for each day
-        pos_no_seg = dataset1.variables['T_stream'].dimensions.index('no_seg')
-        data_values = np.mean(data_values, axis=pos_no_seg)
+        print('File {} not found!'.format(fname))
+        data_values, date_array, lons, lats = None, None, None, None
 
     return data_values, date_array, lons, lats
 
@@ -428,10 +438,19 @@ def order_cells_by_flow(genparam, curtailparam, currYear, n=100, output_list=Tru
 
     df_final = None
 
+    # read file with dictionary mapping cells to IPM zones (this file must be in the VICS/RBM folder)
+    with open(os.path.join(curtailparam.rbmRootDir, 'cells2zones.pk'), 'rb') as f:
+        cells2zones = pk.load(f)
+
     for gcm in curtailparam.listgcms:
-        # reading flow/streamT file. substitute '_' to '.'
-        gcm = gcm.replace('_', '.')
-        gcm = gcm.replace('rcp', 'RCP')
+
+        if genparam.referenceCase:
+            # in reference case just use flows of an arbitrary gcm
+            gcm = 'bcc-csm1-1.RCP45'
+        else:
+            # reading flow/streamT file. substitute '_' to '.'
+            gcm = gcm.replace('_', '.')
+            gcm = gcm.replace('rcp', 'RCP')
 
         fname = curtailparam.basenameflow
         fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm))
@@ -439,12 +458,11 @@ def order_cells_by_flow(genparam, curtailparam, currYear, n=100, output_list=Tru
 
         avg_stream_flow = np.mean(streamflow.data[:, :, :], axis=0)
 
-        # read file with dictionary mapping cells to IPM zones (this file must be in the VICS/RBM folder)
-        with open(os.path.join(curtailparam.rbmRootDir, 'cells2zones.pk'), 'rb') as f:
-            cells2zones = pk.load(f)
-
         for z in genparam.ipmZones:
-            cellFoldersInZone = [c for c in allCellFolders if cells2zones[c] == z]
+            if allCellFolders is not None:
+                cellFoldersInZone = [c for c in allCellFolders if cells2zones[c] == z]
+            else:
+                cellFoldersInZone = [c for c in cells2zones if cells2zones[c] == z]
 
             avg_stream_flow_in_zone = []
 
