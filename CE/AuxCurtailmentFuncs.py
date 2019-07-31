@@ -19,8 +19,8 @@ import pickle as pk
 import datetime as dt
 
 
-def loadWaterAndMetData(curtailmentYear, cellLat, cellLong, genparam, curtailparam, metdatatot=None, waterDatatot=None,
-                        netcdf=True):
+def loadWaterAndMetData(curtailmentYear, cellLat, cellLong, genparam, curtailparam, gcm, metdatatot=None,
+                        waterDatatot=None, netcdf=True):
     """LOAD WATER AND MET DATA BY CELL ON HOURLY BASIS
 
     Read text files with data for met (air T and rh) and water T data for one specific cell. The data files were
@@ -31,6 +31,7 @@ def loadWaterAndMetData(curtailmentYear, cellLat, cellLong, genparam, curtailpar
     :param cellLong:
     :param genparam:
     :param curtailparam:
+    :param gcm: (string) GCM name
     :param metdatatot: dictionary with complete meteo data from the netcdf file (see 'read_netcdf_full')
     :param waterDatatot: dict of {cell folder name : [[Datetime],[AverageWaterT(degC)], [AirT], [flow]]}
     :param netcdf: (boolean) if true reads water data from NETCDF files (new format from August 2018)
@@ -45,17 +46,17 @@ def loadWaterAndMetData(curtailmentYear, cellLat, cellLong, genparam, curtailpar
         # Load netcdf files w/ air T, rh, air pressure and datetime just for current year
         if genparam.analysisArea == 'test':
             # for now read with dara from some random
-            metData = read_netcdf(34.3125, -86.6875, curtailmentYear, curtailparam)
+            metData = read_netcdf(34.3125, -86.6875, curtailmentYear, curtailparam, gcm)
         else:
-            metData = read_netcdf(cellLat, cellLong, curtailmentYear, curtailparam)
+            metData = read_netcdf(cellLat, cellLong, curtailmentYear, curtailparam, gcm)
     else:
         # get cell data from pre loaded meteo data
         metData = read_dict_necdf(cellLat, cellLong, metdatatot)
 
     if waterDatatot is None:
         if netcdf:
-            waterData = read_waterdata_cell(curtailparam, curtailmentYear, cellLat, cellLong)
-
+            waterData = read_waterdata_cell(curtailparam=curtailparam, currYear=curtailmentYear,  cellLat=cellLat,
+                                            cellLon=cellLong, gcm=gcm)
         else:
             # load csv files with water temp and stream flows and filter current year
             cellFolder = os.path.join(curtailparam.rbmOutputDir, cellFoldername)
@@ -193,6 +194,7 @@ def read_netcdf_full(currYear, fname, curtailparam):
         date_array = pd.date_range(start=start, end=end, freq='H')
 
         dict_out = {'date': date_array, 'lat': lats, 'lon': lons, 'airT': temp, 'P': air_pressure, 'rh': rel_humid}
+        dataset.close()
     else:
         print('{} not found!'.format(fname))
         dict_out = None
@@ -200,7 +202,7 @@ def read_netcdf_full(currYear, fname, curtailparam):
     return dict_out
 
 
-def read_netcdf(cellLat, cellLon, currYear, curtailparam, idx_gcm):
+def read_netcdf(cellLat, cellLon, currYear, curtailparam, gcm):
     """Reads NETCDF file with meteo data for current year and gets data for specified cell
 
     :param cellLat: (numeric) latitude of cell
@@ -211,30 +213,34 @@ def read_netcdf(cellLat, cellLon, currYear, curtailparam, idx_gcm):
     """
     fname = curtailparam.basenamemeteo
 
-    # TODO: find a way to combine different GCMs
-    gcm = curtailparam.listgcms[idx_gcm]
-
     if os.path.isfile(os.path.join(curtailparam.rbmDataDir, fname.format(gcm, currYear))):
 
         fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm, currYear))
-        dict_out = read_netcdf_full(currYear, fname, curtailparam)
 
-        lats = dict_out['lat']
-        lons = dict_out['lon']
-        temp = dict_out['airT']
-        air_pressure = dict_out['P']
-        rel_humid = dict_out['rh']
+        dataset = nc.Dataset(fname)
 
+        # Extract lat and lon from NetCDF file
+        lats = dataset.variables['lat'][:]
+        lons = dataset.variables['lon'][:]
+
+        # get indexes of position of cell
         ix = np.argwhere(lats == cellLat).flatten()[0]
         iy = np.argwhere(lons == cellLon).flatten()[0]
+
+        # get meteodata for cell
+        temp = dataset.variables['temp'][:, ix, iy]
+        air_pressure = dataset.variables['air_pressure'][:, ix, iy]
+        rel_humid = dataset.variables['rel_humid'][:, ix, iy]
+
+        dataset.close()
 
         # create array with hourly time stamps for year
         start = dt.datetime(currYear, 1, 1)
         end = dt.datetime(currYear, 12, 31, 23, 00, 00)
         date_array = pd.date_range(start=start, end=end, freq='H')
 
-        df_out = pd.DataFrame({'date': date_array, 'airT': temp[:, ix, iy], 'P': air_pressure[:, ix, iy],
-                               'rh': rel_humid[:, ix, iy]},
+        # create data frame
+        df_out = pd.DataFrame({'date': date_array, 'airT': temp, 'P': air_pressure, 'rh': rel_humid},
                               columns=['date', 'airT', 'rh', 'P'])
     else:
         print('No METEO data (NETCDF files) on folder {0:} for year {1:4d}!'.format(curtailparam.rbmDataDir, currYear))
@@ -298,6 +304,7 @@ def get_all_cells_from_netcdf(curtailparam, gcm):
         # compile list of cell grids. Ignore those that are masked.
         allCellFolders = ['{}_{}'.format(la, lo) for (i, la) in enumerate(lats)
                           for (j, lo) in enumerate(lons) if not mask[i, j]]
+        dataset1.close()
     else:
         print('File {} not found!'.format(os.path.join(curtailparam.rbmDataDir, fname.format(name_gcm))))
 
@@ -324,7 +331,7 @@ def get_all_cells_in_zone(allCellFolders, genparam, curtailparam):
     return allCellFoldersInZone
 
 
-def read_waterdata_cell(curtailparam, currYear, cellLat, cellLon):
+def read_waterdata_cell(curtailparam, currYear, cellLat, cellLon, gcm):
     """ Reads netcdf file with water data and returns panda data frame for data for given cell
 
     :param curtailparam
@@ -335,9 +342,6 @@ def read_waterdata_cell(curtailparam, currYear, cellLat, cellLon):
             lons: 1d array with longitude values
             lats: 1d array with latitude values
     """
-
-    # TODO: find a way to combine different GCMs
-    gcm = curtailparam.listgcms[0]
 
     # reading flow/streamT file. substitute '_' to '.'
     gcm = gcm.replace('_', '.')
@@ -407,15 +411,17 @@ def read_waterdata_netcdf(fname, varname, curryear):
                 data_values = dataset1.variables[varname][idx_year, :, :, :]
             else:
                 data_values = dataset1.variables[varname][idx_year, :, :]
+
+            date_array = date_array[idx_year]
         else:
             data_values = dataset1.variables[varname][:]
-
-        date_array = date_array[idx_year]
 
         if varname == 'T_stream':
             # for T_stream average data of multiple segments for each day
             pos_no_seg = dataset1.variables['T_stream'].dimensions.index('no_seg')
             data_values = np.mean(data_values, axis=pos_no_seg)
+
+        dataset1.close()
     else:
         print('File {} not found!'.format(fname))
         data_values, date_array, lons, lats = None, None, None, None
@@ -521,6 +527,8 @@ def convert_2dList_netcdf(listcurtail, curtailparam, fnameuw, fnameout='~/test.n
     lats = dataset.variables['lat'][:]
     lons = dataset.variables['lon'][:]
     temp = dataset.variables['temp'][:]
+
+    dataset.close()
 
     # initialize new netcdf file
 
@@ -656,6 +664,8 @@ def read_bulk_water_meteo(currYear, curtailparam):
                 flow[:, ix, iy] = np.array(waterData['flow'])
 
                 i = i + 1
+
+    dataset.close()
 
     # convert to masked arrays
     waterT = np.ma.array(waterT, mask=temp.mask)

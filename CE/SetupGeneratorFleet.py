@@ -583,6 +583,25 @@ def addLatLongValues(baseFleet, egridPlant):
 
 ################################################################################
 
+def performFleetCompressionORIS(genFleet):
+
+    colclasses = []
+
+    # convert to data frame
+    df = pd.DataFrame(genFleet[1:], columns=genFleet[0])
+
+    aux = df.groupby('ORIS Plant Code')['Capacity (MW)'].apply(lambda x: np.sum(x.astype(float))).reset_index()
+    aux.columns = ['ORIS Plant Code', 'TOTCAP']
+
+    df = pd.merge(df, aux, how='left', on='ORIS Plant Code')
+
+
+
+
+
+
+
+
 ################################################################################
 # COMPRESS FLEET BY COMBINING SMALL UNITS
 def performFleetCompression(genFleet, ipmZones, plantTypesCurtailed):
@@ -608,8 +627,7 @@ def compressFuelAndPlantType(genFleet, fuel, plant, ipmZones, plantTypesCurtaile
         rowFuel = isolateFirstFuelType(genFleet[idx][fuelCol])
         # Only combine plants that meet criteria AND don't have a cooling tech or source listed
         # if the plant will be curtailed.
-        if (rowFuel == fuel and genFleet[idx][plantCol] == plant
-            and float(genFleet[idx][capacCol]) < maxSizeToCombine):
+        if rowFuel == fuel and genFleet[idx][plantCol] == plant and float(genFleet[idx][capacCol]) < maxSizeToCombine:
             if plant in plantTypesCurtailed:
                 if genFleet[idx][coolTechCol] == 'NoMatch' and genFleet[idx][coolSourceCol] == 'NoMatch':
                     idxsToRemoveAndCombine.append(idx)
@@ -632,9 +650,8 @@ def combineGenerators(genFleet, idxsToRemoveAndCombine, fuel, plant, startFleetL
                 beginningYear = 0
             else:
                 beginningYear = endingYear - stepYr
-            idxsInInterval = [idx for idx in idxsToRemoveAndCombine if
-                              (int(genFleet[idx][onlineYearCol]) <= endingYear and
-                               int(genFleet[idx][onlineYearCol]) > beginningYear)]
+            idxsInInterval = [idx for idx in idxsToRemoveAndCombine
+                              if (beginningYear < int(genFleet[idx][onlineYearCol]) <= endingYear)]
             idxsInIntervalAndZone = [idx for idx in idxsInInterval if genFleet[idx][zoneCol] == zone]
             if len(idxsInInterval) > 0:
                 combineGeneratorsInDecade(genFleet, idxsInIntervalAndZone, endingYear - stepYr // 2, fuel, plant,
@@ -647,7 +664,7 @@ def combineGeneratorsInDecade(genFleet, idxsInIntervalAndZone, medianYearInInter
     (runningCombinedSize, idxsToCombine) = (0, [])
     capacCol = genFleet[0].index('Capacity (MW)')
     for idx in idxsInIntervalAndZone:
-        if (runningCombinedSize + float(genFleet[idx][capacCol]) > maxCombinedSize):
+        if runningCombinedSize + float(genFleet[idx][capacCol]) > maxCombinedSize:
             addCombinedIdxsToFleet(genFleet, idxsToCombine, runningCombinedSize, fuel, plant,
                                    medianYearInInterval, zone)
             runningCombinedSize = float(genFleet[idx][capacCol])
@@ -748,8 +765,12 @@ def addUCValues(baseGenFleet, ucHeaders, phorumData):
         phorumParamName = ucHeaderToPhorumParamName[ucHeader]
         for row in baseGenFleet[1:]:
             (fuel, plantType, size) = (row[fuelCol], row[plantTypeCol], float(row[capacCol]))
+
+            # some plants have multiple modeled fuels divided by &
             fuel = isolateFirstFuelType(fuel)
+
             phorumValue = getMatchingPhorumValue(phorumData, fuel, plantType, size, phorumParamName)
+
             if ucHeader == 'MinDownTime(hrs)':
                 valToAdd = phorumValue
             else:
@@ -763,7 +784,9 @@ def addUCValues(baseGenFleet, ucHeaders, phorumData):
 
 def isolateFirstFuelType(fuel):
     multiFuelDivider = '&'  # some plants have multiple modeled fuels divided by &
-    if multiFuelDivider in fuel: fuel = fuel[:fuel.index(multiFuelDivider)]
+
+    fuel = fuel.split('multiFuelDivider')[0]
+
     return fuel
 
 

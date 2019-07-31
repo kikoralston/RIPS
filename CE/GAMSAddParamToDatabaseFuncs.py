@@ -666,7 +666,7 @@ def addMaxNumNewRenew(db, newWindCFsCEZonal, newSolarCFsCEZonal, ipmZones, ipmZo
         solarblocks = list(solarCfs[z])
         solarblocks.sort()
         for b in solarblocks[:-1]:
-            d[(zoneSymbol, b)] = 1000 // 30
+            d[(zoneSymbol, b)] = 1000 // 50
         d[(zoneSymbol, solarblocks[-1])] = 10000
 
     windCfs = newWindCFsCEZonal[list(newWindCFsCEZonal.keys())[0]]
@@ -676,7 +676,7 @@ def addMaxNumNewRenew(db, newWindCFsCEZonal, newSolarCFsCEZonal, ipmZones, ipmZo
         windblocks = list(windCfs[z])
         windblocks.sort()
         for b in windblocks[:-1]:
-            d[(zoneSymbol, b)] = 1000 // 70
+            d[(zoneSymbol, b)] = 1000 // 50
         d[(zoneSymbol, windblocks[-1])] = 10000
 
     maxGenParam = add_NdParam(db, d, [zoneSet, renewTechSet], name, desc)

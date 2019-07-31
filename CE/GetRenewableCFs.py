@@ -216,12 +216,16 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
                 df_out = df_out.append(pd.DataFrame({'datetime': x[0][0][1:], 'Id': x[2], 'capac': x[5], 'cfs': x[0][1][1:],
                                                      'segment': s}), ignore_index=True)
 
-    # compute weighted average CF using vectorization and pandas
+    # compute generation in MWh
+    df_out['gen'] = df_out['capac'] * df_out['cfs']
 
+    # compute weighted average CF using vectorization and pandas
     x = df_out.groupby(['segment', 'datetime'])['capac'].agg(np.sum).reset_index()
     df_aux = pd.merge(df_out, x, how='left', on=['segment', 'datetime'])
     df_aux['cfsw'] = df_aux['cfs']*df_aux['capac_x']/df_aux['capac_y']
-    df_total2 = df_aux.groupby(['segment', 'datetime'])['cfsw'].agg(np.sum).reset_index().rename(columns={'cfsw': 'cf'})
+
+    df_total2 = df_aux.groupby(['segment', 'datetime'])['cfsw', 'gen'].agg(np.sum).reset_index().rename(columns={'cfsw': 'cf'})
+
     del x
     del df_aux
     gc.collect()
@@ -232,20 +236,22 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
     df_total2 = df_total2.sort_values(by=['segment', 'datetime'])
 
     if existing:
-        # for existing plants, output list with hourly CFs
-        cfs_out = list(df_total2[df_total2['segment'] == 0]['cf'].values)
+        # for existing plants, output LIST with HOURLY GENERATION in MWh
+        df_existing = df_total2[df_total2['segment'] == 0]
+        result_out = list(df_existing['gen'].values)
+
     else:
-        # for candidate plants, output dictionary
-        cfs_out = {}
+        # for candidate plants, output DICTIONARY with CFs
+        result_out = {}
         for s in df_total2['segment'].unique():
             cfs_list = list(df_total2[df_total2['segment'] == s]['cf'].values)
-            cfs_out[s] = cfs_list
+            result_out[s] = cfs_list
 
     print('    Finished aggregating into one data frame and processing dictionary: ' + str_elapsedtime(t_step))
 
     print('    FINISHED: ' + str_elapsedtime(t_start))
 
-    return cfs_out
+    return result_out
 
 
 def getPlantInfoInZone(metadata, cfCol, capacCol, siteNumberOrFileCol, fipsToZones, fipsToPolys, currZone,

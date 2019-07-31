@@ -78,6 +78,9 @@ parse.type <- function(x) {
   
   out <- x
   
+  # remove digits with Wind/solar aggregation block
+  out <- gsub('\\.\\d\\d', '', out)
+  
   out <- gsub('\\.', ' ', out)
   out <- gsub('OT|DC|RC|CCS', '', out, perl = TRUE)
   out <- trimws(out)
@@ -129,7 +132,8 @@ plot.map.serc <- function(path.data.ce, path.plot){
 }
 
 plot.map.serc.with.plants <- function(path.data.ce, path.plot, 
-                                      gen.fleet=NULL, show.points=TRUE){
+                                      gen.fleet=NULL, show.points=TRUE, 
+                                      width=7){
   
   g <- get.map.serc(path.data.ce)
 
@@ -155,8 +159,8 @@ plot.map.serc.with.plants <- function(path.data.ce, path.plot,
                                Plant.Name)) %>%
     filter(Plant.Name != '' & Plant.Name != 'NA_NA') %>%
     select(-Modeled.Fuels) %>% group_by(Plant.Name) %>%
-    summarise(PlantType=PlantType[1], Capacity..MW.=sum(Capacity..MW., na.rm = TRUE),
-              Longitude=Longitude[1], Latitude=Latitude[1])
+    dplyr::summarise(PlantType=PlantType[1], Capacity..MW.=sum(Capacity..MW., na.rm = TRUE),
+                     Longitude=Longitude[1], Latitude=Latitude[1])
 
   if (show.points) {
     g_plants <- g + 
@@ -172,14 +176,16 @@ plot.map.serc.with.plants <- function(path.data.ce, path.plot,
     scale_shape_manual(values = shapes.pallete) + 
     theme(legend.position = "top", legend.title=element_blank(),
           legend.margin=margin(), legend.spacing=unit(0, 'points'),
-          plot.margin=margin(),legend.box.spacing=unit(0.1, 'points')) +
+          plot.margin=margin(),legend.box.spacing=unit(0.1, 'points'),
+          legend.key.height = unit(0.8, 'line')) +
     theme(axis.title.x=element_blank(), axis.title.y=element_blank())
   
   if (!show.points) {
     g_plants <- g_plants + theme(legend.text = element_text(colour = 'white'))
   }
   
-  pdf(paste0(path.plot, "/sercmap_fleet.pdf"), width=7*16/9, height=7)
+  # assume ratio 16:9
+  pdf(paste0(path.plot, "/sercmap_fleet.pdf"), width=width, height=width*9/16)
   print(g_plants)
   dev.off()
   system(sprintf('pdfcrop %s %s', paste0(path.plot, "/sercmap_fleet.pdf"), 
@@ -212,7 +218,7 @@ get.map.serc <- function(path.data.ce) {
   map.us.counties <- map.us.counties %>% 
     mutate(polyname=paste(region, subregion, sep=',')) %>%
     left_join(county.fips, by='polyname') %>%
-    rename(FIPS=fips) %>% left_join(df.ipm.counties, by='FIPS')
+    dplyr::rename(FIPS=fips) %>% left_join(df.ipm.counties, by='FIPS')
   
   map.us.counties <- map.us.counties %>% 
     mutate(IPM_Region = as.character(IPM_Region)) %>%
@@ -249,24 +255,38 @@ get.map.serc <- function(path.data.ce) {
   pal <- c('#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c',
            '#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928')
   
+  # change position of labels and jsutification
+  labels_regions <- labels_regions %>%
+    mutate(hjust=0.5, vjust=0.5)
+  
+  labels_regions <- labels_regions %>%
+    mutate(hjust=ifelse(label=='S_C_KY', 0, hjust),
+           hjust=ifelse(label=='S_C_TVA', 0.75, hjust),
+           hjust=ifelse(label=='S_VACA', 0, hjust),
+           vjust=ifelse(label=='S_SOU', 0.8, vjust)) %>%
+    mutate(x=ifelse(label=='S_VACA', -78, x))
+  
   g <- ggplot() +
     geom_polygon(data=map.us.counties, aes(x=long, y=lat, group=group), 
                  colour='gray80') +
     geom_polygon(data=map.us.counties, aes(x=long, y=lat, group=group, 
                                            fill=IPM_Region)) +
-    geom_sf(data=rivers4, colour='blue') +
+    geom_sf(data=rivers4, colour='dodgerblue') +
     coord_sf(xlim=bounds.longitude, ylim = bounds.latitude) +
-    geom_label(data=labels_regions, aes(x=x, y=y, label=label)) +
+    geom_label(data=labels_regions, aes(x=x, y=y, label=label, hjust=hjust, 
+                                        vjust=vjust), size=rel(2.3)) + 
+    guides(fill=FALSE) +
 #    coord_map("polyconic", xlim=bounds.longitude, ylim=bounds.latitude) + 
     scale_fill_manual(breaks=serc.zones, values=pal, na.value="gray95") +
     theme(axis.title.x=element_blank(), axis.title.y=element_blank()) + 
-    theme_bw() + guides(fill=FALSE)
+    theme_bw()
   
   return(g)
 }
 
 plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand=NULL, 
-                              path.out.plot=path.output.ce) {
+                              path.out.plot=path.output.ce, width=7,
+                              divide.by.zone=FALSE) {
   
   ini.gen.fleet.raw <- read.csv(file=paste0(path.output.ce, '/genFleetInitial.csv'))
   
@@ -312,7 +332,7 @@ plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand=NULL,
   
   # aggreagate by PlantType and region and currYear
   df.fleet.time.2 <- df.fleet.time %>% group_by(Region.Name, PlantType, currYear) %>%
-    summarise(online.cap = sum(online.cap)) %>% arrange(currYear) %>%
+    dplyr::summarise(online.cap = sum(online.cap)) %>% arrange(currYear) %>%
     ungroup() %>%
     mutate(PlantType=factor(PlantType, levels=rev(plant.types))) %>%
     mutate(Region.Name == as.character(Region.Name))
@@ -342,9 +362,11 @@ plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand=NULL,
       guides(linetype=guide_legend(title=NULL, reverse=TRUE))
   }
   
-  g <- g + facet_grid(Region.Name ~ ., scales = 'free_y') 
+  if (divide.by.zone) {
+    g <- g + facet_grid(Region.Name ~ ., scales = 'free_y') 
+  }
   
-  pdf(paste0(path.out.plot,"/supply_demand.pdf"), width=7*16/9, height=7)
+  pdf(paste0(path.out.plot,"/supply_demand.pdf"), width=width, height=width*9/16)
   print(g)
   dev.off()
   
@@ -389,7 +411,7 @@ get.new.additions <- function(y, path.gdx) {
     arrange(ZoneNum) %>% mutate(year=y)
   
   df.tech.curtailed.zone <- df.tech.curtailed %>% group_by(Zone, type) %>%
-    summarise(value=sum(value, na.rm=TRUE)) %>% mutate(year=y) %>%
+    dplyr::summarise(value=sum(value, na.rm=TRUE)) %>% mutate(year=y) %>%
     select(year, Zone, type, value) %>% as.data.frame()
   
   tech.renew <- rgdx(gdxName = paste0(path.gdx, '/gdxOutYear', y, '.gdx'), 
@@ -402,8 +424,10 @@ get.new.additions <- function(y, path.gdx) {
     select(-zone) %>%
     gather(key='type', value='value', -ZoneNum) %>%
     left_join(serc.zones, by='ZoneNum') %>%
-    arrange(ZoneNum) %>% mutate(year=y) %>%
-    select(year, Zone, type, value) %>% as.data.frame()
+    arrange(ZoneNum) %>% mutate(type=gsub('\\.\\d\\d', '', type)) %>% 
+    group_by(Zone, type) %>%
+    dplyr::summarise(value=sum(value, na.rm=TRUE)) %>% mutate(year=y) %>%
+    select(year, Zone, type, value) %>% ungroup() %>% as.data.frame()
   
   df.complete.decision <- rbind(df.tech.curtailed.zone, df.tech.not.curtailed, 
                                 df.tech.renew)
@@ -421,8 +445,8 @@ plot.new.additions <- function(path.output.ce,
                                path.out.plot=path.output.ce) {
   
   igdx(gamsSysDir)
-  df.new.techs <- read.csv(paste0(path.rcps[1],sprintf('newTechsCE%4d.csv',
-                                                       yearIni)))
+  df.new.techs <- read.csv(paste0(path.rcps[1],
+                                  sprintf('newTechsCE%4d.csv', yearIni)))
   #df.new.techs <- read.csv(file='./newtechs.csv', header = TRUE, stringsAsFactors = FALSE)
   #names(df.new.techs) <- df.new.techs[1,]
   #df.new.techs <- df.new.techs[-1,]
@@ -446,68 +470,16 @@ plot.new.additions <- function(path.output.ce,
   for (rcp in path.rcps) {
     serc.zones <- read.csv(paste0(rcp,'zoneNamesToNumbers.csv'))
     case.name <- names(which(path.rcps == rcp))
+    
     for (y in seq(yearIni, yearEnd, by=5)) {
-      # map cell to zone
-      map.cell2zone <- rgdx.param(gdxName = paste0(rcp, 'gdxOutYear', y, 
-                                                   '.gdx'), 'pCellzones')
-      map.cell2zone$c <- as.character(map.cell2zone$c)
       
-      tech.not.curtailed <- rgdx(gdxName = paste0(rcp, '/gdxOutYear', y, '.gdx'), 
-                                 requestList = list(name="vNnotcurtailed", 
-                                                    form='full', 
-                                                    field=c('l')))
+      path.gdx <- paste0(rcp, '/gdxOutYear', y, '.gdx')
       
-      df.tech.not.curtailed <- data.frame(zone=tech.not.curtailed$uels$z,
-                                          tech.not.curtailed$val, 
-                                          row.names = NULL) %>%
-        mutate(ZoneNum=as.numeric(as.factor(zone))) %>%
-        select(-zone) %>%
-        gather(key='type', value='value', Nuclear) %>%
-        left_join(serc.zones, by='ZoneNum') %>%
-        arrange(ZoneNum) %>% mutate(year=y) %>%
-        select(year, Zone, type, value) %>% as.data.frame()
-      
-      tech.curtailed <- rgdx(gdxName = paste0(rcp, '/gdxOutYear', y, '.gdx'), 
-                             requestList = list(name="vNcurtailed", 
-                                                form='full',field=c('l')))
-      
-      df.tech.curtailed <- data.frame(cells=rownames(tech.curtailed$val),
-                                      tech.curtailed$val, row.names = NULL,
-                                      stringsAsFactors = FALSE) %>%
-        left_join(map.cell2zone, by=c("cells" = "c")) %>%
-        mutate(ZoneNum=pCellzones) %>% select(-pCellzones) %>%
-        left_join(serc.zones, by='ZoneNum') %>%
-        gather(key='type', value='value', -c(cells, ZoneNum, Zone)) %>% 
-        arrange(ZoneNum) %>% mutate(year=y)
-      
-      df.tech.curtailed.zone <- df.tech.curtailed %>% group_by(Zone, type) %>%
-        summarise(value=sum(value, na.rm=TRUE)) %>% mutate(year=y) %>%
-        select(year, Zone, type, value) %>% as.data.frame()
-      
-      tech.renew <- rgdx(gdxName = paste0(rcp, '/gdxOutYear', y, '.gdx'), 
-                         requestList = list(name="vNrenew", 
-                                            form='full',field=c('l')))
-      
-      df.tech.renew <- data.frame(zone=tech.renew$uels$z,
-                                  tech.renew$val, row.names = NULL) %>%
-        mutate(ZoneNum=as.numeric(as.factor(zone))) %>%
-        select(-zone) %>%
-        gather(key='type', value='value', -ZoneNum) %>%
-        left_join(serc.zones, by='ZoneNum') %>%
-        arrange(ZoneNum) %>% mutate(year=y) %>%
-        select(year, Zone, type, value) %>% as.data.frame()
-      
+      df <- get.new.additions(y, path.gdx)
+
       df.complete.decision <- rbind(df.complete.decision,
-                                    data.frame(case=case.name,
-                                               df.tech.curtailed.zone, 
-                                               stringsAsFactors = FALSE),
-                                    data.frame(case=case.name,
-                                               df.tech.not.curtailed, 
-                                               stringsAsFactors = FALSE),
-                                    data.frame(case=case.name,
-                                               df.tech.renew,
+                                    data.frame(case=case.name, df, 
                                                stringsAsFactors = FALSE))
-      
     }
   }
   
@@ -528,11 +500,11 @@ plot.new.additions <- function(path.output.ce,
   ncases <- length(list.cases)
   if (ncases == 2) {
     width <- 1.5
-    offset <- data_frame(case=list.cases,
+    offset <- data.frame(case=list.cases,
                          off=c(-width/2, width/2))
   } else if (ncases == 3) {
     width <- 1
-    offset <- data_frame(case=list.cases,
+    offset <- data.frame(case=list.cases,
                          off=c(-1, 0, 1))
   }
   
@@ -550,7 +522,8 @@ plot.new.additions <- function(path.output.ce,
     guides(fill=guide_legend(title=NULL)) +
     theme_bw() +
     theme(plot.margin = unit(c(0, 0.5, 0.5, 0.5), "lines"),
-          axis.title.x = element_blank()) +
+          axis.title.x = element_blank(),
+          panel.spacing = unit(0.1, "lines")) +
     facet_grid(Zone ~ ., scales = 'free_y')
 
   g_param <- ggplot_build(g)
@@ -560,7 +533,8 @@ plot.new.additions <- function(path.output.ce,
   df.top.axis <- df.complete.decision.3 %>%
     mutate(xpos=year) %>%
     select(case, xpos) %>%
-    distinct()
+    distinct() %>%
+    mutate(case=ifelse(case=='Reference', 'Ref.', case))
     
   g.top.axis <- ggplot(df.top.axis) + 
     geom_text(aes(x=xpos, y=0, label=case), 
@@ -576,10 +550,10 @@ plot.new.additions <- function(path.output.ce,
           axis.line.x = element_line(), 
           panel.grid = element_blank(),
           panel.background = element_rect(fill='white')
-          #panel.border = element_rect(fill = NA)
+#          panel.border = element_rect(fill = NA)
     )
   
-  lay <- rbind(c(rep(1,9), rep(2,165), rep(3, 26)),
+  lay <- rbind(c(rep(1,11), rep(2,163), rep(3, 26)),
                c(rep(4,200)))
   # 
   gg <- arrangeGrob(rectGrob(gp=gpar(fill="white", lty='blank')),
@@ -627,10 +601,10 @@ plot.updated.fleet <- function(df.fleet, df.new.additions, path.output.ce,
     select(case, Region.Name, PlantType, currYear, online.cap)
   
   df.complete.decision.3 <- df.new.additions %>% 
-    rename(online.cap=total.cap, PlantType=Type, currYear=year, Region.Name=Zone) %>%
+    dplyr::rename(online.cap=total.cap, PlantType=Type, currYear=year, Region.Name=Zone) %>%
     select(case, Region.Name, PlantType, currYear, online.cap) %>%
     group_by(case, Region.Name, PlantType, currYear) %>%
-    summarise(online.cap=sum(online.cap))
+    dplyr::summarise(online.cap=sum(online.cap))
   
   df.complete.decision.3 <- df.complete.decision.3 %>%
     arrange(case, Region.Name, PlantType, currYear) %>%
@@ -744,10 +718,10 @@ get.demand <- function(path.output.ce, path.data.ce,
         df$V1 <- NULL
         df <- df %>% gather('hour', 'demand', -V2) %>% 
           mutate(hour=as.numeric(gsub('V', '', hour))-2) %>% arrange(V2, hour) %>%
-          rename(Region.Name=V2)
+          dplyr::rename(Region.Name=V2)
         
         df <- df %>% group_by(Region.Name) %>% 
-          summarise(mean.load=mean(demand), peak.load=max(demand)) %>%
+          dplyr::summarise(mean.load=mean(demand), peak.load=max(demand)) %>%
           mutate(currYear=y, case=case.name) %>% 
           select(case, Region.Name, currYear, mean.load, peak.load)
         
@@ -794,10 +768,10 @@ plot_renewable_cfs <- function(path.output.ce,
     x <- x %>% mutate(h = as.numeric(gsub('h', '', as.character(h)))-1) %>%
       mutate(time=ymd_h(sprintf('%4d-01-01 %2d', y, 0), tz='EST') + hours(h)) %>%
       mutate(hour.of.day=hour(time)) %>% group_by(Zone, techrenew, hour.of.day) %>%
-      summarize(CF=mean(pCf)) %>% mutate(year=y) %>%
+      dplyr::summarize(CF=mean(pCf)) %>% mutate(year=y) %>%
       select(year, Zone, techrenew, hour.of.day, CF) %>% as.data.frame() 
     
-    w <- x %>% group_by(year, Zone, techrenew) %>% summarise(mean.CF=sum(CF)/24)
+    w <- x %>% group_by(year, Zone, techrenew) %>% dplyr::summarise(mean.CF=sum(CF)/24)
     
     x <- x %>% 
       left_join(w, by=c('year'='year' , 'Zone'='Zone' , 'techrenew'='techrenew')) %>%
@@ -846,7 +820,7 @@ plot.donut.chart <- function(fileGenfleet) {
     mutate(cooling = ifelse(cooling == 'NA', NA, cooling)) %>%
     select(Plant.Name, PlantType, Modeled.Fuels, Capacity..MW.,cooling)
   
-  df.fleet <- df.fleet %>% group_by(Modeled.Fuels, PlantType, cooling) %>% summarize(sum=sum(Capacity..MW.)) %>% as.data.frame()
+  df.fleet <- df.fleet %>% group_by(Modeled.Fuels, PlantType, cooling) %>% dplyr::summarize(sum=sum(Capacity..MW.)) %>% as.data.frame()
   
   total <- sum(df.fleet$sum)
   
@@ -858,7 +832,7 @@ plot.donut.chart <- function(fileGenfleet) {
     mutate(xmin=0, xmax=1, ymin=0, ymax=value) %>%
     mutate(x.avg=0, y.avg=0, colour=FALSE, label=name)
   
-  lvl1 <- df.fleet %>% group_by(Modeled.Fuels) %>% summarize(sum=sum(sum)) %>%
+  lvl1 <- df.fleet %>% group_by(Modeled.Fuels) %>% dplyr::summarize(sum=sum(sum)) %>%
     ungroup() %>%
     mutate(name = Modeled.Fuels, value = sum, level = 1, fill = name) %>%
     select(name, value, level, fill) %>%
@@ -871,7 +845,7 @@ plot.donut.chart <- function(fileGenfleet) {
     mutate(label=ifelse(value<700 | is.na(name), '', name))
   
   lvl2 <- df.fleet %>% group_by(Modeled.Fuels, PlantType) %>%
-    summarize(value=sum(sum)) %>%
+    dplyr::summarize(value=sum(sum)) %>%
     ungroup() %>%
     mutate(name=PlantType) %>%
     mutate(fill=Modeled.Fuels) %>%
@@ -888,7 +862,7 @@ plot.donut.chart <- function(fileGenfleet) {
   
   
   lvl3 <- df.fleet %>% group_by(Modeled.Fuels, PlantType, cooling) %>%
-    summarize(value=sum(sum)) %>%
+    dplyr::summarize(value=sum(sum)) %>%
     arrange(Modeled.Fuels, PlantType, cooling) %>%
     ungroup() %>%
     mutate(name=cooling) %>%
@@ -901,7 +875,7 @@ plot.donut.chart <- function(fileGenfleet) {
            x.avg=(xmin+xmax)/2,
            y.avg=(ymin+ymax)/2,
            colour=ifelse(grepl('_NA', fill), FALSE, TRUE)) %>%
-    mutate(label=ifelse(value<400 | is.na(name), '', name))
+    mutate(label=ifelse(value<600 | is.na(name), '', name))
   
   #col.pallete <- brewer.pal(9, 'YlOrBr')
   
@@ -920,12 +894,19 @@ plot.donut.chart <- function(fileGenfleet) {
   # create column for adjusting hjust and vjust of labels
   df.final <- df.final %>%
     mutate(hjust=0.5, vjust=0.5) %>%
-    mutate(hjust=ifelse(name=='DC' & fill == 'Natural Gas', 0, hjust),
-           vjust=ifelse(name=='DC' & fill == 'Natural Gas', 1, vjust)) %>%
+    mutate(hjust=ifelse(name=='DC' & fill == 'Natural Gas', 1, hjust),
+           vjust=ifelse(name=='DC' & fill == 'Natural Gas', 0, vjust)) %>%
+    mutate(hjust=ifelse(name=='OT' & fill == 'Natural Gas', 0, hjust),
+           vjust=ifelse(name=='OT' & fill == 'Natural Gas', 1, vjust)) %>%
     mutate(hjust=ifelse(name=='Other', 1, hjust),
            vjust=ifelse(name=='Other', 0, vjust)) %>%
     mutate(hjust=ifelse(name=='Solar', 0.2, hjust),
            vjust=ifelse(name=='Solar', 0.9, vjust))
+  
+  # adjust some labels
+  df.final <- df.final %>% 
+    mutate(label=ifelse(label == 'Natural Gas', 'Natural\nGas', label)) %>%
+    mutate(label=ifelse(label == 'Combined Cycle', 'Combined\nCycle', label))
   
   g <- ggplot(data=df.final, aes(fill = fill)) +  
     geom_rect(aes(ymax=ymax, ymin=ymin, xmax=xmax, xmin=xmin, color=colour), 
@@ -934,20 +915,24 @@ plot.donut.chart <- function(fileGenfleet) {
     scale_color_manual(values = c('TRUE'='gray20', 'FALSE'='#FFFFFF00'), 
                        guide = F, na.translate = FALSE) +
     geom_text(aes(x = x.avg, y = y.avg, label = label, hjust=hjust, 
-                  vjust=vjust), size = rel(2.5)) +
-    scale_x_continuous(breaks = NULL, expand = c(0, 0)) +
-    scale_y_continuous(breaks = NULL, expand = c(0, 0)) +
-    labs(x = NULL, y = NULL) +
-    theme_minimal() + guides(fill=FALSE) +
-    theme(plot.margin = unit(c(0, 0, 0, 0), "lines"),
+                  vjust=vjust), size = rel(3)) +
+    scale_x_continuous(expand = c(0, 0), limits = c(0,4)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    theme_bw() + 
+    guides(fill=FALSE) +
+    theme(panel.border = element_blank(),
+          plot.margin = unit(c(-2, -2, -2, -2), "lines"),
           panel.grid = element_blank(),
-          legend.position = 'none') +
-    coord_polar(theta = "y")
+          axis.title = element_blank(),
+          axis.ticks = element_blank(),
+          axis.text = element_blank(),
+          legend.key = element_blank()) +
+    coord_polar(theta = "y", clip='off')
   
-#  pdf("~/CMU/RIPS/paperCE/longdraft/images/sunburst.pdf", width=5, height=5)
-#  print(g)
-#  dev.off()
-#  system('pdfcrop ~/CMU/RIPS/paperCE/longdraft/images/sunburst.pdf ~/CMU/RIPS/paperCE/longdraft/images/sunburst.pdf')
+  #pdf("~/CMU/RIPS/paperCE/longdraft/images/sunburst.pdf", width=5, height=5)
+  #print(g)
+  #dev.off()
+  #system('pdfcrop ~/CMU/RIPS/paperCE/longdraft/images/sunburst.pdf ~/CMU/RIPS/paperCE/longdraft/images/sunburst.pdf')
   
   return(g)
 }
@@ -1037,6 +1022,47 @@ levelized.cost.energy <- function(y, path.output.ce,
   return(df.out)
 }
 
+
+check.available.energy <- function(y, path.gdx) {
+  pCapacExist <- rgdx.param(gdxName = paste0(path.gdx), symName = "pCapac")
+  
+  x <- gdxInfo(gdxName = paste0(path.gdx), dump=FALSE, returnList=TRUE, returnDF=FALSE)
+  
+  path.gdx <- "/Volumes/Seagate_RIPS/CE/results//rcp85//gdxOutYear2045.gdx"
+  
+  pCapacExist <- rgdx.param(gdxName = paste0(path.gdx), symName = "pCapac") %>% 
+    group_by(g, h) %>% summarise(value = sum(pCapac))
+  
+  pMaxgensolar <- rgdx.param(gdxName = paste0(path.gdx), symName = "pMaxgensolar") %>%
+    group_by(g, h) %>% summarise(value = sum(pMaxgensolar))
+
+  pMaxgenwind <- rgdx.param(gdxName = paste0(path.gdx), symName = "pMaxgenwind") %>%
+    group_by(g, h) %>% summarise(value = sum(pMaxgenwind))
+    
+  y <- pCapacExist 
+  
+  
+  
+  
+  ids.solar <- rgdx.set(gdxName = paste0(path.gdx), symName = "solaregu") %>% 
+    mutate(egu=as.character(egu)) %>% unlist()
+  ids.wind <- rgdx.set(gdxName = paste0(path.gdx), symName = "windegu") %>% 
+    mutate(egu=as.character(egu)) %>% unlist()
+  ids.hydro <- rgdx.set(gdxName = paste0(path.gdx), symName = "hydroegu") %>% 
+    mutate(egu=as.character(egu)) %>% unlist()
+  ids.pumped <- rgdx.set(gdxName = paste0(path.gdx), symName = "pumphydroegu") %>% 
+    mutate(egu=as.character(egu)) %>% unlist()
+  
+  ids.non.thermal <- c(ids.wind, ids.solar, ids.hydro, ids.pumped)
+  
+  capac.thermal <- rgdx.param(gdxName = paste0(path.gdx), symName = "pCapac") %>%
+    mutate(egu=as.character(egu)) %>% filter(!(egu %in% ids.non.thermal)) %>% 
+    group_by(g, h) %>% summarise(value = sum(pCapac))
+  
+  ggplot(capac.thermal) + geom_line(aes(x=h, y=value, colour=g, group=g))
+  
+}
+
 #
 # lifetimes <- read.csv(paste0(path.data.ce, '/NewPlantData/',
 #                              'LifetimeValuesExistingPlants4Aug2016.csv'))
@@ -1080,3 +1106,55 @@ levelized.cost.energy <- function(y, path.output.ce,
 # 
 # 
 # 
+
+
+# map.cell2zone <- rgdx.param(gdxName = paste0(rcp, 'gdxOutYear', y, 
+#                                              '.gdx'), 'pCellzones')
+# map.cell2zone$c <- as.character(map.cell2zone$c)
+# 
+# tech.not.curtailed <- rgdx(gdxName = paste0(rcp, '/gdxOutYear', y, '.gdx'), 
+#                            requestList = list(name="vNnotcurtailed", 
+#                                               form='full', 
+#                                               field=c('l')))
+# 
+# df.tech.not.curtailed <- data.frame(zone=tech.not.curtailed$uels$z,
+#                                     tech.not.curtailed$val, 
+#                                     row.names = NULL) %>%
+#   mutate(ZoneNum=as.numeric(as.factor(zone))) %>%
+#   select(-zone) %>%
+#   gather(key='type', value='value', Nuclear) %>%
+#   left_join(serc.zones, by='ZoneNum') %>%
+#   arrange(ZoneNum) %>% mutate(year=y) %>%
+#   select(year, Zone, type, value) %>% as.data.frame()
+# 
+# tech.curtailed <- rgdx(gdxName = paste0(rcp, '/gdxOutYear', y, '.gdx'), 
+#                        requestList = list(name="vNcurtailed", 
+#                                           form='full',field=c('l')))
+# 
+# df.tech.curtailed <- data.frame(cells=rownames(tech.curtailed$val),
+#                                 tech.curtailed$val, row.names = NULL,
+#                                 stringsAsFactors = FALSE) %>%
+#   left_join(map.cell2zone, by=c("cells" = "c")) %>%
+#   mutate(ZoneNum=pCellzones) %>% select(-pCellzones) %>%
+#   left_join(serc.zones, by='ZoneNum') %>%
+#   gather(key='type', value='value', -c(cells, ZoneNum, Zone)) %>% 
+#   arrange(ZoneNum) %>% mutate(year=y)
+# 
+# df.tech.curtailed.zone <- df.tech.curtailed %>% group_by(Zone, type) %>%
+#   dplyr::summarise(value=sum(value, na.rm=TRUE)) %>% mutate(year=y) %>%
+#   select(year, Zone, type, value) %>% as.data.frame()
+# 
+# tech.renew <- rgdx(gdxName = paste0(rcp, '/gdxOutYear', y, '.gdx'), 
+#                    requestList = list(name="vNrenew", 
+#                                       form='full',field=c('l')))
+# 
+# df.tech.renew <- data.frame(zone=tech.renew$uels$z,
+#                             tech.renew$val, row.names = NULL) %>%
+#   mutate(ZoneNum=as.numeric(as.factor(zone))) %>%
+#   select(-zone) %>%
+#   gather(key='type', value='value', -ZoneNum) %>%
+#   left_join(serc.zones, by='ZoneNum') %>%
+#   arrange(ZoneNum) %>% mutate(type=gsub('\\.\\d\\d', '', type)) %>% 
+#   group_by(Zone, type) %>%
+#   dplyr::summarise(value=sum(value, na.rm=TRUE)) %>% mutate(year=y) %>%
+#   select(year, Zone, type, value) %>% ungroup() %>% as.data.frame()

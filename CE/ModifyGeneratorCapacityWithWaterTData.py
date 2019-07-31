@@ -169,7 +169,7 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, currYear, genFleet, gen
             if genparam.referenceCase:
                 metAndWaterData = None
             else:
-                metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam,
+                metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam, gcm=gcm,
                                                       metdatatot=meteodata, waterDatatot=cellWaterTsForGens)
 
             gensInCell = cellLatLongToGenDict[(cellLat, cellLong)]  # list of ORIS-UNITID in cell

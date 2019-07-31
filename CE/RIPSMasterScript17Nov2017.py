@@ -338,29 +338,31 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
         solarCapacInZone = sum([float(row[capacCol]) for row in zonalGenFleet[1:] if row[plantTypeCol] == 'Solar PV'])
 
         print('Existing Wind: ')
-        windCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=70, capacInCurrFleet=windCapacInZone,
+        windCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=50, capacInCurrFleet=windCapacInZone,
                                      type='wind', existing=True)
 
         print('Existing Solar: ')
-        solarCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=12, capacInCurrFleet=solarCapacInZone,
+        solarCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=50, capacInCurrFleet=solarCapacInZone,
                                       type='solar', existing=True)
 
         print('Got Existing RE CFs.')
 
         print('New Wind: ')
-        newWindCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=70, capacInCurrFleet=windCapacInZone,
+        newWindCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=50, capacInCurrFleet=windCapacInZone,
                                         type='wind', existing=False)
 
         print('New Solar: ')
-        newSolarCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=12, capacInCurrFleet=solarCapacInZone,
+        newSolarCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=50, capacInCurrFleet=solarCapacInZone,
                                          type='solar', existing=False)
 
         print('Got new RE CFs.')
 
-        # store renewables CFs for each zone in dictionaries
+        # For EXISTING renewables, store GENERATION (MWh) for each zone in dictionaries
         zonalHourlyWindGen[zone], zonalHourlySolarGen[zone] = windCFs, solarCFs
 
+        # For NEW renewables, store CFs for each zone in dictionaries
         zonalNewWindCFs[zone], zonalNewSolarCFs[zone] = newWindCFs, newSolarCFs
+
 
     zonalNetDemand = dict()
     for gcm in curtailparam.listgcms:
