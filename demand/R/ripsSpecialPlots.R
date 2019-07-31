@@ -2,7 +2,7 @@
 #           functions to create specific plots
 # ************************************************************************
 
-source("auxiliary_functions.R")
+source("~/CMU/RIPS/git/demand/R/auxiliary_functions.R")
 
 build.ldc <- function(load.data, time=c('year', 'month', 'day')) {
   # Computes load duration curve (LDC)
@@ -263,18 +263,18 @@ plot.temp.load <- function(reg.model,
     #get info from main plot
     gb <- ggplot_build(g)
     
-    y.range <- gb$layout$panel_ranges[[1]]$y.range
-    x.range <- gb$layout$panel_ranges[[1]]$x.range
+    y.range <- gb$layout$panel_params[[1]]$y.range
+    x.range <- gb$layout$panel_params[[1]]$x.range
     
-    y.major <- gb$layout$panel_ranges[[1]]$y.major_source
-    y.minor <- gb$layout$panel_ranges[[1]]$y.minor_source
+    y.major <- gb$layout$panel_params[[1]]$y.major_source
+    y.minor <- gb$layout$panel_params[[1]]$y.minor_source
     
-    x.major <- gb$layout$panel_ranges[[1]]$x.major_source
-    x.minor <- gb$layout$panel_ranges[[1]]$x.minor_source
+    x.major <- gb$layout$panel_params[[1]]$x.major_source
+    x.minor <- gb$layout$panel_params[[1]]$x.minor_source
     
     # create marginal histograms to top and right
     x <- data.set$temp[!is.na(data.set$temp)]
-    breaks <- pretty(x.range, n = nclass.FD(x), min.n = 1)
+    breaks <- pretty(x, n = nclass.FD(x))
     bwidth <- breaks[2]-breaks[1]
     pTop <- ggplot(data.set, aes(x = temp)) +
       geom_histogram(binwidth=bwidth, na.rm = TRUE, 
@@ -345,7 +345,7 @@ plot.temp.load <- function(reg.model,
   grid.arrange(g)
   dev.off()
   
-  return(df.plot.out1)
+  return(g)
 }
 
 plot3d.temp.load <- function(reg.model, data.set,

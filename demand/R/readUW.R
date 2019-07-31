@@ -27,7 +27,7 @@ library(lubridate)
 library(plyr)
 library(dplyr)
 
-source("auxiliary_functions.R")
+source("~/CMU/RIPS/git/demand/R/auxiliary_functions.R")
 
 read.uw <- function(url.uw="~/GoogleDrive/CMU/RIPS/UW/meteo_memphis.txt",
                     years.data=c(2030, 2040)) {

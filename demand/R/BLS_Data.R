@@ -1,4 +1,9 @@
 # BLS_Data
+library(lubridate)
+library(RCurl)
+library(XML)
+library(plyr)
+library(dplyr)
 
 # -------------------- UTILITY FUNCTIONS --------------------
 
@@ -18,19 +23,20 @@ getBlsApiCall <- function(seriesId) {
   
   bls.api.key <- getBlsApiKey()
   
-  api.call <- paste0("http://api.bls.gov/publicAPI/v2/timeseries/data/?api_key=",
+  api.call <- paste0('https://api.bls.gov/publicAPI/v1/timeseries/data/?api_key=',
                      bls.api.key,"&","series_id=", seriesId)
   
   return(api.call)
 }
 
+
+getSeries <- function(seriesId) {
+  api.call <- getBlsApiCall(seriesId)
+  df <- getURL(api.call, httpheader=c('Content-Type' = "application/json;"))
+}
+
+
 getCPI <- function() {
-  
-  library(lubridate)
-  library(RCurl)
-  library(XML)
-  library(plyr)
-  library(dplyr)
   
   url.bls <- "http://download.bls.gov/pub/time.series/cu/cu.data.1.AllItems"
   

@@ -3,22 +3,29 @@
 # RIPS project
 # May 2017
 
+if (!exists('path.rips')) {
+  cat('\n ------------------------ \n')
+  cat('Variable path.rips not set!!!!')
+  cat('\n ------------------------ \n')
+  path.rips <- '~/CMU/RIPS/git/'
+}
+
 # load other scripts and libraries ----
 library(plyr)
 library(dplyr)
 library(tidyr)
 
-source("auxiliary_functions.R")
-source("ripsSpecialPlots.R")
-source("regression4.R")
-source("eiaData.R")
-source("NBER.R")
+source(paste0(path.rips, "/demand/R/auxiliary_functions.R"))
+source(paste0(path.rips, "/demand/R/ripsSpecialPlots.R"))
+source(paste0(path.rips, "/demand/R/regression4.R"))
+source(paste0(path.rips, "/demand/R/eiaData.R"))
+source(paste0(path.rips, "/demand/R/NBER.R"))
 #source("prepare_data_frame.R")
 
-source('Read_SSP_Data.R')
-source('readUW.R')
-source("CENSUS_DATA.R")
-source('BEA_DATA.R')
+source(paste0(path.rips, "/demand/R/Read_SSP_Data.R"))
+source(paste0(path.rips, "/demand/R/readUW.R"))
+source(paste0(path.rips, "/demand/R/CENSUS_DATA.R"))
+source(paste0(path.rips, "/demand/R/BEA_DATA.R"))
 
 # ************************************************************************
 #           functions to prepare and read data frame 
