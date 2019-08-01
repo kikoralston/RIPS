@@ -783,9 +783,10 @@ def addUCValues(baseGenFleet, ucHeaders, phorumData):
 
 
 def isolateFirstFuelType(fuel):
+
     multiFuelDivider = '&'  # some plants have multiple modeled fuels divided by &
 
-    fuel = fuel.split('multiFuelDivider')[0]
+    fuel = fuel.split(multiFuelDivider)[0]
 
     return fuel
 

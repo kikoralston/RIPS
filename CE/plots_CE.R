@@ -1024,28 +1024,133 @@ levelized.cost.energy <- function(y, path.output.ce,
 
 
 check.available.energy <- function(y, path.gdx) {
-  pCapacExist <- rgdx.param(gdxName = paste0(path.gdx), symName = "pCapac")
+
+  #path.gdx <- "/Volumes/Seagate_RIPS/CE/results//rcp85//gdxOutYear2045.gdx"
+  path.gdx <- "/Users/kiko/Documents/CE/out/CE/gdxOutYear2025.gdx"
+  
+  
+  pDemand <- rgdx.param(gdxName = path.gdx, symName = "pDemand") %>% 
+    group_by(g, h) %>% summarise(value = sum(pDemand)) %>%
+    mutate(h2 = as.numeric(gsub('h', '', as.character(h)))) %>%
+    mutate(date=as.POSIXct(ymd("20200101") + hours(h2))) %>%
+    mutate(season=define.season(date))
+    
+  ggplot(pDemand) + geom_line(aes(x=date, y=value), colour='red') + 
+    guides(colour=FALSE) + theme_minimal() +
+    theme(axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          panel.spacing = unit(0,'lines'),
+          panel.border = element_rect(fill = NA)) + 
+    facet_grid(cols = vars(season), scales = 'free_x')
+  
+  
+  # check generation
+  gexist <- rgdx(gdxName = path.gdx, requestList = list(name='vPegu', field='l'))
+  gexist <- convert.gdx.result.df(gexist) %>% 
+    group_by(g, h) %>% summarise(value = sum(value)) %>%
+    mutate(h2 = as.numeric(gsub('h', '', as.character(h)))) %>%
+    mutate(date=as.POSIXct(ymd("20200101") + hours(h2))) %>%
+    mutate(season=define.season(date)) %>%
+    rename(value.exist = value)
+
+  ggplot(gexist) + geom_line(aes(x=date, y=value.exist), colour='red') + 
+    guides(colour=FALSE) + theme_minimal() +
+    theme(axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          panel.spacing = unit(0,'lines'),
+          panel.border = element_rect(fill = NA)) + 
+    facet_grid(cols = vars(season), scales = 'free_x')
+  
+  gtechcurt <- rgdx(gdxName = path.gdx, requestList = list(name='vPtechcurtailed', field='l'))
+  gtechcurt  <- convert.gdx.result.df(gtechcurt)
+  
+  if (!is.null(gtechcurt)){
+    gtechcurt <- gtechcurt %>% 
+      group_by(g, h) %>% summarise(value = sum(value)) %>%
+      mutate(h2 = as.numeric(gsub('h', '', as.character(h)))) %>%
+      mutate(date=as.POSIXct(ymd("20200101") + hours(h2))) %>%
+      mutate(season=define.season(date)) %>%
+      rename(value.tech.curt = value)
+  }
+  
+  gtechnotcurt <- rgdx(gdxName = path.gdx, requestList = list(name='vPtechnotcurtailed', field='l'))
+  gtechnotcurt  <- convert.gdx.result.df(gtechnotcurt)
+
+  if (!is.null(gtechnotcurt)){
+    gtechnotcurt <- gtechnotcurt %>% 
+      group_by(g, h) %>% summarise(value = sum(value)) %>%
+      mutate(h2 = as.numeric(gsub('h', '', as.character(h)))) %>%
+      mutate(date=as.POSIXct(ymd("20200101") + hours(h2))) %>%
+      mutate(season=define.season(date)) %>%
+      rename(value.tech.not.curt = value)
+  }
+  
+  gtechrenew <- rgdx(gdxName = path.gdx, requestList = list(name='vPtechrenew', field='l'))
+  gtechrenew  <- convert.gdx.result.df(gtechrenew)
+  
+  if (!is.null(gtechrenew)){
+    gtechrenew <- gtechrenew %>% 
+      group_by(g, h) %>% summarise(value = sum(value)) %>%
+      mutate(h2 = as.numeric(gsub('h', '', as.character(h)))) %>%
+      mutate(date=as.POSIXct(ymd("20200101") + hours(h2))) %>%
+      mutate(season=define.season(date)) %>%
+      rename(value.tech.renew = value)
+  }
+
+  ggplot(gtechrenew) + geom_line(aes(x=date, y=value.tech.renew), colour='red') + 
+    guides(colour=FALSE) + theme_minimal() +
+    theme(axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          panel.spacing = unit(0,'lines'),
+          panel.border = element_rect(fill = NA)) + 
+    facet_grid(cols = vars(season), scales = 'free_x')
+  
+  gtotal <- pDemand %>% select(g, date, value) %>% 
+    left_join(gexist %>% select(g, date, value.exist), by=c('g', 'date'))
+
+  if (!is.null(gtechcurt)) {
+    gtotal <- gtotal %>% 
+      left_join(gtechcurt %>% select(g, date, value.tech.curt), by=c('g', 'date'))
+  }
+
+  if (!is.null(gtechnotcurt)) {
+    gtotal <- gtotal %>% 
+      left_join(gtechnotcurt %>% select(g, date, value.tech.not.curt), by=c('g', 'date'))
+  }
+
+  if (!is.null(gtechrenew)) {
+    gtotal <- gtotal %>% 
+      left_join(gtechrenew %>% select(g, date, value.tech.renew), by=c('g', 'date'))
+  }
+  
+  gtotal <- gtotal %>% mutate_at(.vars=vars(value.exist, value.tech.curt, value.tech.renew),
+                                 .fun=function(x){ifelse(is.na(x), 0, x)}) %>%
+    mutate(net=value.exist + value.tech.curt + value.tech.renew - value)
+  
+  range(gtotal$value.dem - (gtotal$value.genexist+gtotal$value))
   
   x <- gdxInfo(gdxName = paste0(path.gdx), dump=FALSE, returnList=TRUE, returnDF=FALSE)
   
-  path.gdx <- "/Volumes/Seagate_RIPS/CE/results//rcp85//gdxOutYear2045.gdx"
+  # get capacity from all existing generators
+  pCapacExist <- rgdx.param(gdxName = paste0(path.gdx), symName = "pCapac")
   
-  pCapacExist <- rgdx.param(gdxName = paste0(path.gdx), symName = "pCapac") %>% 
-    group_by(g, h) %>% summarise(value = sum(pCapac))
-  
-  pMaxgensolar <- rgdx.param(gdxName = paste0(path.gdx), symName = "pMaxgensolar") %>%
+  # get max energy from existing solar generators
+  ids.solar <- rgdx.set(gdxName = paste0(path.gdx), symName = "solaregu") %>% 
+    mutate(egu=as.character(egu)) %>% unlist()
+  pMaxgensolar <- rgdx.param(gdxName = path.gdx, symName = "pMaxgensolar") %>%
     group_by(g, h) %>% summarise(value = sum(pMaxgensolar))
+  pCapacSolar <- pCapacExist %>% filter(egu %in% ids.solar) %>% group_by(h) %>% summarise(value=sum(pCapac))
 
+  pMaxgensolar <- pMaxgensolar %>% mutate(capac = mean(pCapacSolar$value),
+                                          cf = value/capac) %>%
+    mutate(h2 = as.numeric(gsub('h', '', as.character(h)))) %>%
+    mutate(hour.of.day=hour(ymd("20200101") + hours(h2)))
+  
+  # get max energy from existing wind generators
   pMaxgenwind <- rgdx.param(gdxName = paste0(path.gdx), symName = "pMaxgenwind") %>%
     group_by(g, h) %>% summarise(value = sum(pMaxgenwind))
     
-  y <- pCapacExist 
-  
-  
-  
-  
-  ids.solar <- rgdx.set(gdxName = paste0(path.gdx), symName = "solaregu") %>% 
-    mutate(egu=as.character(egu)) %>% unlist()
+  # get ids from existing solar, wind, hydro, pumped hydro
   ids.wind <- rgdx.set(gdxName = paste0(path.gdx), symName = "windegu") %>% 
     mutate(egu=as.character(egu)) %>% unlist()
   ids.hydro <- rgdx.set(gdxName = paste0(path.gdx), symName = "hydroegu") %>% 
@@ -1055,13 +1160,52 @@ check.available.energy <- function(y, path.gdx) {
   
   ids.non.thermal <- c(ids.wind, ids.solar, ids.hydro, ids.pumped)
   
+  
+  # remove existing solar, wind, hydro, pumped hydro from data set
   capac.thermal <- rgdx.param(gdxName = paste0(path.gdx), symName = "pCapac") %>%
     mutate(egu=as.character(egu)) %>% filter(!(egu %in% ids.non.thermal)) %>% 
     group_by(g, h) %>% summarise(value = sum(pCapac))
   
   ggplot(capac.thermal) + geom_line(aes(x=h, y=value, colour=g, group=g))
   
+  
+  x <- pMaxgensolar %>% group_by(hour.of.day) %>% 
+    summarise(cf.mean=mean(cf), lb=quantile(cf, 0.025), ub=quantile(cf, 0.975),
+              sd=sd(cf))
+  
+  ggplot(x) + geom_line(aes(x=hour.of.day, y=cf.mean)) + geom_errorbar(aes(x=hour.of.day, ymin=lb, ymax=ub))
+  ggplot(x) + geom_line(aes(x=hour.of.day, y=cf.mean)) + geom_errorbar(aes(x=hour.of.day, ymin=cf.mean - sd*1.96, ymax=cf.mean + sd*1.96))
+  
 }
+
+convert.gdx.result.df <- function(list.gdx) {
+  df.gdx <- as.data.frame(list.gdx$val)
+  
+  if (nrow(df.gdx) > 0) {
+    names(df.gdx) <- c(list.gdx$domains, 'value')
+    
+    for (i in 1:length(list.gdx$domains)) {
+      dom.values <- list.gdx$uels[[i]]
+      df.gdx[[i]] <- factor(df.gdx[[i]], levels = 1:length(dom.values), labels=c(dom.values))
+    }
+  } else {
+    df.gdx <- NULL
+  }
+  
+  return (df.gdx)
+  
+}
+
+define.season <- function(dt) {
+  
+  s <- ifelse(month(dt) %in% c(3,4,5), 'spring',
+              ifelse(month(dt) %in% c(6,7,8), 'summer',
+                     ifelse(month(dt) %in% c(9,10,11), 'fall', 'winter')))
+  
+  return(s)
+  
+} 
+
 
 #
 # lifetimes <- read.csv(paste0(path.data.ce, '/NewPlantData/',

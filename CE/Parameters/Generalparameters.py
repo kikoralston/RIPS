@@ -38,7 +38,7 @@ class Generalparameters:
         self.coolDesignT = 100  # design temperature of cooling techs
 
         # PTs curtailed via regression (ptCurtailed) and via enviro regulations (ptCurtailedRegs)
-        self.ptCurtailed = {'Coal Steam', 'Combined Cycle'}
+        self.ptCurtailed = {'Coal Steam', 'Combined Cycle', 'Nuclear'}
         self.ptCurtailedRegs = {'Coal Steam', 'Coal Steam CCS', 'Combined Cycle', 'Combined Cycle CCS', 'Nuclear'}
         self.ptCurtailedAll = self.ptCurtailed | self.ptCurtailedRegs
 
@@ -49,7 +49,7 @@ class Generalparameters:
 
         self.compressFleet = True
         self.co2CapScenario = 'none'
-        self.scenario = 'normal'
+        self.scenario = 'FuelPriceTimeSeries.csv'
 
         self.fuelPricesTimeSeries = []
 
@@ -217,12 +217,7 @@ class Generalparameters:
     def importFuelPrices(dataRoot, scenario):
         fuelPriceDir = os.path.join(dataRoot, 'FuelPricesCapacityExpansion')
 
-        if scenario == 'ng':
-            fuelFileName = 'FuelPriceTimeSeries2Aug2016LowNG.csv'
-        else:
-            fuelFileName = 'FuelPriceTimeSeries2Aug2016.csv'
-
-        return readCSVto2dList(os.path.join(fuelPriceDir, fuelFileName))
+        return readCSVto2dList(os.path.join(fuelPriceDir, scenario))
 
     @staticmethod
     def list2string(ll):

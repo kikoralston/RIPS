@@ -117,7 +117,7 @@ def calculateTechsCurtailments(cellWaterTsForNewTechs, newTechsCE, currYear, gen
         if genparam.referenceCase:
             metAndWaterData = None
         else:
-            metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam,
+            metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam, gcm=gcm,
                                                   metdatatot=meteodata, waterDatatot=cellWaterTsForNewTechs)
 
         #print('  Got met data. ' + str_elapsedtime(t0))

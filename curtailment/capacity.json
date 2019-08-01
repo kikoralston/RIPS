@@ -257,5 +257,12 @@
             "lbound":  1
          }
       },
+      "dry cooling": {
+         "35": {
+            "intercept":  1,
+            "ubound":  1,
+            "lbound":  1
+         }
+      }
    }
 }

@@ -102,11 +102,12 @@ def loadRegData(genparam, currYear, zone, curtailparam, idx_gcm, netcdf=False):
     """
 
     dataDir = os.path.join(genparam.dataRoot, 'DemandData')
+    gcm = curtailparam.listgcms[idx_gcm]
 
     if netcdf:
         cellLat, cellLon = getCellForZone(dataDir, zone)
         cellLat, cellLon = find125GridMaurerLatLong(cellLat, cellLon)
-        data = read_netcdf(cellLat, cellLon, currYear, curtailparam, idx_gcm)
+        data = read_netcdf(cellLat, cellLon, currYear, curtailparam, gcm)
 
     else:
         data = pd.read_table(os.path.join(dataDir, 'meteo_memphis'), names=['precip', 'sh', 'rh', 'tC', 'p'])
