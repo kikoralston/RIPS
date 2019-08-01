@@ -160,5 +160,102 @@
             "lbound":  0
          }
       }
+   },
+   "Combustion Turbine": {
+      "once through": {
+         "10": {
+            "intercept":  8.03,
+            "airF":  0.0875,
+            "waterF":  -0.155,
+            "ubound":  1,
+            "lbound":  0
+         },
+         "20": {
+            "intercept":  8.67,
+            "airF":  0.0991,
+            "waterF":  -0.181,
+            "ubound":  1,
+            "lbound":  0
+         },
+         "30": {
+            "intercept":  5.48,
+            "airF":  0.0655,
+            "waterF":  -0.12,
+            "ubound":  1,
+            "lbound":  0
+         }
+      },
+      "recirculating": {
+         "90-70": {
+            "intercept":  -0.842,
+            "airF":  0.0233,
+            "rh":  0.0661,
+            "airF:rh":  -0.000873,
+            "ubound":  1,
+            "lbound":  0
+         },
+         "95-75": {
+            "intercept":  0.12,
+            "airF":  0.0113,
+            "rh":  0.0266,
+            "airF:rh":  -0.000336,
+            "ubound":  1,
+            "lbound":  0
+         },
+         "100-80": {
+            "intercept":  0.77,
+            "airF":  0.00317,
+            "rh":  0.00493,
+            "airF:rh":  -6.03E-05,
+            "ubound":  1,
+            "lbound":  0
+         }
+      },
+      "dry cooling": {
+         "25": {
+            "intercept":  1.01,
+            "airF":  -0.000512,
+            "P":  0.00262,
+            "ubound":  1,
+            "lbound":  0
+         },
+         "35": {
+            "intercept":  1.24,
+            "airF":  -0.00399,
+            "P":  0.00693,
+            "ubound":  1,
+            "lbound":  0
+         },
+         "45": {
+            "intercept":  1.66,
+            "airF":  -0.0107,
+            "P":  0.0161,
+            "ubound":  1,
+            "lbound":  0
+         },
+         "55": {
+            "intercept":  2.09,
+            "airF":  -0.0185,
+            "P":  0.0272,
+            "ubound":  1,
+            "lbound":  0
+         }
+      }
+   },
+   "Nuclear": {
+      "once through": {
+         "20": {
+            "intercept":  1,
+            "ubound":  1,
+            "lbound":  1
+         }
+      },
+      "recirculating": {
+         "95-75": {
+            "intercept":  1,
+            "ubound":  1,
+            "lbound":  1
+         }
+      },
    }
 }
