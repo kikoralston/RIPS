@@ -35,6 +35,7 @@ Sets
          z                               zones
          l                               lines
          peakh(g,z,h)                    hours for each zone with peak net demand and respective gcm
+         NonIniHours(g, h)               hours that are not initial horus of a season block
          ;
 
 Parameters
@@ -118,7 +119,11 @@ $load pR, pLife, pNmaxReBlock, pPlanningreserve, pWeightspring, pWeightsummer, p
 $load pInitsoc, pMaxsoc, pEfficiency
 $gdxin
 
-*pPeakhtozone,
+*-----------------------------------------------------------------------------------------------------------------------
+*INITIALIZATION OF AUXILIARY SETS AND PARAMETERS
+
+* CREATE ANOTHER NAME ('Alias') FOR SET h
+Alias(h, hh);
 
 *DEFINE NON-PEAK HOURS THAT WILL BE INCLUDED IN DEMAND=SUPPLY EQUATION
 *dispatchh(g,h) = winterh(h) + summerh(h) + specialh(h) + fallh(h) + springh(h);
@@ -136,11 +141,19 @@ pHourIniWinter(g) = smin(h$winterh(g,h), ord(h));
 pHourIniFall(g) = smin(h$fallh(g,h), ord(h));
 pHourIniSpecial(g) = smin(h$specialh(g,h), ord(h));
 
-* CREATE ANOTHER NAME ('Alias') FOR SET h
-Alias(h, hh);
+*CREATE MAPPING WITH HOURS THAT ARE NOT INITIAL HOURS OF EACH SEASON BLOCK
+NonIniHours(g, h)$h2(g,h) = yes;
+NonIniHours(g, h)$[ord(h)=pHourIniSpring(g)] = no;
+NonIniHours(g, h)$[ord(h)=pHourIniSummer(g)] = no;
+NonIniHours(g, h)$[ord(h)=pHourIniWinter(g)] = no;
+NonIniHours(g, h)$[ord(h)=pHourIniFall(g)] = no;
+NonIniHours(g, h)$[ord(h)=pHourIniSpecial(g)] = no;
 
 * FOR EACH OF THE SPECIAL HOURS, GET THE PREVIOUS HOUR (NECESSARY FOR PUMPED HYDRO SIMULATION)
 pPreviousHourSpecial(g, h) = smax(hh$[specialh(g,hh) and ord(hh) < ord(h)], ord(hh));
+
+*END INITIALIZATION OF AUXILIARY SETS AND PARAMETERS
+*-----------------------------------------------------------------------------------------------------------------------
 
 Variable
          vZ                              obj func [billion $ per yr]
@@ -375,10 +388,15 @@ enforceco2emissionscap.. vCO2emsannual =l= pCO2emcap/1e3;
 ************************************************************
 
 ******************STORAGE CONSTRAINTS******************
-*Limit generation to state of charge
-genandsoc(g,pumphydroegu,h)$h2(g,h).. vPegu(g,pumphydroegu,h) =l= vSoc(g,pumphydroegu,h);
+*Limit generation to state of charge of end of previous period
+genandsoc(g,pumphydroegu,h)$h2(g,h).. vPegu(g, pumphydroegu, h) =l= vSoc(g, pumphydroegu, h-1)$NonIniHours(g, h)
+                                                                    + pInitsoc(pumphydroegu)$[ord(h)=pHourIniSpring(g)]
+                                                                    + pInitsoc(pumphydroegu)$[ord(h)=pHourIniSummer(g)]
+                                                                    + pInitsoc(pumphydroegu)$[ord(h)=pHourIniWinter(g)]
+                                                                    + pInitsoc(pumphydroegu)$[ord(h)=pHourIniFall(g)]
+                                                                    + pInitsoc(pumphydroegu)$[ord(h)=pHourIniSpecial(g)];
 
-*Link state of charge, charging, and discharging
+* state of charge at end of h =  state of charge at end of previous h + gen at h + charging at h
 defsocspr(g,pumphydroegu,h)$springh(g,h).. vSoc(g,pumphydroegu,h) =e= pInitsoc(pumphydroegu)$[ord(h)=pHourIniSpring(g)]
                                                                       + vSoc(g,pumphydroegu,h-1)$[ord(h)>pHourIniSpring(g)]
                                                                       - vPegu(g,pumphydroegu,h)
@@ -408,7 +426,7 @@ defsocspe(g,pumphydroegu,h)$specialh(g,h)..  vSoc(g,pumphydroegu,h) =e= pInitsoc
 maxsto(g,pumphydroegu,h)$h2(g,h) .. vSoc(g,pumphydroegu,h) =l= pMaxsoc(pumphydroegu);
 
 *Limit rate of charging to capacity times efficiency
-limitcharging(g,pumphydroegu,h)$h2(g,h) .. vCharge(g,pumphydroegu,h) =l= pCapac(g,pumphydroegu,h);
+limitcharging(g,pumphydroegu,h)$h2(g,h) .. vCharge(g,pumphydroegu,h) =l= pEfficiency(pumphydroegu) * pCapac(g,pumphydroegu,h);
 ***************************************************
 
 Model expansion includes all equations /all/;
