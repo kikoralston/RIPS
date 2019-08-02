@@ -276,7 +276,7 @@ meetdemand(g,z,h) $ h2(g,h)..   sum((techcurtailed,c)$[pCellzones(c)=ORD(z)],vPt
                                 + sum(egu$[pEguzones(egu)=ORD(z)],vPegu(g,egu,h))
                                 - sum(l$[pLinesources(l)=ORD(z)],vLineflow(g,l,h))
                                 + sum(l$[pLinesinks(l)=ORD(z)],vLineflow(g,l,h))
-                                - sum(pumphydroegu,vCharge(g,pumphydroegu,h)) =e= pDemand(g,z,h);
+                                - sum(pumphydroegu$[pEguzones(pumphydroegu)=ORD(z)],vCharge(g,pumphydroegu,h)) =e= pDemand(g,z,h);
 
 *Total installed capacity must exceed peak demand + planning reserve margin in each zone
 meetreservemargin(z)..  pPlanningreserve(z) =l= sum((g,h)$[peakh(g,z,h)], sum(egu$[pEguzones(egu)=ORD(z)],pCapac(g,egu,h))

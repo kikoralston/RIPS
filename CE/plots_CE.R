@@ -1026,7 +1026,7 @@ levelized.cost.energy <- function(y, path.output.ce,
 check.available.energy <- function(y, path.gdx) {
 
   #path.gdx <- "/Volumes/Seagate_RIPS/CE/results//rcp85//gdxOutYear2045.gdx"
-  path.gdx <- "/Users/kiko/Documents/CE/out/CE/gdxOutYear2025.gdx"
+  path.gdx <- "/Users/kiko/Documents/CE/out/CE/gdxOutYear2020.gdx"
   
   
   pDemand <- rgdx.param(gdxName = path.gdx, symName = "pDemand") %>% 
@@ -1042,9 +1042,18 @@ check.available.energy <- function(y, path.gdx) {
           panel.spacing = unit(0,'lines'),
           panel.border = element_rect(fill = NA)) + 
     facet_grid(cols = vars(season), scales = 'free_x')
+
+  charge.ph <- rgdx(gdxName = path.gdx, requestList = list(name='vCharge', field='l'))
+  if (!is.null(charge.ph)) {
+    charge.ph <- convert.gdx.result.df(charge.ph) %>% 
+      group_by(g, h) %>% summarise(value = sum(value)) %>%
+      mutate(h2 = as.numeric(gsub('h', '', as.character(h)))) %>%
+      mutate(date=as.POSIXct(ymd("20200101") + hours(h2))) %>%
+      mutate(season=define.season(date)) %>%
+      rename(value.charge = value)
+  }
   
-  
-  # check generation
+  # get generation
   gexist <- rgdx(gdxName = path.gdx, requestList = list(name='vPegu', field='l'))
   gexist <- convert.gdx.result.df(gexist) %>% 
     group_by(g, h) %>% summarise(value = sum(value)) %>%
@@ -1063,7 +1072,6 @@ check.available.energy <- function(y, path.gdx) {
   
   gtechcurt <- rgdx(gdxName = path.gdx, requestList = list(name='vPtechcurtailed', field='l'))
   gtechcurt  <- convert.gdx.result.df(gtechcurt)
-  
   if (!is.null(gtechcurt)){
     gtechcurt <- gtechcurt %>% 
       group_by(g, h) %>% summarise(value = sum(value)) %>%
@@ -1075,7 +1083,6 @@ check.available.energy <- function(y, path.gdx) {
   
   gtechnotcurt <- rgdx(gdxName = path.gdx, requestList = list(name='vPtechnotcurtailed', field='l'))
   gtechnotcurt  <- convert.gdx.result.df(gtechnotcurt)
-
   if (!is.null(gtechnotcurt)){
     gtechnotcurt <- gtechnotcurt %>% 
       group_by(g, h) %>% summarise(value = sum(value)) %>%
@@ -1087,7 +1094,6 @@ check.available.energy <- function(y, path.gdx) {
   
   gtechrenew <- rgdx(gdxName = path.gdx, requestList = list(name='vPtechrenew', field='l'))
   gtechrenew  <- convert.gdx.result.df(gtechrenew)
-  
   if (!is.null(gtechrenew)){
     gtechrenew <- gtechrenew %>% 
       group_by(g, h) %>% summarise(value = sum(value)) %>%
@@ -1104,30 +1110,51 @@ check.available.energy <- function(y, path.gdx) {
           panel.spacing = unit(0,'lines'),
           panel.border = element_rect(fill = NA)) + 
     facet_grid(cols = vars(season), scales = 'free_x')
-  
+
+  # join all dfs 
   gtotal <- pDemand %>% select(g, date, value) %>% 
     left_join(gexist %>% select(g, date, value.exist), by=c('g', 'date'))
 
+  if (!is.null(charge.ph)) {
+    gtotal <- gtotal %>% 
+      left_join(charge.ph %>% select(g, date, value.charge), by=c('g', 'date'))
+  } else {
+    gtotal$value.charge <- 0
+  }
+  
   if (!is.null(gtechcurt)) {
     gtotal <- gtotal %>% 
       left_join(gtechcurt %>% select(g, date, value.tech.curt), by=c('g', 'date'))
+  } else {
+    gtotal$value.tech.curt <- 0
   }
 
   if (!is.null(gtechnotcurt)) {
     gtotal <- gtotal %>% 
       left_join(gtechnotcurt %>% select(g, date, value.tech.not.curt), by=c('g', 'date'))
+  } else {
+    gtotal$value.tech.not.curt <- 0
   }
 
   if (!is.null(gtechrenew)) {
     gtotal <- gtotal %>% 
       left_join(gtechrenew %>% select(g, date, value.tech.renew), by=c('g', 'date'))
+  }else {
+    gtotal$value.tech.renew <- 0 
   }
   
-  gtotal <- gtotal %>% mutate_at(.vars=vars(value.exist, value.tech.curt, value.tech.renew),
-                                 .fun=function(x){ifelse(is.na(x), 0, x)}) %>%
-    mutate(net=value.exist + value.tech.curt + value.tech.renew - value)
+  gtotal <- gtotal %>% ungroup() %>% mutate_at(.vars=vars(value, value.exist, value.charge, value.tech.curt, value.tech.renew), 
+                                               .funs=function(x){ifelse(is.na(x), 0, x)}) %>%
+    mutate(net=value.exist + value.tech.curt + value.tech.renew - value - value.charge)
   
-  range(gtotal$value.dem - (gtotal$value.genexist+gtotal$value))
+  
+  
+  
+  
+  # check supply demand equations
+  # meetdemand <- rgdx(gdxName = path.gdx, requestList = list(name='meetdemand', field='l'))
+  rgdx.param(gdxName = path.gdx, symName = 'pLinesources')
+  
   
   x <- gdxInfo(gdxName = paste0(path.gdx), dump=FALSE, returnList=TRUE, returnDF=FALSE)
   
