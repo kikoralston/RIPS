@@ -309,8 +309,7 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
         write2dListToCSV([unitsRetireCFPriorCE],
                          os.path.join(resultsDir, 'genRetirementsEconCEPrior' + str(currYear) + '.csv'))
 
-    genFleetForCE = createFleetForCurrentCELoop(genFleet, currYear, capacExpRetiredUnitsByAge,
-                                                genparam.dataRoot, genparam.scenario)  # removes all retired units
+    genFleetForCE = createFleetForCurrentCELoop(genFleet, currYear, capacExpRetiredUnitsByAge, genparam)  # removes all retired units
 
     print('Num units that retire due to age in ' + str(currYear) + ':' + str(len(capacExpRetiredUnitsByAge[-1]) - 1))
 
@@ -526,7 +525,7 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
                                              genparam.ptEligRetCF, peakDemandHourZonal)
 
     # removes all retired units; [] is dummy list b/c not adding ret age units to list
-    genFleetNoRetiredUnits = createFleetForCurrentCELoop(genFleet, currYear, [], genparam.dataRoot, genparam.scenario)
+    genFleetNoRetiredUnits = createFleetForCurrentCELoop(genFleet, currYear, [], genparam)
 
     writeCEInfoToCSVs(capacExpBuilds, capacExpGenByGens, capacExpRetiredUnitsByCE,
                       capacExpRetiredUnitsByAge, resultsDir, currYear)

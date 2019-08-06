@@ -3,7 +3,7 @@ $TITLE CAPACITY EXPANSION WITH CHRONOLOGICAL DEMAND THROUGH PYTHON API, 27 MAY 2
 *$offsymxref offsymlist
 
 Options
-         optcr = 5E-2
+         optcr = 1E-2
          reslim = 80000
          limcol = 0
          limrow = 0

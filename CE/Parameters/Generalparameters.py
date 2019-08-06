@@ -72,6 +72,7 @@ class Generalparameters:
         self.allowCoalWithoutCCS = True
         self.onlyNSPSUnits = False
         self.permitOncethru = True
+        self.retireOldPlants = True
 
         self.ucFilename = 'UCRIPS18April2017.gms'
         self.calculateCO2Price = True
@@ -181,7 +182,7 @@ class Generalparameters:
         outstr = outstr + 'discountRate = {}\n'.format(self.discountRate)
         outstr = outstr + 'allowCoalWithoutCCS = {}\n'.format(self.allowCoalWithoutCCS)
         outstr = outstr + 'onlyNSPSUnits = {}\n'.format(self.onlyNSPSUnits)
-        outstr = outstr + 'permitOncethru = {}\n'.format(self.permitOncethru)
+        outstr = outstr + 'retireOldPlants = {}\n'.format(self.retireOldPlants)
 
         outstr = outstr + '#\n# -------- UNIT COMMITMENT PARAMETERS --------\n#\n'
         outstr = outstr + 'ucFilename = {}\n'.format(self.ucFilename)

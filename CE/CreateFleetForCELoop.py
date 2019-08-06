@@ -11,18 +11,23 @@ from AuxFuncs import *
 from GAMSAuxFuncs import createGenSymbol
 
 
-def createFleetForCurrentCELoop(genFleet, currYear, capacExpRetiredUnitsByAge, dataRoot, scenario):
+def createFleetForCurrentCELoop(genFleet, currYear, capacExpRetiredUnitsByAge, genparam):
     """CREATE FLEET FOR CURRENT CE LOOP
 
     :param genFleet: gen fleet (2d list)
     :param currYear: current CE year
     :param capacExpRetiredUnitsByAge: list of units retired each year (2d list)
-    :param dataRoot:
-    :param scenario:
+    :param genparam: object of class Generalparameters
     :return: gen fleet w/ retired units removed (2d list)
     """
-    markAndSaveRetiredUnitsFromAge(genFleet, currYear, capacExpRetiredUnitsByAge, dataRoot, scenario)
+
+    if genparam.retireOldPlants:
+        markAndSaveRetiredUnitsFromAge(genFleet, currYear, capacExpRetiredUnitsByAge, genparam.dataRoot, genparam.scenario)
+    else:
+        capacExpRetiredUnitsByAge.append(['UnitsRetiredByAge' + str(currYear)] + [])
+
     genFleetForCE = [genFleet[0]] + [row for row in genFleet[1:] if onlineAndNotRetired(row, genFleet[0], currYear)]
+
     return genFleetForCE
 
 

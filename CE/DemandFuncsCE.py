@@ -39,7 +39,7 @@ def selectWeeksForExpansion(zonalDemandProfile, zonalNetDemand, zonalHourlyWindG
 
     demand = OrderedDict()
     for gcm in zonalDemandProfile.keys():
-        demand[gcm] = sumZonalData(zonalNetDemand[gcm])
+        demand[gcm] = sumZonalData(zonalDemandProfile[gcm])
 
     # Get hour of peak demand in each zone (over all gcms)
     peakDemandHourZonal, planningMarginZonal = getPeakDemandHourAndPlanningMarginCEZonal(zonalDemandProfile,
@@ -491,8 +491,13 @@ def getPeakDemandHourAndPlanningMarginCEZonal(demandCEZonal, planningMargin):
     zones = list(demandCEZonal[gcms[0]].keys())
 
     for z in zones:
-        auxDemand = np.array([demandCEZonal[g][z] for g in gcms])
+
+        # zonal demand for each GCM (truncate at 8760 hours to avoid errors)
+        auxDemand = np.array([demandCEZonal[g][z][:8760] for g in gcms])
+
+        # get hour of peak demand in each gcm for this zone
         maxHoursEachGcm = auxDemand.argmax(axis=1)
+
         peakDemandValuesEachGcm = np.array([auxDemand[i, maxHoursEachGcm[i]] for i in range(len(gcms))])
 
         peakDemandValue = np.max(peakDemandValuesEachGcm)
