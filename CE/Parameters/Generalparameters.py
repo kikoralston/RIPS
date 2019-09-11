@@ -182,6 +182,7 @@ class Generalparameters:
         outstr = outstr + 'discountRate = {}\n'.format(self.discountRate)
         outstr = outstr + 'allowCoalWithoutCCS = {}\n'.format(self.allowCoalWithoutCCS)
         outstr = outstr + 'onlyNSPSUnits = {}\n'.format(self.onlyNSPSUnits)
+        outstr = outstr + 'permitOncethru = {}\n'.format(self.permitOncethru)
         outstr = outstr + 'retireOldPlants = {}\n'.format(self.retireOldPlants)
 
         outstr = outstr + '#\n# -------- UNIT COMMITMENT PARAMETERS --------\n#\n'
