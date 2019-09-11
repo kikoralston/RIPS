@@ -53,7 +53,7 @@ def wrappersolar(site):
 
     siteCfsHourly, siteCfsSubhourly = getSolarSiteCfs_2(solarDir=solarDir, siteFilename=siteFilename,
                                                         datasetSiteCapac=datasetSiteCapac, siteTz=siteTz,
-                                                        desiredTz=desiredTz, subHour=subHour)
+                                                        desiredTz=desiredTz, subHour=subHour, listout=True)
 
     out = [siteCfsHourly, siteCfsSubhourly, siteFilename, segment, datasetSiteCapac, fleetCapac]
 
@@ -61,7 +61,7 @@ def wrappersolar(site):
 
 
 def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacInCurrFleet=0, type='wind',
-                       existing=False):
+                       existing=False, subHour = False):
     """
 
     :param currZone:
@@ -77,10 +77,8 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
     t_start = time.time()
     t_step = time.time()
 
-    if existing and capacInCurrFleet == 0:
-        list_out = [0 for i in range(8760)]
-        print('    FINISHED: ' + str_elapsedtime(t_start))
-        return list_out
+    windGenDataYr = genparam.windGenDataYr
+    desiredTz = genparam.tzAnalysis
 
     if type.lower() == 'wind':
         renewableDir = os.path.join(genparam.dataRoot, 'WINDSERCData')
@@ -93,8 +91,6 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
         metadata = pd.read_csv(os.path.join(renewableDir, 'SolarCapacityFactorsNRELSERC_zones.csv'))
         metadata.rename(columns={'CF': 'cfs', 'PlantSize': 'capacs', 'File': 'site_id'},
                         inplace=True)
-
-    fipsToZones, fipsToPolys = genparam.fipsToZones, genparam.fipsToPolys
 
     # read metada data of all sites in this zone and keep only relevant columns
     df_cfs = metadata[metadata['zone'] == currZone]
@@ -112,6 +108,33 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
     df_cfs_inv.loc[:, 'totalCapac'] = df_cfs_inv['fleetCapac'].cumsum()
     df_cfs_inv = df_cfs_inv[df_cfs_inv['totalCapac'] < sizeSegment]
     df_cfs_inv = df_cfs_inv.sort_values(by=['cfs'], ascending=False)
+
+    #
+    # If existing gen and current capacity == 0, just return data frame with zeros
+    if existing and capacInCurrFleet == 0:
+        # get array with dates from first file (and cap it at 8760 hours)
+        if type.lower() == 'wind':
+            dfaux = getWindSiteCfs_2(windDir=renewableDir, siteId=str(df_cfs_inv['site_id'].iloc[0]),
+                                     siteCapac=df_cfs_inv['capacs'].iloc[0], desiredTz=desiredTz,
+                                     windGenDataYr=windGenDataYr, subHour=False, listout=False)[0]
+        else:
+            sitetz = timezoneOfSolarSite(df_cfs_inv['site_id'].iloc[0], currZone)
+            dfaux = getSolarSiteCfs_2(solarDir=renewableDir, siteFilename=str(df_cfs_inv['site_id'].iloc[0]),
+                                      datasetSiteCapac=df_cfs_inv['capacs'].iloc[0], siteTz=sitetz, desiredTz=desiredTz,
+                                      subHour=False, listout=False)[0]
+
+        dtvalues = dfaux.iloc[:8760, 0].tolist()
+
+        df_hour = pd.DataFrame({'datetime': dtvalues, 'segment': 0, 'cfs': [0 for i in range(8760)],
+                                'gen': [0 for i in range(8760)]})
+        df_hour = df_hour[['datetime', 'segment', 'cfs', 'gen']]
+
+        df_subhour = None
+
+        print('    FINISHED: ' + str_elapsedtime(t_start))
+
+        # ****** EXIT FUNCTION ********
+        return df_hour, df_subhour
 
     if existing:
 
@@ -159,16 +182,6 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
 
     t_step = time.time()
 
-    subHour = False
-    windGenDataYr = genparam.windGenDataYr
-    desiredTz = genparam.tzAnalysis
-
-    # Import CFs for each wind plant
-    if subHour:
-        allSiteCfsHourly, allSiteCfsSubhourly, avgFleetCfHr = [], [], []
-    else:
-        allSiteCfsHourly, allSiteCfsSubhourly, avgFleetCfHr = [], None, []
-
     ncores = genparam.ncores_py
     gc.collect()
 
@@ -197,61 +210,71 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
 
     t_step = time.time()
 
-    dict_hourly_cfs = dict()
-    df_total = None
-    df_out = None
+    # first compute average CFs for hourly gen
+    df_hour = None
     for s in df_cfs['segment'].unique():
-
-        allSiteCfsHourly = []
-        allSiteCfsSubhourly = None
 
         list_cfs_segment = [siteCfs for siteCfs in list_cfs if siteCfs[3] == s]
 
         # convert to data frame
         for i, x in enumerate(list_cfs_segment):
 
-            if df_out is None:
-                df_out = pd.DataFrame({'datetime': x[0][0][1:], 'Id': x[2], 'capac': x[5],'cfs': x[0][1][1:], 'segment': s})
+            if df_hour is None:
+                df_hour = pd.DataFrame({'datetime': x[0][0][1:], 'Id': x[2], 'capac': x[5],'cfs': x[0][1][1:], 'segment': s})
             else:
-                df_out = df_out.append(pd.DataFrame({'datetime': x[0][0][1:], 'Id': x[2], 'capac': x[5], 'cfs': x[0][1][1:],
-                                                     'segment': s}), ignore_index=True)
+                df_hour = df_hour.append(pd.DataFrame({'datetime': x[0][0][1:], 'Id': x[2], 'capac': x[5], 'cfs': x[0][1][1:],
+                                                       'segment': s}), ignore_index=True)
 
     # compute generation in MWh
-    df_out['gen'] = df_out['capac'] * df_out['cfs']
+    df_hour['gen'] = df_hour['capac'] * df_hour['cfs']
 
     # compute weighted average CF using vectorization and pandas
-    x = df_out.groupby(['segment', 'datetime'])['capac'].agg(np.sum).reset_index()
-    df_aux = pd.merge(df_out, x, how='left', on=['segment', 'datetime'])
+    x = df_hour.groupby(['segment', 'datetime'])['capac'].agg(np.sum).reset_index()
+    df_aux = pd.merge(df_hour, x, how='left', on=['segment', 'datetime'])
     df_aux['cfsw'] = df_aux['cfs']*df_aux['capac_x']/df_aux['capac_y']
 
-    df_total2 = df_aux.groupby(['segment', 'datetime'])['cfsw', 'gen'].agg(np.sum).reset_index().rename(columns={'cfsw': 'cf'})
+    df_hour = df_aux.groupby(['segment', 'datetime'])['cfsw', 'gen'].agg(np.sum).reset_index().rename(columns={'cfsw': 'cf'})
+    # just to make sure order of hours is correct is correct
+    df_hour = df_hour.sort_values(by=['segment', 'datetime'])
 
     del x
     del df_aux
     gc.collect()
+
+    # then compute average CFs for sub-hourly gen
+    df_subhour = None
+    if subHour:
+        for s in df_cfs['segment'].unique():
+
+            list_cfs_segment = [siteCfs for siteCfs in list_cfs if siteCfs[3] == s]
+
+            # convert to data frame
+            for i, x in enumerate(list_cfs_segment):
+
+                if df_subhour is None:
+                    df_subhour = pd.DataFrame({'datetime': x[1][0][1:], 'Id': x[2], 'capac': x[5],'cfs': x[1][1][1:], 'segment': s})
+                else:
+                    df_subhour = df_subhour.append(pd.DataFrame({'datetime': x[1][0][1:], 'Id': x[2], 'capac': x[5],
+                                                                 'cfs': x[1][1][1:], 'segment': s}), ignore_index=True)
+
+        # compute generation in MWh
+        df_subhour['gen'] = df_subhour['capac'] * df_subhour['cfs']
+
+        # compute weighted average CF using vectorization and pandas
+        x = df_subhour.groupby(['segment', 'datetime'])['capac'].agg(np.sum).reset_index()
+        df_aux = pd.merge(df_subhour, x, how='left', on=['segment', 'datetime'])
+        df_aux['cfsw'] = df_aux['cfs']*df_aux['capac_x']/df_aux['capac_y']
+
+        df_subhour = df_aux.groupby(['segment', 'datetime'])['cfsw', 'gen'].agg(np.sum).reset_index().rename(columns={'cfsw': 'cf'})
+        # just to make sure order of hours is correct is correct
+        df_subhour = df_subhour.sort_values(by=['segment', 'datetime'])
+
     print('    Finished computing average CF using vectorization: ' + str_elapsedtime(t_step))
-
-    t_step = time.time()
-    # just to make sure order of hours is correct is correct
-    df_total2 = df_total2.sort_values(by=['segment', 'datetime'])
-
-    if existing:
-        # for existing plants, output LIST with HOURLY GENERATION in MWh
-        df_existing = df_total2[df_total2['segment'] == 0]
-        result_out = list(df_existing['gen'].values)
-
-    else:
-        # for candidate plants, output DICTIONARY with CFs
-        result_out = {}
-        for s in df_total2['segment'].unique():
-            cfs_list = list(df_total2[df_total2['segment'] == s]['cf'].values)
-            result_out[s] = cfs_list
-
-    print('    Finished aggregating into one data frame and processing dictionary: ' + str_elapsedtime(t_step))
 
     print('    FINISHED: ' + str_elapsedtime(t_start))
 
-    return result_out
+    # return both data frames (let the routine that is calling it parse it to the desired format)
+    return df_hour, df_subhour
 
 
 def getPlantInfoInZone(metadata, cfCol, capacCol, siteNumberOrFileCol, fipsToZones, fipsToPolys, currZone,
@@ -298,7 +321,7 @@ def getPlantInfoInZone(metadata, cfCol, capacCol, siteNumberOrFileCol, fipsToZon
     return out
 
 
-def getWindSiteCfs_2(windDir, siteId, siteCapac, desiredTz, windGenDataYr, subHour=False):
+def getWindSiteCfs_2(windDir, siteId, siteCapac, desiredTz, windGenDataYr, subHour=False, listout=True):
     """optimized version of function getWindSiteCfs using pandas (75% faster)
 
     :param windDir: dir w/ wind data
@@ -333,8 +356,9 @@ def getWindSiteCfs_2(windDir, siteId, siteCapac, desiredTz, windGenDataYr, subHo
     # rename columns
     hourlyGen = hourlyGen.rename(columns={'Datetime': 'datetime{}'.format(desiredTz), siteId: 'power(MW){}'.format(siteId)})
 
-    # convert to list
-    hourlyGen = convert_pandas_to_list(hourlyGen, header=list(hourlyGen.columns))
+    # convert to lists
+    if listout:
+        hourlyGen = convert_pandas_to_list(hourlyGen, header=list(hourlyGen.columns))
 
     if subHour:
         subhourlyFile = 'powersubhourly_' + siteId + '.csv'
@@ -356,14 +380,15 @@ def getWindSiteCfs_2(windDir, siteId, siteCapac, desiredTz, windGenDataYr, subHo
                                                     siteId: 'power(MW){}'.format(siteId)})
 
         # convert to list
-        subhourlyGen = convert_pandas_to_list(subhourlyGen, header=list(subhourlyGen.columns))
+        if listout:
+            subhourlyGen = convert_pandas_to_list(subhourlyGen, header=list(subhourlyGen.columns))
     else:
         subhourlyGen = None
 
     return hourlyGen, subhourlyGen
 
 
-def getSolarSiteCfs_2(solarDir, siteFilename, datasetSiteCapac, siteTz, desiredTz, listout=True, subHour=False):
+def getSolarSiteCfs_2(solarDir, siteFilename, datasetSiteCapac, siteTz, desiredTz, subHour=False, listout=True):
     """Optimized version of getSolarSiteCfs. This function uses Pandas in order to get more efficient processing
 
     :param solarDir:

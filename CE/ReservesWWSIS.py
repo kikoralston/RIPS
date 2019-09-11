@@ -24,36 +24,31 @@ rc = {'font.family': 'Times New Roman', 'font.size': 14, 'text.color': 'k',
 plt.rcParams.update(**rc)
 
 
-def calcWWSISReserves(windCfsDtHr, windCfsDtSubhr, windIdAndCapac, solarCfsDtHr, solarCfsDtSubhr,
-                      solarFilenameAndCapac, demand, regLoadFrac, contLoadFrac, regErrorPercentile,
-                      flexErrorPercentile, tzAnalysis='EST'):
+def calcWWSISReserves(windGenHr, windGenSubhr, solarGenHr, solarGenSubhr, demand, regLoadFrac, contLoadFrac,
+                      regErrorPercentile, flexErrorPercentile, tzAnalysis='EST'):
     """CALCULATE WWSIS RESERVES
 
     Loads raw data, gets erorr in 10/5-min and hourly gen, and returns reserve requirements. Based on WWSIS Phase 2 requirements.
 
 
-    :param windCfsDtHr: windCfsDtHr (2d list w/ hourly wind CFs for each wind generator in fleet, col 1 = dt, subsequent cols = gen)
-    :param windCfsDtSubhr: same formatted 2d lists subhourly wind CFs
-    :param windIdAndCapac: windIdsAndCapacs (2d list w/ NREL wind IDs used to load gen files)
-    :param solarCfsDtHr: solar hourly  CFs.
-    :param solarCfsDtSubhr: solar subhourly CFs.
-    :param solarFilenameAndCapac: solarFilenamesAndCapacs (2d list w/ NREL solar filenames used to load gen files)
+    :param windGenDtHr: 2d list w/ hourly TOTAL wind gen for in fleet in zone, col 1 = dt, col 2 = gen (**with header**)
+    :param windGenDtSubhr: same formatted 2d lists subhourly wind gen
+    :param solarGenDtHr: solar hourly gen.
+    :param solarGenDtSubhr: solar subhourly gen.
     :param demand: hourly demand
     :param regLoadFrac: fraction of load included in reg reserves
-    :param contLoadFrac: fraction of load included in cont reserves
+    :param contLoadFrac: fraction of load included in contigency reserves
     :param regErrorPercentile: percentile error of wind and solar forecasts included in reg reserves
     :param flexErrorPercentile: percentile error of wind and solar forecasts included in flex reserves
     :param tzAnalysis: (String) time zone of analysis
     :return: 1d list (1x8760) of hourly contingency, regulation up and down, and flexibility reserve requirements;
     2d list of all res and res components w/ labels
     """
-    # Convert CFs to gen
-    windGenHr, windGenSubhr = convertCfToGenAndSumGen(windIdAndCapac, windCfsDtHr, windCfsDtSubhr, tzAnalysis)
-    solarGenHr, solarGenSubhr = convertCfToGenAndSumGen(solarFilenameAndCapac, solarCfsDtHr, solarCfsDtSubhr,
-                                                        tzAnalysis)
-
+    #
     # Calculate reserves - subhourly wind & solar gen is in 10 & 5 min, respectively
+    #
     contResHourly = setContReserves(contLoadFrac, demand)
+
     (regUpHourly, regDownHourly, regDemand, regUpWind, regDownWind,
      regUpSolar, regDownSolar) = setRegReserves(regErrorPercentile, regLoadFrac, windGenSubhr, solarGenSubhr, demand)
 
@@ -131,7 +126,7 @@ def setContReserves(contLoadFrac, demand):
     :param demand: list with demand values
     :return: 1d list with contigency values in MW
     """
-    return [val * contLoadFrac for val in demand]
+    return [val * contLoadFrac for val in demand[:8760]]
 
 
 def setRegReserves(regErrorPercentile, regLoadFrac, windGen10MinTotal, solarGen5MinTotal, demand):
@@ -144,9 +139,18 @@ def setRegReserves(regErrorPercentile, regLoadFrac, windGen10MinTotal, solarGen5
     :param demand:
     :return:
     """
-    regDemand = [val * regLoadFrac for val in demand]
-    regUpWind, regDownWind = calcWindReserves(windGen10MinTotal, regErrorPercentile, 'reg')
-    regUpSolar, regDownSolar = calcSolarReserves(solarGen5MinTotal, regErrorPercentile)
+    # cap number of hours in year at 8760 hours
+    regDemand = [val * regLoadFrac for val in demand[:8760]]
+
+    if windGen10MinTotal is not None:
+        regUpWind, regDownWind = calcWindReserves(windGen10MinTotal, regErrorPercentile, 'reg')
+    else:
+        regUpWind, regDownWind = [0]*len(regDemand), [0]*len(regDemand)
+
+    if solarGen5MinTotal is not None:
+        regUpSolar, regDownSolar = calcSolarReserves(solarGen5MinTotal, regErrorPercentile)
+    else:
+        regUpSolar, regDownSolar = [0]*len(regDemand), [0]*len(regDemand)
 
     regUpTotal = [(regDemand[idx] ** 2 + regUpWind[idx] ** 2 +
                    regUpSolar[idx] ** 2) ** .5 for idx in range(len(regDemand))]
@@ -191,8 +195,8 @@ def calcWindReserves(windGen, errorPercentile, flexOrReg):
     # Divide into groups and get average power & percentile errors per group
     numGroups = 10
     # plotWindErrors(genErrors,errors,numGroups,errorPercentile)
-    grpAvgPowerAndPtls = getAvgPowerAndPtlErrorPerGroup(numGroups, errorPercentile,
-                                                        genErrors, errors)
+    grpAvgPowerAndPtls = getAvgPowerAndPtlErrorPerGroup(numGroups, errorPercentile, genErrors, errors)
+
     return getReservesPerGenValue(windGen, grpAvgPowerAndPtls)
 
 
@@ -310,22 +314,26 @@ def calcSolarReserves(solarGen, errorPercentile):
     monthGroups = [[mnth, mnth + 1] for mnth in range(1, 13, 2)]  # months in groups of 2; datetime month is 1..12
     upRes, downRes, dts = list(), list(), list()
 
-    for months in monthGroups:  # months is list of months
-        monthsRows = [row for row in solarGen[1:] if row[dtCol].month in months]
-        preMiddayErrorsMonths, postMiddayErrorsMonths = getMonthsErrors(months,
-                                                                        monthsRows, dtCol, genCol, sunriseOffset,
-                                                                        sunsetOffset)
-        lowPtlPre = np.percentile(np.array(preMiddayErrorsMonths), lowPtl)
-        highPtlPre = np.percentile(np.array(preMiddayErrorsMonths), upPtl)
-        lowPtlPost = np.percentile(np.array(postMiddayErrorsMonths), lowPtl)
-        highPtlPost = np.percentile(np.array(postMiddayErrorsMonths), upPtl)
-        upResMonths, downResMonths = assignReserves(months, monthsRows, dtCol, genCol, lowPtlPre,
-                                                    highPtlPre, lowPtlPost, highPtlPost)
-        upRes.extend(copy.copy(upResMonths))
-        downRes.extend(copy.copy(downResMonths))
-        dts.extend([row[dtCol] for row in monthsRows])
+    if sum([val[genCol] for val in solarGen[1:]]) == 0:
+        # if solarGen == 0 for all hours, return upRes, downRes == 0
+        # (otherwise there will be an error with the definition of sunrise and sunset)
+        upRes, downRes = [0]*8760, [0]*8760
+    else:
+        for months in monthGroups:  # months is list of months
+            monthsRows = [row for row in solarGen[1:] if row[dtCol].month in months]
+            preMiddayErrorsMonths, postMiddayErrorsMonths = getMonthsErrors(months, monthsRows, dtCol, genCol,
+                                                                            sunriseOffset, sunsetOffset)
+            lowPtlPre = np.percentile(np.array(preMiddayErrorsMonths), lowPtl)
+            highPtlPre = np.percentile(np.array(preMiddayErrorsMonths), upPtl)
+            lowPtlPost = np.percentile(np.array(postMiddayErrorsMonths), lowPtl)
+            highPtlPost = np.percentile(np.array(postMiddayErrorsMonths), upPtl)
+            upResMonths, downResMonths = assignReserves(months, monthsRows, dtCol, genCol, lowPtlPre,
+                                                        highPtlPre, lowPtlPost, highPtlPost)
+            upRes.extend(copy.copy(upResMonths))
+            downRes.extend(copy.copy(downResMonths))
+            dts.extend([row[dtCol] for row in monthsRows])
 
-    if len(upRes) > 8760: upRes, downRes = aggregateResToHourly(upRes, downRes, dts)
+        if len(upRes) > 8760: upRes, downRes = aggregateResToHourly(upRes, downRes, dts)
 
     return upRes, downRes
 
@@ -340,6 +348,7 @@ def getMonthsErrors(months, monthsRows, dtCol, genCol, sunriseOffset, sunsetOffs
     preMiddayErrorsMonths, postMiddayErrorsMonths = list(), list()
     currDate = monthsRows[0][dtCol]
     while currDate.month in months:
+
         currDateRows = [row for row in monthsRows if (row[dtCol].month == currDate.month
                                                       and row[dtCol].day == currDate.day)]
         sunrise, sunset, midday = getSunriseAndSunset(currDateRows, dtCol, genCol)
@@ -348,6 +357,7 @@ def getMonthsErrors(months, monthsRows, dtCol, genCol, sunriseOffset, sunsetOffs
         preMiddayErrorsMonths.extend(preMiddayErrors)
         postMiddayErrorsMonths.extend(postMiddayErrors)
         currDate += dt.timedelta(days=1)
+
     return preMiddayErrorsMonths, postMiddayErrorsMonths
 
 

@@ -26,9 +26,10 @@ def write2dListToCSV(list2d, fileNameWithDir):
     """
 
     fullFileName = fileNameWithDir
-    with open(fullFileName, 'w', newline='') as csvfile:
-        w = csv.writer(csvfile)
-        w.writerows(list2d)
+    if list2d is not None:
+        with open(fullFileName, 'w', newline='') as csvfile:
+            w = csv.writer(csvfile)
+            w.writerows(list2d)
 
 
 def convert_dict2list2d(dict_in):

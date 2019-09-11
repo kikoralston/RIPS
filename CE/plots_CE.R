@@ -61,7 +61,7 @@ update.ID <- function(uniqueid, planttype, region, capacity) {
 
 parse.cooling.type <- function(x) {
   
-  idx.cooling <- grepl('\\.OT|\\.DC|\\.RC', x, perl=TRUE)
+  idx.cooling <- grepl('\\+OT|\\+DC|\\+RC', x, perl=TRUE)
   
   out <- x
   
@@ -81,7 +81,7 @@ parse.type <- function(x) {
   # remove digits with Wind/solar aggregation block
   out <- gsub('\\.\\d\\d', '', out)
   
-  out <- gsub('\\.', ' ', out)
+  out <- gsub('\\+', ' ', out)
   out <- gsub('OT|DC|RC|CCS', '', out, perl = TRUE)
   out <- trimws(out)
   return(out)
@@ -107,7 +107,7 @@ get.capacity.tech <- function(type, ccs, cool, df.new.techs) {
                                    ifelse(Cooling == "recirculating",
                                           'RC',
                                           NA)))) %>%
-    mutate(Type = ifelse(Type == 'Nuclear' | is.na(Cooling), as.character(Type), 
+    mutate(Type = ifelse(is.na(Cooling), as.character(Type), 
                          paste(Type, Cooling)))
   
   out <- data.frame(Type=out, stringsAsFactors = FALSE) %>%
@@ -310,6 +310,7 @@ plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand=NULL,
     mutate(PlantType = as.character(PlantType)) %>%
     mutate(PlantType = ifelse(PlantType %in% otherTypes, 'Other', PlantType)) %>%
     mutate(PlantType = ifelse(Modeled.Fuels %in% coal.types, 'Coal', PlantType)) %>%
+    mutate(PlantType = ifelse(Modeled.Fuels %in% coal.types, 'Coal', PlantType))
     mutate(PlantType = ifelse(grepl('Natural Gas', Modeled.Fuels), 
                               'Natural Gas', PlantType)) %>%
     mutate(PlantType = ifelse(grepl('Fuel Oil', Modeled.Fuels), 
@@ -335,7 +336,7 @@ plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand=NULL,
     dplyr::summarise(online.cap = sum(online.cap)) %>% arrange(currYear) %>%
     ungroup() %>%
     mutate(PlantType=factor(PlantType, levels=rev(plant.types))) %>%
-    mutate(Region.Name == as.character(Region.Name))
+    mutate(Region.Name = as.character(Region.Name))
   
   list.cases <- NULL
   df.demand.aux <- NULL
@@ -375,7 +376,7 @@ plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand=NULL,
 
 get.new.additions <- function(y, path.gdx) {
   
-  serc.zones <- read.csv(paste0(path.gdx,'zoneNamesToNumbers.csv'))
+  serc.zones <- read.csv(paste0(path.gdx,'/zoneNamesToNumbers.csv'))
   
   # map cell to zone
   map.cell2zone <- rgdx.param(gdxName = paste0(path.gdx, 'gdxOutYear', y, 
@@ -387,47 +388,62 @@ get.new.additions <- function(y, path.gdx) {
                                                 form='full', 
                                                 field=c('l')))
   
-  df.tech.not.curtailed <- data.frame(zone=tech.not.curtailed$uels$z,
-                                      tech.not.curtailed$val, 
-                                      row.names = NULL) %>%
-    mutate(ZoneNum=as.numeric(as.factor(zone))) %>%
-    select(-zone) %>%
-    gather(key='type', value='value', Nuclear) %>%
+  df.tech.not.curtailed <- reshape2::melt(tech.not.curtailed$val) %>%
+    dplyr::rename(zone=z, type=technotcurtailed) %>% 
+    mutate(ZoneNum=as.numeric(as.factor(zone))) %>% select(-zone) %>%
     left_join(serc.zones, by='ZoneNum') %>%
-    arrange(ZoneNum) %>% mutate(year=y) %>%
-    select(year, Zone, type, value) %>% as.data.frame()
+    arrange(ZoneNum)
+  
+  if(nrow(df.tech.not.curtailed) > 0) {
+    df.tech.not.curtailed <- df.tech.not.curtailed %>% mutate(year=y)
+  } else {
+    df.tech.not.curtailed <- df.tech.not.curtailed %>% mutate(year=as.integer())
+  }
+  df.tech.not.curtailed <- df.tech.not.curtailed %>% 
+    dplyr::select(year, Zone, type, value) %>% as.data.frame()
   
   tech.curtailed <- rgdx(gdxName = paste0(path.gdx, '/gdxOutYear', y, '.gdx'), 
                          requestList = list(name="vNcurtailed", 
                                             form='full',field=c('l')))
-  
-  df.tech.curtailed <- data.frame(cells=rownames(tech.curtailed$val),
-                                  tech.curtailed$val, row.names = NULL,
-                                  stringsAsFactors = FALSE) %>%
-    left_join(map.cell2zone, by=c("cells" = "c")) %>%
+  df.tech.curtailed <- reshape2::melt(tech.curtailed$val) %>%
+    mutate(c=as.character(c)) %>%
+    dplyr::rename(type=techcurtailed) %>%
+    left_join(map.cell2zone, by="c") %>%
     mutate(ZoneNum=pCellzones) %>% select(-pCellzones) %>%
     left_join(serc.zones, by='ZoneNum') %>%
-    gather(key='type', value='value', -c(cells, ZoneNum, Zone)) %>% 
-    arrange(ZoneNum) %>% mutate(year=y)
+    arrange(ZoneNum)
+
+  if(nrow(df.tech.curtailed) > 0) {
+    df.tech.curtailed <- df.tech.curtailed %>% mutate(year=y)
+  } else {
+    df.tech.curtailed <- df.tech.curtailed %>% mutate(year=as.integer())
+  }
+  df.tech.curtailed <- df.tech.curtailed %>% 
+    dplyr::select(year, Zone, type, value) %>% as.data.frame()
   
   df.tech.curtailed.zone <- df.tech.curtailed %>% group_by(Zone, type) %>%
     dplyr::summarise(value=sum(value, na.rm=TRUE)) %>% mutate(year=y) %>%
-    select(year, Zone, type, value) %>% as.data.frame()
+    dplyr::select(year, Zone, type, value) %>% as.data.frame()
   
   tech.renew <- rgdx(gdxName = paste0(path.gdx, '/gdxOutYear', y, '.gdx'), 
                      requestList = list(name="vNrenew", 
                                         form='full',field=c('l')))
   
-  df.tech.renew <- data.frame(zone=tech.renew$uels$z,
-                              tech.renew$val, row.names = NULL) %>%
-    mutate(ZoneNum=as.numeric(as.factor(zone))) %>%
-    select(-zone) %>%
-    gather(key='type', value='value', -ZoneNum) %>%
-    left_join(serc.zones, by='ZoneNum') %>%
-    arrange(ZoneNum) %>% mutate(type=gsub('\\.\\d\\d', '', type)) %>% 
-    group_by(Zone, type) %>%
-    dplyr::summarise(value=sum(value, na.rm=TRUE)) %>% mutate(year=y) %>%
-    select(year, Zone, type, value) %>% ungroup() %>% as.data.frame()
+  df.tech.renew <- reshape2::melt(tech.renew$val) %>%
+    dplyr::rename(zone=z, type=techrenew) %>% 
+    mutate(ZoneNum=as.numeric(as.factor(zone))) %>% select(-zone) %>%
+    mutate(type=ifelse(grepl('Wind', type), 'Wind', 'Solar PV')) %>%
+    group_by(ZoneNum, type) %>% dplyr::summarize(value=sum(value)) %>% 
+    ungroup() %>% left_join(serc.zones, by='ZoneNum') %>%
+    arrange(ZoneNum)
+
+  if(nrow(df.tech.renew) > 0) {
+    df.tech.renew <- df.tech.renew %>% mutate(year=y)
+  } else {
+    df.tech.renew <- df.tech.renew %>% mutate(year=as.integer())
+  }
+  df.tech.renew <- df.tech.renew %>%  
+    dplyr::select(year, Zone, type, value) %>% as.data.frame()
   
   df.complete.decision <- rbind(df.tech.curtailed.zone, df.tech.not.curtailed, 
                                 df.tech.renew)
@@ -442,7 +458,7 @@ plot.new.additions <- function(path.output.ce,
                                            'RCP 8.5'=sprintf('%s/rcp85/',
                                                              path.output.ce)),
                                yearIni=2020, yearEnd=2050,
-                               path.out.plot=path.output.ce) {
+                               path.file=paste0(path.output.ce, "/newadditions.pdf")) {
   
   igdx(gamsSysDir)
   df.new.techs <- read.csv(paste0(path.rcps[1],
@@ -468,14 +484,14 @@ plot.new.additions <- function(path.output.ce,
                                      stringsAsFactors = FALSE)
   
   for (rcp in path.rcps) {
-    serc.zones <- read.csv(paste0(rcp,'zoneNamesToNumbers.csv'))
+    #serc.zones <- read.csv(paste0(rcp,'zoneNamesToNumbers.csv'))
     case.name <- names(which(path.rcps == rcp))
     
     for (y in seq(yearIni, yearEnd, by=5)) {
       
-      path.gdx <- paste0(rcp, '/gdxOutYear', y, '.gdx')
+      #path.gdx <- paste0(rcp, '/gdxOutYear', y, '.gdx')
       
-      df <- get.new.additions(y, path.gdx)
+      df <- get.new.additions(y, rcp)
 
       df.complete.decision <- rbind(df.complete.decision,
                                     data.frame(case=case.name, df, 
@@ -496,8 +512,9 @@ plot.new.additions <- function(path.output.ce,
     mutate(Type = ifelse(Type == 'Solar PV', 'Solar', Type)) %>%
     mutate(Type=factor(Type, levels=rev(plant.types)))
   
-  list.cases <- names(path.rcps)
+  list.cases <- names(path.rcps) 
   ncases <- length(list.cases)
+  
   if (ncases == 2) {
     width <- 1.5
     offset <- data.frame(case=list.cases,
@@ -510,64 +527,81 @@ plot.new.additions <- function(path.output.ce,
   
   df.complete.decision.3 <- df.complete.decision.2 %>%
     left_join(offset, by='case') %>% mutate(year=year+off) %>%
-    select(-off)
+    select(-off) %>%
+    # remove CO2 from name of case (just for this plot --  to save space)
+    mutate(case=trimws(gsub('CO2', '', case))) %>%
+    mutate(case=ifelse(case=='Reference', 'Ref.', case))
+    
   
   g <- ggplot() + geom_col(data=df.complete.decision.3, 
                            aes(x=year, y=total.cap/1e3, fill=Type), 
                            width=width-0.1)
+  
+  list.cases <- names(path.rcps) %>%
+    gsub(pattern='CO2', replacement='', x=.) %>%
+    trimws() %>%
+    gsub(pattern='Reference', replacement='Ref.', x=.)
+    
+  breaks <- sort(unique(df.complete.decision.3$year))
+  labels.up <- rep(list.cases, 7)
   
   g <- g + scale_fill_manual(limits = rev(plant.types), 
                              values = col.pallete) +
     theme_bw() + ylab('New Capacity (GW)') +
     guides(fill=guide_legend(title=NULL)) +
     theme_bw() +
+    scale_x_continuous(sec.axis = dup_axis(breaks = breaks,
+                                           labels = labels.up)) +
     theme(plot.margin = unit(c(0, 0.5, 0.5, 0.5), "lines"),
           axis.title.x = element_blank(),
-          panel.spacing = unit(0.1, "lines")) +
+          panel.spacing = unit(0.1, "lines"),
+          axis.text.x.top = element_text(angle = 90, vjust=0.5, hjust=0)) +
     facet_grid(Zone ~ ., scales = 'free_y')
 
-  g_param <- ggplot_build(g)
-  x.range <- g_param$layout$panel_params[[1]]$x.range
-  year.values <- unique(df.complete.decision.3$year)
-  
-  df.top.axis <- df.complete.decision.3 %>%
-    mutate(xpos=year) %>%
-    select(case, xpos) %>%
-    distinct() %>%
-    mutate(case=ifelse(case=='Reference', 'Ref.', case))
-    
-  g.top.axis <- ggplot(df.top.axis) + 
-    geom_text(aes(x=xpos, y=0, label=case), 
-              angle=90, hjust=0, vjust=0.5, size=3.3, 
-              nudge_y = 0.2) +
-    coord_cartesian(xlim = x.range, ylim = c(0, 1), expand = FALSE) +
-    scale_x_continuous(breaks = df.top.axis$xpos) +
-    theme(plot.margin = unit(c(0, 0, 0.15, 0), "cm"),
-          axis.title=element_blank(),
-          axis.text = element_blank(),
-          axis.ticks.y = element_blank(),
-          axis.ticks.length = unit(-0.25, "cm"),
-          axis.line.x = element_line(), 
-          panel.grid = element_blank(),
-          panel.background = element_rect(fill='white')
-#          panel.border = element_rect(fill = NA)
-    )
-  
-  lay <- rbind(c(rep(1,11), rep(2,163), rep(3, 26)),
-               c(rep(4,200)))
-  # 
-  gg <- arrangeGrob(rectGrob(gp=gpar(fill="white", lty='blank')),
-                    g.top.axis,
-                    #rectGrob(gp=gpar(fill="white", lty='blank')),
-                    rectGrob(gp=gpar(fill="white", lty='blank')),
-                    g, layout_matrix=lay,
-                    heights=c(2,20),
-                    padding=unit(0, units='mm'))
+#   g_param <- ggplot_build(g)
+#   x.range <- g_param$layout$panel_params[[1]]$x.range
+#   year.values <- unique(df.complete.decision.3$year)
+#   
+#   df.top.axis <- df.complete.decision.3 %>%
+#     mutate(xpos=year) %>%
+#     select(case, xpos) %>%
+#     distinct() %>%
+#     # remove CO2 from name of case (just for this plot --  to save space)
+#     mutate(case=trimws(gsub('CO2', '', case))) %>%
+#     mutate(case=ifelse(case=='Reference', 'Ref.', case))
+#     
+#   g.top.axis <- ggplot(df.top.axis) + 
+#     geom_text(aes(x=xpos, y=0, label=case), 
+#               angle=90, hjust=0, vjust=0.5, size=3.3, 
+#               nudge_y = 0.2) +
+#     coord_cartesian(xlim = x.range, ylim = c(0, 1), expand = FALSE) +
+#     scale_x_continuous(breaks = df.top.axis$xpos) +
+#     theme(plot.margin = unit(c(0, 0, 0.15, 0), "cm"),
+#           axis.title=element_blank(),
+#           axis.text = element_blank(),
+#           axis.ticks.y = element_blank(),
+#           axis.ticks.length = unit(-0.25, "cm"),
+#           axis.line.x = element_line(), 
+#           panel.grid = element_blank(),
+#           panel.background = element_rect(fill='white')
+# #          panel.border = element_rect(fill = NA)
+#     )
+#   
+#   lay <- rbind(c(rep(1,19), rep(2,329), rep(3, 52)),
+#                c(rep(4,400)))
+#   # 
+#   gg <- arrangeGrob(rectGrob(gp=gpar(fill="white", lty='blank')),
+#                     g.top.axis,
+#                     #rectGrob(gp=gpar(fill="white", lty='blank')),
+#                     rectGrob(gp=gpar(fill="white", lty='blank')),
+#                     g, layout_matrix=lay,
+#                     heights=c(2,20),
+#                     padding=unit(0, units='mm'))
   
   # plot new additions by plant type
-  pdf(paste0(path.out.plot,"/newadditions.pdf"), width=7*16/9, height=7)
-  #print(g)
-  grid.draw(gg)
+  pdf(path.file, width=7*16/9, height=7)
+  print(g)
+  #grid.draw(gg)
   dev.off()
   
   return(df.complete.decision.2)
@@ -1096,42 +1130,51 @@ check.available.energy <- function(y, path.gdx) {
                     requestList = list(name='vPtechcurtailed', field='l', compress=FALSE,
                                        form = 'full'))
   gtechcurt  <- convert.gdx.result.df(gtechcurt)
-  if (!is.null(gtechcurt)){
+  if (!is.null(gtechcurt) && nrow(gtechcurt) > 0){
     gtechcurt <- gtechcurt %>% 
       group_by(g, h) %>% summarise(value = sum(value)) %>%
       right_join(df.hours.season, by=c('g','h')) %>% 
       mutate(type=c('thermal.new')) %>%
-      select(g, type, h, value, season, h2, date, hour.in.season)
+      select(g, type, h, value, season, h2, date, hour.in.season) %>%
+      ungroup()
   }
   
   gtechnotcurt <- rgdx(gdxName = path.gdx, 
                        requestList = list(name='vPtechnotcurtailed', field='l', 
                                           compress=FALSE, form = 'full'))
   gtechnotcurt  <- convert.gdx.result.df(gtechnotcurt)
-  if (!is.null(gtechnotcurt)){
+  if (!is.null(gtechnotcurt) && nrow(gtechnotcurt) > 0){
     gtechnotcurt <- gtechnotcurt %>% 
       group_by(g, h) %>% summarise(value = sum(value)) %>%
       right_join(df.hours.season, by=c('g','h')) %>% 
       mutate(type=c('thermal.new')) %>%
-      select(g, type, h, value, season, h2, date, hour.in.season)  
+      select(g, type, h, value, season, h2, date, hour.in.season) %>%
+      ungroup()
   }
   
   gtechrenew <- rgdx(gdxName = path.gdx, 
                      requestList = list(name='vPtechrenew',field='l', 
                                         compress=FALSE, form = 'full'))
   gtechrenew  <- convert.gdx.result.df(gtechrenew)
-  if (!is.null(gtechrenew)){
+  if (!is.null(gtechrenew) && nrow(gtechrenew) > 0){
     gtechrenew <- gtechrenew %>% 
       mutate(techrenew = as.character(techrenew)) %>%
       mutate(techrenew = ifelse(grepl('Solar PV\\+\\d\\d',gtechrenew$techrenew, perl = TRUE), 
                                 'solar.new', 'wind.new')) %>%
       group_by(g, techrenew, h) %>% summarise(value = sum(value)) %>%
       right_join(df.hours.season, by=c('g','h')) %>% ungroup() %>%
-      dplyr::select(g, type=techrenew, h, value, season, h2, date, hour.in.season)
+      dplyr::select(g, type=techrenew, h, value, season, h2, date, hour.in.season) %>%
+      ungroup()
   }
   
-  df.total <- rbind.data.frame(gexist, gtechcurt, gtechrenew, stringsAsFactors = FALSE)
-  if (!is.null(gtechnotcurt)) {
+  df.total <- gexist
+  if (!is.null(gtechcurt) && nrow(gtechcurt) > 0) {
+    df.total <- rbind(df.total, gtechcurt, stringsAsFactors = FALSE)
+  }
+  if (!is.null(gtechrenew) && nrow(gtechrenew) > 0) {
+    df.total <- rbind(df.total, gtechrenew, stringsAsFactors = FALSE)
+  }
+  if (!is.null(gtechnotcurt) && nrow(gtechnotcurt) > 0) {
     df.total <- rbind(df.total, gtechnotcurt, stringsAsFactors = FALSE)
   }
   
@@ -1150,10 +1193,6 @@ check.available.energy <- function(y, path.gdx) {
     guides(fill=guide_legend(title=NULL), 
            linetype=guide_legend(title=NULL)) +
     facet_grid(cols = vars(season), rows=vars(g), scales = 'free_x')
-  
-  
-  
-  
   
   # join all dfs 
   gtotal <- pDemand %>% select(g, date, value) %>% 
@@ -1192,47 +1231,6 @@ check.available.energy <- function(y, path.gdx) {
               .funs={function(x){ifelse(is.na(x), 0, x)}}) %>%
     mutate(net=value.exist + value.tech.curt + value.tech.renew - value - value.charge)
   
-  # check supply demand equations
-  # meetdemand <- rgdx(gdxName = path.gdx, requestList = list(name='meetdemand', field='l'))
-  rgdx.param(gdxName = path.gdx, symName = 'pLinesources')
-  
-  
-  x <- gdxInfo(gdxName = paste0(path.gdx), dump=FALSE, returnList=TRUE, returnDF=FALSE)
-  
-  # get capacity from all existing generators
-  pCapacExist <- rgdx.param(gdxName = paste0(path.gdx), symName = "pCapac")
-  
-  # get max energy from existing solar generators
-  pMaxgensolar <- rgdx.param(gdxName = path.gdx, symName = "pMaxgensolar") %>%
-    group_by(g, h) %>% summarise(value = sum(pMaxgensolar))
-  pCapacSolar <- pCapacExist %>% filter(egu %in% ids.solar) %>% group_by(h) %>% summarise(value=sum(pCapac))
-
-  pMaxgensolar <- pMaxgensolar %>% mutate(capac = mean(pCapacSolar$value),
-                                          cf = value/capac) %>%
-    mutate(h2 = as.numeric(gsub('h', '', as.character(h)))) %>%
-    mutate(hour.of.day=hour(ymd("20200101") + hours(h2)))
-  
-  # get max energy from existing wind generators
-  pMaxgenwind <- rgdx.param(gdxName = paste0(path.gdx), symName = "pMaxgenwind") %>%
-    group_by(g, h) %>% summarise(value = sum(pMaxgenwind))
-    
-  ids.non.thermal <- c(ids.wind, ids.solar, ids.hydro, ids.pumped)
-  
-  
-  # remove existing solar, wind, hydro, pumped hydro from data set
-  capac.thermal <- rgdx.param(gdxName = paste0(path.gdx), symName = "pCapac") %>%
-    mutate(egu=as.character(egu)) %>% filter(!(egu %in% ids.non.thermal)) %>% 
-    group_by(g, h) %>% summarise(value = sum(pCapac))
-  
-  ggplot(capac.thermal) + geom_line(aes(x=h, y=value, colour=g, group=g))
-  
-  
-  x <- pMaxgensolar %>% group_by(hour.of.day) %>% 
-    summarise(cf.mean=mean(cf), lb=quantile(cf, 0.025), ub=quantile(cf, 0.975),
-              sd=sd(cf))
-  
-  ggplot(x) + geom_line(aes(x=hour.of.day, y=cf.mean)) + geom_errorbar(aes(x=hour.of.day, ymin=lb, ymax=ub))
-  ggplot(x) + geom_line(aes(x=hour.of.day, y=cf.mean)) + geom_errorbar(aes(x=hour.of.day, ymin=cf.mean - sd*1.96, ymax=cf.mean + sd*1.96))
   
 }
 
@@ -1447,6 +1445,48 @@ compute.annual.emmission <- function(y, path.gdx) {
   ce.generation %>% group_by(g) %>% summarize(annual.emission=sum(emission)) %>% select(annual.emission) %>% unlist() %>% mean()
   
 }
+
+# # check supply demand equations
+# # meetdemand <- rgdx(gdxName = path.gdx, requestList = list(name='meetdemand', field='l'))
+# rgdx.param(gdxName = path.gdx, symName = 'pLinesources')
+# 
+# 
+# x <- gdxInfo(gdxName = paste0(path.gdx), dump=FALSE, returnList=TRUE, returnDF=FALSE)
+# 
+# # get capacity from all existing generators
+# pCapacExist <- rgdx.param(gdxName = paste0(path.gdx), symName = "pCapac")
+# 
+# # get max energy from existing solar generators
+# pMaxgensolar <- rgdx.param(gdxName = path.gdx, symName = "pMaxgensolar") %>%
+#   group_by(g, h) %>% summarise(value = sum(pMaxgensolar))
+# pCapacSolar <- pCapacExist %>% filter(egu %in% ids.solar) %>% group_by(h) %>% summarise(value=sum(pCapac))
+# 
+# pMaxgensolar <- pMaxgensolar %>% mutate(capac = mean(pCapacSolar$value),
+#                                         cf = value/capac) %>%
+#   mutate(h2 = as.numeric(gsub('h', '', as.character(h)))) %>%
+#   mutate(hour.of.day=hour(ymd("20200101") + hours(h2)))
+# 
+# # get max energy from existing wind generators
+# pMaxgenwind <- rgdx.param(gdxName = paste0(path.gdx), symName = "pMaxgenwind") %>%
+#   group_by(g, h) %>% summarise(value = sum(pMaxgenwind))
+# 
+# ids.non.thermal <- c(ids.wind, ids.solar, ids.hydro, ids.pumped)
+# 
+# 
+# # remove existing solar, wind, hydro, pumped hydro from data set
+# capac.thermal <- rgdx.param(gdxName = paste0(path.gdx), symName = "pCapac") %>%
+#   mutate(egu=as.character(egu)) %>% filter(!(egu %in% ids.non.thermal)) %>% 
+#   group_by(g, h) %>% summarise(value = sum(pCapac))
+# 
+# ggplot(capac.thermal) + geom_line(aes(x=h, y=value, colour=g, group=g))
+# 
+# 
+# x <- pMaxgensolar %>% group_by(hour.of.day) %>% 
+#   summarise(cf.mean=mean(cf), lb=quantile(cf, 0.025), ub=quantile(cf, 0.975),
+#             sd=sd(cf))
+# 
+# ggplot(x) + geom_line(aes(x=hour.of.day, y=cf.mean)) + geom_errorbar(aes(x=hour.of.day, ymin=lb, ymax=ub))
+# ggplot(x) + geom_line(aes(x=hour.of.day, y=cf.mean)) + geom_errorbar(aes(x=hour.of.day, ymin=cf.mean - sd*1.96, ymax=cf.mean + sd*1.96))
 
 #
 # lifetimes <- read.csv(paste0(path.data.ce, '/NewPlantData/',

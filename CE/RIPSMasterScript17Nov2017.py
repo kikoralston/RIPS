@@ -338,30 +338,37 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
 
         print('Existing Wind: ')
         windCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=50, capacInCurrFleet=windCapacInZone,
-                                     type='wind', existing=True)
+                                     type='wind', existing=True)[0]
 
         print('Existing Solar: ')
         solarCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=50, capacInCurrFleet=solarCapacInZone,
-                                      type='solar', existing=True)
+                                      type='solar', existing=True)[0]
+
+        # For EXISTING renewables, store GENERATION (MWh) for each zone in dictionaries
+        # getRenewableCFData() returns data frames, convert to 1-d list
+        zonalHourlyWindGen[zone], zonalHourlySolarGen[zone] = windCFs['gen'].tolist(), solarCFs['gen'].tolist()
 
         print('Got Existing RE CFs.')
 
         print('New Wind: ')
         newWindCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=50, capacInCurrFleet=windCapacInZone,
-                                        type='wind', existing=False)
+                                        type='wind', existing=False)[0]
 
         print('New Solar: ')
         newSolarCFs = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=50, capacInCurrFleet=solarCapacInZone,
-                                         type='solar', existing=False)
+                                         type='solar', existing=False)[0]
+
+        # For NEW renewables, store 1d list with CFs for each zone in dictionaries
+        # getRenewableCFData() returns data frames, convert to dictionaries with segment keys and 1-d list for values
+        zonalNewWindCFs[zone] = {}
+        for s in newWindCFs['segment'].unique():
+            zonalNewWindCFs[zone][s] = list(newWindCFs[newWindCFs['segment'] == s]['cf'].values)
+
+        zonalNewSolarCFs[zone] = {}
+        for s in newSolarCFs['segment'].unique():
+            zonalNewSolarCFs[zone][s] = list(newSolarCFs[newSolarCFs['segment'] == s]['cf'].values)
 
         print('Got new RE CFs.')
-
-        # For EXISTING renewables, store GENERATION (MWh) for each zone in dictionaries
-        zonalHourlyWindGen[zone], zonalHourlySolarGen[zone] = windCFs, solarCFs
-
-        # For NEW renewables, store CFs for each zone in dictionaries
-        zonalNewWindCFs[zone], zonalNewSolarCFs[zone] = newWindCFs, newSolarCFs
-
 
     zonalNetDemand = dict()
     for gcm in curtailparam.listgcms:
@@ -895,66 +902,74 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
                          reserveparam.rampRateToFlexReserveScalar, reserveparam.rampRateToContReserveScalar,
                          copy.deepcopy(reserveparam.regUpCostCoeffs))
 
-    resultsDir = os.path.join(resultsDir, 'UC')
-    if not os.path.exists(resultsDir): os.makedirs(resultsDir)
-    print('Entering UC loop for year ' + str(ucYear))
+    # *******************************************************
+    # ------- FOR NOW JUST USE A SINGLE GCM ----------------
+    # *******************************************************
+    gcm = curtailparam.listgcms[0]
+
+    resultsDir = os.path.join(resultsDir, 'UC', gcm)
+
+    if not os.path.exists(resultsDir):
+        os.makedirs(resultsDir)
+
+    print('Entering UC loop for year {0:4d} with gcm {1}'.format(ucYear, gcm))
 
     fleetUC = copy.deepcopy(genFleet)
 
     (startWindCapacForCFs, startSolarCapacForCFs) = (0, 0)
     zoneCol = fleetUC[0].index('Region Name')
     zonalHourlyWindGen, zonalHourlySolarGen = dict(), dict()
+    zonalHourlyDfWind, zonalHourlyDfSolar = dict(), dict()
+    zonalSubhourlyDfWind, zonalSubhourlyDfSolar = dict(), dict()
 
     print('Computing CFs for Renewables...')
     for zone in genparam.ipmZones:
         print('Zone ', zone)
 
+        zonalGenFleet = [genFleet[0]] + [row for row in genFleet if row[zoneCol] == zone]
+
+        capacCol = zonalGenFleet[0].index('Capacity (MW)')
+        plantTypeCol = zonalGenFleet[0].index('PlantType')
+
+        windCapacInZone = sum([float(row[capacCol]) for row in zonalGenFleet[1:] if row[plantTypeCol] == 'Wind'])
+        solarCapacInZone = sum([float(row[capacCol]) for row in zonalGenFleet[1:] if row[plantTypeCol] == 'Solar PV'])
+
+        print('Existing Wind: ')
+        windCfsDtHr, windCfsDtSubhr = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=50,
+                                                         capacInCurrFleet=windCapacInZone, type='wind', existing=True,
+                                                         subHour=True)
+        print('Existing Solar: ')
+        solarCfsDtHr, solarCfsDtSubhr = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=50,
+                                                           capacInCurrFleet=solarCapacInZone, type='solar',
+                                                           existing=True, subHour=True)
+
+        # get 1-d list with hourly generation of existing generators
+        windCFs, solarCFs = windCfsDtHr['gen'].tolist(), solarCfsDtHr['gen'].tolist()
+
+        # convert pandas DFs to 2-d lists with necessary columns datetime and gen
+        windCfsDtHr = [['datetime', 'totalGen(MWh)']] + windCfsDtHr[['datetime', 'gen']].as_matrix().tolist()
+        if windCfsDtSubhr is not None:
+            windCfsDtSubhr = [['datetime', 'totalGen(MWh)']] + windCfsDtSubhr[['datetime', 'gen']].as_matrix().tolist()
+
+        solarCfsDtHr = [['datetime', 'totalGen(MWh)']] + solarCfsDtHr[['datetime', 'gen']].as_matrix().tolist()
+        if solarCfsDtSubhr is not None:
+            solarCfsDtSubhr = [['datetime', 'totalGen(MWh)']] + solarCfsDtSubhr[['datetime', 'gen']].as_matrix().tolist()
+
         start_time = time.time()
-        zonalGenFleet = [fleetUC[0]] + [row for row in fleetUC if row[zoneCol] == zone]
 
-        (windCFs, windCfsDtHr, windCfsDtSubhr, windIdAndCapac, solarCFs, solarCfsDtHr, solarCfsDtSubhr,
-         solarFilenameAndCapac) = getRenewableCFs(zonalGenFleet, startWindCapacForCFs, startSolarCapacForCFs,
-                                                  genparam.tzAnalysis, genparam.dataRoot, genparam.windGenDataYr,
-                                                  zone, genparam.fipsToZones, genparam.fipsToPolys, subHour=True,
-                                                  ncores_py=genparam.ncores_py)
+        write2dListToCSV(windCfsDtHr, os.path.join(resultsDir, 'windGenDtUC' + zone + str(ucYear) + '.csv'))
+        write2dListToCSV(windCfsDtSubhr,
+                         os.path.join(resultsDir, 'windGenDtSubhrUC' + zone + str(ucYear) + '.csv'))
 
-        print('Got RE CFs. Elapsed time: ' + str_elapsedtime(start_time))
+        write2dListToCSV(solarCfsDtHr, os.path.join(resultsDir, 'solarGenDtUC' + zone + str(ucYear) + '.csv'))
+        write2dListToCSV(solarCfsDtSubhr,
+                         os.path.join(resultsDir, 'solarGenSubhrDtUC' + zone + str(ucYear) + '.csv'))
 
-        start_time = time.time()
-        if windCFs is not None:
-            write2dListToCSV(windCFs, os.path.join(resultsDir, 'windCFsFullYrCE' + zone + str(ucYear) + '.csv'))
-            write2dListToCSV(windCfsDtHr, os.path.join(resultsDir, 'windCFsDtFullYrCE' + zone + str(ucYear) + '.csv'))
-            write2dListToCSV(windCfsDtSubhr,
-                             os.path.join(resultsDir, 'windCFsDtSubhrFullYrCE' + zone + str(ucYear) + '.csv'))
-            write2dListToCSV(windIdAndCapac, os.path.join(resultsDir, 'windIdAndCapacCE' + zone + str(ucYear) + '.csv'))
-        if solarCFs is not None:
-            write2dListToCSV(solarCFs, os.path.join(resultsDir, 'solarCFsFullYrCE' + zone + str(ucYear) + '.csv'))
-            write2dListToCSV(solarCfsDtHr, os.path.join(resultsDir, 'solarCFsDtFullYrCE' + zone + str(ucYear) + '.csv'))
-            write2dListToCSV(solarCfsDtSubhr,
-                             os.path.join(resultsDir, 'solarCFsDtSubhrFullYrCE' + zone + str(ucYear) + '.csv'))
-            write2dListToCSV(solarFilenameAndCapac,
-                             os.path.join(resultsDir, 'solarIdAndCapacCE' + zone + str(ucYear) + '.csv'))
+        # allocate wind/solar generation
+        zonalHourlyWindGen[zone], zonalHourlySolarGen[zone] = windCFs, solarCFs
 
-        # get number of hours in year (assume that is the same over all gcms)
-        gcm = curtailparam.listgcms[0]
-        nhours_year = len(zonalDemandProfile[gcm][zone])
-
-        zonalHourlyWindGen[zone], zonalHourlySolarGen[zone] = getAggregateSolarAndWind(windCFs, windIdAndCapac,
-                                                                                       solarCFs, solarFilenameAndCapac,
-                                                                                       nhours_year)
-
-    #    (windCFs, windCfsDtHr, windCfsDtSubhr, windIdAndCapac, solarCFs, solarCfsDtHr, solarCfsDtSubhr,
-    #     solarFilenameAndCapac) = getRenewableCFs(fleetUC, startWindCapacForCFs, startSolarCapacForCFs, tzAnalysis, dataRoot,
-    #                                              windGenDataYr, z)
-    #     write2dListToCSV([zonalDemandProfile], os.path.join(resultsDir, 'demandUC' + str(ucYear) + '.csv'))
-    #     write2dListToCSV(windCFs, os.path.join(resultsDir, 'windCFsUC' + str(ucYear) + '.csv'))
-    #     write2dListToCSV(windCfsDtHr, os.path.join(resultsDir, 'windCFsDtUC' + str(ucYear) + '.csv'))
-    #     write2dListToCSV(windCfsDtSubhr, os.path.join(resultsDir, 'windCFsDtSubhrUC' + str(ucYear) + '.csv'))
-    #     write2dListToCSV(windIdAndCapac, os.path.join(resultsDir, 'windIdAndCapacUC' + str(ucYear) + '.csv'))
-    #     write2dListToCSV(solarCFs, os.path.join(resultsDir, 'solarCFsUC' + str(ucYear) + '.csv'))
-    #     write2dListToCSV(solarCfsDtHr, os.path.join(resultsDir, 'solarCFsDtUC' + str(ucYear) + '.csv'))
-    #     write2dListToCSV(solarCfsDtSubhr, os.path.join(resultsDir, 'solarCFsDtSubhrUC' + str(ucYear) + '.csv'))
-    #     write2dListToCSV(solarFilenameAndCapac, os.path.join(resultsDir, 'solarIdAndCapacUC' + str(ucYear) + '.csv'))
+        zonalHourlyDfWind[zone], zonalHourlyDfSolar[zone] = windCfsDtHr, solarCfsDtHr
+        zonalSubhourlyDfWind[zone], zonalSubhourlyDfSolar[zone] = windCfsDtSubhr, solarCfsDtSubhr
 
     (contResHourly, regUpHourly, regDownHourly, flexResHourly, allRes, regUpWind, regDownWind, regUpSolar,
      regDownSolar, flexWind, flexSolar) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(),
@@ -969,9 +984,10 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
         for zone in genparam.ipmZones:
             (zonalcontResHourly, zonalregUpHourly, zonalregDownHourly, zonalflexResHourly, zonalallRes, zonalregUpWind,
              zonalregDownWind, zonalregUpSolar, zonalregDownSolar, zonalflexWind,
-             zonalflexSolar) = calcWWSISReserves(windCfsDtHr, windCfsDtSubhr, windIdAndCapac, solarCfsDtHr,
-                                                 solarCfsDtSubhr, solarFilenameAndCapac, zonalDemandProfile[gcm][zone],
-                                                 regLoadFrac, contLoadFrac, regErrorPercentile, flexErrorPercentile)
+             zonalflexSolar) = calcWWSISReserves(zonalHourlyDfWind[zone], zonalSubhourlyDfWind[zone],
+                                                 zonalHourlyDfSolar[zone], zonalSubhourlyDfSolar[zone],
+                                                 zonalDemandProfile[gcm][zone], regLoadFrac, contLoadFrac,
+                                                 regErrorPercentile, flexErrorPercentile)
             auxcontResHourly[zone] = zonalcontResHourly
             auxregUpHourly[zone] = zonalregUpHourly
             auxregDownHourly[zone] = zonalregDownHourly
@@ -1004,11 +1020,6 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     writeDictToCSV(regDownHourly, os.path.join(resultsDir, 'reservesRegDownUC' + str(ucYear) + '.csv'))
     writeDictToCSV(flexResHourly, os.path.join(resultsDir, 'reservesFlexUC' + str(ucYear) + '.csv'))
 
-    # (hourlyWindGen, hourlySolarGen) = getAggregateSolarAndWind(windCFs, ewdIdAndCapac, solarCFs, solarFilenameAndCapac)
-    # netDemand = getNetDemand(zonalDemandProfile, hourlyWindGen, hourlySolarGen)
-    # write2dListToCSV([[val] for val in hourlyWindGen], os.path.join(resultsDir, 'windGenUC' + str(ucYear) + '.csv'))
-    # write2dListToCSV([[val] for val in hourlySolarGen], os.path.join(resultsDir, 'solarGenUC' + str(ucYear) + '.csv'))
-
     updateFuelPricesExistingGens(fleetUC, ucYear, fuelPricesTimeSeries)
     combineWindAndSolarToSinglePlant(fleetUC, genparam.ipmZones, genparam.dataRoot)
 
@@ -1040,11 +1051,6 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     (sysResults, resultToRow, hourToColSys) = setupHourlySystemResults(daysForUC)
 
     msAndSs = [['day', 'ms', 'ss']]  # store modelstat & solvestat from GAMS
-
-    # *******************************************************
-    # ------- FOR NOW JUST USE A SINGLE GCM ----------------
-    # *******************************************************
-    gcm = curtailparam.listgcms[0]
 
     hydroPotentials = importHydroPotentialGen(ucYear, genparam, gcm)
 
