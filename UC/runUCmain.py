@@ -25,7 +25,7 @@ def list_all_gcms(rcp=None):
 
     return listgcms_total
 
-
+@profile
 def runUCgcm(gcm, rcp, cwd=os.getcwd(), yearUC=2050):
 
     print('Loading parameters and setting up initial data')
@@ -45,6 +45,12 @@ def runUCgcm(gcm, rcp, cwd=os.getcwd(), yearUC=2050):
     genparam.runCE = False
     genparam.runFirstUCYear = True
     genparam.runUC = True
+
+    # BASE LINE CASE
+    if genparam.referenceCase:
+        genparam.incCurtailments = False
+        genparam.incRegs = False
+        genparam.selectCurtailDays = False
 
     genparam.startYear = yearUC
     genparam.endYear = yearUC+1
@@ -72,3 +78,7 @@ def runUCgcm(gcm, rcp, cwd=os.getcwd(), yearUC=2050):
     print()
 
     masterFunction(genparam, reserveparam, curtailparam)
+
+
+if __name__ == "__main__":
+    runUCgcm('bcc-csm1-1_rcp45', 'rcp45')
