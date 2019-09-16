@@ -1,10 +1,16 @@
 import os, sys
+import multiprocessing as mp
 from memory_profiler import profile
 from RIPSMasterScript17Nov2017 import *
 from Parameters import *
-import multiprocessing as mp
 
-sys.stdout.flush()
+#sys.stdout.flush()
+
+
+def wrapper(arg_list):
+    x = runUCsinglegcm(arg_list[0], arg_list[1], arg_list[2], arg_list[3])
+    
+    return x
 
 
 def list_all_gcms(rcp=None):
@@ -25,8 +31,22 @@ def list_all_gcms(rcp=None):
 
     return listgcms_total
 
-@profile
-def runUCgcm(gcm, rcp, cwd=os.getcwd(), yearUC=2050):
+
+def runUCsinglegcm(gcmIdx, pathresultroot, rcp, pathCEtoUC, cwd=os.getcwd(), yearUC=2050):
+
+    resultsDir = os.path.join(pathresultroot, 'gcm{0:02d}'.format(gcmIdx))
+
+    # create pathresult for this UC fun with this GCM
+    if not os.path.exists(resultsDir):
+        os.makedirs(resultsDir)
+
+    # redirect stdout to file
+    #original_stdout = sys.stdout
+    #sys.stdout = open(os.path.join(resultsDir, 'stdout.txt'), 'a')
+
+    # copy CE results to results folder for this gcm (if not already copied)
+    if not os.path.exists(os.path.join(resultsDir, 'CEtoUC')):
+        shutil.copytree(pathCEtoUC, os.path.join(resultsDir, 'CEtoUC'), symlinks=False, ignore=None)
 
     print('Loading parameters and setting up initial data')
     # Load parameters
@@ -39,12 +59,18 @@ def runUCgcm(gcm, rcp, cwd=os.getcwd(), yearUC=2050):
     curtailparam = Curtailmentparameters.Curtailmentparameters()
     curtailparam.load(fname=os.path.join(cwd, 'curtailmentparameters.txt'))
 
-    curtailparam.listgcms = [gcm]
     genparam.rcp = rcp
 
     genparam.runCE = False
     genparam.runFirstUCYear = True
     genparam.runUC = True
+    
+    genparam.ncores_py = 1
+    genparam.gams = 1
+
+    genparam.gcmranking = [gcmIdx]
+
+    genparam.resultsDir = resultsDir
 
     # BASE LINE CASE
     if genparam.referenceCase:
@@ -53,24 +79,7 @@ def runUCgcm(gcm, rcp, cwd=os.getcwd(), yearUC=2050):
         genparam.selectCurtailDays = False
 
     genparam.startYear = yearUC
-    genparam.endYear = yearUC+1
-
-    if not os.path.exists(genparam.resultsDir):
-        os.mkdir(genparam.resultsDir)
-
-    print()
-    print('------------------------------------------')
-
-    print('folder out: {}'.format(genparam.resultsDir))
-    print('list gcms: {}'.format(curtailparam.listgcms))
-    print('referenceCase: {}'.format(genparam.referenceCase))
-    print('incCurtailments: {}'.format(genparam.incCurtailments))
-    print('selectCurtailDays: {}'.format(genparam.selectCurtailDays))
-    print('incRegs: {}'.format(genparam.incRegs))
-    print('CO2 Cap Scenario: {}'.format(genparam.co2CapScenario))
-    print('RCP: {}'.format(genparam.rcp))
-
-    print('------------------------------------------')
+    genparam.endYear = yearUC + 1
 
     print()
     print('Parameters loaded! Calling CE masterFunction...')
@@ -78,7 +87,36 @@ def runUCgcm(gcm, rcp, cwd=os.getcwd(), yearUC=2050):
     print()
 
     masterFunction(genparam, reserveparam, curtailparam)
+    
+    #sys.stdout = original_stdout
+
+    return 0
 
 
 if __name__ == "__main__":
-    runUCgcm('bcc-csm1-1_rcp45', 'rcp45')
+
+    # runUCsinglegcm(11, '', 'rcp45')
+        
+    # first argument is range of gcms rankings. Format 'rankstart-rankend'. 'rankend' is included
+    start, end = sys.argv[1].split('-')
+    
+    gcmIdxlist = list(range(int(start), int(end)+1))
+    rcp = sys.argv[2]
+    pathresultroot = sys.argv[3]
+    pathCEtoUC = sys.argv[4]
+    #ncores = int(sys.argv[5])
+
+    print("----------------------------------------------")
+    print(gcmIdxlist)
+    print(rcp)
+    print(pathresultroot)
+    print(pathCEtoUC)
+    #print(ncores)
+
+    ncores = len(gcmIdxlist) 
+    
+    args_list = [[gcmIdx, pathresultroot, rcp, pathCEtoUC] for gcmIdx in gcmIdxlist]
+
+    with mp.Pool(processes=ncores) as pool:
+         list_curtailments = pool.map(wrapper, args_list)
+

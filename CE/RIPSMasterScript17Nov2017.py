@@ -208,14 +208,11 @@ def masterFunction(genparam, reserveparam, curtailparam):
             # Either only runs 2015, or runs in all but 2015
             if ((currYear == genparam.startYear and genparam.runFirstUCYear) or
                     (currYear > genparam.startYear and not genparam.runFirstUCYear)):
-                if currYear == genparam.startYear:
-                    genFleetNoRetiredUnits = genFleet
-                else:
-                    genFleetNoRetiredUnits = loadCEFleet(currYear, genparam.resultsDir)
+                genFleetNoRetiredUnits = loadCEFleet(currYear, genparam.resultsDir)
 
                 (ucResultsByDay, hourlyGenerationByPlants) = runUnitCommitment(genFleetNoRetiredUnits,
                                                                                zonalDemandProfile, currYear, currCo2Cap,
-                                                                               genparam, reserveparam, curtailparam)
+                                                                               genparam, reserveparam, curtparam_year)
 
         print()
         print('Elapsed Time: ' + str_elapsedtime(t_year))
@@ -907,7 +904,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     # *******************************************************
     gcm = curtailparam.listgcms[0]
 
-    resultsDir = os.path.join(resultsDir, 'UC', gcm)
+    resultsDir = os.path.join(resultsDir, 'UC')
 
     if not os.path.exists(resultsDir):
         os.makedirs(resultsDir)
@@ -926,7 +923,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     for zone in genparam.ipmZones:
         print('Zone ', zone)
 
-        zonalGenFleet = [genFleet[0]] + [row for row in genFleet if row[zoneCol] == zone]
+        zonalGenFleet = [fleetUC[0]] + [row for row in fleetUC if row[zoneCol] == zone]
 
         capacCol = zonalGenFleet[0].index('Capacity (MW)')
         plantTypeCol = zonalGenFleet[0].index('PlantType')
@@ -934,11 +931,11 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
         windCapacInZone = sum([float(row[capacCol]) for row in zonalGenFleet[1:] if row[plantTypeCol] == 'Wind'])
         solarCapacInZone = sum([float(row[capacCol]) for row in zonalGenFleet[1:] if row[plantTypeCol] == 'Solar PV'])
 
-        print('Existing Wind: ')
+        print('Existing Wind. Installed Capacity = {0:.2f} MW.'.format(windCapacInZone))
         windCfsDtHr, windCfsDtSubhr = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=50,
                                                          capacInCurrFleet=windCapacInZone, type='wind', existing=True,
                                                          subHour=True)
-        print('Existing Solar: ')
+        print('Existing Solar. Installed Capacity = {0:.2f} MW.'.format(solarCapacInZone))
         solarCfsDtHr, solarCfsDtSubhr = getRenewableCFData(currZone=zone, genparam=genparam, fleetCap=50,
                                                            capacInCurrFleet=solarCapacInZone, type='solar',
                                                            existing=True, subHour=True)
@@ -1031,7 +1028,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     if genparam.calculateCO2Price:
         co2Price = convertCo2CapToPrice(fleetUC, zonalHourlyWindGen, zonalHourlySolarGen, zonalDemandProfile,
                                         currCo2Cap, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon,
-                                        genparam.dataRoot)
+                                        genparam.dataRoot, ucYear)
     else:
         co2Price = 0
 

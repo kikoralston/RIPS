@@ -9,7 +9,6 @@ Options
          reslim = 1000
          limcol = 0
          limrow = 0
-         threads = -1
          solprint = off
          ;
 

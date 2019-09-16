@@ -304,10 +304,12 @@ def calcSolarReserves(solarGen, errorPercentile):
     # Offsets for which errors are used to calculate percentiles; sunrise & sunset have
     # large but predictable ramps. Offsets try to skip those ramps.
 
-    if len(solarGen) > 8761:
-        sunriseOffset, sunsetOffset = 5, 8  # skip several intervals when
-    else:
-        sunriseOffset, sunsetOffset = 2, 2  # skip first & last 2 hours of gen each day (sunrise & sunset)
+#    if len(solarGen) > 8761:
+#        sunriseOffset, sunsetOffset = 5, 8  # skip several intervals when
+#    else:
+    
+    # do only for hourly data!
+    sunriseOffset, sunsetOffset = 2, 2  # skip first & last 2 hours of gen each day (sunrise & sunset)
 
     lowPtl, upPtl = (100 - errorPercentile) / 2, errorPercentile + (100 - errorPercentile) / 2
     dtCol, genCol = solarGen[0].index('datetime'), solarGen[0].index('totalGen(MWh)')
@@ -372,10 +374,14 @@ def getSunriseAndSunset(currDateRows, dtCol, genCol):
     sunsetIdx = len(gen) - [val > 0 for val in list(reversed(gen))].index(True)
     sunrise, sunset = dts[sunriseIdx], dts[sunsetIdx]
     midday = sunrise + (sunset - sunrise) / 2
-    minuteIntervals = int(60 * 24 / len(currDateRows))
-    middayDistToNearestInterval = dt.timedelta(minutes=((midday - sunrise).seconds / 60 % minuteIntervals))
-    midday -= middayDistToNearestInterval
-    return sunrise, sunset, midday
+#    minuteIntervals = int(60 * 24 / len(currDateRows))
+#    middayDistToNearestInterval = dt.timedelta(minutes=((midday - sunrise).seconds / 60 % minuteIntervals))
+#    midday -= middayDistToNearestInterval
+
+    # get closest datetime to midday
+    midday_valid = min(dts, key=lambda x:abs(x - midday))
+    
+    return sunrise, sunset, midday_valid
 
 
 # Calculate solar errors as chagne in power output from 1 time interval to next.
