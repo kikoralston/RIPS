@@ -1055,7 +1055,8 @@ def runUnitCommitmentSingleGcm(list_args):
     hourlyCapacsCurtailedGens = importHourlyThermalCurtailments(fleetUC, ucYear, 'UC', resultsDir, genparam_local,
                                                                 curtailparam_local)
 
-    hourlyCapacsAllGens = calculateHourlyCapacsWithCurtailments(fleetUC, hourlyCapacsCurtailedGens, ucYear)
+    # get simulated capacities for all generators and remove redundant key for GCM
+    hourlyCapacsAllGens = calculateHourlyCapacsWithCurtailments(fleetUC, hourlyCapacsCurtailedGens, ucYear)[gcm]
 
     if genparam_local.calculateCO2Price:
         co2Price = convertCo2CapToPrice(fleetUC, zonalHourlyWindGen, zonalHourlySolarGen, zonalDemandProfile,
