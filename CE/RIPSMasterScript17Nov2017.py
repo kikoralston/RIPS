@@ -148,7 +148,7 @@ def masterFunction(genparam, reserveparam, curtailparam):
 
         print('CO2 cap in year {1:4d}: {0:,.3f} million tons'.format(currCo2Cap / 1e6, currYear))
 
-        zonalDemandProfile, zonalTempDfs = forecastZonalsDemandWithReg(currYear, genparam, curtparam_year)
+        zonalDemandProfile, zonalTempDfs = forecastZonalDemandWithReg(currYear, genparam, curtparam_year)
 
         if genparam.runCE:
             # run capacity expansion model
