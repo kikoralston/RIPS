@@ -896,7 +896,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     if not os.path.exists(resultsDir):
         os.makedirs(resultsDir)
 
-    print('Entering UC loop for year {0:4d} with gcm {1}'.format(ucYear, gcm))
+    print('Entering UC loop for year {0:4d}'.format(ucYear))
 
     fleetUC = copy.deepcopy(genFleet)
 
