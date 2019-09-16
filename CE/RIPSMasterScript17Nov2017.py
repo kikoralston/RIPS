@@ -1168,11 +1168,12 @@ def runUnitCommitmentSingleGcm(list_args):
     # write final total results
     writeHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant,
                               turnonByPlant, turnoffByPlant, onOffByPlant, resultsDir, ucYear, 'UC', 'Plant')
+
     writeHourlyStoResults(pumphydroCharge, pumphydroSoc, resultsDir, ucYear)
     write2dListToCSV(sysResults, os.path.join(resultsDir, 'systemResultsUC' + str(ucYear) + '.csv'))
     write2dListToCSV(msAndSs, os.path.join(resultsDir, 'msAndSsUC' + str(ucYear) + '.csv'))
 
-    return ucResultsByDay, genByPlant
+    return 0
 
 
 def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenUC, hydroPotentialUC, demandUC,
@@ -1233,6 +1234,7 @@ def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenU
     ucModel.run(optUC, databases=dbUC, output=sys.stdout)
     ms, ss = ucModel.out_db['pModelstat'].find_record().value, ucModel.out_db['pSolvestat'].find_record().value
     if int(ms) != 8 or int(ss) != 1: print('Modelstat & solvestat:', ms, ' & ', ss, ' (should be 8 and 1)')
+
     return ucModel, ms, ss
 
 
