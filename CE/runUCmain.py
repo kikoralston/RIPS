@@ -104,11 +104,14 @@ if __name__ == "__main__":
         start, end = sys.argv[1].split('-')
         gcmIdxlist = list(range(int(start), int(end)+1))
     else:
-        gcmIdxlist = [int(x) for x in sys.argv[1].split(',')]
+        gcmIdxlist = [float(x) for x in sys.argv[1].split(',')]
 
     rcp = sys.argv[2]
     pathresultroot = sys.argv[3]
     pathCEtoUC = sys.argv[4]
+
+    if rcp != 'ref':
+        gcmIdxlist = [int(x) for x in gcmIdxlist]
 
     print("----------------------------------------------")
     print(gcmIdxlist)
