@@ -55,7 +55,8 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
     else:
         if genparam.referenceCase:
 
-            df_demand_reference = getDemandReference(genparam, list_percent=(0.2, 0.5, 0.8), yearFixed=2015)
+            # if running reference case, gcmranking is list with PERCENTILES!
+            df_demand_reference = getDemandReference(genparam, list_percent=genparam.gcmranking, yearFixed=2015)
 
             for i, yr in enumerate(df_demand_reference['yearorig'].unique()):
 

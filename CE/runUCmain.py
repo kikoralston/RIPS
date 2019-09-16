@@ -57,6 +57,11 @@ def runUC(gcmIdxlist, pathresultroot, rcp, pathCEtoUC, cwd=os.getcwd(), yearUC=2
 
     genparam.rcp = rcp
 
+    if rcp == 'ref':
+        genparam.referenceCase = True
+    else:
+        genparam.referenceCase = False
+
     genparam.runCE = False
     genparam.runFirstUCYear = True
     genparam.runUC = True
