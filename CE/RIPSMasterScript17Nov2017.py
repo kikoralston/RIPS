@@ -884,25 +884,12 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     :return:
     """
 
-    daysForUC = list(range(genparam.ucDayInitial, (genparam.ucDayEnd + 1)))
-
     (startYear, fuelPricesTimeSeries, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon,
      daysOpt, daysLA, projectName, resultsDir, ocAdderMin, ocAdderMax,
      windGenDataYr) = (genparam.startYear, genparam.fuelPricesTimeSeries, genparam.scaleMWtoGW,
                        genparam.scaleDollarsToThousands, genparam.scaleLbToShortTon, genparam.daysOpt, genparam.daysLA,
                        genparam.projectName, genparam.resultsDir, genparam.ocAdderMin, genparam.ocAdderMax,
                        genparam.windGenDataYr)
-
-    (regLoadFrac, contLoadFrac, regErrorPercentile, flexErrorPercentile, rrToRegTime, rrToFlexTime, rrToContTime,
-     regUpCostCoeffs) = (reserveparam.regLoadFrac, reserveparam.contLoadFrac, reserveparam.regErrorPercentile,
-                         reserveparam.flexErrorPercentile, reserveparam.rampRateToRegReserveScalar,
-                         reserveparam.rampRateToFlexReserveScalar, reserveparam.rampRateToContReserveScalar,
-                         copy.deepcopy(reserveparam.regUpCostCoeffs))
-
-    # *******************************************************
-    # ------- FOR NOW JUST USE A SINGLE GCM ----------------
-    # *******************************************************
-    gcm = curtailparam.listgcms[0]
 
     resultsDir = os.path.join(resultsDir, 'UC')
 
@@ -968,46 +955,89 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
         zonalHourlyDfWind[zone], zonalHourlyDfSolar[zone] = windCfsDtHr, solarCfsDtHr
         zonalSubhourlyDfWind[zone], zonalSubhourlyDfSolar[zone] = windCfsDtSubhr, solarCfsDtSubhr
 
+    #
+    # run multi-core over all gcms in list of gcms
+    #
+    # pack arguments in list so they can be passed to pool.map
+    args_list = [[gcm, fleetUC, zonalDemandProfile, ucYear, currCo2Cap, genparam, reserveparam, curtailparam,
+                  zonalHourlyWindGen, zonalHourlySolarGen, zonalHourlyDfWind, zonalHourlyDfSolar,
+                  zonalSubhourlyDfWind, zonalSubhourlyDfSolar] for gcm in curtailparam.listgcms]
+
+    with mp.Pool(processes=ncores) as pool:
+        list_results = pool.map(lambda x: runUnitCommitmentSingleGcm(x), args_list)
+
+
+def runUnitCommitmentSingleGcm(list_args):
+
+    # unpack list with arguments fot this function
+    gcm, fleetUC, zonalDemandProfile, ucYear = list_args[0], list_args[1], list_args[2], list_args[3],
+    currCo2Cap, genparam, reserveparam, curtailparam = list_args[4], list_args[5], list_args[6], list_args[7]
+    zonalHourlyWindGen, zonalHourlySolarGen = list_args[8], list_args[9]
+    zonalHourlyDfWind, zonalHourlyDfSolar = list_args[10], list_args[11]
+    zonalSubhourlyDfWind, zonalSubhourlyDfSolar = list_args[12], list_args[13]
+
+    daysForUC = list(range(genparam.ucDayInitial, (genparam.ucDayEnd + 1)))
+
+    (startYear, fuelPricesTimeSeries, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon,
+     daysOpt, daysLA, projectName, resultsDir, ocAdderMin, ocAdderMax,
+     windGenDataYr) = (genparam.startYear, genparam.fuelPricesTimeSeries, genparam.scaleMWtoGW,
+                       genparam.scaleDollarsToThousands, genparam.scaleLbToShortTon, genparam.daysOpt, genparam.daysLA,
+                       genparam.projectName, genparam.resultsDir, genparam.ocAdderMin, genparam.ocAdderMax,
+                       genparam.windGenDataYr)
+
+    (regLoadFrac, contLoadFrac, regErrorPercentile, flexErrorPercentile, rrToRegTime, rrToFlexTime, rrToContTime,
+     regUpCostCoeffs) = (reserveparam.regLoadFrac, reserveparam.contLoadFrac, reserveparam.regErrorPercentile,
+                         reserveparam.flexErrorPercentile, reserveparam.rampRateToRegReserveScalar,
+                         reserveparam.rampRateToFlexReserveScalar, reserveparam.rampRateToContReserveScalar,
+                         copy.deepcopy(reserveparam.regUpCostCoeffs))
+
+    # make copy of genparam and curtailparam for this gcm run
+    genparam_local = copy.deepcopy(genparam)
+    curtailparam_local = copy.deepcopy(curtailparam)
+
+    # update relevant values for local genparam and curtailparam --------
+    #
+    # define separate folder of results for this gcm run
+    resultsDir = os.path.join(genparam.resultsDir, 'UC', gcm)
+    if not os.path.exists(resultsDir):
+        os.makedirs(resultsDir)
+
+    # copy folder with GAMS code to resulsdir for this gcm run
+    if not os.path.exists(os.path.join(resultsDir, 'GAMS')):
+        shutil.copytree(os.path.join(genparam.resultsDir, 'GAMS'),
+                        os.path.join(resultsDir, 'GAMS'), symlinks=False, ignore=None)
+
+    # redefine resultsDir in local genparam so UC can find GAMS code
+    genparam_local.resultsDir = os.path.join(genparam.resultsDir, 'UC', gcm)
+
+    # define list of GCMs to only respective gcm
+    curtailparam_local.listgcms = [gcm]
+    #
+    # ------ END of updating relevant values for local genparam and curtailparam
+
     (contResHourly, regUpHourly, regDownHourly, flexResHourly, allRes, regUpWind, regDownWind, regUpSolar,
      regDownSolar, flexWind, flexSolar) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(),
                                            dict(), dict())
 
-    for gcm in curtailparam.listgcms:
+    for zone in genparam_local.ipmZones:
+        (zonalcontResHourly, zonalregUpHourly, zonalregDownHourly, zonalflexResHourly, zonalallRes, zonalregUpWind,
+         zonalregDownWind, zonalregUpSolar, zonalregDownSolar, zonalflexWind,
+         zonalflexSolar) = calcWWSISReserves(zonalHourlyDfWind[zone], zonalSubhourlyDfWind[zone],
+                                             zonalHourlyDfSolar[zone], zonalSubhourlyDfSolar[zone],
+                                             zonalDemandProfile[gcm][zone], regLoadFrac, contLoadFrac,
+                                             regErrorPercentile, flexErrorPercentile)
 
-        (auxcontResHourly, auxregUpHourly, auxregDownHourly, auxflexResHourly, auxallRes, auxregUpWind, auxregDownWind,
-         auxregUpSolar, auxregDownSolar, auxflexWind, auxflexSolar) = (dict(), dict(), dict(), dict(), dict(), dict(),
-                                                                       dict(), dict(), dict(), dict(), dict())
-
-        for zone in genparam.ipmZones:
-            (zonalcontResHourly, zonalregUpHourly, zonalregDownHourly, zonalflexResHourly, zonalallRes, zonalregUpWind,
-             zonalregDownWind, zonalregUpSolar, zonalregDownSolar, zonalflexWind,
-             zonalflexSolar) = calcWWSISReserves(zonalHourlyDfWind[zone], zonalSubhourlyDfWind[zone],
-                                                 zonalHourlyDfSolar[zone], zonalSubhourlyDfSolar[zone],
-                                                 zonalDemandProfile[gcm][zone], regLoadFrac, contLoadFrac,
-                                                 regErrorPercentile, flexErrorPercentile)
-            auxcontResHourly[zone] = zonalcontResHourly
-            auxregUpHourly[zone] = zonalregUpHourly
-            auxregDownHourly[zone] = zonalregDownHourly
-            auxflexResHourly[zone] = zonalflexResHourly
-            auxallRes[zone] = zonalallRes
-            auxregUpWind[zone] = zonalregUpWind
-            auxregDownWind[zone] = zonalregDownWind
-            auxregUpSolar[zone] = zonalregUpSolar
-            auxregDownSolar[zone] = zonalregDownSolar
-            auxflexWind[zone] = zonalflexWind
-            auxflexSolar[zone] = zonalflexSolar
-
-        contResHourly[gcm] = auxcontResHourly
-        regUpHourly[gcm] = auxregUpHourly
-        regDownHourly[gcm] = auxregDownHourly
-        flexResHourly[gcm] = auxflexResHourly
-        allRes[gcm] = auxallRes
-        regUpWind[gcm] = auxregUpWind
-        regDownWind[gcm] = auxregDownWind
-        regUpSolar[gcm] = auxregUpSolar
-        regDownSolar[gcm] = auxregDownSolar
-        flexWind[gcm] = auxflexWind
-        flexSolar[gcm] = auxflexSolar
+        contResHourly[zone] = zonalcontResHourly
+        regUpHourly[zone] = zonalregUpHourly
+        regDownHourly[zone] = zonalregDownHourly
+        flexResHourly[zone] = zonalflexResHourly
+        allRes[zone] = zonalallRes
+        regUpWind[zone] = zonalregUpWind
+        regDownWind[zone] = zonalregDownWind
+        regUpSolar[zone] = zonalregUpSolar
+        regDownSolar[zone] = zonalregDownSolar
+        flexWind[zone] = zonalflexWind
+        flexSolar[zone] = zonalflexSolar
 
     # convert allRes dict to data frame for printing
     writeDictToCSV(allRes, os.path.join(resultsDir, 'reservesUC' + str(ucYear) + '.csv'))
@@ -1018,17 +1048,17 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     writeDictToCSV(flexResHourly, os.path.join(resultsDir, 'reservesFlexUC' + str(ucYear) + '.csv'))
 
     updateFuelPricesExistingGens(fleetUC, ucYear, fuelPricesTimeSeries)
-    combineWindAndSolarToSinglePlant(fleetUC, genparam.ipmZones, genparam.dataRoot)
+    combineWindAndSolarToSinglePlant(fleetUC, genparam_local.ipmZones, genparam_local.dataRoot)
 
-    hourlyCapacsCurtailedGens = importHourlyThermalCurtailments(fleetUC, ucYear, 'UC', resultsDir, genparam,
-                                                                curtailparam)
+    hourlyCapacsCurtailedGens = importHourlyThermalCurtailments(fleetUC, ucYear, 'UC', resultsDir, genparam_local,
+                                                                curtailparam_local)
 
     hourlyCapacsAllGens = calculateHourlyCapacsWithCurtailments(fleetUC, hourlyCapacsCurtailedGens, ucYear)
 
-    if genparam.calculateCO2Price:
+    if genparam_local.calculateCO2Price:
         co2Price = convertCo2CapToPrice(fleetUC, zonalHourlyWindGen, zonalHourlySolarGen, zonalDemandProfile,
                                         currCo2Cap, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon,
-                                        genparam.dataRoot, ucYear)
+                                        genparam_local.dataRoot, ucYear)
     else:
         co2Price = 0
 
@@ -1049,7 +1079,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
 
     msAndSs = [['day', 'ms', 'ss']]  # store modelstat & solvestat from GAMS
 
-    hydroPotentials = importHydroPotentialGen(ucYear, genparam, gcm)
+    hydroPotentials = importHydroPotentialGen(ucYear, genparam_local, gcm)
 
     for dayIdx in range(0, len(daysForUC), daysOpt):
 
@@ -1065,15 +1095,15 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
                                                                                            zonalHourlyWindGen,
                                                                                            zonalHourlySolarGen)
 
-        (regUpUC, regDownUC, flexUC, contUC) = getResForUC(day, daysOpt, daysLA, regUpHourly[gcm], regDownHourly[gcm],
-                                                           flexResHourly[gcm], contResHourly[gcm])
+        (regUpUC, regDownUC, flexUC, contUC) = getResForUC(day, daysOpt, daysLA, regUpHourly, regDownHourly,
+                                                           flexResHourly, contResHourly)
 
-        hourlyCapacsUC = getHourlyCapacitiesForDays(fleetUC, hourlyCapacsAllGens[gcm], hoursForUC)
+        hourlyCapacsUC = getHourlyCapacitiesForDays(fleetUC, hourlyCapacsAllGens, hoursForUC)
 
         hydroPotentialUC = getDailyHydroPotentialsUC(fleetUC, hydroPotentials, daysForUCAux, ucYear)
 
         if daysForUC[0] == day:  # first day, therefore no initial conditions defined. MW energy values
-            (onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSocDict) = setInitCondsFirstUC(fleetUC, genparam)
+            (onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSocDict) = setInitCondsFirstUC(fleetUC, genparam_local)
         else:  # other days. MW energy values
             (onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSocDict) = setInitCondsPerPriorUC(ucModel, fleetUC,
                                                                                                         hoursForUC, daysOpt, daysLA,
@@ -1082,7 +1112,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
         ucModel, ms, ss = callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenUC,
                                              hydroPotentialUC, demandUC, hoursForUC, onOffInitial, genAboveMinInitial,
                                              mdtCarriedInitial, initSocDict, co2Price, regUpUC, regDownUC, flexUC,
-                                             contUC, genparam, reserveparam)
+                                             contUC, genparam_local, reserveparam)
 
         print('Time (secs) for UC day ' + str(day) + ': ' + str(time.time() - t0))
         print('---------------------------------------------------------------')
@@ -1100,7 +1130,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
         msAndSs.append([day, ms, ss])
 
         # check if file with flag to save GDX files exists in GAMS folder
-        gamsFileDir = os.path.join(genparam.resultsDir, 'GAMS')
+        gamsFileDir = os.path.join(genparam_local.resultsDir, 'GAMS')
         if os.path.exists(os.path.join(gamsFileDir, 'saveGDX.flag')):
 
             # read flag from file

@@ -32,13 +32,9 @@ def list_all_gcms(rcp=None):
     return listgcms_total
 
 
-def runUCsinglegcm(gcmIdx, pathresultroot, rcp, pathCEtoUC, cwd=os.getcwd(), yearUC=2050):
+def runUC(gcmIdxlist, pathresultroot, rcp, pathCEtoUC, cwd=os.getcwd(), yearUC=2050):
 
-    resultsDir = os.path.join(pathresultroot, 'gcm{0:02d}'.format(gcmIdx))
-
-    # create pathresult for this UC fun with this GCM
-    if not os.path.exists(resultsDir):
-        os.makedirs(resultsDir)
+    resultsDir = os.path.join(pathresultroot)
 
     # redirect stdout to file
     #original_stdout = sys.stdout
@@ -65,11 +61,10 @@ def runUCsinglegcm(gcmIdx, pathresultroot, rcp, pathCEtoUC, cwd=os.getcwd(), yea
     genparam.runFirstUCYear = True
     genparam.runUC = True
     
-    genparam.ncores_py = 1
+    genparam.ncores_py = 4
     genparam.gams = 1
 
-    genparam.gcmranking = [gcmIdx]
-
+    genparam.gcmranking = gcmIdxlist
     genparam.resultsDir = resultsDir
 
     # BASE LINE CASE
@@ -97,26 +92,27 @@ if __name__ == "__main__":
 
     # runUCsinglegcm(11, '', 'rcp45')
         
-    # first argument is range of gcms rankings. Format 'rankstart-rankend'. 'rankend' is included
-    start, end = sys.argv[1].split('-')
-    
-    gcmIdxlist = list(range(int(start), int(end)+1))
+    # first argument is range/list of gcms rankings. Two possible formats:
+    #   - 'rankstart-rankend'. 'rankend' is included
+    #   - 'rank1, rank2, rank3'
+    if '-' in sys.argv[1]:
+        start, end = sys.argv[1].split('-')
+        gcmIdxlist = list(range(int(start), int(end)+1))
+    else:
+        gcmIdxlist = [int(x) for x in sys.argv[1].split(',')]
+
     rcp = sys.argv[2]
     pathresultroot = sys.argv[3]
     pathCEtoUC = sys.argv[4]
-    #ncores = int(sys.argv[5])
 
     print("----------------------------------------------")
     print(gcmIdxlist)
     print(rcp)
     print(pathresultroot)
     print(pathCEtoUC)
-    #print(ncores)
 
-    ncores = len(gcmIdxlist) 
-    
-    args_list = [[gcmIdx, pathresultroot, rcp, pathCEtoUC] for gcmIdx in gcmIdxlist]
+    # create pathresult for this UC run
+    if not os.path.exists(pathresultroot):
+        os.makedirs(pathresultroot)
 
-    with mp.Pool(processes=ncores) as pool:
-         list_curtailments = pool.map(wrapper, args_list)
-
+    runUC(gcmIdxlist, pathresultroot, rcp, pathCEtoUC)
