@@ -966,7 +966,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     ncores = len(curtailparam.listgcms)
 
     with mp.Pool(processes=ncores) as pool:
-        list_results = pool.map(lambda x: runUnitCommitmentSingleGcm(x), args_list)
+        list_results = pool.map(runUnitCommitmentSingleGcm, args_list)
 
 
 def runUnitCommitmentSingleGcm(list_args):
