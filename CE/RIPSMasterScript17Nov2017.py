@@ -963,6 +963,8 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
                   zonalHourlyWindGen, zonalHourlySolarGen, zonalHourlyDfWind, zonalHourlyDfSolar,
                   zonalSubhourlyDfWind, zonalSubhourlyDfSolar] for gcm in curtailparam.listgcms]
 
+    ncores = len(curtailparam.listgcms)
+
     with mp.Pool(processes=ncores) as pool:
         list_results = pool.map(lambda x: runUnitCommitmentSingleGcm(x), args_list)
 
