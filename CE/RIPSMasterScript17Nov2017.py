@@ -210,9 +210,8 @@ def masterFunction(genparam, reserveparam, curtailparam):
                     (currYear > genparam.startYear and not genparam.runFirstUCYear)):
                 genFleetNoRetiredUnits = loadCEFleet(currYear, genparam.resultsDir)
 
-                (ucResultsByDay, hourlyGenerationByPlants) = runUnitCommitment(genFleetNoRetiredUnits,
-                                                                               zonalDemandProfile, currYear, currCo2Cap,
-                                                                               genparam, reserveparam, curtparam_year)
+                uc_out = runUnitCommitment(genFleetNoRetiredUnits, zonalDemandProfile, currYear, currCo2Cap,
+                                           genparam, reserveparam, curtparam_year)
 
         print()
         print('Elapsed Time: ' + str_elapsedtime(t_year))
@@ -967,6 +966,8 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
 
     with mp.Pool(processes=ncores) as pool:
         list_results = pool.map(runUnitCommitmentSingleGcm, args_list)
+
+    return 0
 
 
 def runUnitCommitmentSingleGcm(list_args):
