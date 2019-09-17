@@ -1018,6 +1018,9 @@ def runUnitCommitmentSingleGcm(list_args):
     #
     # ------ END of updating relevant values for local genparam and curtailparam
 
+    # write hourly demand for each zone for this gcm
+    writeDictToCSV(zonalDemandProfile[gcm], os.path.join(resultsDir, 'demandFullYrZonalCE' + str(currYear) + '.csv'))
+
     (contResHourly, regUpHourly, regDownHourly, flexResHourly, allRes, regUpWind, regDownWind, regUpSolar,
      regDownSolar, flexWind, flexSolar) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(),
                                            dict(), dict())
