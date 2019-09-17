@@ -67,6 +67,9 @@ def saveHourlySystemResults(sysResults, ucModel, ucDay, daysOpt):
     :param ucDay: day of UC simulation
     :param daysOpt: number of days in UC simulation
     """
+
+    df = pd.DataFrame(sysResults)
+
     resultLabelToEqnName = {'nse':'vNse','mcGen':'meetdemand','mcRegup':'meetregupreserves',
                             'mcFlex':'meetflexreserves','mcCont':'meetcontreserves'} #'mcRegdown':'meetregdownreserves'
 
@@ -84,5 +87,6 @@ def saveHourlySystemResults(sysResults, ucModel, ucDay, daysOpt):
                     value = rec.level
 
                 # append row with result to data frame
-                sysResults.append({'zone': zone, 'hour': hour, 'variable': result, 'value': value},
-                                  ignore_index=True)
+                df = df.append({'zone': zone, 'hour': hour, 'variable': result, 'value': value}, ignore_index=True)
+
+    return df

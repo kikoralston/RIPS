@@ -1130,7 +1130,7 @@ def runUnitCommitmentSingleGcm(list_args):
 
         saveHourlyPumpedHydroResults(pumphydroSoc, pumphydroCharge, ucModel, day, daysOpt)
 
-        saveHourlySystemResults(sysResults, ucModel, day, daysOpt)
+        sysResults = saveHourlySystemResults(sysResults, ucModel, day, daysOpt)
 
         msAndSs.append([day, ms, ss])
 
