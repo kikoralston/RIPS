@@ -83,5 +83,6 @@ def saveHourlySystemResults(sysResults, ucModel, ucDay, daysOpt):
                 else:
                     value = rec.level
 
-                sysResults = sysResults.append({'zone': zone, 'hour': hour, 'variable': result, 'value': value},
-                                               ignore_index=True)
+                # append row with result to data frame
+                sysResults.append({'zone': zone, 'hour': hour, 'variable': result, 'value': value},
+                                  ignore_index=True)
