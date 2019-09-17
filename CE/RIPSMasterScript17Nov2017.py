@@ -44,7 +44,7 @@ from TrimDemandREGenAndResForUC import getDemandAndREGenForUC, getResForUC
 from GAMSAddSetToDatabaseFuncs import *
 from GAMSAddParamToDatabaseFuncs import *
 from ConvertCO2CapToPrice import convertCo2CapToPrice
-from SetupResultLists import setupHourlyResultsByPlant, setupHourlySystemResults, setupHourlyPHResults
+from SetupResultLists import setupHourlyResultsByPlant, setupHourlyPHResults, initializeSystemResultsdf
 from SaveHourlyResults import saveHourlyResultsByPlant, saveHourlySystemResults, saveHourlyPumpedHydroResults
 from WriteUCResults import writeHourlyResultsByPlant, writeHourlyStoResults
 from ReservesWWSIS import calcWWSISReserves
