@@ -79,13 +79,21 @@ def setupHourlyPHResults(genByPlant, fleetUC):
     return pumphydroSoc, pumphydroCharge
 
 
-################################################################################
+def initializeSystemResultsdf():
 
-############ SETUP HOURLY RESULT LISTS #########################################
-#Inputs: days included iN UC (1d list)
-#Outputs: 2d list - 1st row = hours, other rows = diff sys results; dict mapping
-#hour symbol to col #; dict mapping result name to row #
+    # variables = 'mcGen', 'mcRegup', 'mcFlex', 'mcCont', 'nse'
+    sysresultsdf = pd.DataFrame(columns=['zone', 'hour', 'variable', 'value'])
+
+    return sysresultsdf
+
+
 def setupHourlySystemResults(daysForUC):
+    """ SETUP HOURLY RESULT LISTS
+
+    :param daysForUC: days included iN UC (1d list)
+    :return: 2d list - 1st row = hours, other rows = diff sys results; dict mapping hour symbol to col;
+    dict mapping result name to row
+    """
     hourSymbolsForUC = getHourSymbolsForUC(daysForUC)
     resultLabels = ['mcGen','mcRegup','mcFlex','mcCont','nse'] #'mcRegdown',
     return setupHourlySystemResultsWithHourSymbols(hourSymbolsForUC,resultLabels)

@@ -1079,7 +1079,7 @@ def runUnitCommitmentSingleGcm(list_args):
 
     pumphydroSoc, pumphydroCharge = setupHourlyPHResults(genByPlant, fleetUC)
 
-    (sysResults, resultToRow, hourToColSys) = setupHourlySystemResults(daysForUC)
+    sysResults = initializeSystemResultsdf()
 
     msAndSs = [['day', 'ms', 'ss']]  # store modelstat & solvestat from GAMS
 
@@ -1130,7 +1130,8 @@ def runUnitCommitmentSingleGcm(list_args):
 
         saveHourlyPumpedHydroResults(pumphydroSoc, pumphydroCharge, ucModel, day, daysOpt)
 
-        saveHourlySystemResults(sysResults, resultToRow, hourToColSys, ucModel, day, daysOpt)
+        saveHourlySystemResults(sysResults, ucModel, day, daysOpt)
+
         msAndSs.append([day, ms, ss])
 
         # check if file with flag to save GDX files exists in GAMS folder
@@ -1159,7 +1160,8 @@ def runUnitCommitmentSingleGcm(list_args):
                                       turnonByPlant, turnoffByPlant, onOffByPlant, resultsDir, ucYear, 'UC', 'Plant')
             writeHourlyStoResults(pumphydroCharge, pumphydroSoc, resultsDir, ucYear)
 
-            write2dListToCSV(sysResults, os.path.join(resultsDir, 'systemResultsUC' + str(ucYear) + '.csv'))
+            sysResults.to_csv(os.path.join(resultsDir, 'systemResultsUC' + str(ucYear) + '.csv'))
+
             write2dListToCSV(msAndSs, os.path.join(resultsDir, 'msAndSsUC' + str(ucYear) + '.csv'))
 
             # save results of current UC model object to GDX file to allow "Cold start" in case of error
@@ -1167,11 +1169,13 @@ def runUnitCommitmentSingleGcm(list_args):
             ucModel.get_out_db().export(os.path.join(resultsDir, "last_ucmodel.gdx"))
 
     # write final total results
-    writeHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant,
-                              turnonByPlant, turnoffByPlant, onOffByPlant, resultsDir, ucYear, 'UC', 'Plant')
+    writeHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant, turnonByPlant,
+                              turnoffByPlant, onOffByPlant, resultsDir, ucYear, 'UC', 'Plant')
 
     writeHourlyStoResults(pumphydroCharge, pumphydroSoc, resultsDir, ucYear)
-    write2dListToCSV(sysResults, os.path.join(resultsDir, 'systemResultsUC' + str(ucYear) + '.csv'))
+
+    sysResults.to_csv(os.path.join(resultsDir, 'systemResultsUC' + str(ucYear) + '.csv'))
+
     write2dListToCSV(msAndSs, os.path.join(resultsDir, 'msAndSsUC' + str(ucYear) + '.csv'))
 
     return 0

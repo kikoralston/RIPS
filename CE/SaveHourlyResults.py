@@ -58,18 +58,29 @@ def saveHourlyPumpedHydroResults(pumphydroSoc, pumphydroCharge, ucModel, ucDay, 
             pumphydroCharge[rowIdx+1][colIdx+1] = rec.level
 
 
+def saveHourlySystemResults(sysResults, ucModel, ucDay, daysOpt):
+    """ SAVE HOURLY SYSTEM RESULTS TO PANDAS DATA FRAME
 
-############ SAVE HOURLY SYSTEM RESULTS ########################################
-def saveHourlySystemResults(sysResults,resultToRow,hourToColSys,ucModel,ucDay,daysOpt):
+    :param sysResults: pandas data frame with systems results
+    :param ucModel: GAMS model object
+    :param ucDay: day of UC simulation
+    :param daysOpt: number of days in UC simulation
+    """
     resultLabelToEqnName = {'nse':'vNse','mcGen':'meetdemand','mcRegup':'meetregupreserves',
                             'mcFlex':'meetflexreserves','mcCont':'meetcontreserves'} #'mcRegdown':'meetregdownreserves'
-    hoursForOptSet = getHoursInOptimHorizon(ucDay,daysOpt)
+
+    hoursForOptSet = getHoursInOptimHorizon(ucDay, daysOpt)
+
     for result in resultLabelToEqnName:
         varName = resultLabelToEqnName[result]
         for rec in ucModel.out_db[varName]:
-            hour = rec.key(0)
-            if hour in hoursForOptSet: 
-                (rowIdx,colIdx) = (resultToRow[result],hourToColSys[hour])
-                if 'mc' in result: sysResults[rowIdx][colIdx] = rec.marginal
-                else: sysResults[rowIdx][colIdx] = rec.level 
-################################################################################
+            zone = rec.key(0)
+            hour = rec.key(1)
+            if hour in hoursForOptSet:
+                if 'mc' in result:
+                    value = rec.marginal
+                else:
+                    value = rec.level
+
+                sysResults = sysResults.append({'zone': zone, 'hour': hour, 'variable': result, 'value': value},
+                                               ignore_index=True)
