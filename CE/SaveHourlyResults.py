@@ -4,6 +4,7 @@
 
 # from GAMSAuxFuncs import extract2dVarResultsIntoDictNoLA
 from GAMSAuxFuncs import createHourSymbol
+import pandas as pd
 
 ############ SAVE HOURLY X PLANT RESULTS #######################################
 #Adds results from curr UC run to input 2d lists

@@ -5,6 +5,7 @@
 
 from GAMSAuxFuncs import createGenSymbol,createHourSymbol
 import copy
+import pandas as pd
 
 ############ SETUP GEN X HOUR RESULT LISTS #####################################
 #Outputs empty 2d lists that will store gen-by-hour results
