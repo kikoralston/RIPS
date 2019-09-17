@@ -82,6 +82,7 @@ class Generalparameters:
         self.ocAdderMax = 0.05              # $/MWh
         self.ucDayInitial = 1               # initial day of the year for UC simulation
         self.ucDayEnd = 365                 # final day of the year for UC simulation
+        self.costnse = 5000                 # cost of non supplied energy (cnse) in $/MWh
 
         self.phEff = 0.81
         self.phMaxSoc = 5
@@ -194,8 +195,9 @@ class Generalparameters:
         outstr = outstr + 'ocAdderMax = {} \t # $/MWh\n'.format(self.ocAdderMax)
         outstr = outstr + 'ucDayInitial = {}\n'.format(self.ucDayInitial)
         outstr = outstr + 'ucDayEnd = {}\n'.format(self.ucDayEnd)
+        outstr = outstr + 'costnse = {}\n'.format(self.costnse)
 
-        outstr = outstr +  '#\n# -------- PUMPED HYDRO PARAMETERS --------\n#\n'
+        outstr = outstr + '#\n# -------- PUMPED HYDRO PARAMETERS --------\n#\n'
         outstr = outstr + 'phEff = {}\n'.format(self.phEff)
         outstr = outstr + 'phMaxSoc = {}\n'.format(self.phMaxSoc)
         outstr = outstr + 'phInitSoc = {} \t # max soc as multiple of capacity; init SOC as fraction ' \

@@ -1221,8 +1221,10 @@ def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenU
 
     dbUC = wsUC.add_database()
 
-    # Add sets and parameters to database
-    cnse = 10000
+    # Add sets and parameters to GAMS database
+
+    # cost of non supplied energy (deficit)
+    cnse = genparam.costnse
 
     (genSet, genSymbols, hydroGenSet, hydroGenSymbols, hourSet, hourSymbols, zoneSet, zoneSymbols,
      lineSet) = addSetsToDatabaseUC(dbUC, fleetUC, hoursForUC, genparam)
