@@ -826,8 +826,11 @@ plot.donut.chart <- function(fileGenfleet) {
   
   df.fleet <- read.csv(file=fileGenfleet, 
                        stringsAsFactors = FALSE) %>%
-    # remove plants retired
-    filter(YearRetiredByAge >= 2050 | is.na(YearRetiredByAge)) %>%
+    # remove plants retired by age
+    filter(YearRetiredByAge > 2050 | is.na(YearRetiredByAge)) %>%
+    # remove plants originally marked to retire in IPM
+    filter(Retirement.Year > 2050) %>%
+    # remove plants that were retired by the CE model due to low CF
     filter(is.na(YearRetiredByCE)) %>%
     mutate(PlantType = as.character(PlantType)) %>%
     mutate(PlantType = ifelse(PlantType %in% otherTypes, 'Other', PlantType)) %>%
@@ -969,91 +972,6 @@ plot.donut.chart <- function(fileGenfleet) {
   #system('pdfcrop ~/CMU/RIPS/paperCE/longdraft/images/sunburst.pdf ~/CMU/RIPS/paperCE/longdraft/images/sunburst.pdf')
   
   return(g)
-}
-
-
-levelized.cost.energy <- function(y, path.output.ce,
-                                  gamsSysDir='/Applications/GAMS24.7/sysdir/',
-                                  path.out.plot=path.output.ce) {
-  
-  rate <- 0.07
-  igdx(gamsSysDir, silent=TRUE)
-  
-  lifetimes <- rgdx.param(gdxName = paste0(path.output.ce, '/gdxOutYear', y, '.gdx'), 
-                          'pLife')
-  
-#  lifetimes <- read.csv(paste0(path.data.ce, '/NewPlantData/',
-#                               'LifetimeValuesExistingPlants4Aug2016.csv'))  
-  
-  df.new.techs <- read.csv(paste0(path.output.ce,sprintf('newTechsCE%4d.csv', y)))
-  df.new.techs <- df.new.techs %>%
-    transmute(Type=TechnologyType, Fuel=FuelType,
-              Cooling=as.character(Cooling.Tech),
-              CAPEX=as.numeric(CAPEX.2012..MW.)/1e3,
-              FixedOM=as.numeric(FOM.2012..MW.yr.)/1e3) %>%
-    arrange(Type, Cooling) %>%
-    mutate(Cooling=ifelse(Type %in% c('Nuclear', 'Solar PV', 'Wind'), 'other', Cooling)) %>%
-    mutate(cool2=ifelse(Cooling == 'other', '',
-                        ifelse(Cooling=='dry cooling', 'DC',
-                               ifelse(Cooling=='recirculating', 'RC',
-                                      ifelse(Cooling == 'once through',
-                                             'OT', ''))))) %>%
-    mutate(type.2=ifelse(Cooling == 'other',
-                         gsub(' ', '.', Type),
-                         gsub(' ', '.', paste0(Type, '.', cool2)))) %>%
-    mutate(type.3=ifelse(cool2 != '', paste0(Type,'+',cool2), as.character(Type))) %>%
-    left_join(lifetimes, by=c('type.3' = 'tech')) %>%
-    select(-type.3) %>% dplyr::rename(n=pLife)
-
-  # Fixed annualized costs of new plants
-  vFixNew <- rgdx(gdxName = paste0(path.output.ce, 'gdxOutYear', y, '.gdx'), 
-                  requestList = list(name="vIc", form='full', field=c('l')))$val
-  # Variable annualized costs of ALL plants (existing and new)
-  vVarTotal <- rgdx(gdxName = paste0(path.output.ce, 'gdxOutYear', y, '.gdx'), 
-                    requestList = list(name="vVc", form='full', field=c('l')))$val
-  
-  fname <- paste0(path.output.ce, 'demandFullYrZonalCE', y,'.csv')
-  df.dem <- read.csv(file=fname, stringsAsFactors = FALSE, header = FALSE) %>%
-    select(-V1) %>% gather('hour', 'demand', -V2) %>% 
-    mutate(hour=as.numeric(gsub('V', '', hour))-2) %>% arrange(V2, hour) %>%
-    dplyr::rename(Region.Name=V2)
-  
-  annual.demand <- sum(df.dem$demand)
-  
-  # get existing generators
-  fname <- paste0(path.output.ce, 'genFleetAfterCE', y,'.csv')
-  df.egu <- read.csv(file=fname, stringsAsFactors = FALSE, header = TRUE) %>%
-    select(Plant.Name, UniqueID_Final, ORIS.Plant.Code, Unit.ID, PlantType, Region.Name, 
-           State.Name, Capacity..MW., Heat.Rate..Btu.kWh., Cooling.Tech, On.Line.Year, 
-           Retirement.Year, Modeled.Fuels, FOM...MW.yr., VOM...MWh., YearAddedCE, 
-           YearRetiredByCE, YearRetiredByAge) %>%
-    mutate(Cooling.Tech=ifelse(grepl('once through', Cooling.Tech), 'once through',
-                               ifelse(grepl('recirculating', Cooling.Tech), 'recirculating',
-                                      ifelse(grepl('dry cooling', Cooling.Tech), 'dry cooling', 'other')))) %>%
-    mutate(YearAddedCE=ifelse(is.na(YearAddedCE), 9999, YearAddedCE),
-           YearRetiredByCE=ifelse(is.na(YearRetiredByCE), 9999, YearRetiredByCE),
-           YearRetiredByAge=ifelse(is.na(YearRetiredByAge), 9999, YearRetiredByAge)) %>%
-    # remove those retired by the model in years <= y
-    filter(YearRetiredByCE > y & YearRetiredByAge > y)
-  
-  # existing generators not added by the model
-  df.egu.original <- df.egu %>% filter(YearAddedCE == 9999) %>%
-    mutate(annual.fix.cost=Capacity..MW.*(FOM...MW.yr.)/1e3)
-    
-  # existing generators added by the model (add capital costs)
-  df.egu.added.ce <- df.egu %>% filter(YearAddedCE != 9999) %>% 
-    left_join(df.new.techs, by=c('PlantType' = 'Type', 'Cooling.Tech' = 'Cooling')) %>% 
-    mutate(annual.fix.cost=Capacity..MW.*(CAPEX*(rate*(1+rate)^n/((1+rate)^n-1))+FixedOM))
-  
-  # "annualized" levelized cost of energy of total fleet in year y
-  
-  df.out <-  data.frame(year=y,
-                        type=c('Fixed Costs', 'Variable Costs'),
-                        absolute.value=c(vFixNew+sum(df.egu.original$annual.fix.cost)+sum(df.egu.added.ce$annual.fix.cost), vVarTotal),
-                        annual.demand=annual.demand) %>%
-    mutate(value.per.MWh=absolute.value*1e3/annual.demand)
-  
-  return(df.out)
 }
 
 

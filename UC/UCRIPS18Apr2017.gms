@@ -35,8 +35,8 @@ Parameters
          pStartupfixedcost(egu)                  "start up cost of EGU (thousands$)"
          pMindowntime(egu)                       "MDT (hours)"
          pRegeligible(egu)                       "whether eligible to provide reg reserves (1) or not (0)"
-         pFlexeligible(egu)
-         pConteligible(egu)
+         pFlexeligible(egu)                      "whether eligible to provide flex reserves (1) or not (0)"
+         pConteligible(egu)                      "whether eligible to provide contigency reserves (1) or not (0)"
 *Max hourly generation for renewables
          pMaxgenwind(z,h)                          "maximum hourly generation by all wind generators"
          pMaxgensolar(z,h)                         "maximum hourly generation by all solar generators"
@@ -192,6 +192,7 @@ vLineflow.up(l,h)=pLinecapacs(l);
 regupreservelimit(egu,h)$[pMaxregupoffer(egu)>0] .. vRegup(egu,h) =l= pMaxregupoffer(egu)*vOnoroff(egu,h);
 flexreservelimit(egu,h)$[pMaxflexoffer(egu)>0] .. vFlex(egu,h) =l= pMaxflexoffer(egu)*vOnoroff(egu,h);
 contreservelimit(egu,h)$[pMaxcontoffer(egu)>0] .. vCont(egu,h) =l= pMaxcontoffer(egu)*vOnoroff(egu,h);
+
 vRegup.fx(egu,h)$[pMaxregupoffer(egu)=0] = 0;
 vFlex.fx(egu,h)$[pMaxflexoffer(egu)=0] = 0;
 vCont.fx(egu,h)$[pMaxcontoffer(egu)=0] = 0;

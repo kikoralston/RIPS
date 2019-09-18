@@ -537,7 +537,9 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
     # Write gen fleet for UC to special folder for ease of transfer
     ceUCDir = os.path.join(genparam.resultsDir, 'CEtoUC')
 
-    if not os.path.exists(ceUCDir): os.makedirs(ceUCDir)
+    if not os.path.exists(ceUCDir):
+        os.makedirs(ceUCDir)
+
     write2dListToCSV(genFleetNoRetiredUnits, os.path.join(ceUCDir, 'genFleetCEtoUC' + str(currYear) + '.csv'))
 
     return genFleet, genFleetNoRetiredUnits, genFleetForCE, capacExpModel.out_db, hoursForCE
@@ -1171,6 +1173,9 @@ def runUnitCommitmentSingleGcm(list_args):
             write2dListToCSV([[day]], os.path.join(resultsDir, 'lastdayUC' + str(ucYear) + '.csv'))
             ucModel.get_out_db().export(os.path.join(resultsDir, "last_ucmodel.gdx"))
 
+        if int(ms) != 8 or int(ss) != 1:
+            print('******* ERROR IN OPTIMIZATION! Day {0}. GCM {1}. Stopping UC simulation! *******'.format(day, gcm))
+
     # write final total results
     writeHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant, turnonByPlant,
                               turnoffByPlant, onOffByPlant, resultsDir, ucYear, 'UC', 'Plant')
@@ -1243,7 +1248,11 @@ def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenU
     optUC.defines['gdxincname'] = dbUC.name
     ucModel.run(optUC, databases=dbUC, output=sys.stdout)
     ms, ss = ucModel.out_db['pModelstat'].find_record().value, ucModel.out_db['pSolvestat'].find_record().value
-    if int(ms) != 8 or int(ss) != 1: print('Modelstat & solvestat:', ms, ' & ', ss, ' (should be 8 and 1)')
+
+    if int(ms) != 8 or int(ss) != 1:
+        print('************************************************************************************')
+        print('Modelstat & solvestat:', ms, ' & ', ss, ' (should be 8 and 1)')
+        print('************************************************************************************')
 
     return ucModel, ms, ss
 
