@@ -1175,6 +1175,8 @@ def runUnitCommitmentSingleGcm(list_args):
 
         if int(ms) != 8 or int(ss) != 1:
             print('******* ERROR IN OPTIMIZATION! Day {0}. GCM {1}. Stopping UC simulation! *******'.format(day, gcm))
+            # exit for loop
+            break
 
     # write final total results
     writeHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant, turnonByPlant,
