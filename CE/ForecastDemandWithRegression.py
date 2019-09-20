@@ -191,13 +191,14 @@ def addTimeDummies(dataYr, yr, holidays):
     # Add whether weekday or weekend
     addWeekdayOrWeekend(dataYr, holidays)
     # Add which season
-    seasons = {'Spring': ('3/15/' + yr, '6/15/' + yr),
-               'Fall': ('9/15/' + yr, '12/15/' + yr),
+    seasons = {'Spring': ('3/15/' + yr, '6/15/' + yr), 'Fall': ('9/15/' + yr, '12/15/' + yr),
                'Summer': ('6/15/' + yr, '9/15/' + yr)}
     dataYr['season'] = 'Winter'  # use winter - don't need to worry about wrpa-around in yr
+
     for season in seasons:
         startDt, endDt = pd.to_datetime(seasons[season][0]), pd.to_datetime(seasons[season][1])
         dataYr.loc[(dataYr['date'] >= startDt) & (dataYr['date'] < endDt), 'season'] = season
+
     # Add hour of day
     dataYr['hour.of.day'] = dataYr['date'].dt.hour
 
