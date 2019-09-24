@@ -1074,7 +1074,9 @@ def runUnitCommitmentSingleGcm(list_args):
         fleetUC[i][colPlantType] = 'SERC'
 
     # remove transmission lines
-    genparam_local.lineList, genparam_local.lineCapacs = list(), dict()
+    # (create dummy line with source == sink == 'SERC' and capacity == 0)
+    genparam_local.lineList = ['SERC_to_SERC']
+    genparam_local.lineCapacs = {'SERC_to_SERC': 0}
 
     #
     # ------ END aggregating to single ipm zone-------------------------------------------------------------------
