@@ -1037,7 +1037,7 @@ def runUnitCommitmentSingleGcm(list_args):
     # aggregate dict of 1d lists
     def f1(d):
         y = dict()
-        y['SERC'] = np.matrix([d[z][:8760] for z in d]).sum(axis=0).tolist()
+        y['SERC'] = np.matrix([d[z][:8760] for z in d]).sum(axis=0).tolist()[0]
         return y
 
     # aggregate dict of 2d lists (only 2nd "column")
