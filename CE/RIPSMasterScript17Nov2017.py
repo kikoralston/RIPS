@@ -1179,6 +1179,13 @@ def runUnitCommitmentSingleGcm(list_args):
         print('---------------------------------------------------------------')
         print()
 
+        msAndSs.append([day, ms, ss])
+
+        if int(ms) != 8 or int(ss) != 1:
+            print('******* ERROR IN OPTIMIZATION! Day {0}. GCM {1} *******'.format(day, gcm))
+            # if GAMS/CPLEX returns invalid results, replace results in ucModel with the one from previous day
+            ucModel = copy.copy(ucResultsByDay[-1])
+
         # just saves GAMS model of current day to list
         ucResultsByDay.append((day, ucModel))
 
@@ -1188,8 +1195,6 @@ def runUnitCommitmentSingleGcm(list_args):
         saveHourlyPumpedHydroResults(pumphydroSoc, pumphydroCharge, ucModel, day, daysOpt)
 
         sysResults = saveHourlySystemResults(sysResults, ucModel, day, daysOpt)
-
-        msAndSs.append([day, ms, ss])
 
         # check if file with flag to save GDX files exists in GAMS folder
         gamsFileDir = os.path.join(genparam_local.resultsDir, 'GAMS')
@@ -1225,10 +1230,6 @@ def runUnitCommitmentSingleGcm(list_args):
             write2dListToCSV([[day]], os.path.join(resultsDir, 'lastdayUC' + str(ucYear) + '.csv'))
             ucModel.get_out_db().export(os.path.join(resultsDir, "last_ucmodel.gdx"))
 
-        if int(ms) != 8 or int(ss) != 1:
-            print('******* ERROR IN OPTIMIZATION! Day {0}. GCM {1}. Stopping UC simulation! *******'.format(day, gcm))
-            # exit for loop
-            break
 
     # write final total results
     writeHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant, turnonByPlant,
