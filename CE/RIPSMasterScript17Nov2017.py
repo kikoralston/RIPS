@@ -1023,6 +1023,8 @@ def runUnitCommitmentSingleGcm(list_args):
 
     #
     # Simulate thermal deratings/curtailments (do this before aggregating zones!!) -------------------------------
+    combineWindAndSolarToSinglePlant(fleetUC, genparam_local.ipmZones, genparam_local.dataRoot)
+
     updateFuelPricesExistingGens(fleetUC, ucYear, fuelPricesTimeSeries)
     hourlyCapacsCurtailedGens = importHourlyThermalCurtailments(fleetUC, ucYear, 'UC', resultsDir, genparam_local,
                                                                 curtailparam_local)
@@ -1107,8 +1109,6 @@ def runUnitCommitmentSingleGcm(list_args):
     writeDictToCSV(regUpHourly, os.path.join(resultsDir, 'reservesRegUpUC' + str(ucYear) + '.csv'))
     writeDictToCSV(regDownHourly, os.path.join(resultsDir, 'reservesRegDownUC' + str(ucYear) + '.csv'))
     writeDictToCSV(flexResHourly, os.path.join(resultsDir, 'reservesFlexUC' + str(ucYear) + '.csv'))
-
-    combineWindAndSolarToSinglePlant(fleetUC, genparam_local.ipmZones, genparam_local.dataRoot)
 
     if genparam_local.calculateCO2Price:
         co2Price = convertCo2CapToPrice(fleetUC, zonalHourlyWindGen, zonalHourlySolarGen, zonalDemandProfile,
