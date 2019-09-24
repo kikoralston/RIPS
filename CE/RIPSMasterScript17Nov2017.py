@@ -960,7 +960,7 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
     # run multi-core over all gcms in list of gcms
     #
     # pack arguments in list so they can be passed to pool.map
-    args_list = [[gcm, fleetUC, zonalDemandProfile, ucYear, currCo2Cap, genparam, reserveparam, curtailparam,
+    args_list = [[gcm, fleetUC, zonalDemandProfile[gcm], ucYear, currCo2Cap, genparam, reserveparam, curtailparam,
                   zonalHourlyWindGen, zonalHourlySolarGen, zonalHourlyDfWind, zonalHourlyDfSolar,
                   zonalSubhourlyDfWind, zonalSubhourlyDfSolar] for gcm in curtailparam.listgcms]
 
@@ -975,7 +975,8 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
 def runUnitCommitmentSingleGcm(list_args):
 
     # unpack list with arguments fot this function
-    gcm, fleetUC, zonalDemandProfile, ucYear = list_args[0], list_args[1], list_args[2], list_args[3],
+    gcm, fleetUC, zonalDemandProfile, ucYear = list_args[0], list_args[1], list_args[2], list_args[3]
+
     currCo2Cap, genparam, reserveparam, curtailparam = list_args[4], list_args[5], list_args[6], list_args[7]
     zonalHourlyWindGen, zonalHourlySolarGen = list_args[8], list_args[9]
     zonalHourlyDfWind, zonalHourlyDfSolar = list_args[10], list_args[11]
@@ -1000,7 +1001,7 @@ def runUnitCommitmentSingleGcm(list_args):
     genparam_local = copy.deepcopy(genparam)
     curtailparam_local = copy.deepcopy(curtailparam)
 
-    # update relevant values for local genparam and curtailparam --------
+    # update relevant values for local genparam and curtailparam -------------------------------------------------
     #
     # define separate folder of results for this gcm run
     resultsDir = os.path.join(genparam.resultsDir, 'UC', gcm)
@@ -1018,10 +1019,62 @@ def runUnitCommitmentSingleGcm(list_args):
     # define list of GCMs to only respective gcm
     curtailparam_local.listgcms = [gcm]
     #
-    # ------ END of updating relevant values for local genparam and curtailparam
+    # ------ END of updating relevant values for local genparam and curtailparam ---------------------------------
+
+    #
+    # Simulate thermal deratings/curtailments (do this before aggregating zones!!) -------------------------------
+    updateFuelPricesExistingGens(fleetUC, ucYear, fuelPricesTimeSeries)
+    hourlyCapacsCurtailedGens = importHourlyThermalCurtailments(fleetUC, ucYear, 'UC', resultsDir, genparam_local,
+                                                                curtailparam_local)
+
+    # get simulated capacities for all generators and remove redundant key for GCM
+    hourlyCapacsAllGens = calculateHourlyCapacsWithCurtailments(fleetUC, hourlyCapacsCurtailedGens, ucYear)[gcm]
+    #
+    # ------ END of updating relevant values for local genparam and curtailparam ----------------------------------
+
+    # Aggregate to single ipm zone --------------------------------------------------------------------------------
+    #
+    # aggregate dict of 1d lists
+    def f1(d):
+        y = dict()
+        y['SERC'] = np.matrix([d[z][:8760] for z in d]).sum(axis=0).tolist()
+        return y
+
+    # aggregate dict of 2d lists (only 2nd "column")
+    def f2(d):
+        y = dict()
+        df = None
+        for z in d:
+            if df is None:
+                df = pd.DataFrame(d[z][1:], columns=d[z][0])
+            else:
+                df2 = pd.DataFrame(d[z][1:], columns=d[z][0])
+                df = pd.concat([df, df2]).groupby(['datetime'])['totalGen(MWh)'].sum().reset_index()
+        y['SERC'] = [list(df.columns)] + df.as_matrix().tolist()
+
+        return y
+
+    zonalDemandProfile = f1(zonalDemandProfile)
+    zonalHourlyWindGen = f1(zonalHourlyWindGen)
+    zonalHourlySolarGen = f1(zonalHourlySolarGen)
+    zonalHourlyDfWind = f2(zonalHourlyDfWind)
+    zonalSubhourlyDfWind = f2(zonalSubhourlyDfWind)
+    zonalHourlyDfSolar = f2(zonalHourlyDfSolar)
+    zonalSubhourlyDfSolar = f2(zonalSubhourlyDfSolar)
+
+    # change list of ipmzones to only SERC
+    genparam_local.ipmZones = ['SERC']
+    genparam_local.ipmZoneNums = [1]
+
+    # change all zones to SERC in the fleet matrix
+    colPlantType = fleetUC[0].index('Region Name')
+    for i in range(1, len(fleetUC)):
+        fleetUC[i][colPlantType] = 'SERC'
+    #
+    # ------ END aggregating to single ipm zone-------------------------------------------------------------------
 
     # write hourly demand for each zone for this gcm
-    writeDictToCSV(zonalDemandProfile[gcm], os.path.join(resultsDir, 'demandFullYrZonalCE' + str(ucYear) + '.csv'))
+    writeDictToCSV(zonalDemandProfile, os.path.join(resultsDir, 'demandFullYrZonalCE' + str(ucYear) + '.csv'))
 
     (contResHourly, regUpHourly, regDownHourly, flexResHourly, allRes, regUpWind, regDownWind, regUpSolar,
      regDownSolar, flexWind, flexSolar) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(),
@@ -1032,7 +1085,7 @@ def runUnitCommitmentSingleGcm(list_args):
          zonalregDownWind, zonalregUpSolar, zonalregDownSolar, zonalflexWind,
          zonalflexSolar) = calcWWSISReserves(zonalHourlyDfWind[zone], zonalSubhourlyDfWind[zone],
                                              zonalHourlyDfSolar[zone], zonalSubhourlyDfSolar[zone],
-                                             zonalDemandProfile[gcm][zone], regLoadFrac, contLoadFrac,
+                                             zonalDemandProfile[zone], regLoadFrac, contLoadFrac,
                                              regErrorPercentile, flexErrorPercentile)
 
         contResHourly[zone] = zonalcontResHourly
@@ -1055,14 +1108,7 @@ def runUnitCommitmentSingleGcm(list_args):
     writeDictToCSV(regDownHourly, os.path.join(resultsDir, 'reservesRegDownUC' + str(ucYear) + '.csv'))
     writeDictToCSV(flexResHourly, os.path.join(resultsDir, 'reservesFlexUC' + str(ucYear) + '.csv'))
 
-    updateFuelPricesExistingGens(fleetUC, ucYear, fuelPricesTimeSeries)
     combineWindAndSolarToSinglePlant(fleetUC, genparam_local.ipmZones, genparam_local.dataRoot)
-
-    hourlyCapacsCurtailedGens = importHourlyThermalCurtailments(fleetUC, ucYear, 'UC', resultsDir, genparam_local,
-                                                                curtailparam_local)
-
-    # get simulated capacities for all generators and remove redundant key for GCM
-    hourlyCapacsAllGens = calculateHourlyCapacsWithCurtailments(fleetUC, hourlyCapacsCurtailedGens, ucYear)[gcm]
 
     if genparam_local.calculateCO2Price:
         co2Price = convertCo2CapToPrice(fleetUC, zonalHourlyWindGen, zonalHourlySolarGen, zonalDemandProfile,
@@ -1100,7 +1146,7 @@ def runUnitCommitmentSingleGcm(list_args):
         daysForUCAux = list(range(day, day + daysOpt + daysLA))
 
         (demandUC, hourlyWindGenUC, hourlySolarGenUC, hoursForUC) = getDemandAndREGenForUC(day, daysOpt, daysLA,
-                                                                                           zonalDemandProfile[gcm],
+                                                                                           zonalDemandProfile,
                                                                                            zonalHourlyWindGen,
                                                                                            zonalHourlySolarGen)
 
