@@ -112,24 +112,29 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
     #
     # If existing gen and current capacity == 0, just return data frame with zeros
     if existing and capacInCurrFleet == 0:
-        # get array with dates from first file (and cap it at 8760 hours)
+
+        # get array with times and dates from first file (and cap it at 8760 hours)
         if type.lower() == 'wind':
-            dfaux = getWindSiteCfs_2(windDir=renewableDir, siteId=str(df_cfs_inv['site_id'].iloc[0]),
-                                     siteCapac=df_cfs_inv['capacs'].iloc[0], desiredTz=desiredTz,
-                                     windGenDataYr=windGenDataYr, subHour=False, listout=False)[0]
+            dfauxhour, dfauxsub = getWindSiteCfs_2(windDir=renewableDir, siteId=str(df_cfs_inv['site_id'].iloc[0]),
+                                                   siteCapac=df_cfs_inv['capacs'].iloc[0], desiredTz=desiredTz,
+                                                   windGenDataYr=windGenDataYr, subHour=subHour, listout=False)
         else:
             sitetz = timezoneOfSolarSite(df_cfs_inv['site_id'].iloc[0], currZone)
-            dfaux = getSolarSiteCfs_2(solarDir=renewableDir, siteFilename=str(df_cfs_inv['site_id'].iloc[0]),
-                                      datasetSiteCapac=df_cfs_inv['capacs'].iloc[0], siteTz=sitetz, desiredTz=desiredTz,
-                                      subHour=False, listout=False)[0]
+            dfauxhour, dfauxsub = getSolarSiteCfs_2(solarDir=renewableDir,
+                                                    siteFilename=str(df_cfs_inv['site_id'].iloc[0]),
+                                                    datasetSiteCapac=df_cfs_inv['capacs'].iloc[0], siteTz=sitetz,
+                                                    desiredTz=desiredTz, subHour=subHour, listout=False)
 
-        dtvalues = dfaux.iloc[:8760, 0].tolist()
-
-        df_hour = pd.DataFrame({'datetime': dtvalues, 'segment': 0, 'cfs': [0 for i in range(8760)],
-                                'gen': [0 for i in range(8760)]})
+        dtvalues_hour = dfauxhour.iloc[:8760, 0].tolist()
+        df_hour = pd.DataFrame({'datetime': dtvalues_hour, 'segment': 0, 'cfs': 0, 'gen': 0})
         df_hour = df_hour[['datetime', 'segment', 'cfs', 'gen']]
 
-        df_subhour = None
+        if subHour:
+            dtvalues_sub = dfauxsub.iloc[:, 0].tolist()
+            df_subhour = pd.DataFrame({'datetime': dtvalues_sub, 'segment': 0, 'cfs': 0, 'gen': 0})
+            df_subhour = df_subhour[['datetime', 'segment', 'cfs', 'gen']]
+        else:
+            df_subhour = None
 
         print('    FINISHED: ' + str_elapsedtime(t_start))
 
