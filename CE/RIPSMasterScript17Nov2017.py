@@ -1072,6 +1072,10 @@ def runUnitCommitmentSingleGcm(list_args):
     colPlantType = fleetUC[0].index('Region Name')
     for i in range(1, len(fleetUC)):
         fleetUC[i][colPlantType] = 'SERC'
+
+    # remove transmission lines
+    genparam_local.lineList, genparam_local.lineCapacs = list(), dict()
+
     #
     # ------ END aggregating to single ipm zone-------------------------------------------------------------------
 
