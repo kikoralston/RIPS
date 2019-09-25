@@ -982,7 +982,8 @@ def runUnitCommitmentSingleGcm(list_args):
     zonalHourlyDfWind, zonalHourlyDfSolar = list_args[10], list_args[11]
     zonalSubhourlyDfWind, zonalSubhourlyDfSolar = list_args[12], list_args[13]
 
-    daysForUC = list(range(genparam.ucDayInitial, (genparam.ucDayEnd + 1)))
+    # daysForUC = list(range(genparam.ucDayInitial, (genparam.ucDayEnd + 1)))
+    daysForUC = list(range(genparam.ucDayInitial, (genparam.ucDayEnd + 1), 2))
 
     (startYear, fuelPricesTimeSeries, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon,
      daysOpt, daysLA, projectName, resultsDir, ocAdderMin, ocAdderMax,
