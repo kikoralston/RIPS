@@ -1,7 +1,7 @@
-#Michael Craig
-#October 4, 2016
-#Sets values for initial condition parameters for UC run, either for first
-#run of entire year using assumed values or based on last values in prior run.
+# Michael Craig
+# October 4, 2016
+# Sets values for initial condition parameters for UC run, either for first run of entire year using assumed values
+# or based on last values in prior run.
 
 from GAMSAuxFuncs import *
 from GAMSAddSetToDatabaseFuncs import isolateGenSymbols
@@ -47,8 +47,8 @@ def setInitCondsPerPriorUC(ucModel, fleetUC, hoursForUC, daysOpt, daysLA, scaleM
              Dict with initial state of charge for pumped hydro
     """
 
-    #For genAboveMin & onOff, just need variable value in prior hour
-    #lastHourSymbolPriorUCRun = 'h' + str((min(hoursForUC) - 1))
+    # For genAboveMin & onOff, just need variable value in prior hour
+    # lastHourSymbolPriorUCRun = 'h' + str((min(hoursForUC) - 1))
 
     # get list with hours from previous UC run and get last hour of optimization period in previous run
     hoursPreviousUC = [h.keys[0] for h in ucModel.out_db.get_set('h')]
@@ -59,8 +59,8 @@ def setInitCondsPerPriorUC(ucModel, fleetUC, hoursForUC, daysOpt, daysLA, scaleM
     genAboveMinDict = extract2dVarResultsIntoDict(ucModel, 'vGenabovemin')
     genAboveMinInitial = getInitCondValues(genAboveMinDict, fleetUC, lastHourSymbolPriorUCRun, 1/scaleMWtoGW) #MW
 
-    #For mdtCarriedInitial, get last turnoff decision, subtract # hours from then
-    #to end of last time period, and subtract that from MDT.
+    # For mdtCarriedInitial, get last turnoff decision, subtract # hours from then to end of last time period, and
+    # subtract that from MDT.
     mdtCarriedInitial = getMdtCarriedInitial(onOffInitial, ucModel, fleetUC, hoursForUC, daysOpt, daysLA)
 
     # initial state of charge for pumped storage
@@ -83,21 +83,28 @@ def getMdtCarriedInitial(onOffInitial, ucModel, fleetUC, hoursForUC, daysOpt, da
     """
     mdtCarriedInitial = []
     fleetMDTCol = fleetUC[0].index('MinDownTime(hrs)')
-    turnOffDict = extract2dVarResultsIntoDict(ucModel,'vTurnoff')
-    lastHourPriorUCRun = min(hoursForUC) - 1
-    for rowNum in range(1,len(fleetUC)):
-        if onOffInitial[rowNum-1]==1:  #on @ start, so no MDT carried
+    turnOffDict = extract2dVarResultsIntoDict(ucModel, 'vTurnoff')
+
+    # lastHourPriorUCRun = min(hoursForUC) - 1
+    # get list with hours from previous UC run and get last hour of optimization period in previous run (as an integer)
+    hoursPreviousUC = [h.keys[0] for h in ucModel.out_db.get_set('h')]
+    lastHourPriorUCRun = int(hoursPreviousUC[daysOpt*24 - 1].replace('h', ''))
+
+    for rowNum in range(1, len(fleetUC)):
+        if onOffInitial[rowNum-1] == 1:  # on @ start, so no MDT carried
             mdtCarriedInitial.append(0)
         else:
-            genSymbol = createGenSymbol(fleetUC[rowNum],fleetUC[0])
+            genSymbol = createGenSymbol(fleetUC[rowNum], fleetUC[0])
             turnOff = 0
-            for hr in range(lastHourPriorUCRun,lastHourPriorUCRun - (24*daysOpt) + 1,-1):
-                if turnOffDict[(genSymbol,'h'+str(hr))] == 1 and turnOff == 0:
+            for hr in range(lastHourPriorUCRun, lastHourPriorUCRun - (24*daysOpt) + 1, -1):
+                if turnOffDict[(genSymbol, 'h' + str(hr))] == 1 and turnOff == 0:
                     turnOff = 1
                     genMDT = float(fleetUC[rowNum][fleetMDTCol])
-                    #Hr that turn off counts toward MDT; therefore +1 to hr. 
-                    mdtCarriedInitial.append(max(0,genMDT - (lastHourPriorUCRun - hr + 1)))
-            if turnOff == 0: mdtCarriedInitial.append(0) #never turned off in last UC
+                    # Hr that turn off counts toward MDT; therefore +1 to hr.
+                    mdtCarriedInitial.append(max(0, genMDT - (lastHourPriorUCRun - hr + 1)))
+
+            if turnOff == 0:
+                mdtCarriedInitial.append(0)  # never turned off in last UC
 
     return mdtCarriedInitial
 
