@@ -48,7 +48,12 @@ def setInitCondsPerPriorUC(ucModel, fleetUC, hoursForUC, daysOpt, daysLA, scaleM
     """
 
     #For genAboveMin & onOff, just need variable value in prior hour
-    lastHourSymbolPriorUCRun = 'h' + str((min(hoursForUC) - 1))
+    #lastHourSymbolPriorUCRun = 'h' + str((min(hoursForUC) - 1))
+
+    # get list with hours from previous UC run and get last hour of optimization period in previous run
+    hoursPreviousUC = [h.keys[0] for h in ucModel.out_db.get_set('h')]
+    lastHourSymbolPriorUCRun = hoursPreviousUC[daysOpt*24 - 1]
+
     onOffDict = extract2dVarResultsIntoDict(ucModel, 'vOnoroff')
     onOffInitial = getInitCondValues(onOffDict, fleetUC, lastHourSymbolPriorUCRun)
     genAboveMinDict = extract2dVarResultsIntoDict(ucModel, 'vGenabovemin')
