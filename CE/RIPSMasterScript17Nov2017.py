@@ -1181,7 +1181,7 @@ def runUnitCommitmentSingleGcm(list_args):
 
         msAndSs.append([day, ms, ss])
 
-        if int(ms) != 8 or int(ss) != 1:
+        if int(ms) not in [1, 8] or int(ss) != 1:
             print('******* ERROR IN OPTIMIZATION! Day {0}. GCM {1} *******'.format(day, gcm))
             # if GAMS/CPLEX returns invalid results, replace results in ucModel with the one from previous day
             ucModel = copy.copy(lastUcModel)
@@ -1305,7 +1305,7 @@ def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenU
     ucModel.run(optUC, databases=dbUC, output=sys.stdout)
     ms, ss = ucModel.out_db['pModelstat'].find_record().value, ucModel.out_db['pSolvestat'].find_record().value
 
-    if int(ms) != 8 or int(ss) != 1:
+    if int(ms) not in [1, 8] or int(ss) != 1:
         print('************************************************************************************')
         print('Modelstat & solvestat:', ms, ' & ', ss, ' (should be 8 and 1)')
         print('************************************************************************************')
