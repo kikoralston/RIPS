@@ -1184,10 +1184,12 @@ def runUnitCommitmentSingleGcm(list_args):
         if int(ms) != 8 or int(ss) != 1:
             print('******* ERROR IN OPTIMIZATION! Day {0}. GCM {1} *******'.format(day, gcm))
             # if GAMS/CPLEX returns invalid results, replace results in ucModel with the one from previous day
-            ucModel = copy.copy(ucResultsByDay[-1])
+            ucModel = copy.copy(lastUcModel)
+        else:
+            lastUcModel = copy.copy(ucModel)
 
         # just saves GAMS model of current day to list
-        ucResultsByDay.append((day, ucModel))
+        # ucResultsByDay.append((day, ucModel))
 
         saveHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant, turnonByPlant,
                                  turnoffByPlant, onOffByPlant, genToRow, hourToColPlant, ucModel, day, daysOpt)
@@ -1229,7 +1231,6 @@ def runUnitCommitmentSingleGcm(list_args):
             # save results of current UC model object to GDX file to allow "Cold start" in case of error
             write2dListToCSV([[day]], os.path.join(resultsDir, 'lastdayUC' + str(ucYear) + '.csv'))
             ucModel.get_out_db().export(os.path.join(resultsDir, "last_ucmodel.gdx"))
-
 
     # write final total results
     writeHourlyResultsByPlant(genByPlant, regUpByPlant, regDownByPlant, flexByPlant, contByPlant, turnonByPlant,
