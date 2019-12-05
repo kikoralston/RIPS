@@ -1,7 +1,7 @@
 # Jannuary 2019
 # Set of functions that read CE model output and create plots for the analysis
 
-
+library(rgeos)
 library(plyr)
 library(dplyr)
 library(ggplot2)
@@ -131,29 +131,25 @@ plot.map.serc <- function(path.data.ce, path.plot){
                  paste0(path.plot, "/sercmap.pdf")))
 }
 
-plot.map.serc.with.plants <- function(path.data.ce, path.plot, 
-                                      gen.fleet=NULL, show.points=TRUE, 
-                                      width=7){
+plot.map.serc.with.plants <- function(path.data.ce, path.plot, gen.fleet, 
+                                      show.points=TRUE, width=7, 
+                                      axis.labels=TRUE){
   
   g <- get.map.serc(path.data.ce)
 
-  if (is.null(gen.fleet)) {
-    gen.fleet <- read.csv(file=paste0(path.output.ce, '/base_case/genFleetInitial.csv'))  
-  }
-  
   gen.fleet.2 <- gen.fleet %>% 
     select(Plant.Name, UniqueID_Final, PlantType, Region.Name, State.Name, County, 
            Capacity..MW., On.Line.Year, Retirement.Year,
            YearRetiredByAge, Modeled.Fuels, Longitude, Latitude) %>%
-    mutate(PlantType = as.character(PlantType)) %>%
+    mutate(PlantType = as.character(PlantType), Modeled.Fuels=as.character(Modeled.Fuels)) %>%
     mutate(PlantType = ifelse(PlantType %in% otherTypes, 'Other', PlantType)) %>%
-    mutate(PlantType = ifelse(Modeled.Fuels %in% coal.types, 'Coal', PlantType)) %>%
-    mutate(PlantType = ifelse(grepl('Natural Gas', Modeled.Fuels), 
-                              'Natural Gas', PlantType)) %>%
-    mutate(PlantType = ifelse(grepl('Fuel Oil', Modeled.Fuels), 
-                              'Fuel Oil', PlantType)) %>%
-    mutate(PlantType = ifelse(PlantType %in% c('Hydro', 'Pumped Storage'), 
-                              'Hydro', PlantType)) %>%
+    # simplify fossil fuels in Modeled.Fuels
+    mutate(Modeled.Fuels = ifelse(Modeled.Fuels %in% coal.types, 'Coal', Modeled.Fuels)) %>%
+    mutate(Modeled.Fuels = ifelse(grepl('Natural Gas', Modeled.Fuels), 'Natural Gas', Modeled.Fuels)) %>%
+    mutate(Modeled.Fuels = ifelse(grepl('Fuel Oil', Modeled.Fuels), 'Fuel Oil', Modeled.Fuels)) %>%
+    # for fossil fuels, replace fuel in PlantType
+    mutate(PlantType = ifelse(Modeled.Fuels %in% c("Coal", "Natural Gas", "Fuel Oil"), Modeled.Fuels, PlantType)) %>%
+    mutate(PlantType = ifelse(PlantType %in% c('Hydro', 'Pumped Storage'), 'Hydro', PlantType)) %>%
     mutate(PlantType = ifelse(PlantType == 'Solar PV', 'Solar', PlantType)) %>%
     mutate(Plant.Name = ifelse(Plant.Name == '', paste0(Longitude, '_', Latitude), 
                                Plant.Name)) %>%
@@ -183,13 +179,16 @@ plot.map.serc.with.plants <- function(path.data.ce, path.plot,
   if (!show.points) {
     g_plants <- g_plants + theme(legend.text = element_text(colour = 'white'))
   }
+
+  if (!axis.labels) {
+    g_plants <- g_plants + theme(axis.text=element_blank())
+  }
   
   # assume ratio 16:9
-  pdf(paste0(path.plot, "/sercmap_fleet.pdf"), width=width, height=width*9/16)
+  pdf(path.plot, width=width, height=width*9/16)
   print(g_plants)
   dev.off()
-  system(sprintf('pdfcrop %s %s', paste0(path.plot, "/sercmap_fleet.pdf"), 
-                 paste0(path.plot, "/sercmap_fleet.pdf")))
+  system(sprintf('pdfcrop %s %s', path.plot, path.plot))
   
   return(g_plants)
 }
@@ -202,16 +201,27 @@ get.map.serc <- function(path.data.ce) {
   
   serc.zones <- c('S_SOU', 'S_C_TVA', 'S_VACA', 'S_C_KY')
   
-  s1 <- readOGR(paste0(path.data.ce, 'IPMRegionsShapeFile/'), 
-                'IPM_Regions_20121023_US')
+#  s1 <- readOGR(paste0(path.data.ce, 'IPMRegionsShapeFile/'), 
+#                'IPM_Regions_20121023_US')
   
-  zones.map <- ifelse(s1@data$IPM_Region %in% serc.zones, 
-                      s1@data$IPM_Region, NA)
+  s1 <- st_read(paste0(path.data.ce, 'IPMRegionsShapeFile/'), 
+                'IPM_Regions_20121023_US') 
   
-  s1.union.serc <- unionSpatialPolygons(s1, zones.map)
+  zones.map <- ifelse(s1$IPM_Region %in% serc.zones, 
+                      s1$IPM_Region, NA)
   
-  df.ipm.counties <- s1@data %>% 
-    mutate(FIPS=as.numeric(as.character(FIPS)))
+  # s1.union.serc <- unionSpatialPolygons(s1, zones.map, avoidUnaryUnion=TRUE)
+  
+  s1.union.serc <- s1 %>% filter(IPM_Region %in% serc.zones) %>% filter(st_is_valid(.)) 
+  
+  l <- list()
+  for (z in serc.zones) {
+    l[[z]] <- s1.union.serc %>% filter(IPM_Region == z) %>% st_union() %>% st_simplify()
+  }
+
+  df.ipm.zones <- l %>% ldply(.fun = data.frame) %>% st_sf() %>% st_simplify()
+  
+  df.ipm.counties <- s1 %>% mutate(FIPS=as.numeric(as.character(FIPS)))
   
   map.us.counties <- map_data('county')
   
@@ -237,20 +247,23 @@ get.map.serc <- function(path.data.ce) {
                      c(xmin=bounds.longitude[1], xmax=bounds.latitude[2], 
                        ymin=bounds.latitude[1], ymax=bounds.latitude[2]))
   
-  labels_regions <- data.frame(x=as.numeric(),
-                               y=as.numeric(),
-                               label=as.character())
+  labels_regions <- st_centroid(df.ipm.zones$geometry) %>% st_coordinates() %>% as.data.frame() %>%
+    dplyr::rename(x=X, y=Y)
+  labels_regions$label <- as.character(df.ipm.zones$.id)
   
-  for (p in s1.union.serc@polygons) {
-    x <- p@labpt[1]
-    y <- p@labpt[2]
-    label <- levels(df.ipm.counties$IPM_Region)[as.integer(p@ID)]
-    
-    labels_regions <- rbind(labels_regions,
-                            data.frame(x=x,
-                                       y=y,
-                                       label=label))
-  }
+#  labels_regions <- data.frame(x=as.numeric(),
+#                               y=as.numeric(),
+#                               label=as.character())
+#  for (p in s1.union.serc@polygons) {
+#    x <- p@labpt[1]
+#    y <- p@labpt[2]
+#    label <- levels(df.ipm.counties$IPM_Region)[as.integer(p@ID)]
+#    
+#    labels_regions <- rbind(labels_regions,
+#                            data.frame(x=x,
+#                                       y=y,
+#                                       label=label))
+#  }
   
   pal <- c('#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c',
            '#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928')
@@ -307,18 +320,16 @@ plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand=NULL,
     mutate(UniqueID_Final = as.character(UniqueID_Final)) %>%
     mutate(UniqueID_Final = update.ID(UniqueID_Final, PlantType, Region.Name, 
                                       Capacity..MW.)) %>%
-    mutate(PlantType = as.character(PlantType)) %>%
+    mutate(PlantType = as.character(PlantType), Modeled.Fuels=as.character(Modeled.Fuels)) %>%
     mutate(PlantType = ifelse(PlantType %in% otherTypes, 'Other', PlantType)) %>%
-    mutate(PlantType = ifelse(Modeled.Fuels %in% coal.types, 'Coal', PlantType)) %>%
-    mutate(PlantType = ifelse(Modeled.Fuels %in% coal.types, 'Coal', PlantType))
-    mutate(PlantType = ifelse(grepl('Natural Gas', Modeled.Fuels), 
-                              'Natural Gas', PlantType)) %>%
-    mutate(PlantType = ifelse(grepl('Fuel Oil', Modeled.Fuels), 
-                              'Fuel Oil', PlantType)) %>%
-    mutate(PlantType = ifelse(PlantType %in% c('Hydro', 'Pumped Storage'), 
-                              'Hydro', PlantType)) %>%
-    mutate(PlantType = ifelse(PlantType == 'Solar PV', 'Solar', PlantType)) %>%
-    select(-Modeled.Fuels)
+    # simplify fossil fuels in Modeled.Fuels
+    mutate(Modeled.Fuels = ifelse(Modeled.Fuels %in% coal.types, 'Coal', Modeled.Fuels)) %>%
+    mutate(Modeled.Fuels = ifelse(grepl('Natural Gas', Modeled.Fuels), 'Natural Gas', Modeled.Fuels)) %>%
+    mutate(Modeled.Fuels = ifelse(grepl('Fuel Oil', Modeled.Fuels), 'Fuel Oil', Modeled.Fuels)) %>%
+    # for fossil fuels, replace fuel in PlantType
+    mutate(PlantType = ifelse(Modeled.Fuels %in% c("Coal", "Natural Gas", "Fuel Oil"), Modeled.Fuels, PlantType)) %>%
+    mutate(PlantType = ifelse(PlantType %in% c('Hydro', 'Pumped Storage'), 'Hydro', PlantType)) %>%
+    mutate(PlantType = ifelse(PlantType == 'Solar PV', 'Solar', PlantType))
   
   years <- expand.grid(UniqueID_Final=unique(ini.gen.fleet.2$UniqueID_Final), 
                        currYear=seq(2020, 2050, by=5))
@@ -822,14 +833,14 @@ plot_renewable_cfs <- function(path.output.ce,
 }
 
 
-plot.donut.chart <- function(fileGenfleet) {
+plot.donut.chart <- function(fileGenfleet, currYear=2050, GW=TRUE) {
   
   df.fleet <- read.csv(file=fileGenfleet, 
                        stringsAsFactors = FALSE) %>%
     # remove plants retired by age
-    filter(YearRetiredByAge > 2050 | is.na(YearRetiredByAge)) %>%
+    filter(YearRetiredByAge > currYear | is.na(YearRetiredByAge)) %>%
     # remove plants originally marked to retire in IPM
-    filter(Retirement.Year > 2050) %>%
+    filter(Retirement.Year > currYear) %>%
     # remove plants that were retired by the CE model due to low CF
     filter(is.na(YearRetiredByCE)) %>%
     mutate(PlantType = as.character(PlantType)) %>%
@@ -859,15 +870,21 @@ plot.donut.chart <- function(fileGenfleet) {
   
   df.fleet <- df.fleet %>% group_by(Modeled.Fuels, PlantType, cooling) %>% dplyr::summarize(sum=sum(Capacity..MW.)) %>% as.data.frame()
   
-  total <- sum(df.fleet$sum)
+  if (GW) {
+    total <- sum(df.fleet$sum)/1000
+    label.center <- paste0("SERC\n", formatC(total, big.mark=',', digits=0,  format = 'f'), ' GW')
+    size.center <- 3
+  } else {
+    total <- sum(df.fleet$sum)
+    label.center <- paste0("SERC\n", formatC(total, big.mark=',', digits=0,  format = 'f'), ' MW')
+    size.center <- 2.5
+  }
   
-  lvl0 <- data.frame(name = paste0("SERC\n", formatC(total, big.mark=',', 
-                                                     digits=0, 
-                                                     format = 'f'),
-                                   ' MW'), 
-                     value = total, level = 0, fill = NA) %>%
+  size.labels <- 2.9
+  
+  lvl0 <- data.frame(name = label.center, value = total, level = 0, fill = NA) %>%
     mutate(xmin=0, xmax=1, ymin=0, ymax=value) %>%
-    mutate(x.avg=0, y.avg=0, colour=FALSE, label=name)
+    mutate(x.avg=0, y.avg=0, colour=FALSE, label=name, size=size.center)
   
   lvl1 <- df.fleet %>% group_by(Modeled.Fuels) %>% dplyr::summarize(sum=sum(sum)) %>%
     ungroup() %>%
@@ -879,7 +896,7 @@ plot.donut.chart <- function(fileGenfleet) {
            x.avg=(xmin+xmax)/2,
            y.avg=(ymin+ymax)/2,
            colour=TRUE) %>%
-    mutate(label=ifelse(value<700 | is.na(name), '', name))
+    mutate(label=ifelse(value<700 | is.na(name), '', name), size=size.labels)
   
   lvl2 <- df.fleet %>% group_by(Modeled.Fuels, PlantType) %>%
     dplyr::summarize(value=sum(sum)) %>%
@@ -895,7 +912,7 @@ plot.donut.chart <- function(fileGenfleet) {
            x.avg=(xmin+xmax)/2,
            y.avg=(ymin+ymax)/2,
            colour=ifelse(grepl('_NA', fill), FALSE, TRUE)) %>%
-    mutate(label=ifelse(value<700 | is.na(name), '', name))
+    mutate(label=ifelse(value<700 | is.na(name), '', name), size=size.labels)
   
   
   lvl3 <- df.fleet %>% group_by(Modeled.Fuels, PlantType, cooling) %>%
@@ -912,7 +929,7 @@ plot.donut.chart <- function(fileGenfleet) {
            x.avg=(xmin+xmax)/2,
            y.avg=(ymin+ymax)/2,
            colour=ifelse(grepl('_NA', fill), FALSE, TRUE)) %>%
-    mutate(label=ifelse(value<600 | is.na(name), '', name))
+    mutate(label=ifelse(value<600 | is.na(name), '', name), size=size.labels)
   
   #col.pallete <- brewer.pal(9, 'YlOrBr')
   
@@ -945,18 +962,26 @@ plot.donut.chart <- function(fileGenfleet) {
     mutate(label=ifelse(label == 'Natural Gas', 'Natural\nGas', label)) %>%
     mutate(label=ifelse(label == 'Combined Cycle', 'Combined\nCycle', label))
   
+  df.final <- df.final %>% mutate(level= as.numeric(as.character(level)))
+  
   g <- ggplot(data=df.final, aes(fill = fill)) +  
     geom_rect(aes(ymax=ymax, ymin=ymin, xmax=xmax, xmin=xmin, color=colour), 
               size = 0.1) +
     scale_fill_manual(values = new.pallete.2, na.translate = FALSE) +
     scale_color_manual(values = c('TRUE'='gray20', 'FALSE'='#FFFFFF00'), 
                        guide = F, na.translate = FALSE) +
-    geom_text(aes(x = x.avg, y = y.avg, label = label, hjust=hjust, 
+    # label for center
+    geom_text(data=df.final %>% filter(level == 0), 
+              aes(x = x.avg, y = y.avg, label = label, hjust=hjust, 
+                  vjust=vjust), size = rel(5)) +
+    # label for layers
+    geom_text(data=df.final %>% filter(level > 0),
+              aes(x = x.avg, y = y.avg, label = label, hjust=hjust, 
                   vjust=vjust), size = rel(3)) +
     scale_x_continuous(expand = c(0, 0), limits = c(0,4)) +
     scale_y_continuous(expand = c(0, 0)) +
     theme_bw() + 
-    guides(fill=FALSE) +
+    guides(fill=FALSE, size=FALSE) +
     theme(panel.border = element_blank(),
           plot.margin = unit(c(-2, -2, -2, -2), "lines"),
           panel.grid = element_blank(),
@@ -975,12 +1000,13 @@ plot.donut.chart <- function(fileGenfleet) {
 }
 
 
-check.available.energy <- function(y, path.gdx) {
+get.generation <- function(y, path.gdx) {
 
-  y <- 2045
+  # y <- 2050
   
-  path.gdx <- "/Volumes/RIPS/CE/results//rcp85//gdxOutYear2045.gdx"
-  #path.gdx <- "/Users/kiko/Documents/CE/out/CE/gdxOutYear2025.gdx"
+  path.gdx <- paste0(path.gdx, '/gdxOutYear', y,'.gdx')
+  # path.gdx <- "/Volumes/RIPS/CE/results//rcp85//gdxOutYear2045.gdx"
+  # path.gdx <- "/Users/kiko/Documents/CE/out/CE/gdxOutYear2025.gdx"
 
   # get ids from existing solar, wind, hydro, pumped hydro
   ids.solar <- rgdx.set(gdxName = paste0(path.gdx), symName = "solaregu") %>% 
@@ -1000,6 +1026,7 @@ check.available.energy <- function(y, path.gdx) {
   hours.spring <- rgdx.set(gdxName = path.gdx, symName = "springh") %>% mutate(season='spring')
   hours.fall <- rgdx.set(gdxName = path.gdx, symName = "fallh") %>% mutate(season='fall')
   hours.special <- rgdx.set(gdxName = path.gdx, symName = "specialh") %>% mutate(season='special')
+  
   df.hours.season <- rbind(hours.summer, hours.winter, hours.fall, hours.spring, hours.special) %>%
     mutate(h2 = as.numeric(gsub('h', '', as.character(h)))) %>%
     mutate(date=as.POSIXct(ymd(paste0(y,"0101")) + hours(h2))) %>%
@@ -1009,16 +1036,22 @@ check.available.energy <- function(y, path.gdx) {
     
   pDemand <- rgdx.param(gdxName = path.gdx, symName = "pDemand") %>% 
     group_by(g, h) %>% summarise(value = sum(pDemand)) %>%
-    rename(value.demand=value) %>%
     right_join(df.hours.season, by=c('g','h'))
     
   charge.ph <- rgdx(gdxName = path.gdx, requestList = list(name='vCharge', field='l'))
   if (!is.null(charge.ph)) {
     charge.ph <- convert.gdx.result.df(charge.ph) %>% 
-      group_by(g, h) %>% summarise(value = sum(value)) %>%
-      rename(value.charge = value)
+      group_by(g, h) %>% summarise(value = sum(value))  %>%
+      ungroup() %>% right_join(df.hours.season, by=c('g','h')) %>%
+      mutate(value = ifelse(is.na(value), 0, value))
   }
   
+  pDemand <- pDemand %>% left_join(charge.ph %>% select(g, h, value), 
+                                      by=c('g','h')) %>%
+    mutate(value=value.x+value.y) %>% 
+    mutate(type="demand") %>%
+    select(g, type, h, value, season, h2, date, hour.in.season) %>% ungroup()
+
   # get generation
   gexist <- rgdx(gdxName = path.gdx, 
                  requestList = list(name='vPegu', field='l', compress=FALSE,
@@ -1028,21 +1061,21 @@ check.available.energy <- function(y, path.gdx) {
     group_by(g, type, h) %>% summarise(value = sum(value)) %>%
     ungroup() %>% right_join(df.hours.season, by=c('g','h'))
   
-  ggplot(gexist) + geom_area(aes(x=hour.in.season, y=value, fill=type)) + 
-    geom_line(data = pDemand, aes(x=hour.in.season, y=value.demand, linetype='Demand'),
-              colour='black') +
-    guides(colour=FALSE) + theme_minimal() +
-    scale_fill_brewer(type='div', palette = 'Spectral') +
-    scale_linetype_manual(values=c('dashed')) +
-    #scale_fill_grey() +
-    theme(axis.text.x = element_blank(),
-          axis.ticks.x = element_blank(),
-          panel.spacing = unit(0,'lines'),
-          panel.border = element_rect(fill = NA),
-          legend.position = 'top') + 
-    guides(fill=guide_legend(title=NULL), 
-           linetype=guide_legend(title=NULL)) +
-    facet_grid(cols = vars(season), rows=vars(g), scales = 'free_x')
+  # ggplot(gexist) + geom_area(aes(x=hour.in.season, y=value, fill=type)) + 
+  #   geom_line(data = pDemand, aes(x=hour.in.season, y=value.demand, linetype='Demand'),
+  #             colour='black') +
+  #   guides(colour=FALSE) + theme_minimal() +
+  #   scale_fill_brewer(type='div', palette = 'Spectral') +
+  #   scale_linetype_manual(values=c('dashed')) +
+  #   #scale_fill_grey() +
+  #   theme(axis.text.x = element_blank(),
+  #         axis.ticks.x = element_blank(),
+  #         panel.spacing = unit(0,'lines'),
+  #         panel.border = element_rect(fill = NA),
+  #         legend.position = 'top') + 
+  #   guides(fill=guide_legend(title=NULL), 
+  #          linetype=guide_legend(title=NULL)) +
+  #   facet_grid(cols = vars(season), rows=vars(g), scales = 'free_x')
   
   gtechcurt <- rgdx(gdxName = path.gdx, 
                     requestList = list(name='vPtechcurtailed', field='l', compress=FALSE,
@@ -1052,7 +1085,7 @@ check.available.energy <- function(y, path.gdx) {
     gtechcurt <- gtechcurt %>% 
       group_by(g, h) %>% summarise(value = sum(value)) %>%
       right_join(df.hours.season, by=c('g','h')) %>% 
-      mutate(type=c('thermal.new')) %>%
+      mutate(type=c('thermal')) %>%
       select(g, type, h, value, season, h2, date, hour.in.season) %>%
       ungroup()
   }
@@ -1065,7 +1098,7 @@ check.available.energy <- function(y, path.gdx) {
     gtechnotcurt <- gtechnotcurt %>% 
       group_by(g, h) %>% summarise(value = sum(value)) %>%
       right_join(df.hours.season, by=c('g','h')) %>% 
-      mutate(type=c('thermal.new')) %>%
+      mutate(type=c('thermal')) %>%
       select(g, type, h, value, season, h2, date, hour.in.season) %>%
       ungroup()
   }
@@ -1078,7 +1111,7 @@ check.available.energy <- function(y, path.gdx) {
     gtechrenew <- gtechrenew %>% 
       mutate(techrenew = as.character(techrenew)) %>%
       mutate(techrenew = ifelse(grepl('Solar PV\\+\\d\\d',gtechrenew$techrenew, perl = TRUE), 
-                                'solar.new', 'wind.new')) %>%
+                                'solar', 'wind')) %>%
       group_by(g, techrenew, h) %>% summarise(value = sum(value)) %>%
       right_join(df.hours.season, by=c('g','h')) %>% ungroup() %>%
       dplyr::select(g, type=techrenew, h, value, season, h2, date, hour.in.season) %>%
@@ -1095,60 +1128,66 @@ check.available.energy <- function(y, path.gdx) {
   if (!is.null(gtechnotcurt) && nrow(gtechnotcurt) > 0) {
     df.total <- rbind(df.total, gtechnotcurt, stringsAsFactors = FALSE)
   }
+  df.total <- rbind(df.total, pDemand, stringsAsFactors = FALSE)
   
-  ggplot(df.total) + 
-    geom_area(aes(x=hour.in.season, y=value, fill=type)) + 
-    geom_line(data = pDemand, aes(x=hour.in.season, y=value.demand, linetype='Demand'),
-              colour='black') +
-    guides(colour=FALSE) + theme_minimal() +
-    scale_fill_brewer(type='div', palette = 'Spectral') +
-    scale_linetype_manual(values=c('dashed')) +
-    #scale_fill_grey() +
-    theme(axis.text.x = element_blank(),
-          axis.ticks.x = element_blank(),
-          panel.spacing = unit(0,'lines'),
-          panel.border = element_rect(fill = NA)) + 
-    guides(fill=guide_legend(title=NULL), 
-           linetype=guide_legend(title=NULL)) +
-    facet_grid(cols = vars(season), rows=vars(g), scales = 'free_x')
+  df.total <- df.total %>% group_by(g, h, type) %>% summarise(value = sum(value)) %>% ungroup() %>%
+    right_join(df.hours.season, by=c('g','h')) %>% ungroup() 
+
+  # add demand
+  
+  # ggplot(df.total) +
+  #   geom_area(aes(x=hour.in.season, y=value, fill=type)) +
+  #   geom_line(data = pDemand, aes(x=hour.in.season, y=value, linetype='Demand'),
+  #             colour='black') +
+  #   guides(colour=FALSE) + theme_minimal() +
+  #   scale_fill_brewer(type='div', palette = 'Spectral') +
+  #   scale_linetype_manual(values=c('dashed')) +
+  #   #scale_fill_grey() +
+  #   theme(axis.text.x = element_blank(),
+  #         axis.ticks.x = element_blank(),
+  #         panel.spacing = unit(0,'lines'),
+  #         panel.border = element_rect(fill = NA)) +
+  #   guides(fill=guide_legend(title=NULL),
+  #          linetype=guide_legend(title=NULL)) +
+  #   facet_grid(cols = vars(season), rows=vars(g), scales = 'free_x')
   
   # join all dfs 
-  gtotal <- pDemand %>% select(g, date, value) %>% 
-    left_join(gexist %>% select(g, date, value.exist), by=c('g', 'date'))
-
-  if (!is.null(charge.ph)) {
-    gtotal <- gtotal %>% 
-      left_join(charge.ph %>% select(g, date, value.charge), by=c('g', 'date'))
-  } else {
-    gtotal$value.charge <- 0
-  }
-  
-  if (!is.null(gtechcurt)) {
-    gtotal <- gtotal %>% 
-      left_join(gtechcurt %>% select(g, date, value.tech.curt), by=c('g', 'date'))
-  } else {
-    gtotal$value.tech.curt <- 0
-  }
-
-  if (!is.null(gtechnotcurt)) {
-    gtotal <- gtotal %>% 
-      left_join(gtechnotcurt %>% select(g, date, value.tech.not.curt), by=c('g', 'date'))
-  } else {
-    gtotal$value.tech.not.curt <- 0
-  }
-
-  if (!is.null(gtechrenew)) {
-    gtotal <- gtotal %>% 
-      left_join(gtechrenew %>% select(g, date, value.tech.renew), by=c('g', 'date'))
-  }else {
-    gtotal$value.tech.renew <- 0 
-  }
-  
-  gtotal <- gtotal %>% ungroup() %>% 
-    mutate_at(.vars=vars(value, value.exist, value.charge, value.tech.curt, value.tech.renew), 
-              .funs={function(x){ifelse(is.na(x), 0, x)}}) %>%
-    mutate(net=value.exist + value.tech.curt + value.tech.renew - value - value.charge)
-  
+  # gtotal <- pDemand %>% select(g, date, value.demand) %>% 
+  #   left_join(gexist %>% select(g, date, value.exist), by=c('g', 'date'))
+  # 
+  # if (!is.null(charge.ph) && nrow(charge.ph) > 0) {
+  #   gtotal <- gtotal %>% 
+  #     left_join(charge.ph %>% select(g, date, value.charge), by=c('g', 'date'))
+  # } else {
+  #   gtotal$value.charge <- 0
+  # }
+  # 
+  # if (!is.null(gtechcurt) && nrow(gtechcurt) > 0) {
+  #   gtotal <- gtotal %>% 
+  #     left_join(gtechcurt %>% select(g, date, value.tech.curt), by=c('g', 'date'))
+  # } else {
+  #   gtotal$value.tech.curt <- 0
+  # }
+  # 
+  # if (!is.null(gtechnotcurt) && nrow(gtechnotcurt) > 0) {
+  #   gtotal <- gtotal %>% 
+  #     left_join(gtechnotcurt %>% select(g, date, value.tech.not.curt), by=c('g', 'date'))
+  # } else {
+  #   gtotal$value.tech.not.curt <- 0
+  # }
+  # 
+  # if (!is.null(gtechrenew) && nrow(gtechrenew) > 0) {
+  #   gtotal <- gtotal %>% 
+  #     left_join(gtechrenew %>% select(g, date, value.tech.renew), by=c('g', 'date'))
+  # }else {
+  #   gtotal$value.tech.renew <- 0 
+  # }
+  # gtotal <- gtotal %>% ungroup() %>% 
+  #   mutate_at(.vars=vars(value.demand, value.exist, value.charge, value.tech.curt, value.tech.not.curt, value.tech.renew), 
+  #             .funs={function(x){ifelse(is.na(x), 0, x)}}) %>%
+  #   mutate(net=value.exist + value.tech.curt + value.tech.renew - value.demand - value.charge)
+ 
+  return(df.total) 
   
 }
 

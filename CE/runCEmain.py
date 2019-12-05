@@ -66,8 +66,11 @@ def runCEmain(cwd=os.getcwd(), case=None, runUC=False):
                 # change empty list to None
                 genparam.gcmranking = None
             else:
-                # change string values to integer
-                genparam.gcmranking = list(map(int, genparam.gcmranking))
+                # change string values to integer or float
+                if genparam.referenceCase:
+                    genparam.gcmranking = list(map(float, genparam.gcmranking))
+                else:
+                    genparam.gcmranking = list(map(int, genparam.gcmranking))
 
             genparam.ncores_py = df['ncores_py'].iloc[case]
             genparam.ncores_gams = df['ncores_gams'].iloc[case]

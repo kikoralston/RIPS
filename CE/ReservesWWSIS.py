@@ -49,10 +49,19 @@ def calcWWSISReserves(windGenHr, windGenSubhr, solarGenHr, solarGenSubhr, demand
     #
     contResHourly = setContReserves(contLoadFrac, demand)
 
-    (regUpHourly, regDownHourly, regDemand, regUpWind, regDownWind,
-     regUpSolar, regDownSolar) = setRegReserves(regErrorPercentile, regLoadFrac, windGenSubhr, solarGenSubhr, demand)
+    if regErrorPercentile > 0:
+        (regUpHourly, regDownHourly, regDemand, regUpWind, regDownWind, regUpSolar,
+         regDownSolar) = setRegReserves(regErrorPercentile, regLoadFrac, windGenSubhr, solarGenSubhr, demand)
+    else:
+        # no reserves
+        (regUpHourly, regDownHourly, regDemand, regUpWind, regDownWind, regUpSolar,
+         regDownSolar) = setRegReserves(regErrorPercentile, regLoadFrac, None, None, demand)
 
-    flexResHourly, flexWind, flexSolar = setFlexReserves(flexErrorPercentile, windGenHr, solarGenHr)
+    if flexErrorPercentile > 0:
+        flexResHourly, flexWind, flexSolar = setFlexReserves(flexErrorPercentile, windGenHr, solarGenHr)
+    else:
+        # no reserves
+        flexResHourly, flexWind, flexSolar = [0] * 8760, [0] * 8760, [0] * 8760
 
     # plotGenDemandAndRes(demand,windGenHr,solarGenHr,regUpHourly,flexResHourly,contResHourly)
     # plotWindAndSolarRes(regUpWind,regUpSolar,windGenHr,solarGenHr,'RegUp')
