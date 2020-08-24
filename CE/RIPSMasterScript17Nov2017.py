@@ -1,10 +1,7 @@
 # Michael Craig, 31 May 2016
 # Run capacity expansion and dispatch models w/ climate impacts.
 
-import os, sys
-import csv, operator, copy, time, random
 import numpy as np
-import datetime as dt
 import multiprocessing as mp
 import shutil
 import gc
@@ -16,24 +13,20 @@ try:
 except ImportError:
     print('gams module not found! GAMS functions will not work.')
 
-from AuxFuncs import *
-from GAMSAuxFuncs import *
 from SetupGeneratorFleet import setupGeneratorFleet, aggregatePlantTypeToORIS
-# from ImportDemandProfile import importZonalHourlyDemand
 from ForecastDemandWithRegression import forecastZonalDemandWithReg
 from UpdateFuelPriceFuncs import *
 from DemandFuncs import *
 from DemandFuncsCE import *
 from GetHydroMaxGenPotential import getHydroEPotential, importHydroPotentialGen, getDailyHydroPotentialsUC
-from CO2CapCalculations import getCo2Cap, interpolateCO2Cap
+from CO2CapCalculations import interpolateCO2Cap
 from SetInitCondsUC import *
 from ImportNewTechs import getNewTechs
 from RetireUnitsCFPriorCE import retireUnitsCFPriorCE
-from CreateFleetForCELoop import createFleetForCurrentCELoop, onlineAndNotRetired
+from CreateFleetForCELoop import createFleetForCurrentCELoop
 from GetRenewableCFs import getRenewableCFData
-from GetNewRenewableCFs import getNewWindAndSolarCFs, trimNewRECFsToCEHours
-from AssignCellsToIPMZones import getIPMPolys, assignCellsToIPMZones
-from AssignCellsToStates import getStatePolys
+from GetNewRenewableCFs import trimNewRECFsToCEHours
+from AssignCellsToIPMZones import assignCellsToIPMZones
 from LoadEligibleCellWaterTs import loadEligibleCellWaterTs
 from GetHourlyCapacsForCE import getHourlyNonRECapacsForCE, getHourlyCurtailedTechCapacsForCE
 from GetHourlyCapacsForUC import getHourlyCapacitiesForDays
@@ -51,17 +44,21 @@ from ReservesWWSIS import calcWWSISReserves
 from SaveCEOperationalResults import saveCapacExpOperationalData
 from LoadCEFleet import loadCEFleet
 from ModifyGeneratorCapacityWithWaterTData import determineHrlyCurtailmentsForExistingGens
-from PreProcessRBM import processRBMDataIntoIndividualCellFiles
 from ModifyNewTechCapacityWithWaterTData import determineHrlyCurtailmentsForNewTechs
-
-from Parameters import *
 
 sys.stdout.flush()
 
 
 def masterFunction(genparam, reserveparam, curtailparam):
-    """MASTER FUNCTION
+    """Main function of CE/UCED simulation
 
+    This is the main function that must be called to start a CE/UCED simulation. It takes three arguments that define
+    the parameters of the simulation. Each argument is an object with a set of specific parameters for the simulation.
+    These objects must be created and the fields defined before being passed to this function.
+
+    :param genparam: object of type :mod:`Generalparameters`
+    :param reserveparam: object of type :mod:`Reserveparameters`
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
     """
     # initialize random number generator with fixed value (for 'reproducibility')
     random.seed(a=27081979)
@@ -94,11 +91,6 @@ def masterFunction(genparam, reserveparam, curtailparam):
     print()
 
     genFleet = getInitialFleetAndDemand(genparam, reserveparam)
-
-    if genparam.processRBMData:
-        print('Processing raw RBM data')
-        processRBMDataIntoIndividualCellFiles(curtailparam=curtailparam)
-        print('Processed RBM data')
 
     (capacExpModelsEachYear, capacExpBuilds, capacExpGenByGens, capacExpRetiredUnitsByCE,
      capacExpRetiredUnitsByAge) = ([], [['TechnologyType']], [['ORIS+UnitID']], [], [])
@@ -223,34 +215,23 @@ def masterFunction(genparam, reserveparam, curtailparam):
 
 
 def getInitialFleetAndDemand(genparam, reserveparam):
-    """SET UP INITIAL FLEET
+    """Set up initial generator fleet
 
-    Reads folders containing data of existing power plant data and compiles 2d list with generator fleet data. If the
-    genparam.analysisArea == 'test', it reads a file 'genFleetInitial.csv' from genparam.dataRoot.
+    Reads folders containing data of existing power plant data and compiles 2d list with generator fleet data.
 
-    :param genparam: object of class Generalparameters
-    :param reserveparam: object of class Reserveparameters
+    :param genparam: object of class :mod:`Generalparameters`
+    :param reserveparam: object of class :mod:`Reserveparameters`
     :return: 2d list with initial generator fleet data
     """
 
-    if genparam.analysisArea == 'test':
-        fileNameWithDir = os.path.join(genparam.dataRoot, 'genFleetInitial.csv')
+    genFleet = setupGeneratorFleet(genparam.startYear, genparam, reserveparam)
 
-        if os.path.isfile(fileNameWithDir):
-            genFleet = readCSVto2dList(fileNameWithDir=fileNameWithDir)
-        else:
-            print('Error! analysisArea is set to \'test\'. There must be a file \'genFleetInitial.csv\' at the ' +
-                  'root of the data folder')
-            sys.exit()
-    else:
-        genFleet = setupGeneratorFleet(genparam.startYear, genparam, reserveparam)
-
-        aggregatePlantTypeToORIS(genFleet, 'Hydro')
-        aggregatePlantTypeToORIS(genFleet, 'Pumped Storage')
-        # Add placeholder columns for additions & retirements by CE
-        ceHeaders = ['YearAddedCE', 'YearRetiredByCE', 'YearRetiredByAge']
-        genFleet[0].extend(ceHeaders)
-        for row in genFleet[1:]: row.extend([''] * len(ceHeaders))
+    aggregatePlantTypeToORIS(genFleet, 'Hydro')
+    aggregatePlantTypeToORIS(genFleet, 'Pumped Storage')
+    # Add placeholder columns for additions & retirements by CE
+    ceHeaders = ['YearAddedCE', 'YearRetiredByCE', 'YearRetiredByAge']
+    genFleet[0].extend(ceHeaders)
+    for row in genFleet[1:]: row.extend([''] * len(ceHeaders))
 
     write2dListToCSV(genFleet, os.path.join(genparam.resultsDir, 'genFleetInitial.csv'))
 
@@ -260,15 +241,15 @@ def getInitialFleetAndDemand(genparam, reserveparam):
 def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, capacExpModelsEachYear, capacExpBuilds,
                          capacExpGenByGens, capacExpRetiredUnitsByCE, capacExpRetiredUnitsByAge, genFleetPriorCE,
                          priorCEout_db, priorHoursCE, genparam, reserveparam, curtailparam):
-    """RUN CAPACITY EXPANSION
+    """Run capacity expansion simulation
 
-    This function does all the reading and preprocessing before executing optimization
+    This function does all the reading and preprocessing before executing capacity expansion optimization
 
     :param genFleet: 2d list with original existing generator fleet (in the first year of the simulation)
     :param zonalDemandProfile: nested dictionary with hourly demand by ipm zone in each gcm case being simulated.
                                Dictionary is {gcm: {zone: [hourly demand]}}
-    :param currYear:
-    :param currCo2Cap:
+    :param currYear: integer with year of simulation
+    :param currCo2Cap: float with value in MMton/year of CO2 emission limit
     :param capacExpModelsEachYear:
     :param capacExpBuilds:
     :param capacExpGenByGens:
@@ -278,9 +259,9 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
                             (including prior additions)
     :param priorCEout_db:
     :param priorHoursCE:
-    :param genparam: object of class Generalparameters
-    :param reserveparam: object of class Reserveparameters
-    :param curtailparam: object of class Curtailmentparameters
+    :param genparam: object of class :mod:`Generalparameters`
+    :param reserveparam: object of class :mod:`Reserveparameters`
+    :param curtailparam: object of class :mod:`Curtailmentparameters`
     :return:
     """
 
@@ -437,8 +418,7 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
 
     # hrlyCurtailmentsAllTechsInTgtYr is a dict of (tech,cell):[hourlycapac]
     hrlyCurtailmentsAllTechsInTgtYr = \
-        determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam, curtailparam,
-                                             resultsDir)
+        determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam, curtailparam)
 
     writeDictToCSV(hrlyCurtailmentsAllTechsInTgtYr, os.path.join(resultsDir, 'curtailmentsTechHourly' +
                                                                  str(currYear) + '.csv'))
@@ -546,14 +526,17 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
 
 
 def importHourlyThermalCurtailments(genFleet, currYear, modelName, resultsDir, genparam, curtailparam):
-    """IMPORT HOURLY THERMAL CURTAILMENTS BY GENERATOR
+    """Import hourly thermal curtailments by generator
 
-    :param genFleet: 2d list (matrix) with data of gen fleet
+    This is a wrapper function that calls thermal curtailments simulations and cleans up the output so it
+    can be used by the CE/UCED simulations
+
+    :param genFleet: 2d list (matrix) with data of generator fleet
     :param currYear: current year of analysis
     :param modelName: string with model name ('CE' or 'UC')
-    :param resultsDir: string specifying folder where files will be saved (it is a subfolder of genparam.dataRoot)
-    :param genparam: object of class General Parameters
-    :param curtailparam: object of class General Parameters
+    :param resultsDir: string specifying folder where output files will be saved
+    :param genparam: object of type :mod:`Generalparameters`
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
     :return: nested dict mapping each gen to 1d numpy array of hourly net capacity curtailments(MW)
              dict is {gcm:{genId: 1d np.array()}}
     """
@@ -581,9 +564,11 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
                           hourlySolarGenCEZonal, demandCEZonal, newTechsCE, planningReserveZonal, hoursForCE,
                           newWindCFsCEZonal, newSolarCFsCEZonal, currCo2Cap, seasonDemandWeights, repHrsBySeason,
                           specialHrs, peakDemandHourZonal, cellsToZones, hydroPotPerSeason, genparam):
-    """CALL CAPACITY EXPANSION
+    """Call capacity expansion optimization
 
-    :param genFleetForCE:
+    This funtion loads GAMS workspace and runs capacity expansion optimization
+
+    :param genFleetForCE: 2d list (matrix) with data of generator fleet
     :param hourlyCapacsCE:
     :param hourlyCurtailedTechCapacsCE:
     :param hourlyWindGenCEZonal:
@@ -601,7 +586,7 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
     :param peakDemandHourZonal:
     :param cellsToZones:
     :param hydroPotPerSeason:
-    :param genparam:
+    :param genparam: object of type :mod:`Generalparameters`
     :return:
     """
 
@@ -730,9 +715,25 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
     return capacExpModel, ms, ss, techCurtailedSymbols, renewTechSymbols, techNotCurtailedSymbols, pumpHydroGenSymbols
 
 
-################################### ADD SETS
 def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeason, specialHrs, peakDemandHourZonal,
                         cellsToZones, genparam, blocksWind=None, blocksSolar=None):
+    """Add sets needed to GAMS database
+
+    This function adds the sets to the GAMS database that are needed to run the capacity expansion optimization
+
+    :param db:
+    :param genFleetForCE: 2d list (matrix) with data of generator fleet
+    :param hoursForCE:
+    :param newTechsCE:
+    :param repHrsBySeason:
+    :param specialHrs:
+    :param peakDemandHourZonal:
+    :param cellsToZones:
+    :param genparam: object of class :mod:`Generalparameters`
+    :param blocksWind:
+    :param blocksSolar:
+    :return:
+    """
     ipmZoneNums, lineList, ptCurtailedAll = genparam.ipmZoneNums, genparam.lineList, genparam.ptCurtailedAll
 
     zoneSet, zoneSymbols = addZoneSets(db, ipmZoneNums)  # create string for set IDs
@@ -791,7 +792,6 @@ def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeaso
             peakHrSymbols, pumpHydroGenSet, pumpHydroGenSymbols, gcmSet)
 
 
-################################### ADD PARAMETERS
 def addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySolarGenCEZonal, demandCEZonal,
                               newTechsCE, genFleetForCE, genSet, genSymbols, hydroGenSet, hoursForCE, hourSet,
                               hourSymbols, techSet, techSymbols, techCurtailedSet, techCurtailedSymbols, renewTechSet,
@@ -802,7 +802,61 @@ def addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySo
                               cellSet, peakDemandHourZonal, peakHourSet, peakHrSymbols, hydroPotPerSeason,
                               ptCurtailedAll, pumpHydroGenSet, pumpHydroGenSymbols, phEff, phMaxSoc, phInitSoc,
                               gcmSet):
+    """Add parameters needed to GAMS database
 
+    This function adds the parameters to the GAMS database that are needed to run the capacity expansion optimization
+
+    :param db:
+    :param hourlyCapacsCE:
+    :param hourlyWindGenCEZonal:
+    :param hourlySolarGenCEZonal:
+    :param demandCEZonal:
+    :param newTechsCE:
+    :param genFleetForCE: 2d list (matrix) with data of generator fleet
+    :param genSet:
+    :param genSymbols:
+    :param hydroGenSet:
+    :param hoursForCE:
+    :param hourSet:
+    :param hourSymbols:
+    :param techSet:
+    :param techSymbols:
+    :param techCurtailedSet:
+    :param techCurtailedSymbols:
+    :param renewTechSet:
+    :param renewTechSymbols:
+    :param planningReserveZonal:
+    :param discountRate:
+    :param newWindCFsCEZonal:
+    :param newSolarCFsCEZonal:
+    :param scaleMWtoGW:
+    :param scaleDollarsToThousands:
+    :param currCo2Cap:
+    :param seasonDemandWeights:
+    :param hourlyCurtailedTechCapacsCE:
+    :param scaleLbToShortTon:
+    :param maxAddedZonalCapacPerTech:
+    :param zoneSet:
+    :param zoneSymbols:
+    :param lineSet:
+    :param ipmZones:
+    :param ipmZoneNums:
+    :param lineList:
+    :param lineCapacs:
+    :param cellsToZones:
+    :param cellSet:
+    :param peakDemandHourZonal:
+    :param peakHourSet:
+    :param peakHrSymbols:
+    :param hydroPotPerSeason:
+    :param ptCurtailedAll:
+    :param pumpHydroGenSet:
+    :param pumpHydroGenSymbols:
+    :param phEff:
+    :param phMaxSoc:
+    :param phInitSoc:
+    :param gcmSet:
+    """
     # update newTechsCE to account for blocks of Wind and Solar with different CF
     newTechsCEcopy = copy.deepcopy(newTechsCE)
     techCol = newTechsCEcopy[0].index('TechnologyType')
@@ -873,15 +927,15 @@ def addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySo
 
 
 def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam, reserveparam, curtailparam):
-    """RUN UNIT COMMITMENT
+    """Run unit commitment simulation
 
-    :param genFleet:
+    :param genFleet: 2d list with generator fleet for UCED simulation
     :param zonalDemandProfile:
-    :param ucYear:
+    :param ucYear: integer with year of UCED run
     :param currCo2Cap:
-    :param genparam:
-    :param reserveparam:
-    :param curtailparam:
+    :param genparam: object of class :mod:`Generalparameters`
+    :param reserveparam: object of type :mod:`Reserveparameters`
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
     :return:
     """
 
@@ -973,7 +1027,11 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
 
 
 def runUnitCommitmentSingleGcm(list_args):
+    """
 
+    :param list_args:
+    :return:
+    """
     # unpack list with arguments fot this function
     gcm, fleetUC, zonalDemandProfile, ucYear = list_args[0], list_args[1], list_args[2], list_args[3]
 
@@ -982,8 +1040,8 @@ def runUnitCommitmentSingleGcm(list_args):
     zonalHourlyDfWind, zonalHourlyDfSolar = list_args[10], list_args[11]
     zonalSubhourlyDfWind, zonalSubhourlyDfSolar = list_args[12], list_args[13]
 
-    # daysForUC = list(range(genparam.ucDayInitial, (genparam.ucDayEnd + 1)))
-    daysForUC = list(range(genparam.ucDayInitial, (genparam.ucDayEnd + 1), 2))
+    daysForUC = list(range(genparam.ucDayInitial, (genparam.ucDayEnd + 1)))
+    # daysForUC = list(range(genparam.ucDayInitial, (genparam.ucDayEnd + 1), 2))
 
     (startYear, fuelPricesTimeSeries, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon,
      daysOpt, daysLA, projectName, resultsDir, ocAdderMin, ocAdderMax,
@@ -1251,22 +1309,25 @@ def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenU
                        regDownUC, flexUC, contUC, genparam, reserveparam):
     """RUN UNIT COMMITMENT MODEL
 
-    :param fleetUC:
+
+    :param fleetUC: 2d list with generator fleet for UCED simulation
     :param hourlyCapacsUC:
     :param hourlyWindGenUC:
     :param hourlySolarGenUC:
+    :param hydroPotentialUC:
     :param demandUC:
-    :param hoursForUC:
+    :param hoursForUC: 1d list with hours (1-8760) that will be used in this UCED run
     :param onOffInitial:
     :param genAboveMinInitial:
     :param mdtCarriedInitial:
+    :param initSoc:
     :param co2Price:
     :param regUpUC:
     :param regDownUC:
     :param flexUC:
     :param contUC:
-    :param genparam:
-    :param reserveparam:
+    :param genparam: object of class :mod:`Generalparameters`
+    :param reserveparam: object of type :mod:`Reserveparameters`
     :return:
 
     """
@@ -1315,11 +1376,14 @@ def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenU
 
 
 def addSetsToDatabaseUC(db, fleetUC, hoursForUC, genparam):
-    """ADD SETS
+    """Add sets to GAMS database
 
-    :param db:
-    :param fleetUC:
-    :param hoursForUC:
+    This function adds the sets to the GAMS database needed to run the UCED optimization
+
+    :param db: gams database object
+    :param fleetUC: 2d list with generator fleet for UCED simulation
+    :param hoursForUC: 1d list with hours (1-8760) that will be used in this UCED run
+    :param genparam: object of class :mod:`Generalparameters`
     :return:
     """
 
@@ -1341,15 +1405,17 @@ def addParametersToDatabaseUC(db, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGe
                               fleetUC, genSet, genSymbols, hydroGenSet, hydroGenSymbols, hourSet, hourSymbols, zoneSet,
                               zoneSymbols, lineSet, cnse, onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSoc,
                               co2Price, hoursForUC, flexUC, contUC, regUpUC, regDownUC, genparam, reserveparam):
-    """ADD PARAMETERS
+    """Add parameters to GAMS database
 
-    :param db:
+    This function adds the parameters to the GAMS database needed to run the UCED optimization
+
+    :param db: gams database object
     :param hourlyCapacsUC:
     :param hourlyWindGenUC:
     :param hourlySolarGenUC:
     :param hydroPotentialUC:
     :param demandUC:
-    :param fleetUC:
+    :param fleetUC: 2d list with generator fleet for UCED simulation
     :param genSet:
     :param genSymbols:
     :param hydroGenSet:
@@ -1365,16 +1431,13 @@ def addParametersToDatabaseUC(db, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGe
     :param mdtCarriedInitial:
     :param initSoc: initial state of charge for pumped storage
     :param co2Price:
-    :param hoursForUC:
+    :param hoursForUC: 1d list with hours (1-8760) that will be used in this UCED run
     :param flexUC:
     :param contUC:
     :param regUpUC:
     :param regDownUC:
-    :param genparam: general parameters
-    :param reserveparam: reserve parameters
-
-
-    
+    :param genparam: object of class :mod:`Generalparameters`
+    :param reserveparam: object of type :mod:`Reserveparameters`
     """
 
     (rrToRegTime, rrToFlexTime, rrToContTime) = (reserveparam.rampRateToRegReserveScalar,
@@ -1442,6 +1505,8 @@ def addParametersToDatabaseUC(db, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGe
 def create_description_file(genparam, curtailparam):
     """ Create a description file of the case in the output folder
 
+    :param genparam: object of class :mod:`Generalparameters`
+    :param reserveparam: object of type :mod:`Reserveparameters`
     """
 
     outstr = '\n\n'
@@ -1472,7 +1537,7 @@ def create_description_file(genparam, curtailparam):
         outstr = outstr + 'GCMs considered      : {}\n'.format("{0}".format(", ".join(
             str(i) for i in curtailparam.listgcms)))
 
-    outstr = outstr + 'CO2 Cap case         : {}\n'.format(genparam.co2CapScenario)
+    outstr = outstr + 'CO2 Cap case         : {:.0%}\n'.format(genparam.co2CapPercentage)
 
     outstr = outstr + '\n\n'
 
@@ -1487,64 +1552,3 @@ def create_description_file(genparam, curtailparam):
 
     with open(fname, 'w') as f:
         f.write(outstr)
-
-
-########### TESTING PURPOSES ONLY ####################################
-# REMOVE THIS FUNCTION - JUST INCLUDED FOR TESTING PURPOSES TO EXPEDITE UC
-def removeHydroForTesting(fleetUC):
-    fuelTypeCol = fleetUC[0].index('Modeled Fuels')
-    idxs = []
-    for idx in range(len(fleetUC) - 1, 0, -1):
-        if fleetUC[idx][fuelTypeCol] == 'Hydro': fleetUC.pop(idx)
-
-
-# for zone in genparam.ipmZones:
-#     print('Zone ', zone)
-#
-#     start_time = time.time()
-#     # Check 5/18/17: next 2 lines are working properly!
-#     zonalGenFleet = [genFleetForCE[0]] + [row for row in genFleetForCE if row[zoneCol] == zone]
-#
-#     (windCFs, windCfsDtHr, windCfsDtSubhr, ewdIdAndCapac, solarCFs, solarCfsDtHr, solarCfsDtSubhr,
-#      solarFilenameAndCapac) = getRenewableCFs(zonalGenFleet, startWindCapacForCFs, startSolarCapacForCFs,
-#                                               genparam.tzAnalysis, genparam.dataRoot, genparam.windGenDataYr,
-#                                               zone, genparam.fipsToZones, genparam.fipsToPolys,
-#                                               ncores_py=genparam.ncores_py)
-#     print('Got RE CFs. Elapsed time: ' + str_elapsedtime(start_time))
-#
-#     start_time = time.time()
-#     if windCFs is not None:
-#         write2dListToCSV(windCFs, os.path.join(resultsDir, 'windCFsFullYrCE' + zone + str(currYear) + '.csv'))
-#         write2dListToCSV(windCfsDtHr, os.path.join(resultsDir, 'windCFsDtFullYrCE' + zone + str(currYear) + '.csv'))
-#         # write2dListToCSV(windCfsDtSubhr,os.path.join(resultsDir,'windCFsDtSubhrFullYrCE' + zone + str(currYear) + '.csv'))
-#         write2dListToCSV(ewdIdAndCapac,
-#                          os.path.join(resultsDir, 'windIdAndCapacCE' + zone + str(currYear) + '.csv'))
-#     if solarCFs is not None:
-#         write2dListToCSV(solarCFs, os.path.join(resultsDir, 'solarCFsFullYrCE' + zone + str(currYear) + '.csv'))
-#         write2dListToCSV(solarCfsDtHr,
-#                          os.path.join(resultsDir, 'solarCFsDtFullYrCE' + zone + str(currYear) + '.csv'))
-#         # write2dListToCSV(solarCfsDtSubhr,os.path.join(resultsDir,'solarCFsDtSubhrFullYrCE' + zone + str(currYear) + '.csv'))
-#         write2dListToCSV(solarFilenameAndCapac,
-#                          os.path.join(resultsDir, 'solarIdAndCapacCE' + zone + str(currYear) + '.csv'))
-#
-#     (newWindCFs, newWindCFsSubhr, newSolarCFs, newSolarCFsSubhr, newWindCfsDtHr, newWindCfsDtSubhr,
-#      newWindIdAndCapac, newSolarCfsDtHr, newSolarCfsDtSubhr, newSolarFilenameAndCapac,
-#      addedWindCapac, addedSolarCapac) = getNewWindAndSolarCFs(zonalGenFleet, currYear, 'CE', genparam.tzAnalysis,
-#                                                               genparam.dataRoot, resultsDir, genparam.windGenDataYr,
-#                                                               zone, genparam.fipsToZones, genparam.fipsToPolys,
-#                                                               ncores_py=genparam.ncores_py)
-#     print('Got new RE CFs. Elapsed time: ' + str_elapsedtime(start_time))
-#
-#     write2dListToCSV(newWindIdAndCapac,
-#                      os.path.join(resultsDir, 'windNewIdAndCapacCE' + zone + str(currYear) + '.csv'))
-#     write2dListToCSV(newSolarFilenameAndCapac,
-#                      os.path.join(resultsDir, 'solarNewIdAndCapacCE' + zone + str(currYear) + '.csv'))
-#
-#     # get number of hours in year (assume that is the same over all gcms)
-#     gcm = curtailparam.listgcms[0]
-#     nhours_year = len(zonalDemandProfile[gcm][zone])
-#
-#     zonalHourlyWindGen[zone], zonalHourlySolarGen[zone] = getAggregateSolarAndWind(windCFs, ewdIdAndCapac,
-#                                                                                    solarCFs, solarFilenameAndCapac,
-#                                                                                    nhours_year)
-#     zonalNewWindCFs[zone], zonalNewSolarCFs[zone] = newWindCFs, newSolarCFs
