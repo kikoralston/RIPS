@@ -14,8 +14,75 @@ class Generalparameters:
     This class contains all general parameters used in the simulation. I aggregated all of them inside this class
     to make it easier to pass them as argument to the functions.
 
-    The method load reads a formatted txt file with the values of the parameters (be careful with the order and format)
-
+    :param dataRoot: (string) path to folder with general input data
+    :param pathSysGams: (string) path to gams installation
+    :param runCE: (boolean) if True run CE simulation
+    :param runUC: (boolean) if True run UCED simulation
+    :param runFirstUCYear: (boolean) if True run UCED in initial year of simulation
+    :param startYear: (integer) first year of simulation
+    :param endYear: (integer) end year of simulation
+    :param yearStepCE: (integer) size of steps (in years) in CE simulation
+    :param daysPerSeason: (integer) number of days in each season considered in CE simulation
+    :param analysisArea: (string) analysis area
+    :param useLineLimits: (boolean) if True, tries to read file with transmission limits (dataRoot/Transmission/). If False, limits = +Inf
+    :param referenceCase: (boolean) If True, run case without curtailments or effects of climate change in demand
+    :param incCurtailments: (boolean) whether to model curtailments,whether to model env regs on water T
+    :param incRegs: (boolean) whether to model curtailments,whether to model env regs on water T
+    :param coolDesignT: (integer) design temperature of cooling techs (NOT USED ANYMORE)
+    :param ptCurtailed: (set) types of power plants for which thermal deratings simulations will be performed (default: {'Coal Steam', 'Combined Cycle', 'Nuclear'})
+    :param ptCurtailedRegs: (set) types of power plants for which thermal curtailments due to enviro regulations simulations will be performed (default: {'Coal Steam', 'Coal Steam CCS', 'Combined Cycle', 'Combined Cycle CCS', 'Nuclear'})
+    :param ptCurtailedAll: (set) used internally only. should not be set by user. Union of ptCurtailed and ptCurtailedRegs
+    :param cellsEligibleForNewPlants: (string) Determines which cells new plants can be sited in; can be all all cells or those w/ gens already. 'all' (all cells) or 'withGens' (only cells with gen inside)
+    :param cellNewTechCriteria: (string) Of those cells given above parameter, whether input all of them or just the one w/ max wtr T per zone. 'all' or 'maxWaterT' (maxWaterT: only include cell w/ max water T in CE.)
+    :param compressFleet:  (boolean) Compress fleet by agregating small generators?
+    :param co2CapPercentage: (float) Cap of co2 emission in final year of analysis **as percentage of emission in base year** (i.e., 100% - %reduction)
+    :param scenario: (string) File with fossil fuel cost scenario (e.g. 'FuelPriceTimeSeries.csv')
+    :param fuelPricesTimeSeries: (list) used internally only. should not be set by user.
+    :param resultsDir: (string) path to folder where output data will be saved
+    :param tzAnalysis: (string) timezone of analysis (default: 'EST')
+    :param projectName: (string) project name
+    :param windGenDataYr: (integer) year of wind database that will be used for wind generation simulations (e.g.: 2009, this was picked somewhat arbitrarily - average CF of all years in WIND data)
+    :param capacExpFilename: (string) name of gams file with capacity expansion model (e.g., 'CERIPS24July2017PS.gms')
+    :param maxAddedZonalCapacPerTech: (integer) maximum number of new techs (by type) that can be added in each CE xtep
+    :param incITC: (boolean) include ITC?
+    :param retirementCFCutoff: (float) retire units w/ CF lower than this value
+    :param ptEligRetCF: (list) types of power plants that can be retired due to low CF
+    :param selectCurtailDays: (boolean) add days with maximum curtailment to special days
+    :param planningReserve: (float) planning reserve as fraction of peak demand
+    :param discountRate: (float) discount rate used for computation of annualized costs
+    :param allowCoalWithoutCCS: (boolean) allow Coal without CCS?
+    :param onlyNSPSUnits: (boolean) allow only NSPS Units?
+    :param permitOncethru: (boolean) permit adding power plants with Once-through cooling?
+    :param retireOldPlants: (boolean) retire Old Plants?
+    :param ucFilename: (string) 'UCRIPS18April2017.gms'
+    :param calculateCO2Price: (boolean) True
+    :param daysOpt: (integer) number of days being optimized in each individual UC run
+    :param daysLA: (integer) number of "Look Ahead Days" in each individual UC run
+    :param ocAdderMin: (float) 0
+    :param ocAdderMax: (float) 0.05 $/MWh
+    :param ucDayInitial: (integer) initial day of the year for complete UC annual simulation
+    :param ucDayEnd: (integer) final day of the year for complete UC annual simulation
+    :param costnse: (float) cost of non supplied energy (cnse) in $/MWh
+    :param phEff: (float) pumped storage efficiency
+    :param phMaxSoc: (float) maximum state of charge of pumped hydro. Max soc as multiple of capacity
+    :param phInitSoc: (float) initial state of charge of pumped hydro. Init SOC as fraction of max soc
+    :param scaleMWtoGW: 1000
+    :param scaleDollarsToThousands: 1000
+    :param scaleLbToShortTon: 2000
+    :param states: (list) used internally only. should not be set by user.
+    :param statesAbbrev: (list) used internally only. should not be set by user.
+    :param ipmZones: (list) used internally only. should not be set by user.
+    :param fipsToZones: (list) used internally only. should not be set by user.
+    :param fipsToPolys: (list) used internally only. should not be set by user.
+    :param statePolys: (list) used internally only. should not be set by user.
+    :param ipmZoneNums: (list) used internally only. should not be set by user.
+    :param lineList: (list) used internally only. should not be set by user.
+    :param lineCapacs: (list) used internally only. should not be set by user.
+    :param ncores_py: (integer) number of cores to use for parallel simulation in python
+    :param ncores_gams: (integer) number of cores to use for parallel simulation in gams
+    :param coldStart: (boolean) "Cold Start" for CE and UC models. Read files with initial conditions in first run
+    :param gcmranking: (list) list with ranking of GCMs that will be chosen in each CE year (e.g. [3, 9, 15])
+    :param rcp: (string) name of rcp being simulated (rcp45 or rcp85)
     """
 
     def __init__(self):
@@ -35,7 +102,6 @@ class Generalparameters:
 
         self.incCurtailments = True  # whether to model curtailments,whether to model env regs on water T
         self.incRegs = True  # whether to model curtailments,whether to model env regs on water T
-        self.coolDesignT = 100  # design temperature of cooling techs
 
         # PTs curtailed via regression (ptCurtailed) and via enviro regulations (ptCurtailedRegs)
         self.ptCurtailed = {'Coal Steam', 'Combined Cycle', 'Nuclear'}
@@ -48,14 +114,12 @@ class Generalparameters:
         self.cellNewTechCriteria = 'all'  # 'all' or 'maxWaterT' (maxWaterT: only include cell w/ max water T in CE.)
 
         self.compressFleet = True
-        self.co2CapScenario = 'none'
+        self.co2CapPercentage = float("inf")
         self.scenario = 'FuelPriceTimeSeries.csv'
 
         self.fuelPricesTimeSeries = []
 
         self.resultsDir = ''
-
-        self.processRBMData = False  # set to True if first time improting set of RBM data
 
         self.tzAnalysis = 'EST'
         self.projectName = 'rips'
@@ -114,8 +178,6 @@ class Generalparameters:
         self.gcmranking = []    # list with ranking of GCMs that will be chosen in each CE year (e.g. [3, 9, 15])
         self.rcp = ''           # name of rcp being simulated (rcp45 or rcp85)
 
-        # OLD VARIABLES
-        self.testModel = False  # use dummy test system; not currently working
 
     def __str__(self):
 
@@ -140,7 +202,6 @@ class Generalparameters:
                           'on water T\n'.format(self.incCurtailments)
         outstr = outstr + 'incRegs = {} \t # whether to model curtailments,whether to model env regs on ' \
                           'water T\n'.format(self.incRegs)
-        outstr = outstr + 'coolDesignT = {} \t # design temperature of cooling techs\n'.format(self.coolDesignT)
         outstr = outstr + '# PTs curtailed via regression (ptCurtailed) and via enviro regulations (ptCurtailedRegs)\n'
         outstr = outstr + 'ptCurtailed = {}\n'.format(self.list2string(list(self.ptCurtailed)))
         outstr = outstr + 'ptCurtailedRegs = {}\n'.format(self.list2string(list(self.ptCurtailedRegs)))
@@ -155,15 +216,11 @@ class Generalparameters:
 
         outstr = outstr + '#\n# -------- GENERAL PARAMETERS --------\n#\n'
         outstr = outstr + 'compressFleet = {}\n'.format(self.compressFleet)
-        outstr = outstr + 'co2CapScenario = {}\n'.format(self.co2CapScenario)
+        outstr = outstr + 'co2CapPercentage = {}\n'.format(self.co2CapPercentage)
         outstr = outstr + 'scenario = {}\n'.format(self.scenario)
 
         outstr = outstr + '#\n# -------- RESULTS DIRECTORY --------\n#\n'
         outstr = outstr + 'resultsDir = {}\n'.format(self.resultsDir)
-
-        outstr = outstr + '#\n# -------- THERMAL CURTAILMENT PARAMETERS --------\n#\n'
-        outstr = outstr + 'processRBMData = {} \t # set to True if first time improting ' \
-                          'set of RBM data\n'.format(self.processRBMData)
 
         outstr = outstr + '#\n# -------- RENEWABLE CAPACITY FACTOR PARAMETERS --------\n#\n'
         outstr = outstr + 'tzAnalysis = {}\n'.format(self.tzAnalysis)
@@ -236,7 +293,7 @@ class Generalparameters:
 
     def load(self, fname):
         """
-        Reads parameter file and allocates to object
+        Reads formatted txt file with the values of the parameters and allocates to object
 
         :param fname: string with path to parameter file
         """
@@ -282,11 +339,7 @@ class Generalparameters:
             # change string values to integer
             self.gcmranking = list(map(int, self.gcmranking))
 
-#        folderName = ('Area' + self.analysisArea + 'Cells' + self.cellNewTechCriteria +
-#                      ('Curtail' if self.incCurtailments == True else 'NoCurtail') +
-#                      ('EnvRegs' if self.incRegs == True else 'NoRegs') +
-#                      'C' + self.co2CapScenario + 'S' + self.scenario[:3])
-#        self.resultsDir = os.path.join(self.resultsDir, folderName)
+        self.co2CapPercentage = float(self.co2CapPercentage)
 
         self.ptCurtailedAll = self.ptCurtailed | self.ptCurtailedRegs
 

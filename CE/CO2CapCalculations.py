@@ -4,7 +4,7 @@
 # & 2030 limits.
 
 from AuxFuncs import *
-import os
+import os, sys
 import json
 
 
@@ -57,21 +57,20 @@ def readInitialCondCO2(fname):
     return startYr, startEms
 
 
-def getCo2Cap(co2CapScenario, startEms=380000000):
+def getCo2Cap(co2CapPercentage, startEms=380000000):
     """
-    Get CO2 cap for given scenario. Refs: For emissions limits, see: see Databases, CO2EmissionERCOT,
-    UCBaseCase2015Output9April2017 folder, baseCaseCo2Emissions9April2017.xlsx.
+    Get CO2 cap for given scenario.
 
-    :param co2CapScenario: name of CO2 scenario
-    :param startEms: total emissions (in short tons) in initial year
-    :return:
+    :param co2CapPercentage: (float) percentage of reduction in 2050
+    :param startEms: (float) total emissions (in short tons) in initial year
+    :return: tuple (year of cap, value of cap in short tons)
     """
-    if co2CapScenario == 'cpp':
-        capYear, capEms = 2050, 0.5*startEms  # 50% redux
-    elif co2CapScenario == 'deep':
-        capYear, capEms = 2050, 0.8*startEms  # 80% redux
-    elif co2CapScenario == 'none':
-        capYear, capEms = 2050, float('inf')  # set to arbitrarily large value so effectively no cap
+
+    if co2CapPercentage is str:
+        print('Variable co2CapPercentage must be float, not a string')
+        sys.exit()
+
+    capYear, capEms = 2050, co2CapPercentage * startEms
 
     return capYear, capEms  # short tons!
 
@@ -88,7 +87,7 @@ def interpolateCO2Cap(currYear, genparam):
     """
     startYr, startEms = readInitialCondCO2(fname=os.path.join(genparam.dataRoot, 'co2values.json'))
 
-    endYr, endLimit = getCo2Cap(genparam.co2CapScenario, startEms)
+    endYr, endLimit = getCo2Cap(genparam.co2CapPercentage, startEms)
 
     #if currYear == startYr: startEms *= 10  # if first year, don't want to enforce co2 cap, so just scale up
 
