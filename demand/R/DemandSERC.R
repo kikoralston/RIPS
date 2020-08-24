@@ -9,8 +9,6 @@ library(grid)
 
 source('~/CMU/RIPS/git/demand/R/readFERC.R')
 source('~/CMU/RIPS/git/demand/R/rips_demand.R')
-source('~/CMU/RIPS/git/demand/R/auxiliary_functions.R')
-
 
 read.total.demand.serc <- function() {
   df.companies <- read.csv(file = paste('/Users/kiko/CMU/RIPS/SERC companies/SERC.csv'),
