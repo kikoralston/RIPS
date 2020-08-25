@@ -26,9 +26,10 @@ class Generalparameters:
     :param analysisArea: (string) analysis area
     :param useLineLimits: (boolean) if True, tries to read file with transmission limits (dataRoot/Transmission/). If False, limits = +Inf
     :param referenceCase: (boolean) If True, run case without curtailments or effects of climate change in demand
+    :param incDemandCC: (boolean) If True, run case WITH effects of climate change in demand
+    :param incHydroCC: (boolean) If True, run case WITH effects of climate change in hydropower
     :param incCurtailments: (boolean) whether to model curtailments,whether to model env regs on water T
     :param incRegs: (boolean) whether to model curtailments,whether to model env regs on water T
-    :param coolDesignT: (integer) design temperature of cooling techs (NOT USED ANYMORE)
     :param ptCurtailed: (set) types of power plants for which thermal deratings simulations will be performed (default: {'Coal Steam', 'Combined Cycle', 'Nuclear'})
     :param ptCurtailedRegs: (set) types of power plants for which thermal curtailments due to enviro regulations simulations will be performed (default: {'Coal Steam', 'Coal Steam CCS', 'Combined Cycle', 'Combined Cycle CCS', 'Nuclear'})
     :param ptCurtailedAll: (set) used internally only. should not be set by user. Union of ptCurtailed and ptCurtailedRegs
@@ -99,6 +100,9 @@ class Generalparameters:
         self.useLineLimits = False     # True: Tries to read file with transmission limits. False: limits = +Inf
 
         self.referenceCase = False     # True: Run case without curtailments or effects of cc in demand
+
+        self.incDemandCC = True  # whether to model CC impacts in demand
+        self.incHydroCC = True  # whether to model CC impacts in hydropower
 
         self.incCurtailments = True  # whether to model curtailments,whether to model env regs on water T
         self.incRegs = True  # whether to model curtailments,whether to model env regs on water T
@@ -196,6 +200,9 @@ class Generalparameters:
         outstr = outstr + 'useLineLimits = {}\n'.format(self.useLineLimits)
 
         outstr = outstr + 'referenceCase = {}\n'.format(self.referenceCase)
+
+        outstr = outstr + 'incDemandCC = {}\n'.format(self.incDemandCC)
+        outstr = outstr + 'incHydroCC = {}\n'.format(self.incHydroCC)
 
         outstr = outstr + '#\n# -------- KEY CURTAILMENT PARAMETERS --------\n#\n'
         outstr = outstr + 'incCurtailments = {} \t # whether to model curtailments,whether to model env regs ' \

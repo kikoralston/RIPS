@@ -1,39 +1,41 @@
-""""
-Michael Craig, 17 May 2017
-Functions load cell water T data from cells eligible for new generators by first setting
-the folder names with future data for cells (each folder = 1 cell), then loading water temperatures
-from those folders.
+# Michael Craig, 17 May 2017
+# Functions load cell water T data from cells eligible for new generators by first setting
+# the folder names with future data for cells (each folder = 1 cell), then loading water temperatures
+# from those folders.
+#
+# August 2018
+# UW changed the format of the files with water data to NETCDF. I added a flag 'netcdf' to some functions to read them.
 
-August 2018
-UW changed the format of the files with water data to NETCDF. I added a flag 'netcdf' to some functions to read them.
-"""
 
 import os, copy, sys
 import numpy as np
-from AuxFuncs import *
-import pickle as pk
 from AssignCellsToIPMZones import mapCellToIPMZone
 from ModifyGeneratorCapacityWithWaterTData import getGenToCellAndCellToGenDictionaries
-from AuxCurtailmentFuncs import get_all_cells_from_netcdf, order_cells_by_flow, get_all_cells_in_zone, loadCellWaterTs
-from PreProcessRBM import createBaseFilenameToReadOrWrite
+from AuxCurtailmentFuncs import get_all_cells_from_netcdf, order_cells_by_flow, get_all_cells_in_zone, loadCellWaterTs, createBaseFilenameToReadOrWrite
 import pandas as pd
-
-# genparam.cellsEligibleForNewPlants, genFleet, curtailparam.rbmOutputDir, curtailparam.locPrecision, genparam.ipmZones, genparam.fipsToZones, genparam.fipsToPolys, currYear
-# cellsEligibleForNewPlants, genFleet, rbmOutputDir, locPrecision, zones, fipsToZones, fipsToPolys, currYear
 
 
 def loadEligibleCellWaterTs(genFleet, currYear, genparam, curtailparam, netcdf=True, n_cells=100):
-    """GET DAILY AVERAGE WATER TS FOR CELLS FOR ALL YEARS
+    """Load daily average water temperatures for grid cells for current simulation year
 
-    Current options for which cells can hsot new plants: 'All' (get all cell data)
-    or 'WithGen' (get data for cells that have generator inside at beginning of CE runs).
+    This function selects the eligible grid cells that will be used in the analysis and loads the water data of current
+    simulation year.
 
-    :param genFleet:
-    :param currYear:
-    :param genparam:
-    :param curtailparam:
-    :param netcdf: True if files are in netcdf format
-    :param n_cells: number of cells to load in 'max_flow' option
+    Current options for which cells can host new plants:
+
+    * 'All' (get all cell data)
+    * 'WithGen' (get data for cells that have generator inside at beginning of CE runs).
+    * 'max_flow' (get data for the first ``n_cells`` cells with max average flow in current year.).
+    * 'macrocell' (get data for cells defined in a file 'macrocells.csv' that defines the centers of spatial clusters of cells. This was done to decrease computational burden.).
+
+    This option must be defined in the object ``curtailparam`` in the field ``cellsEligibleForNewPlants``
+
+    :param genFleet: (list) 2d list with generator fleet
+    :param currYear: (integer) current year of simulation
+    :param genparam: object of type :mod:`Generalparameters`
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
+    :param netcdf: (boolean) True if files are in netcdf format
+    :param n_cells: (integer) number of cells to consider in 'max_flow' option
     :return: dict of {cell folder name : [[Datetime],[AverageWaterT(degC)], [AirT], [flow]]}
     """
     allCellFoldersInZone, eligibleCellFolders = setCellFolders(genFleet, currYear, genparam, curtailparam,
@@ -47,10 +49,23 @@ def loadEligibleCellWaterTs(genFleet, currYear, genparam, curtailparam, netcdf=T
 
 
 def setCellFolders(genFleet, currYear, genparam, curtailparam, netcdf=True, n_cells=100):
-    """Get list of folders with future data for 1 cell each
+    """Get list of eligible cells with future data in each ipm zone
+
+    Current options for which cells can host new plants:
+
+    * 'All' (get all cell data)
+    * 'WithGen' (get data for cells that have generator inside at beginning of CE runs).
+    * 'max_flow' (get data for the first ``n_cells`` cells with max average flow in current year.).
+    * 'macrocell' (get data for cells defined in a file 'macrocells.csv' that defines the centers of spatial clusters of cells. This was done to decrease computational burden.).
+
+    This option must be defined in the object ``curtailparam`` in the field ``cellsEligibleForNewPlants``
 
     :param genFleet: 2d list with generator fleet
+    :param currYear: (integer) current year of simulation
+    :param genparam: object of type :mod:`Generalparameters`
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
     :param netcdf: (boolean) if true reads water data from NETCDF files (new format from August 2018)
+    :param n_cells: (integer)  number of cells to consider in 'max_flow' option
     :return:
     """
 
@@ -151,12 +166,12 @@ def setCellFolders(genFleet, currYear, genparam, curtailparam, netcdf=True, n_ce
 
 
 def isolateCellsInZones(allCellFolders, genparam):
-    """Isolates cells in zones of analysis and returns list of cell folders in zones
+    """Isolates ALL cells in zones of analysis and returns list of cell folders in zones
+
+    THIS FUNCTION IS NOT USED ANYMORE WITH THE NETCDF DATA FORMAT. IT WAS USED WITH THE PREVIOUS VERSION OF THE UW DATA.
 
     :param allCellFolders:
-    :param zones:
-    :param fipsToZones:
-    :param fipsToPolys:
+    :param genparam:
     :return:
     """
     allCellFoldersInZone = list()

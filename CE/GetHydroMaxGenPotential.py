@@ -85,7 +85,7 @@ def importHydroPotentialGen(currYear, genparam, gcm, format='new'):
     """
     dataDir = os.path.join(genparam.dataRoot, 'HydroMonthlyDataPNNL')
 
-    if genparam.referenceCase:
+    if not genparam.incHydroCC:
         # get historical values
 
         a = pd.read_csv(os.path.join(dataDir, 'PlantLocationEIA2003_2016.txt'), sep='\t')

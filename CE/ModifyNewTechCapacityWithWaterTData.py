@@ -20,18 +20,19 @@ import pickle as pk
 import netCDF4 as nc
 
 
-def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam, curtailparam,
-                                         resultsDir, pbar=True):
-    """ Returns dict of (plant+cooltype,cell):hrly tech curtailments
+def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam, curtailparam, pbar=True):
+    """ Main wrapper function to compute deratings of candidate thermal technologies for capacity expansion simulation.
+
+    This function computes thermal deratings of candidate thechs using parallel multiprocessing. It combines results from
+    all different GCMs into a single nested dictionary.
 
     :param eligibleCellWaterTs:
     :param newTechsCE:
-    :param currYear:
-    :param genparam:
-    :param curtailparam:
-    :param resultsDir:
-    :param pbar:
-    :return:
+    :param currYear: (integer) current year of simulation
+    :param genparam: object of class :mod:`Generalparameters`
+    :param curtailparam: object of class :mod:`Curtailmentparameters`
+    :param pbar: (boolean) If True show progress bar
+    :return: nested dict of {gcm: {(plant+cooltype,cell): [hrly tech curtailments]}}
     """
     # Isolate water Ts to year of analysis
     eligibleCellWaterTsCurrYear = getWaterTsInCurrYear(currYear, eligibleCellWaterTs)
@@ -59,10 +60,10 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
 
 
 def worker_new_tech_curtailments(list_args):
-    """ Worker function for using multiprocessing with function calculateGeneratorCurtailments
+    """ Worker function for using multiprocessing with function calculateGeneratorCurtailments.
 
     :param list_args: list with arguments for function
-    :return:
+    :return: dict of {(plant+cooltype,cell): [hrly tech curtailments]} (see function calculateGeneratorCurtailments)
     """
 
     curtailments_out = calculateTechsCurtailments(cellWaterTsForNewTechs=list_args[0], newTechsCE=list_args[1],
@@ -72,31 +73,31 @@ def worker_new_tech_curtailments(list_args):
 
 
 def calculateTechsCurtailments(cellWaterTsForNewTechs, newTechsCE, currYear, genparam, curtailparam, gcm, pbar=True):
-    """ Returns dict of (plant+cooltype,cell):hrly tech curtailments
+    """ Computes deratings of candidate thermal technologies for capacity expansion simulation
 
     :param cellWaterTsForNewTechs:
     :param newTechsCE:
-    :param currYear:
-    :param genparam:
-    :param curtailparam:
-    :param resultsDir:
-    :param pbar:
-    :return:
+    :param currYear: (integer) current year of simulation
+    :param genparam: object of class :mod:`Generalparameters`
+    :param curtailparam: object of class :mod:`Curtailmentparameters`
+    :param gcm: (string) name of GCM being simulated
+    :param pbar: (boolean) show progress bar on standard output?
+    :return: dict of {(plant+cooltype,cell): [hrly tech curtailments]}
     """
 
     # Do curtailments
     (hrlyCurtailmentsAllTechsInTgtYr, hrlyTechCurtailmentsList) = (dict(), [])
     regCoeffs = loadRegCoeffs(genparam.dataRoot, 'capacity.json')  # dict of cooling type: reg coeffs
 
-    if genparam.referenceCase:
-        meteodata = None
-    else:
+    if genparam.incCurtailments or genparam.incRegs:
         # read full meteo data for current year (full water data is already loaded)
         fname = curtailparam.basenamemeteo
         name_gcm = gcm
 
         fname = os.path.join(curtailparam.rbmDataDir, fname.format(name_gcm, currYear))
         meteodata = read_netcdf_full(currYear, fname, curtailparam)
+    else:
+        meteodata = None
 
     if pbar:
         ProgressBar = progressbar.ProgressBar
@@ -114,11 +115,11 @@ def calculateTechsCurtailments(cellWaterTsForNewTechs, newTechsCE, currYear, gen
 
         #print('  Got state. ' + str_elapsedtime(t0))
 
-        if genparam.referenceCase:
-            metAndWaterData = None
-        else:
+        if genparam.incCurtailments or genparam.incRegs:
             metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam, gcm=gcm,
                                                   metdatatot=meteodata, waterDatatot=cellWaterTsForNewTechs)
+        else:
+            metAndWaterData = None
 
         #print('  Got met data. ' + str_elapsedtime(t0))
 
@@ -150,7 +151,7 @@ def calculateTechsCurtailments(cellWaterTsForNewTechs, newTechsCE, currYear, gen
 def getWaterTsInCurrYear(currYear, eligibleCellWaterTs):
     """ISOLATE AVG WATER TS FOR CURRENT YEAR FOR EACH CELL
 
-    :param currYear:
+    :param currYear: (integer)
     :param eligibleCellWaterTs:
     :return: Returns dict of cell folder name : [[Datetime],[AverageWaterT(degC)]]
     """
@@ -172,7 +173,15 @@ def getWaterTsInCurrYear(currYear, eligibleCellWaterTs):
 
 
 def selectCells(eligibleCellWaterTsCurrYear, cellNewTechCriteria, fipsToZones, fipsToPolys):
-    """PICK GRID CELL TO PUT NEW TECH IN
+    """Filter list of grid cells that can host new techs
+
+    This function filters the list of eligible cells and chooses only the ones with maximum water temperature in each zone
+    if the criteria is 'maxWaterT'
+
+    The parameter ``cellNewTechCriteria` is defined in the :mod:`Generalparameters` object. It accepts two options:
+
+    * 'all': no filtering is applied. All eligible cells are considered
+    * 'maxWaterT': only the cell with maximum water temeprature in each zone is considered
 
     :param eligibleCellWaterTsCurrYear:
     :param cellNewTechCriteria:
@@ -208,6 +217,7 @@ def getCellsInEachZone(eligibleCellWaterTsCurrYear, fipsToZones, fipsToPolys):
             cellsPerZone[cellZone].append(cell)
         else:
             cellsPerZone[cellZone] = [cell]
+
     return cellsPerZone
 
 
