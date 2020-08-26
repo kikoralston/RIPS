@@ -49,7 +49,8 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
                 zonalDemand[zone] = list(df_year.loc[df_year['zone'] == zone, 'load(MW)'].values)
                 zonalTempDfs[zone] = df_year.loc[df_year['zone'] == zone]
 
-            key = 'ref{0:02d}'.format(i)
+            #key = 'ref{0:02d}'.format(i)
+            key = curtailparam.listgcms[i]
             totalDemandDict[key], totalDemandDictDf[key] = zonalDemand, zonalTempDfs
 
     else:
