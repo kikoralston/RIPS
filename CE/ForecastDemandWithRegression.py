@@ -2,8 +2,8 @@
 # August 3, 2017
 # Script forecasts demand using regressions devleoped by Francisco
 
-import os
-import sys
+import os, sys, copy
+import numpy as np
 import pandas as pd
 from collections import OrderedDict
 from AuxFuncs import *
@@ -31,8 +31,14 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
 
     if not genparam.incDemandCC:
 
+        list_percent_local = copy.deepcopy(genparam.gcmranking)
+        if np.min(list_percent_local) < 0 or np.max(list_percent_local) > 1:
+            print('percentile values are not in the range [0, 1]!')
+            print('Assuming they are ranks of the GCMs. Dividing by the number of GCMs')
+            list_percent_local = [x / 20 for x in list_percent_local]
+
         # if running case without impacts in demand, gcmranking is list with PERCENTILES!
-        df_demand_reference = getDemandReference(genparam, list_percent=genparam.gcmranking, yearFixed=2015)
+        df_demand_reference = getDemandReference(genparam, list_percent=list_percent_local, yearFixed=2015)
 
         for i, yr in enumerate(df_demand_reference['yearorig'].unique()):
 
@@ -67,7 +73,7 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
 
 
 def loadRegData(genparam, currYear, zone, curtailparam, idx_gcm, netcdf=False):
-    """Load all necessary data into pandas DFs exept inercept (just return value)
+    """Load all necessary data into pandas DFs except intercept (just return value)
 
     :param genparam: object of class Generalparameters
     :param currYear: (int) current year of simulation
