@@ -385,6 +385,48 @@ plot.inital.fleet <- function(path.output.ce, path.data.ce, df.demand=NULL,
   return(df.fleet.time.2)
 }
 
+
+get.fleet <- function(fileGenfleet, currYear) {
+  
+  df.fleet <- read.csv(file=fileGenfleet, 
+                       stringsAsFactors = FALSE) %>%
+    # remove plants retired by age
+    filter(YearRetiredByAge > currYear | is.na(YearRetiredByAge)) %>%
+    # remove plants originally marked to retire in IPM
+    filter(Retirement.Year > currYear) %>%
+    # remove plants that were retired by the CE model due to low CF
+    filter(is.na(YearRetiredByCE)) %>%
+    mutate(PlantType = as.character(PlantType)) %>%
+    mutate(PlantType = ifelse(PlantType %in% otherTypes, 'Other', PlantType)) %>%
+    mutate(Modeled.Fuels = ifelse(PlantType == 'Other', 'Other', Modeled.Fuels)) %>%
+    mutate(PlantType = ifelse(Modeled.Fuels == 'Other', 'NA', PlantType)) %>%
+    mutate(Modeled.Fuels = ifelse(Modeled.Fuels %in% coal.types, 'Coal', Modeled.Fuels)) %>%
+    mutate(Modeled.Fuels = ifelse(Modeled.Fuels == 'Nuclear Fuel', 'Nuclear', Modeled.Fuels)) %>%
+    mutate(Modeled.Fuels = ifelse(grepl('Natural Gas', Modeled.Fuels), 'Natural Gas', Modeled.Fuels)) %>%
+    mutate(Modeled.Fuels = ifelse(grepl('Fuel Oil', Modeled.Fuels), 'Fuel Oil', Modeled.Fuels)) %>%
+    mutate(PlantType = ifelse(PlantType %in% c('Hydro', 'Pumped Storage'), 
+                              'Hydro', PlantType)) %>%
+    mutate(PlantType = ifelse(PlantType == 'Combustion Turbine', 'CT', PlantType)) %>%
+    mutate(Modeled.Fuels = ifelse(PlantType == 'Hydro', 'Hydro', Modeled.Fuels)) %>%
+    mutate(PlantType = ifelse(grepl('Hydro|Wind|Solar', PlantType), 'NA', PlantType)) %>%
+    mutate(cooling=ifelse(grepl('recirculating', Cooling.Tech),
+                          'RC',
+                          ifelse(grepl('once through', Cooling.Tech),
+                                 'OT',
+                                 ifelse(grepl('dry cooling', Cooling.Tech),
+                                        'DC', 'NA')))) %>%
+    mutate(cooling = ifelse(PlantType == 'Hydro', 'NA', cooling)) %>%
+    mutate(cooling = ifelse(Modeled.Fuels == 'Other', 'NA', cooling)) %>%
+    mutate(PlantType = ifelse(PlantType == 'NA', NA, PlantType)) %>%
+    mutate(cooling = ifelse(cooling == 'NA', NA, cooling)) %>%
+    mutate(id = paste0(ORIS.Plant.Code, "+", Unit.ID)) %>%
+    select(Plant.Name, PlantType, Modeled.Fuels, Capacity..MW.,cooling, id)
+  
+  return(df.fleet)
+  
+}
+
+
 get.new.additions <- function(y, path.gdx) {
   
   serc.zones <- read.csv(paste0(path.gdx,'/zoneNamesToNumbers.csv'))
@@ -469,7 +511,8 @@ plot.new.additions <- function(path.output.ce,
                                            'RCP 8.5'=sprintf('%s/rcp85/',
                                                              path.output.ce)),
                                yearIni=2020, yearEnd=2050,
-                               path.file=paste0(path.output.ce, "/newadditions.pdf")) {
+                               path.file=paste0(path.output.ce, "/newadditions.pdf"),
+                               divide.zones=TRUE) {
   
   igdx(gamsSysDir)
   df.new.techs <- read.csv(paste0(path.rcps[1],
@@ -563,12 +606,15 @@ plot.new.additions <- function(path.output.ce,
     theme_bw() +
     scale_x_continuous(sec.axis = dup_axis(breaks = breaks,
                                            labels = labels.up)) +
-    theme(plot.margin = unit(c(0, 0.5, 0.5, 0.5), "lines"),
+    theme(plot.margin = unit(c(1, 0.5, 0.5, 0.5), "lines"),
           axis.title.x = element_blank(),
           panel.spacing = unit(0.1, "lines"),
-          axis.text.x.top = element_text(angle = 90, vjust=0.5, hjust=0)) +
-    facet_grid(Zone ~ ., scales = 'free_y')
-
+          axis.text.x.top = element_text(angle = 90, vjust=0.5, hjust=0))
+  
+  if (divide.zones) {
+    g <- g + facet_grid(Zone ~ ., scales = 'free_y')
+  }
+  
 #   g_param <- ggplot_build(g)
 #   x.range <- g_param$layout$panel_params[[1]]$x.range
 #   year.values <- unique(df.complete.decision.3$year)
@@ -1000,11 +1046,16 @@ plot.donut.chart <- function(fileGenfleet, currYear=2050, GW=TRUE) {
 }
 
 
-get.generation <- function(y, path.gdx) {
+get.generation <- function(y, path.data) {
 
   # y <- 2050
+  # path.gdx <- 
   
-  path.gdx <- paste0(path.gdx, '/gdxOutYear', y,'.gdx')
+  # get fleet
+  df.fleet <- get.fleet(paste0(path.data, "/genFleetAfterCE", y,".csv"), y) %>%
+    select(id, Modeled.Fuels) %>% mutate(Modeled.Fuels=tolower(Modeled.Fuels))
+    
+  path.gdx <- paste0(path.data, '/gdxOutYear', y,'.gdx')
   # path.gdx <- "/Volumes/RIPS/CE/results//rcp85//gdxOutYear2045.gdx"
   # path.gdx <- "/Users/kiko/Documents/CE/out/CE/gdxOutYear2025.gdx"
 
@@ -1018,7 +1069,14 @@ get.generation <- function(y, path.gdx) {
   ids.pumped <- rgdx.set(gdxName = paste0(path.gdx), symName = "pumphydroegu") %>% 
     mutate(egu=as.character(egu)) %>% mutate(type='pumped')
   
-  types.exist <- rbind(ids.solar, ids.hydro, ids.pumped, ids.wind)
+  #types.exist <- rbind(ids.solar, ids.hydro, ids.pumped, ids.wind)
+  
+  # **existing** renewables are aggregated within each zone and given a **dummy code**
+  # I get the **dummy codes** here in order to map generation data of existing 
+  # wind/solar to their types
+  # OBS: after the investment decisions are made, these dummy codes are given to new plants added
+  # to the fleet.
+  types.exist.renew <- rbind(ids.solar, ids.wind)
   
   # get hours of each season
   hours.summer <- rgdx.set(gdxName = path.gdx, symName = "summerh") %>% mutate(season='summer')
@@ -1027,13 +1085,32 @@ get.generation <- function(y, path.gdx) {
   hours.fall <- rgdx.set(gdxName = path.gdx, symName = "fallh") %>% mutate(season='fall')
   hours.special <- rgdx.set(gdxName = path.gdx, symName = "specialh") %>% mutate(season='special')
   
-  df.hours.season <- rbind(hours.summer, hours.winter, hours.fall, hours.spring, hours.special) %>%
+  df.hours.season <- rbind(hours.summer, hours.winter, hours.fall, hours.spring) %>%
     mutate(h2 = as.numeric(gsub('h', '', as.character(h)))) %>%
     mutate(date=as.POSIXct(ymd(paste0(y,"0101")) + hours(h2))) %>%
     arrange(g, season, date) %>%
-    group_by(g, season) %>%
-    mutate(hour.in.season= row_number()) %>% ungroup()
+    group_by(g, season) %>% mutate(hour.in.season= row_number()) %>% ungroup()
+  
+  # for special hours put first peak demand than peak curtailment
+  df.out <- get.hours.max.curtailment(path.data, y)
+  
+  hours.special <- hours.special %>% mutate(g=as.character(g), h=as.character(h))
+  
+  if (!is.null(df.out)) {
+    df.out$order <- 2
+    hours.special <- hours.special %>% left_join(df.out, by=c("g", "h")) %>%
+      mutate(order=ifelse(is.na(order), 1, order))
+  } else {
+    hours.special$order <- 1
+  }
+  hours.special <- hours.special %>% group_by(g) %>%
+    arrange(g, order, h) %>% mutate(hour.in.season= row_number()) %>% ungroup() %>%
+    mutate(h2=as.numeric(gsub("h", "", h)),
+           date=as.POSIXct(ymd(paste0(y,"0101")) + hours(h2))) %>%
+    select(g, h, season, h2, date, hour.in.season)
     
+  df.hours.season <- rbind(df.hours.season, hours.special)
+      
   pDemand <- rgdx.param(gdxName = path.gdx, symName = "pDemand") %>% 
     group_by(g, h) %>% summarise(value = sum(pDemand)) %>%
     right_join(df.hours.season, by=c('g','h'))
@@ -1056,10 +1133,25 @@ get.generation <- function(y, path.gdx) {
   gexist <- rgdx(gdxName = path.gdx, 
                  requestList = list(name='vPegu', field='l', compress=FALSE,
                                     form = 'full'))
-  gexist <- convert.gdx.result.df(gexist) %>% left_join(types.exist, by= 'egu') %>%
-    mutate(type=ifelse(is.na(type), 'thermal', type)) %>%
+  gexist <- convert.gdx.result.df(gexist) 
+  
+  # first get wind/solar
+  gexist.renew <-  gexist %>% 
+    mutate(egu=as.character(egu)) %>%
+    inner_join(types.exist.renew, by= 'egu') %>%
     group_by(g, type, h) %>% summarise(value = sum(value)) %>%
     ungroup() %>% right_join(df.hours.season, by=c('g','h'))
+
+  # others (not renewables)
+  gexist.others <- gexist %>% 
+    mutate(egu=as.character(egu)) %>%
+    anti_join(types.exist.renew, by= 'egu') %>%
+    left_join(df.fleet, by= c('egu' = "id")) %>%
+    dplyr::rename(type=Modeled.Fuels) %>%
+    group_by(g, type, h) %>% summarise(value = sum(value)) %>%
+    ungroup() %>% right_join(df.hours.season, by=c('g','h'))
+  
+  gexist <- rbind(gexist.renew, gexist.others)
   
   # ggplot(gexist) + geom_area(aes(x=hour.in.season, y=value, fill=type)) + 
   #   geom_line(data = pDemand, aes(x=hour.in.season, y=value.demand, linetype='Demand'),
@@ -1080,14 +1172,18 @@ get.generation <- function(y, path.gdx) {
   gtechcurt <- rgdx(gdxName = path.gdx, 
                     requestList = list(name='vPtechcurtailed', field='l', compress=FALSE,
                                        form = 'full'))
-  gtechcurt  <- convert.gdx.result.df(gtechcurt)
+  gtechcurt  <- convert.gdx.result.df(gtechcurt) 
+
   if (!is.null(gtechcurt) && nrow(gtechcurt) > 0){
     gtechcurt <- gtechcurt %>% 
-      group_by(g, h) %>% summarise(value = sum(value)) %>%
-      right_join(df.hours.season, by=c('g','h')) %>% 
-      mutate(type=c('thermal')) %>%
-      select(g, type, h, value, season, h2, date, hour.in.season) %>%
-      ungroup()
+      group_by(g, techcurtailed, h) %>% summarise(value = sum(value)) %>%
+      right_join(df.hours.season, by=c('g','h')) %>%
+      ungroup() %>%
+      mutate(techcurtailed=as.character(techcurtailed)) %>%
+      mutate(techcurtailed=sapply(techcurtailed, FUN = {function(x){strsplit(x, "+", fixed=TRUE)[[1]][1]}})) %>%
+      mutate(techcurtailed=simplify.thermal.names(techcurtailed)) %>%
+      dplyr::rename(type=techcurtailed) %>%
+      select(g, type, h, value, season, h2, date, hour.in.season)
   }
   
   gtechnotcurt <- rgdx(gdxName = path.gdx, 
@@ -1098,9 +1194,12 @@ get.generation <- function(y, path.gdx) {
     gtechnotcurt <- gtechnotcurt %>% 
       group_by(g, h) %>% summarise(value = sum(value)) %>%
       right_join(df.hours.season, by=c('g','h')) %>% 
-      mutate(type=c('thermal')) %>%
-      select(g, type, h, value, season, h2, date, hour.in.season) %>%
-      ungroup()
+      ungroup() %>%
+      mutate(technotcurtailed=as.character(technotcurtailed)) %>%
+      mutate(technotcurtailed=sapply(technotcurtailed, FUN = {function(x){strsplit(x, "+", fixed=TRUE)[[1]][1]}})) %>%
+      mutate(technotcurtailed=simplify.thermal.names(technotcurtailed)) %>%
+      dplyr::rename(type=technotcurtailed) %>%
+      select(g, type, h, value, season, h2, date, hour.in.season)
   }
   
   gtechrenew <- rgdx(gdxName = path.gdx, 
@@ -1110,7 +1209,7 @@ get.generation <- function(y, path.gdx) {
   if (!is.null(gtechrenew) && nrow(gtechrenew) > 0){
     gtechrenew <- gtechrenew %>% 
       mutate(techrenew = as.character(techrenew)) %>%
-      mutate(techrenew = ifelse(grepl('Solar PV\\+\\d\\d',gtechrenew$techrenew, perl = TRUE), 
+      mutate(techrenew = ifelse(grepl('Solar PV\\+\\d\\d',techrenew, perl = TRUE), 
                                 'solar', 'wind')) %>%
       group_by(g, techrenew, h) %>% summarise(value = sum(value)) %>%
       right_join(df.hours.season, by=c('g','h')) %>% ungroup() %>%
@@ -1190,6 +1289,16 @@ get.generation <- function(y, path.gdx) {
   return(df.total) 
   
 }
+
+simplify.thermal.names <- function(x) {
+  
+  y <- ifelse(grepl("Combined Cycle", x), "natural gas", x)
+  y <- ifelse(grepl("Coal", y), "coal", y)
+  y <- ifelse(grepl("Nuclear", y), "nuclear", y)
+  
+  return(y)
+}
+
 
 convert.gdx.result.df <- function(list.gdx) {
   
@@ -1401,6 +1510,38 @@ compute.annual.emmission <- function(y, path.gdx) {
   
   ce.generation %>% group_by(g) %>% summarize(annual.emission=sum(emission)) %>% select(annual.emission) %>% unlist() %>% mean()
   
+}
+
+
+get.hours.max.curtailment <- function(path.data, y) {
+  
+  df.out <- NULL
+  if (file.exists(paste0(path.data, '/curtailmentsHourlyCombined', y, '.csv'))) {
+    df <- read.csv(paste0(path.data, '/curtailmentsHourlyCombined', y, '.csv'), header = FALSE, stringsAsFactors = FALSE) %>%
+      pivot_longer(-c(V1), names_to = "hour", values_to = "value") %>%
+      mutate(hour=as.numeric(gsub("V", "", hour))-1) %>%
+      group_by(V1) %>% dplyr::arrange(value) %>%
+      summarise(hour=hour[1], value=value[1]) %>% ungroup() %>%
+      mutate(hour.day=ifelse(hour %% 24 == 0, 24, hour %% 24))
+    
+    df.out <- NULL  
+    for(i in unique(df$V1)) {
+      x <- df %>% dplyr::filter(V1 == i)
+      initial.hour.day <- x$hour - x$hour.day + 1
+      
+      hours.days <- paste0("h", seq(from=initial.hour.day, length.out = 24))
+      
+      if (is.null(df.out)) {
+        df.out <- data.frame(g=i, h=hours.days)
+      } else {
+        df.out <- rbind(df.out, data.frame(g=i, h=hours.days))
+      }
+    }
+    
+    df.out <- df.out %>% mutate(g=as.character(g), h=as.character(h))
+  }
+  
+  return(df.out)
 }
 
 # # check supply demand equations
