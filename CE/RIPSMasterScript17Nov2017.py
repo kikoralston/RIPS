@@ -24,8 +24,7 @@ from SetInitCondsUC import *
 from ImportNewTechs import getNewTechs
 from RetireUnitsCFPriorCE import retireUnitsCFPriorCE
 from CreateFleetForCELoop import createFleetForCurrentCELoop
-from GetRenewableCFs import getRenewableCFData
-from GetNewRenewableCFs import trimNewRECFsToCEHours
+from GetRenewableCFs import getRenewableCFData, trimNewRECFsToCEHours
 from AssignCellsToIPMZones import assignCellsToIPMZones
 from LoadEligibleCellWaterTs import loadEligibleCellWaterTs
 from GetHourlyCapacsForCE import getHourlyNonRECapacsForCE, getHourlyCurtailedTechCapacsForCE

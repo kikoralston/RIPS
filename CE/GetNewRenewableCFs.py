@@ -5,7 +5,7 @@
 # those CFs to hours included in the CE model.
 
 import operator, copy
-from GetRenewableCFs import getRenewableCFs
+# from GetRenewableCFs import getRenewableCFs
 from AuxFuncs import *
 
 
@@ -131,32 +131,3 @@ def getCapacWtdCF(allCfs, idAndCapacs, tzAnalysis):
             capacWtCfs = list(map(operator.add, capacWtCfs, cfsWtd))
 
     return capacWtCfs
-
-
-def trimNewRECFsToCEHours(zonalNewWindCFs, zonalNewSolarCFs, hoursForCE):
-    """TRIM HOURS OF NEW RENEWABLE CFS TO HOURS OF CE
-
-    :param zonalNewWindCFs: hourly CFs for new wind & solar builds (1d lists)
-    :param zonalNewSolarCFs: hourly CFs for new wind & solar builds (1d lists)
-    :param hoursForCE: hours included in CE (1d list, 1-8760 basis)
-    :return: zonal hourly CFs for new wind and solar builds only for CE hours as dict of zone:
-            [CFs (1-8760 basis, 1d list)]
-    """
-    newWindCFsCEZonal, newSolarCFsCEZonal = dict(), dict()
-
-    for gcm in hoursForCE:
-        # (hr - 1) b/c hours in year start @ 1, not 0 like Python idx
-        newWindCFsCEZonal[gcm] = {zone: {'Wind+{0:02d}'.format(int(i)): [zonalNewWindCFs[zone][i][hr - 1]
-                                                                         for hr in hoursForCE[gcm]]
-                                         for i in zonalNewWindCFs[zone]} for zone in zonalNewWindCFs}
-
-        newSolarCFsCEZonal[gcm] = {zone: {'Solar PV+{0:02d}'.format(int(i)): [zonalNewSolarCFs[zone][i][hr - 1]
-                                                                              for hr in hoursForCE[gcm]]
-                                          for i in zonalNewSolarCFs[zone]} for zone in zonalNewSolarCFs}
-
-    #        newWindCFsCEZonal[gcm] = {zone: [zonalNewWindCFs[zone][i][hr - 1] for hr in hoursForCE[gcm]]
-    #                                  for zone in zonalNewWindCFs}
-    #        newSolarCFsCEZonal[gcm] = {zone: [zonalNewSolarCFs[zone][i][hr - 1] for hr in hoursForCE[gcm]]
-    #                                   for zone in zonalNewSolarCFs}
-
-    return newWindCFsCEZonal, newSolarCFsCEZonal
