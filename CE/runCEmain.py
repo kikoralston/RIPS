@@ -60,39 +60,42 @@ def runCEmain(cwd=os.getcwd(), case=None, runUC=False):
         genparam.incRegs = df['incThermoCC'].iloc[case]
         genparam.selectCurtailDays = df['incThermoCC'].iloc[case]
 
-        # BASE LINE CASE
-        if genparam.referenceCase:
-            # reference case. No impact of climate change! Set all flags to false
-            genparam.incCurtailments = False
-            genparam.incRegs = False
-            genparam.selectCurtailDays = False
-            genparam.incDemandCC = False
-            genparam.incHydroCC = False
-            # if baseline case we just need a valid gcm for indexing the dictionaries (GCM data will not be used)
-            curtailparam.listgcms = [curtailparam.listgcms[0]]
+    # read line constraints parameters *AFTER* updating `useLineLimits`
+    genparam.setLines()
 
-        if not os.path.exists(genparam.resultsDir):
-            os.makedirs(genparam.resultsDir)
+    # BASE LINE CASE
+    if genparam.referenceCase:
+        # reference case. No impact of climate change! Set all flags to false
+        genparam.incCurtailments = False
+        genparam.incRegs = False
+        genparam.selectCurtailDays = False
+        genparam.incDemandCC = False
+        genparam.incHydroCC = False
+        # if baseline case we just need a valid gcm for indexing the dictionaries (GCM data will not be used)
+        curtailparam.listgcms = [curtailparam.listgcms[0]]
 
-        print()
-        print('------------------------------------------')
+    if not os.path.exists(genparam.resultsDir):
+        os.makedirs(genparam.resultsDir)
 
-        print('folder out: {}'.format(genparam.resultsDir))
-        print('list gcms: {}'.format(curtailparam.listgcms))
-        print('referenceCase: {}'.format(genparam.referenceCase))
-        print('selectCurtailDays: {}'.format(genparam.selectCurtailDays))
-        print('incRegs: {}'.format(genparam.incRegs))
-        print('incDemandCC: {}'.format(genparam.incDemandCC))
-        print('incHydroCC: {}'.format(genparam.incHydroCC))
-        print('CO2 Cap Scenario: {}'.format(genparam.co2CapPercentage))
-        print('RCP: {}'.format(genparam.rcp))
+    print()
+    print('------------------------------------------')
 
-        print('------------------------------------------')
+    print('folder out: {}'.format(genparam.resultsDir))
+    print('list gcms: {}'.format(curtailparam.listgcms))
+    print('referenceCase: {}'.format(genparam.referenceCase))
+    print('selectCurtailDays: {}'.format(genparam.selectCurtailDays))
+    print('incRegs: {}'.format(genparam.incRegs))
+    print('incDemandCC: {}'.format(genparam.incDemandCC))
+    print('incHydroCC: {}'.format(genparam.incHydroCC))
+    print('CO2 Cap Scenario: {}'.format(genparam.co2CapPercentage))
+    print('RCP: {}'.format(genparam.rcp))
 
-        print()
-        print('Parameters loaded! Calling CE masterFunction...')
-        print()
-        print()
+    print('------------------------------------------')
+
+    print()
+    print('Parameters loaded! Calling CE masterFunction...')
+    print()
+    print()
 
     masterFunction(genparam, reserveparam, curtailparam)
 
