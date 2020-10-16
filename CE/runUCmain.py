@@ -32,6 +32,7 @@ def list_all_gcms(rcp=None):
     return listgcms_total
 
 
+@profile
 def runUC(gcmIdxlist, pathresultroot, rcp, pathCEtoUC, cwd=os.getcwd(), yearUC=2050):
 
     resultsDir = os.path.join(pathresultroot)
@@ -59,8 +60,18 @@ def runUC(gcmIdxlist, pathresultroot, rcp, pathCEtoUC, cwd=os.getcwd(), yearUC=2
 
     if rcp == 'ref':
         genparam.referenceCase = True
+        genparam.incCurtailments = False
+        genparam.incRegs = False
+        genparam.selectCurtailDays = False
+        genparam.incDemandCC = False
+        genparam.incHydroCC = False
     else:
         genparam.referenceCase = False
+        genparam.incCurtailments = True
+        genparam.incRegs = True
+        genparam.selectCurtailDays = True
+        genparam.incDemandCC = True
+        genparam.incHydroCC = True
 
     genparam.runCE = False
     genparam.runFirstUCYear = True
@@ -71,12 +82,6 @@ def runUC(gcmIdxlist, pathresultroot, rcp, pathCEtoUC, cwd=os.getcwd(), yearUC=2
 
     genparam.gcmranking = gcmIdxlist
     genparam.resultsDir = resultsDir
-
-    # BASE LINE CASE
-    if genparam.referenceCase:
-        genparam.incCurtailments = False
-        genparam.incRegs = False
-        genparam.selectCurtailDays = False
 
     genparam.startYear = yearUC
     genparam.endYear = yearUC + 1
