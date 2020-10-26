@@ -93,3 +93,6 @@ reserveparameters.txt
 
 # scratches and test scripts
 _scratch*
+
+# documentation and sphynx
+docsrc/_build/
