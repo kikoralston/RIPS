@@ -1,0 +1,555 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Main Scripts &mdash; Capacity Expansion / Unit Commitment and Economic Dispatch under climate change  documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="Capacity Expansion / Unit Commitment and Economic Dispatch under climate change  documentation" href="../index.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Capacity Expansion / Unit Commitment and Economic Dispatch under climate change
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <!-- Local TOC -->
+                <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Main Scripts</a></li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">Capacity Expansion / Unit Commitment and Economic Dispatch under climate change</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+    <li>Main Scripts</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/Main Scripts/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="main-scripts">
+<span id="id1"></span><h1>Main Scripts<a class="headerlink" href="#main-scripts" title="Permalink to this headline">¶</a></h1>
+<p>The module <code class="docutils literal notranslate"><span class="pre">RIPSMasterScript17Nov2017.py</span></code> contains the main scripts to execute CE/UCED simulations</p>
+<span class="target" id="module-RIPSMasterScript17Nov2017"></span><dl class="py function">
+<dt id="RIPSMasterScript17Nov2017.masterFunction">
+<code class="sig-name descname">masterFunction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">reserveparam</span></em>, <em class="sig-param"><span class="n">curtailparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#RIPSMasterScript17Nov2017.masterFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main function of CE/UCED simulation</p>
+<p>This is the main function that must be called to start a CE/UCED simulation. It takes three arguments that define
+the parameters of the simulation. Each argument is an object with a set of specific parameters for the simulation.
+These objects must be created and the fields defined before being passed to this function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
+<li><p><strong>reserveparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Reserveparameters" title="Reserveparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Reserveparameters</span></code></a></p></li>
+<li><p><strong>curtailparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Curtailmentparameters" title="Curtailmentparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Curtailmentparameters</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="RIPSMasterScript17Nov2017.getInitialFleetAndDemand">
+<code class="sig-name descname">getInitialFleetAndDemand</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">reserveparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#RIPSMasterScript17Nov2017.getInitialFleetAndDemand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set up initial generator fleet</p>
+<p>Reads folders containing data of existing power plant data and compiles 2d list with generator fleet data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genparam</strong> – object of class <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
+<li><p><strong>reserveparam</strong> – object of class <a class="reference internal" href="../Parameters/index.html#module-Reserveparameters" title="Reserveparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Reserveparameters</span></code></a></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>2d list with initial generator fleet data</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="RIPSMasterScript17Nov2017.runCapacityExpansion">
+<code class="sig-name descname">runCapacityExpansion</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">zonalDemandProfile</span></em>, <em class="sig-param"><span class="n">currYear</span></em>, <em class="sig-param"><span class="n">currCo2Cap</span></em>, <em class="sig-param"><span class="n">capacExpModelsEachYear</span></em>, <em class="sig-param"><span class="n">capacExpBuilds</span></em>, <em class="sig-param"><span class="n">capacExpGenByGens</span></em>, <em class="sig-param"><span class="n">capacExpRetiredUnitsByCE</span></em>, <em class="sig-param"><span class="n">capacExpRetiredUnitsByAge</span></em>, <em class="sig-param"><span class="n">genFleetPriorCE</span></em>, <em class="sig-param"><span class="n">priorCEout_db</span></em>, <em class="sig-param"><span class="n">priorHoursCE</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">reserveparam</span></em>, <em class="sig-param"><span class="n">curtailparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#RIPSMasterScript17Nov2017.runCapacityExpansion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run capacity expansion simulation</p>
+<p>This function does all the reading and preprocessing before executing capacity expansion optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – 2d list with original existing generator fleet (in the first year of the simulation)</p></li>
+<li><p><strong>zonalDemandProfile</strong> – nested dictionary with hourly demand by ipm zone in each gcm case being simulated.
+Dictionary is {gcm: {zone: [hourly demand]}}</p></li>
+<li><p><strong>currYear</strong> – integer with year of simulation</p></li>
+<li><p><strong>currCo2Cap</strong> – float with value in MMton/year of CO2 emission limit</p></li>
+<li><p><strong>capacExpModelsEachYear</strong> – </p></li>
+<li><p><strong>capacExpBuilds</strong> – </p></li>
+<li><p><strong>capacExpGenByGens</strong> – </p></li>
+<li><p><strong>capacExpRetiredUnitsByCE</strong> – </p></li>
+<li><p><strong>capacExpRetiredUnitsByAge</strong> – </p></li>
+<li><p><strong>genFleetPriorCE</strong> – 2d list with existing generator fleet in current year of simulation
+(including prior additions)</p></li>
+<li><p><strong>priorCEout_db</strong> – </p></li>
+<li><p><strong>priorHoursCE</strong> – </p></li>
+<li><p><strong>genparam</strong> – object of class <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
+<li><p><strong>reserveparam</strong> – object of class <a class="reference internal" href="../Parameters/index.html#module-Reserveparameters" title="Reserveparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Reserveparameters</span></code></a></p></li>
+<li><p><strong>curtailparam</strong> – object of class <a class="reference internal" href="../Parameters/index.html#module-Curtailmentparameters" title="Curtailmentparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Curtailmentparameters</span></code></a></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="RIPSMasterScript17Nov2017.importHourlyThermalCurtailments">
+<code class="sig-name descname">importHourlyThermalCurtailments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">currYear</span></em>, <em class="sig-param"><span class="n">modelName</span></em>, <em class="sig-param"><span class="n">resultsDir</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">curtailparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#RIPSMasterScript17Nov2017.importHourlyThermalCurtailments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Import hourly thermal curtailments by generator</p>
+<p>This is a wrapper function that calls thermal curtailments simulations and cleans up the output so it
+can be used by the CE/UCED simulations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – 2d list (matrix) with data of generator fleet</p></li>
+<li><p><strong>currYear</strong> – current year of analysis</p></li>
+<li><p><strong>modelName</strong> – string with model name (‘CE’ or ‘UC’)</p></li>
+<li><p><strong>resultsDir</strong> – string specifying folder where output files will be saved</p></li>
+<li><p><strong>genparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
+<li><p><strong>curtailparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Curtailmentparameters" title="Curtailmentparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Curtailmentparameters</span></code></a></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>nested dict mapping each gen to 1d numpy array of hourly net capacity curtailments(MW)
+dict is {gcm:{genId: 1d np.array()}}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="RIPSMasterScript17Nov2017.callCapacityExpansion">
+<code class="sig-name descname">callCapacityExpansion</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleetForCE</span></em>, <em class="sig-param"><span class="n">hourlyCapacsCE</span></em>, <em class="sig-param"><span class="n">hourlyCurtailedTechCapacsCE</span></em>, <em class="sig-param"><span class="n">hourlyWindGenCEZonal</span></em>, <em class="sig-param"><span class="n">hourlySolarGenCEZonal</span></em>, <em class="sig-param"><span class="n">demandCEZonal</span></em>, <em class="sig-param"><span class="n">newTechsCE</span></em>, <em class="sig-param"><span class="n">planningReserveZonal</span></em>, <em class="sig-param"><span class="n">hoursForCE</span></em>, <em class="sig-param"><span class="n">newWindCFsCEZonal</span></em>, <em class="sig-param"><span class="n">newSolarCFsCEZonal</span></em>, <em class="sig-param"><span class="n">currCo2Cap</span></em>, <em class="sig-param"><span class="n">seasonDemandWeights</span></em>, <em class="sig-param"><span class="n">repHrsBySeason</span></em>, <em class="sig-param"><span class="n">specialHrs</span></em>, <em class="sig-param"><span class="n">peakDemandHourZonal</span></em>, <em class="sig-param"><span class="n">cellsToZones</span></em>, <em class="sig-param"><span class="n">hydroPotPerSeason</span></em>, <em class="sig-param"><span class="n">genparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#RIPSMasterScript17Nov2017.callCapacityExpansion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call capacity expansion optimization</p>
+<p>This funtion loads GAMS workspace and runs capacity expansion optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleetForCE</strong> – 2d list (matrix) with data of generator fleet</p></li>
+<li><p><strong>hourlyCapacsCE</strong> – </p></li>
+<li><p><strong>hourlyCurtailedTechCapacsCE</strong> – </p></li>
+<li><p><strong>hourlyWindGenCEZonal</strong> – </p></li>
+<li><p><strong>hourlySolarGenCEZonal</strong> – </p></li>
+<li><p><strong>demandCEZonal</strong> – </p></li>
+<li><p><strong>newTechsCE</strong> – </p></li>
+<li><p><strong>planningReserveZonal</strong> – </p></li>
+<li><p><strong>hoursForCE</strong> – </p></li>
+<li><p><strong>newWindCFsCEZonal</strong> – </p></li>
+<li><p><strong>newSolarCFsCEZonal</strong> – </p></li>
+<li><p><strong>currCo2Cap</strong> – </p></li>
+<li><p><strong>seasonDemandWeights</strong> – </p></li>
+<li><p><strong>repHrsBySeason</strong> – </p></li>
+<li><p><strong>specialHrs</strong> – </p></li>
+<li><p><strong>peakDemandHourZonal</strong> – </p></li>
+<li><p><strong>cellsToZones</strong> – </p></li>
+<li><p><strong>hydroPotPerSeason</strong> – </p></li>
+<li><p><strong>genparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="RIPSMasterScript17Nov2017.addSetsToDatabaseCE">
+<code class="sig-name descname">addSetsToDatabaseCE</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">genFleetForCE</span></em>, <em class="sig-param"><span class="n">hoursForCE</span></em>, <em class="sig-param"><span class="n">newTechsCE</span></em>, <em class="sig-param"><span class="n">repHrsBySeason</span></em>, <em class="sig-param"><span class="n">specialHrs</span></em>, <em class="sig-param"><span class="n">peakDemandHourZonal</span></em>, <em class="sig-param"><span class="n">cellsToZones</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">blocksWind</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">blocksSolar</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#RIPSMasterScript17Nov2017.addSetsToDatabaseCE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add sets needed to GAMS database</p>
+<p>This function adds the sets to the GAMS database that are needed to run the capacity expansion optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – </p></li>
+<li><p><strong>genFleetForCE</strong> – 2d list (matrix) with data of generator fleet</p></li>
+<li><p><strong>hoursForCE</strong> – </p></li>
+<li><p><strong>newTechsCE</strong> – </p></li>
+<li><p><strong>repHrsBySeason</strong> – </p></li>
+<li><p><strong>specialHrs</strong> – </p></li>
+<li><p><strong>peakDemandHourZonal</strong> – </p></li>
+<li><p><strong>cellsToZones</strong> – </p></li>
+<li><p><strong>genparam</strong> – object of class <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
+<li><p><strong>blocksWind</strong> – </p></li>
+<li><p><strong>blocksSolar</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="RIPSMasterScript17Nov2017.addParametersToDatabaseCE">
+<code class="sig-name descname">addParametersToDatabaseCE</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">hourlyCapacsCE</span></em>, <em class="sig-param"><span class="n">hourlyWindGenCEZonal</span></em>, <em class="sig-param"><span class="n">hourlySolarGenCEZonal</span></em>, <em class="sig-param"><span class="n">demandCEZonal</span></em>, <em class="sig-param"><span class="n">newTechsCE</span></em>, <em class="sig-param"><span class="n">genFleetForCE</span></em>, <em class="sig-param"><span class="n">genSet</span></em>, <em class="sig-param"><span class="n">genSymbols</span></em>, <em class="sig-param"><span class="n">hydroGenSet</span></em>, <em class="sig-param"><span class="n">hoursForCE</span></em>, <em class="sig-param"><span class="n">hourSet</span></em>, <em class="sig-param"><span class="n">hourSymbols</span></em>, <em class="sig-param"><span class="n">techSet</span></em>, <em class="sig-param"><span class="n">techSymbols</span></em>, <em class="sig-param"><span class="n">techCurtailedSet</span></em>, <em class="sig-param"><span class="n">techCurtailedSymbols</span></em>, <em class="sig-param"><span class="n">renewTechSet</span></em>, <em class="sig-param"><span class="n">renewTechSymbols</span></em>, <em class="sig-param"><span class="n">planningReserveZonal</span></em>, <em class="sig-param"><span class="n">discountRate</span></em>, <em class="sig-param"><span class="n">newWindCFsCEZonal</span></em>, <em class="sig-param"><span class="n">newSolarCFsCEZonal</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em>, <em class="sig-param"><span class="n">scaleDollarsToThousands</span></em>, <em class="sig-param"><span class="n">currCo2Cap</span></em>, <em class="sig-param"><span class="n">seasonDemandWeights</span></em>, <em class="sig-param"><span class="n">hourlyCurtailedTechCapacsCE</span></em>, <em class="sig-param"><span class="n">scaleLbToShortTon</span></em>, <em class="sig-param"><span class="n">maxAddedZonalCapacPerTech</span></em>, <em class="sig-param"><span class="n">zoneSet</span></em>, <em class="sig-param"><span class="n">zoneSymbols</span></em>, <em class="sig-param"><span class="n">lineSet</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em>, <em class="sig-param"><span class="n">lineList</span></em>, <em class="sig-param"><span class="n">lineCapacs</span></em>, <em class="sig-param"><span class="n">cellsToZones</span></em>, <em class="sig-param"><span class="n">cellSet</span></em>, <em class="sig-param"><span class="n">peakDemandHourZonal</span></em>, <em class="sig-param"><span class="n">peakHourSet</span></em>, <em class="sig-param"><span class="n">peakHrSymbols</span></em>, <em class="sig-param"><span class="n">hydroPotPerSeason</span></em>, <em class="sig-param"><span class="n">ptCurtailedAll</span></em>, <em class="sig-param"><span class="n">pumpHydroGenSet</span></em>, <em class="sig-param"><span class="n">pumpHydroGenSymbols</span></em>, <em class="sig-param"><span class="n">phEff</span></em>, <em class="sig-param"><span class="n">phMaxSoc</span></em>, <em class="sig-param"><span class="n">phInitSoc</span></em>, <em class="sig-param"><span class="n">gcmSet</span></em><span class="sig-paren">)</span><a class="headerlink" href="#RIPSMasterScript17Nov2017.addParametersToDatabaseCE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add parameters needed to GAMS database</p>
+<p>This function adds the parameters to the GAMS database that are needed to run the capacity expansion optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – </p></li>
+<li><p><strong>hourlyCapacsCE</strong> – </p></li>
+<li><p><strong>hourlyWindGenCEZonal</strong> – </p></li>
+<li><p><strong>hourlySolarGenCEZonal</strong> – </p></li>
+<li><p><strong>demandCEZonal</strong> – </p></li>
+<li><p><strong>newTechsCE</strong> – </p></li>
+<li><p><strong>genFleetForCE</strong> – 2d list (matrix) with data of generator fleet</p></li>
+<li><p><strong>genSet</strong> – </p></li>
+<li><p><strong>genSymbols</strong> – </p></li>
+<li><p><strong>hydroGenSet</strong> – </p></li>
+<li><p><strong>hoursForCE</strong> – </p></li>
+<li><p><strong>hourSet</strong> – </p></li>
+<li><p><strong>hourSymbols</strong> – </p></li>
+<li><p><strong>techSet</strong> – </p></li>
+<li><p><strong>techSymbols</strong> – </p></li>
+<li><p><strong>techCurtailedSet</strong> – </p></li>
+<li><p><strong>techCurtailedSymbols</strong> – </p></li>
+<li><p><strong>renewTechSet</strong> – </p></li>
+<li><p><strong>renewTechSymbols</strong> – </p></li>
+<li><p><strong>planningReserveZonal</strong> – </p></li>
+<li><p><strong>discountRate</strong> – </p></li>
+<li><p><strong>newWindCFsCEZonal</strong> – </p></li>
+<li><p><strong>newSolarCFsCEZonal</strong> – </p></li>
+<li><p><strong>scaleMWtoGW</strong> – </p></li>
+<li><p><strong>scaleDollarsToThousands</strong> – </p></li>
+<li><p><strong>currCo2Cap</strong> – </p></li>
+<li><p><strong>seasonDemandWeights</strong> – </p></li>
+<li><p><strong>hourlyCurtailedTechCapacsCE</strong> – </p></li>
+<li><p><strong>scaleLbToShortTon</strong> – </p></li>
+<li><p><strong>maxAddedZonalCapacPerTech</strong> – </p></li>
+<li><p><strong>zoneSet</strong> – </p></li>
+<li><p><strong>zoneSymbols</strong> – </p></li>
+<li><p><strong>lineSet</strong> – </p></li>
+<li><p><strong>ipmZones</strong> – </p></li>
+<li><p><strong>ipmZoneNums</strong> – </p></li>
+<li><p><strong>lineList</strong> – </p></li>
+<li><p><strong>lineCapacs</strong> – </p></li>
+<li><p><strong>cellsToZones</strong> – </p></li>
+<li><p><strong>cellSet</strong> – </p></li>
+<li><p><strong>peakDemandHourZonal</strong> – </p></li>
+<li><p><strong>peakHourSet</strong> – </p></li>
+<li><p><strong>peakHrSymbols</strong> – </p></li>
+<li><p><strong>hydroPotPerSeason</strong> – </p></li>
+<li><p><strong>ptCurtailedAll</strong> – </p></li>
+<li><p><strong>pumpHydroGenSet</strong> – </p></li>
+<li><p><strong>pumpHydroGenSymbols</strong> – </p></li>
+<li><p><strong>phEff</strong> – </p></li>
+<li><p><strong>phMaxSoc</strong> – </p></li>
+<li><p><strong>phInitSoc</strong> – </p></li>
+<li><p><strong>gcmSet</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="RIPSMasterScript17Nov2017.runUnitCommitment">
+<code class="sig-name descname">runUnitCommitment</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">zonalDemandProfile</span></em>, <em class="sig-param"><span class="n">ucYear</span></em>, <em class="sig-param"><span class="n">currCo2Cap</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">reserveparam</span></em>, <em class="sig-param"><span class="n">curtailparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#RIPSMasterScript17Nov2017.runUnitCommitment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run unit commitment simulation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – 2d list with generator fleet for UCED simulation</p></li>
+<li><p><strong>zonalDemandProfile</strong> – </p></li>
+<li><p><strong>ucYear</strong> – integer with year of UCED run</p></li>
+<li><p><strong>currCo2Cap</strong> – </p></li>
+<li><p><strong>genparam</strong> – object of class <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
+<li><p><strong>reserveparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Reserveparameters" title="Reserveparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Reserveparameters</span></code></a></p></li>
+<li><p><strong>curtailparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Curtailmentparameters" title="Curtailmentparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Curtailmentparameters</span></code></a></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="RIPSMasterScript17Nov2017.runUnitCommitmentSingleGcm">
+<code class="sig-name descname">runUnitCommitmentSingleGcm</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">list_args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#RIPSMasterScript17Nov2017.runUnitCommitmentSingleGcm" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>list_args</strong> – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="RIPSMasterScript17Nov2017.callUnitCommitment">
+<code class="sig-name descname">callUnitCommitment</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fleetUC</span></em>, <em class="sig-param"><span class="n">hourlyCapacsUC</span></em>, <em class="sig-param"><span class="n">hourlyWindGenUC</span></em>, <em class="sig-param"><span class="n">hourlySolarGenUC</span></em>, <em class="sig-param"><span class="n">hydroPotentialUC</span></em>, <em class="sig-param"><span class="n">demandUC</span></em>, <em class="sig-param"><span class="n">hoursForUC</span></em>, <em class="sig-param"><span class="n">onOffInitial</span></em>, <em class="sig-param"><span class="n">genAboveMinInitial</span></em>, <em class="sig-param"><span class="n">mdtCarriedInitial</span></em>, <em class="sig-param"><span class="n">initSoc</span></em>, <em class="sig-param"><span class="n">co2Price</span></em>, <em class="sig-param"><span class="n">regUpUC</span></em>, <em class="sig-param"><span class="n">regDownUC</span></em>, <em class="sig-param"><span class="n">flexUC</span></em>, <em class="sig-param"><span class="n">contUC</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">reserveparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#RIPSMasterScript17Nov2017.callUnitCommitment" title="Permalink to this definition">¶</a></dt>
+<dd><p>RUN UNIT COMMITMENT MODEL</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fleetUC</strong> – 2d list with generator fleet for UCED simulation</p></li>
+<li><p><strong>hourlyCapacsUC</strong> – </p></li>
+<li><p><strong>hourlyWindGenUC</strong> – </p></li>
+<li><p><strong>hourlySolarGenUC</strong> – </p></li>
+<li><p><strong>hydroPotentialUC</strong> – </p></li>
+<li><p><strong>demandUC</strong> – </p></li>
+<li><p><strong>hoursForUC</strong> – 1d list with hours (1-8760) that will be used in this UCED run</p></li>
+<li><p><strong>onOffInitial</strong> – </p></li>
+<li><p><strong>genAboveMinInitial</strong> – </p></li>
+<li><p><strong>mdtCarriedInitial</strong> – </p></li>
+<li><p><strong>initSoc</strong> – </p></li>
+<li><p><strong>co2Price</strong> – </p></li>
+<li><p><strong>regUpUC</strong> – </p></li>
+<li><p><strong>regDownUC</strong> – </p></li>
+<li><p><strong>flexUC</strong> – </p></li>
+<li><p><strong>contUC</strong> – </p></li>
+<li><p><strong>genparam</strong> – object of class <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
+<li><p><strong>reserveparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Reserveparameters" title="Reserveparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Reserveparameters</span></code></a></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="RIPSMasterScript17Nov2017.addSetsToDatabaseUC">
+<code class="sig-name descname">addSetsToDatabaseUC</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">fleetUC</span></em>, <em class="sig-param"><span class="n">hoursForUC</span></em>, <em class="sig-param"><span class="n">genparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#RIPSMasterScript17Nov2017.addSetsToDatabaseUC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add sets to GAMS database</p>
+<p>This function adds the sets to the GAMS database needed to run the UCED optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams database object</p></li>
+<li><p><strong>fleetUC</strong> – 2d list with generator fleet for UCED simulation</p></li>
+<li><p><strong>hoursForUC</strong> – 1d list with hours (1-8760) that will be used in this UCED run</p></li>
+<li><p><strong>genparam</strong> – object of class <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="RIPSMasterScript17Nov2017.addParametersToDatabaseUC">
+<code class="sig-name descname">addParametersToDatabaseUC</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">hourlyCapacsUC</span></em>, <em class="sig-param"><span class="n">hourlyWindGenUC</span></em>, <em class="sig-param"><span class="n">hourlySolarGenUC</span></em>, <em class="sig-param"><span class="n">hydroPotentialUC</span></em>, <em class="sig-param"><span class="n">demandUC</span></em>, <em class="sig-param"><span class="n">fleetUC</span></em>, <em class="sig-param"><span class="n">genSet</span></em>, <em class="sig-param"><span class="n">genSymbols</span></em>, <em class="sig-param"><span class="n">hydroGenSet</span></em>, <em class="sig-param"><span class="n">hydroGenSymbols</span></em>, <em class="sig-param"><span class="n">hourSet</span></em>, <em class="sig-param"><span class="n">hourSymbols</span></em>, <em class="sig-param"><span class="n">zoneSet</span></em>, <em class="sig-param"><span class="n">zoneSymbols</span></em>, <em class="sig-param"><span class="n">lineSet</span></em>, <em class="sig-param"><span class="n">cnse</span></em>, <em class="sig-param"><span class="n">onOffInitial</span></em>, <em class="sig-param"><span class="n">genAboveMinInitial</span></em>, <em class="sig-param"><span class="n">mdtCarriedInitial</span></em>, <em class="sig-param"><span class="n">initSoc</span></em>, <em class="sig-param"><span class="n">co2Price</span></em>, <em class="sig-param"><span class="n">hoursForUC</span></em>, <em class="sig-param"><span class="n">flexUC</span></em>, <em class="sig-param"><span class="n">contUC</span></em>, <em class="sig-param"><span class="n">regUpUC</span></em>, <em class="sig-param"><span class="n">regDownUC</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">reserveparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#RIPSMasterScript17Nov2017.addParametersToDatabaseUC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add parameters to GAMS database</p>
+<p>This function adds the parameters to the GAMS database needed to run the UCED optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams database object</p></li>
+<li><p><strong>hourlyCapacsUC</strong> – </p></li>
+<li><p><strong>hourlyWindGenUC</strong> – </p></li>
+<li><p><strong>hourlySolarGenUC</strong> – </p></li>
+<li><p><strong>hydroPotentialUC</strong> – </p></li>
+<li><p><strong>demandUC</strong> – </p></li>
+<li><p><strong>fleetUC</strong> – 2d list with generator fleet for UCED simulation</p></li>
+<li><p><strong>genSet</strong> – </p></li>
+<li><p><strong>genSymbols</strong> – </p></li>
+<li><p><strong>hydroGenSet</strong> – </p></li>
+<li><p><strong>hydroGenSymbols</strong> – </p></li>
+<li><p><strong>hourSet</strong> – </p></li>
+<li><p><strong>hourSymbols</strong> – </p></li>
+<li><p><strong>zoneSet</strong> – </p></li>
+<li><p><strong>zoneSymbols</strong> – </p></li>
+<li><p><strong>lineSet</strong> – </p></li>
+<li><p><strong>cnse</strong> – </p></li>
+<li><p><strong>onOffInitial</strong> – </p></li>
+<li><p><strong>genAboveMinInitial</strong> – </p></li>
+<li><p><strong>mdtCarriedInitial</strong> – </p></li>
+<li><p><strong>initSoc</strong> – initial state of charge for pumped storage</p></li>
+<li><p><strong>co2Price</strong> – </p></li>
+<li><p><strong>hoursForUC</strong> – 1d list with hours (1-8760) that will be used in this UCED run</p></li>
+<li><p><strong>flexUC</strong> – </p></li>
+<li><p><strong>contUC</strong> – </p></li>
+<li><p><strong>regUpUC</strong> – </p></li>
+<li><p><strong>regDownUC</strong> – </p></li>
+<li><p><strong>genparam</strong> – object of class <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
+<li><p><strong>reserveparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Reserveparameters" title="Reserveparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Reserveparameters</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="RIPSMasterScript17Nov2017.create_description_file">
+<code class="sig-name descname">create_description_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">curtailparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#RIPSMasterScript17Nov2017.create_description_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a description file of the case in the output folder</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genparam</strong> – object of class <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
+<li><p><strong>reserveparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Reserveparameters" title="Reserveparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Reserveparameters</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Francisco.
+
+    </p>
+  </div>
+  &copy; 2015 HPED LP | <a href="http://www8.hp.com/us/en/hpe/legal/terms-of-use.html">Terms of Use</a> | <a href="https://www.hpe.com/us/en/legal/privacy.html">Privacy</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="../_static/language_data.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

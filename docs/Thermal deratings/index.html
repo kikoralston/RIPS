@@ -1,0 +1,270 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Thermal Deratings &mdash; Capacity Expansion / Unit Commitment and Economic Dispatch under climate change  documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="Capacity Expansion / Unit Commitment and Economic Dispatch under climate change  documentation" href="../index.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Capacity Expansion / Unit Commitment and Economic Dispatch under climate change
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <!-- Local TOC -->
+                <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Thermal Deratings</a></li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">Capacity Expansion / Unit Commitment and Economic Dispatch under climate change</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+    <li>Thermal Deratings</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/Thermal deratings/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-LoadEligibleCellWaterTs">
+<span id="id1"></span><span id="thermal-deratings"></span><h1>Thermal Deratings<a class="headerlink" href="#module-LoadEligibleCellWaterTs" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="LoadEligibleCellWaterTs.loadEligibleCellWaterTs">
+<code class="sig-name descname">loadEligibleCellWaterTs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">currYear</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">curtailparam</span></em>, <em class="sig-param"><span class="n">netcdf</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">n_cells</span><span class="o">=</span><span class="default_value">100</span></em><span class="sig-paren">)</span><a class="headerlink" href="#LoadEligibleCellWaterTs.loadEligibleCellWaterTs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load daily average water temperatures for grid cells for current simulation year</p>
+<p>This function selects the eligible grid cells that will be used in the analysis and loads the water data of current
+simulation year.</p>
+<p>Current options for which cells can host new plants:</p>
+<ul class="simple">
+<li><p>‘All’ (get all cell data)</p></li>
+<li><p>‘WithGen’ (get data for cells that have generator inside at beginning of CE runs).</p></li>
+<li><p>‘max_flow’ (get data for the first <code class="docutils literal notranslate"><span class="pre">n_cells</span></code> cells with max average flow in current year.).</p></li>
+<li><p>‘macrocell’ (get data for cells defined in a file ‘macrocells.csv’ that defines the centers of spatial clusters of cells. This was done to decrease computational burden.).</p></li>
+</ul>
+<p>This option must be defined in the object <code class="docutils literal notranslate"><span class="pre">curtailparam</span></code> in the field <code class="docutils literal notranslate"><span class="pre">cellsEligibleForNewPlants</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – (list) 2d list with generator fleet</p></li>
+<li><p><strong>currYear</strong> – (integer) current year of simulation</p></li>
+<li><p><strong>genparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
+<li><p><strong>curtailparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Curtailmentparameters" title="Curtailmentparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Curtailmentparameters</span></code></a></p></li>
+<li><p><strong>netcdf</strong> – (boolean) True if files are in netcdf format</p></li>
+<li><p><strong>n_cells</strong> – (integer) number of cells to consider in ‘max_flow’ option</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dict of {cell folder name : [[Datetime],[AverageWaterT(degC)], [AirT], [flow]]}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="LoadEligibleCellWaterTs.setCellFolders">
+<code class="sig-name descname">setCellFolders</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">currYear</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">curtailparam</span></em>, <em class="sig-param"><span class="n">netcdf</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">n_cells</span><span class="o">=</span><span class="default_value">100</span></em><span class="sig-paren">)</span><a class="headerlink" href="#LoadEligibleCellWaterTs.setCellFolders" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get list of eligible cells with future data in each ipm zone</p>
+<p>Current options for which cells can host new plants:</p>
+<ul class="simple">
+<li><p>‘All’ (get all cell data)</p></li>
+<li><p>‘WithGen’ (get data for cells that have generator inside at beginning of CE runs).</p></li>
+<li><p>‘max_flow’ (get data for the first <code class="docutils literal notranslate"><span class="pre">n_cells</span></code> cells with max average flow in current year.).</p></li>
+<li><p>‘macrocell’ (get data for cells defined in a file ‘macrocells.csv’ that defines the centers of spatial clusters of cells. This was done to decrease computational burden.).</p></li>
+</ul>
+<p>This option must be defined in the object <code class="docutils literal notranslate"><span class="pre">curtailparam</span></code> in the field <code class="docutils literal notranslate"><span class="pre">cellsEligibleForNewPlants</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – 2d list with generator fleet</p></li>
+<li><p><strong>currYear</strong> – (integer) current year of simulation</p></li>
+<li><p><strong>genparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
+<li><p><strong>curtailparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Curtailmentparameters" title="Curtailmentparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Curtailmentparameters</span></code></a></p></li>
+<li><p><strong>netcdf</strong> – (boolean) if true reads water data from NETCDF files (new format from August 2018)</p></li>
+<li><p><strong>n_cells</strong> – (integer)  number of cells to consider in ‘max_flow’ option</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="LoadEligibleCellWaterTs.isolateCellsInZones">
+<code class="sig-name descname">isolateCellsInZones</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">allCellFolders</span></em>, <em class="sig-param"><span class="n">genparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#LoadEligibleCellWaterTs.isolateCellsInZones" title="Permalink to this definition">¶</a></dt>
+<dd><p>Isolates ALL cells in zones of analysis and returns list of cell folders in zones</p>
+<p>THIS FUNCTION IS NOT USED ANYMORE WITH THE NETCDF DATA FORMAT. IT WAS USED WITH THE PREVIOUS VERSION OF THE UW DATA.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>allCellFolders</strong> – </p></li>
+<li><p><strong>genparam</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Francisco.
+
+    </p>
+  </div>
+  &copy; 2015 HPED LP | <a href="http://www8.hp.com/us/en/hpe/legal/terms-of-use.html">Terms of Use</a> | <a href="https://www.hpe.com/us/en/legal/privacy.html">Privacy</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="../_static/language_data.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,366 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Parameters &mdash; Capacity Expansion / Unit Commitment and Economic Dispatch under climate change  documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="Capacity Expansion / Unit Commitment and Economic Dispatch under climate change  documentation" href="../index.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Capacity Expansion / Unit Commitment and Economic Dispatch under climate change
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <!-- Local TOC -->
+                <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Parameters</a><ul>
+<li><a class="reference internal" href="#module-Generalparameters">General Parameters</a></li>
+<li><a class="reference internal" href="#module-Curtailmentparameters">Curtailment Parameters</a></li>
+<li><a class="reference internal" href="#module-Reserveparameters">Reserve Parameters</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">Capacity Expansion / Unit Commitment and Economic Dispatch under climate change</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+    <li>Parameters</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/Parameters/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="parameters">
+<span id="id1"></span><h1>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-Generalparameters">
+<span id="general-parameters"></span><span id="general-param"></span><h2>General Parameters<a class="headerlink" href="#module-Generalparameters" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="Generalparameters.Generalparameters">
+<em class="property">class </em><code class="sig-name descname">Generalparameters</code><a class="headerlink" href="#Generalparameters.Generalparameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generalparameters class</p>
+<p>This class contains all general parameters used in the simulation. I aggregated all of them inside this class
+to make it easier to pass them as argument to the functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataRoot</strong> – (string) path to folder with general input data</p></li>
+<li><p><strong>pathSysGams</strong> – (string) path to gams installation</p></li>
+<li><p><strong>runCE</strong> – (boolean) if True run CE simulation</p></li>
+<li><p><strong>runUC</strong> – (boolean) if True run UCED simulation</p></li>
+<li><p><strong>runFirstUCYear</strong> – (boolean) if True run UCED in initial year of simulation</p></li>
+<li><p><strong>startYear</strong> – (integer) first year of simulation</p></li>
+<li><p><strong>endYear</strong> – (integer) end year of simulation</p></li>
+<li><p><strong>yearStepCE</strong> – (integer) size of steps (in years) in CE simulation</p></li>
+<li><p><strong>daysPerSeason</strong> – (integer) number of days in each season considered in CE simulation</p></li>
+<li><p><strong>analysisArea</strong> – (string) analysis area</p></li>
+<li><p><strong>useLineLimits</strong> – (boolean) if True, tries to read file with transmission limits (dataRoot/Transmission/). If False, limits = +Inf</p></li>
+<li><p><strong>referenceCase</strong> – (boolean) If True, run case without curtailments or effects of climate change in demand</p></li>
+<li><p><strong>incDemandCC</strong> – (boolean) If True, run case WITH effects of climate change in demand</p></li>
+<li><p><strong>incHydroCC</strong> – (boolean) If True, run case WITH effects of climate change in hydropower</p></li>
+<li><p><strong>incCurtailments</strong> – (boolean) whether to model curtailments,whether to model env regs on water T</p></li>
+<li><p><strong>incRegs</strong> – (boolean) whether to model curtailments,whether to model env regs on water T</p></li>
+<li><p><strong>ptCurtailed</strong> – (set) types of power plants for which thermal deratings simulations will be performed (default: {‘Coal Steam’, ‘Combined Cycle’, ‘Nuclear’})</p></li>
+<li><p><strong>ptCurtailedRegs</strong> – (set) types of power plants for which thermal curtailments due to enviro regulations simulations will be performed (default: {‘Coal Steam’, ‘Coal Steam CCS’, ‘Combined Cycle’, ‘Combined Cycle CCS’, ‘Nuclear’})</p></li>
+<li><p><strong>ptCurtailedAll</strong> – (set) used internally only. should not be set by user. Union of ptCurtailed and ptCurtailedRegs</p></li>
+<li><p><strong>cellsEligibleForNewPlants</strong> – (string) Determines which cells new plants can be sited in; can be all all cells or those w/ gens already. ‘all’ (all cells) or ‘withGens’ (only cells with gen inside)</p></li>
+<li><p><strong>cellNewTechCriteria</strong> – (string) Of those cells given above parameter, whether input all of them or just the one w/ max wtr T per zone. ‘all’ or ‘maxWaterT’ (maxWaterT: only include cell w/ max water T in CE.)</p></li>
+<li><p><strong>compressFleet</strong> – (boolean) Compress fleet by agregating small generators?</p></li>
+<li><p><strong>co2CapPercentage</strong> – (float) Cap of co2 emission in final year of analysis <strong>as percentage of emission in base year</strong> (i.e., 100% - %reduction)</p></li>
+<li><p><strong>scenario</strong> – (string) File with fossil fuel cost scenario (e.g. ‘FuelPriceTimeSeries.csv’)</p></li>
+<li><p><strong>fuelPricesTimeSeries</strong> – (list) used internally only. should not be set by user.</p></li>
+<li><p><strong>resultsDir</strong> – (string) path to folder where output data will be saved</p></li>
+<li><p><strong>tzAnalysis</strong> – (string) timezone of analysis (default: ‘EST’)</p></li>
+<li><p><strong>projectName</strong> – (string) project name</p></li>
+<li><p><strong>windGenDataYr</strong> – (integer) year of wind database that will be used for wind generation simulations (e.g.: 2009, this was picked somewhat arbitrarily - average CF of all years in WIND data)</p></li>
+<li><p><strong>capacExpFilename</strong> – (string) name of gams file with capacity expansion model (e.g., ‘CERIPS24July2017PS.gms’)</p></li>
+<li><p><strong>maxAddedZonalCapacPerTech</strong> – (integer) maximum number of new techs (by type) that can be added in each CE xtep</p></li>
+<li><p><strong>incITC</strong> – (boolean) include ITC?</p></li>
+<li><p><strong>retirementCFCutoff</strong> – (float) retire units w/ CF lower than this value</p></li>
+<li><p><strong>ptEligRetCF</strong> – (list) types of power plants that can be retired due to low CF</p></li>
+<li><p><strong>selectCurtailDays</strong> – (boolean) add days with maximum curtailment to special days</p></li>
+<li><p><strong>planningReserve</strong> – (float) planning reserve as fraction of peak demand</p></li>
+<li><p><strong>discountRate</strong> – (float) discount rate used for computation of annualized costs</p></li>
+<li><p><strong>allowCoalWithoutCCS</strong> – (boolean) allow Coal without CCS?</p></li>
+<li><p><strong>onlyNSPSUnits</strong> – (boolean) allow only NSPS Units?</p></li>
+<li><p><strong>permitOncethru</strong> – (boolean) permit adding power plants with Once-through cooling?</p></li>
+<li><p><strong>retireOldPlants</strong> – (boolean) retire Old Plants?</p></li>
+<li><p><strong>ucFilename</strong> – (string) ‘UCRIPS18April2017.gms’</p></li>
+<li><p><strong>calculateCO2Price</strong> – (boolean) True</p></li>
+<li><p><strong>daysOpt</strong> – (integer) number of days being optimized in each individual UC run</p></li>
+<li><p><strong>daysLA</strong> – (integer) number of “Look Ahead Days” in each individual UC run</p></li>
+<li><p><strong>ocAdderMin</strong> – (float) 0</p></li>
+<li><p><strong>ocAdderMax</strong> – (float) 0.05 $/MWh</p></li>
+<li><p><strong>ucDayInitial</strong> – (integer) initial day of the year for complete UC annual simulation</p></li>
+<li><p><strong>ucDayEnd</strong> – (integer) final day of the year for complete UC annual simulation</p></li>
+<li><p><strong>costnse</strong> – (float) cost of non supplied energy (cnse) in $/MWh</p></li>
+<li><p><strong>phEff</strong> – (float) pumped storage efficiency</p></li>
+<li><p><strong>phMaxSoc</strong> – (float) maximum state of charge of pumped hydro. Max soc as multiple of capacity</p></li>
+<li><p><strong>phInitSoc</strong> – (float) initial state of charge of pumped hydro. Init SOC as fraction of max soc</p></li>
+<li><p><strong>scaleMWtoGW</strong> – 1000</p></li>
+<li><p><strong>scaleDollarsToThousands</strong> – 1000</p></li>
+<li><p><strong>scaleLbToShortTon</strong> – 2000</p></li>
+<li><p><strong>states</strong> – (list) used internally only. should not be set by user.</p></li>
+<li><p><strong>statesAbbrev</strong> – (list) used internally only. should not be set by user.</p></li>
+<li><p><strong>ipmZones</strong> – (list) used internally only. should not be set by user.</p></li>
+<li><p><strong>fipsToZones</strong> – (list) used internally only. should not be set by user.</p></li>
+<li><p><strong>fipsToPolys</strong> – (list) used internally only. should not be set by user.</p></li>
+<li><p><strong>statePolys</strong> – (list) used internally only. should not be set by user.</p></li>
+<li><p><strong>ipmZoneNums</strong> – (list) used internally only. should not be set by user.</p></li>
+<li><p><strong>lineList</strong> – (list) used internally only. should not be set by user.</p></li>
+<li><p><strong>lineCapacs</strong> – (list) used internally only. should not be set by user.</p></li>
+<li><p><strong>ncores_py</strong> – (integer) number of cores to use for parallel simulation in python</p></li>
+<li><p><strong>ncores_gams</strong> – (integer) number of cores to use for parallel simulation in gams</p></li>
+<li><p><strong>coldStart</strong> – (boolean) “Cold Start” for CE and UC models. Read files with initial conditions in first run</p></li>
+<li><p><strong>gcmranking</strong> – (list) list with ranking of GCMs that will be chosen in each CE year (e.g. [3, 9, 15])</p></li>
+<li><p><strong>rcp</strong> – (string) name of rcp being simulated (rcp45 or rcp85)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="Generalparameters.Generalparameters.load">
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Generalparameters.Generalparameters.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads formatted txt file with the values of the parameters and allocates to object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fname</strong> – string with path to parameter file</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-Curtailmentparameters">
+<span id="curtailment-parameters"></span><span id="curtail-param"></span><h2>Curtailment Parameters<a class="headerlink" href="#module-Curtailmentparameters" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="Curtailmentparameters.Curtailmentparameters">
+<em class="property">class </em><code class="sig-name descname">Curtailmentparameters</code><a class="headerlink" href="#Curtailmentparameters.Curtailmentparameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Curtailmentparameters class</p>
+<p>This class contains parameters needed to configure the</p>
+<dl class="py method">
+<dt id="Curtailmentparameters.Curtailmentparameters.load">
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Curtailmentparameters.Curtailmentparameters.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads formatted txt file with the values of the parameters and allocates to object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fname</strong> – string with path to parameter file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="Curtailmentparameters.Curtailmentparameters.writefile">
+<code class="sig-name descname">writefile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Curtailmentparameters.Curtailmentparameters.writefile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes parameters to a formatted txt file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fname</strong> – string with path to parameter file</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-Reserveparameters">
+<span id="reserve-parameters"></span><span id="reserve-param"></span><h2>Reserve Parameters<a class="headerlink" href="#module-Reserveparameters" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="Reserveparameters.Reserveparameters">
+<em class="property">class </em><code class="sig-name descname">Reserveparameters</code><a class="headerlink" href="#Reserveparameters.Reserveparameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reserveparameter class</p>
+<p>This class contains parameters to configure simulation of regulated reserves.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>regLoadFrac</strong> – (float) fraction of hourly load in regulated up &amp; down reserves</p></li>
+<li><p><strong>contLoadFrac</strong> – (float) fraction of hourly load in contingency reserves</p></li>
+<li><p><strong>regErrorPercentile</strong> – (float) percentile of 10-m wind &amp; 5-m solar forecast errors used in regulated reserves</p></li>
+<li><p><strong>flexErrorPercentile</strong> – (float) percentile of hourly wind &amp; solar forecast errors used in regulated reserves</p></li>
+<li><p><strong>=</strong><strong> (</strong><strong>dict</strong><strong>) </strong><strong>{'Combined Cycle'</strong> (<em>regUpCostCoeffs</em>) – 6, ‘Combined Cycle CCS’: 6, ‘O/G Steam’: 4, ‘Coal Steam’: 10, ‘Coal Steam CCS’: 10}  # $/MWh</p></li>
+<li><p><strong>regReserveMinutes</strong> – (float) timeframe of regulated reserves. Regulated reserves must be provided w/in 5 mins</p></li>
+<li><p><strong>flexReserveMinutes</strong> – (float) timeframe of spinning reserves. Spin reserves must be provided w/in 10 minutes</p></li>
+<li><p><strong>contingencyReserveMinutes</strong> – (float) timeframe of contingency res (must be provided w/in 30 minutes)</p></li>
+<li><p><strong>minutesPerHour</strong> – (float) minutes per hour</p></li>
+<li><p><strong>rampRateToRegReserveScalar</strong> – (float) computed internally</p></li>
+<li><p><strong>rampRateToFlexReserveScalar</strong> – (float) computed internally</p></li>
+<li><p><strong>rampRateToContReserveScalar</strong> – (float) computed internally</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="Reserveparameters.Reserveparameters.load">
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Reserveparameters.Reserveparameters.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads formatted txt file with the values of the parameters and allocates to object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fname</strong> – string with path to parameter file</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Francisco.
+
+    </p>
+  </div>
+  &copy; 2015 HPED LP | <a href="http://www8.hp.com/us/en/hpe/legal/terms-of-use.html">Terms of Use</a> | <a href="https://www.hpe.com/us/en/legal/privacy.html">Privacy</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="../_static/language_data.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

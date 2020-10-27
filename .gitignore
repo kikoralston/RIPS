@@ -96,3 +96,4 @@ _scratch*
 
 # documentation and sphynx
 docsrc/_build/
+docs/_sources
