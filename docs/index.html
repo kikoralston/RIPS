@@ -81,8 +81,9 @@
             
                 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Bla</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Main%20Scripts/index.html">Main Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Input%20data/index.html">Input data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Parameters/index.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Main%20Scripts/index.html">Main Scripts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Thermal%20deratings/index.html">Thermal Deratings</a></li>
 </ul>
 
@@ -131,24 +132,13 @@
   <div class="section" id="capacity-expansion-unit-commitment-and-economic-dispatch-under-climate-change">
 <h1>Capacity expansion / unit commitment and economic dispatch under climate change<a class="headerlink" href="#capacity-expansion-unit-commitment-and-economic-dispatch-under-climate-change" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="intro.html">Bla</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Main%20Scripts/index.html">Main Scripts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Parameters/index.html">Parameters</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Parameters/index.html#module-Generalparameters">General Parameters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Parameters/index.html#module-Curtailmentparameters">Curtailment Parameters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Parameters/index.html#module-Reserveparameters">Reserve Parameters</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="Thermal%20deratings/index.html">Thermal Deratings</a></li>
-</ul>
 </div>
 <div class="section" id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <div class="figure align-center">
 <img alt="_images/diagram_models.jpg" src="_images/diagram_models.jpg" />
 </div>
-<p>To run a Capacity Expansion (CE), UCED, or combined CE/UCED simulation the function <code class="docutils literal notranslate"><span class="pre">masterFunction()</span></code> (see <a class="reference internal" href="Main%20Scripts/index.html#main-scripts"><span class="std std-ref">Main Scripts</span></a>) must be called within a python script. This python script must also load the parameters needed to execute the simulation and pass them as arguments to <code class="docutils literal notranslate"><span class="pre">masterFunction()</span></code>.</p>
+<p>To run a CE, UCED, or combined CE/UCED simulation the function <code class="docutils literal notranslate"><span class="pre">masterFunction()</span></code> (see <a class="reference internal" href="Main%20Scripts/index.html#main-scripts"><span class="std std-ref">Main Scripts</span></a>) must be called within a python script. This python script must also load the parameters needed to execute the simulation and pass them as arguments to <code class="docutils literal notranslate"><span class="pre">masterFunction()</span></code>.</p>
 <p>A minimal example of how to execute a capacity expansion only analysis from 2015 to 2050 is illustrated below. The txt files are formatted csv files that contain the parameters data.</p>
 <p>The parameters are python objects in which the fields store the values of specific parameters. After loading the values of the different parameters, they can also be changed by setting the values of the fields directly.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load parameters</span>
