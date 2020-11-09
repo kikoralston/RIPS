@@ -2,7 +2,7 @@
 #October 4, 2016
 #Functions update input fleets' fuel prices for given year
 
-from SetupGeneratorFleet import getFuelPrice
+from SetupFleet.SetupGeneratorFleet import getFuelPrice
 
 #Updates fleets' fuel prices for given year
 #Inputs: gen fleet (2d list), new techs (2d list), current year, future fuel prices (2d list)

@@ -5,11 +5,9 @@
 
 import copy, os, random
 from AuxFuncs import *
-from GAMSAuxFuncs import *
-from CreateFleetForCELoop import onlineAndNotRetired
-from ModifyGeneratorCapacityWithWaterTData import getCellLatAndLongFromFolderName
-from DemandFuncsCE import sumZonalData
-from AssignCellsToStates import getStateOfPt
+from GAMSUtil.GAMSAuxFuncs import *
+from SetupFleet.CreateFleetForCELoop import onlineAndNotRetired
+from AssignCellsToIPMZones import getStateOfPt
 import pandas as pd
 
 

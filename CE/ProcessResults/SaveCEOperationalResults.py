@@ -2,10 +2,7 @@
 # Jan 5, 2017
 
 from AuxFuncs import *
-from GAMSAuxFuncs import *
-from SetupResultLists import (setupHourlyGenByPlant, setupHourlySystemResultsWithHourSymbols,
-                              setupHourlyLineflow, setupEmptyHourly2dList)
-import copy, csv
+from GAMSUtil.GAMSAuxFuncs import *
 import pandas as pd
 
 
@@ -104,8 +101,8 @@ def saveGeneratorSpecificResults(ceModel):
     return genByPlant, genByCTechAndCell, genByRETechAndZone, genByNCTechAndZone
 
 
-def setupCETechResultsLists(curtailedTechs, renewTechs, notCurtailedTechs, cellsForTechs,
-                            ipmZoneNums, hoursForCESymbols):
+def setupCETechResultsLists(curtailedTechs, renewTechs, notCurtailedTechs, cellsForTechs, ipmZoneNums,
+                            hoursForCESymbols):
     """Setup same-formatted results lists as above for by-tech results
 
     :param curtailedTechs:

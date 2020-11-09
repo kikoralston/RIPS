@@ -3,7 +3,7 @@
 #Save UC model results for a day into 2d list for all days
 
 # from GAMSAuxFuncs import extract2dVarResultsIntoDictNoLA
-from GAMSAuxFuncs import createHourSymbol
+from GAMSUtil.GAMSAuxFuncs import createHourSymbol
 import pandas as pd
 
 ############ SAVE HOURLY X PLANT RESULTS #######################################

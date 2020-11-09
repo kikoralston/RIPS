@@ -9,6 +9,7 @@ from AuxFuncs import *
 
 def getNewTechs(currYear, genparam, reserveparam):
     """Import new tech data
+
     Import new tech data by loading forecasts of tech data + 2d list w/ missing data, and fill in that 2d list w/
     forecast data for current year. Inputs used from the parameter objects are the flags indicating which
     techs to import or not import
@@ -135,7 +136,9 @@ def modRECost(newTechsCE, itc, plantType):
 
 
 def modCostsForCoolingTechs(newPlantDataDir, newTechsCE):
-    """Modify costs for thermal plants based on cooling tech. Data from IECM. Also, adds a standard value for
+    """Modify costs for thermal plants based on cooling type
+
+    Modify costs for thermal plants based on cooling tech. Data from IECM. Also, adds a standard value for
     cooling design temperature for each pair (plant type, cooling type)
 
     :param newPlantDataDir: (string) path to folder with new plant data

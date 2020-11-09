@@ -1,32 +1,33 @@
 # Michael Craig, 6 June 2016
 
-# Constructs base generator fleet w/ cooling information, emissions rates,
-# VOM, fuel price, and unit commitment parameters. Then the fleet is compressed.
-# DATA SOURCES: fleet - NEEDS; cooling information - EIA860; emissions rates - eGRID;
-# VOM & UC parameters - PHORUM.
-
-import csv, os, copy, operator, random
+import os, copy, operator, random
 from AuxFuncs import *
-from CurtailmentRegressions import getCoolType
+from thermalderatings.CurtailmentRegressions import getCoolType
 
 
 def setupGeneratorFleet(currYear, genparam, reserveparam):
     """Imports fleet data
 
+    This is the main function to compile the existing power plant fleet that will be used in the simulation
+
     Uses pre defined parameters of this analysis (states, year, & power system for analysis) to import data
     of generator fleet. Imports fleet, isolates fleet to given state and power system, removes retired units, and
     adds emissions rates and cooling information.
 
-    :param currYear: year of fleet
-    :param genparam: object of class GeneralParameters
-    :param reserveparam: object of class ReserveParameters
-    :return: 2d list of generator fleet
+    Constructs base generator fleet w/ cooling information, emissions rates, VOM, fuel price, and unit commitment
+    parameters. Then the fleet is compressed.
+
+    DATA SOURCES: fleet - NEEDS; cooling information - EIA860; emissions rates - eGRID; VOM & UC parameters - PHORUM.
+
+    :param currYear: (int) year of fleet
+    :param genparam: object of class :mod:`Generalparameters`
+    :param reserveparam: object of class :mod:`Reserveparameters`
+    :return: (2d list) generator fleet data
     """
     # Import entire current fleet
-    # if not testModel:
+
     baseGenFleet = importNEEDSFleet(genparam.dataRoot)
-    # else:
-    #    baseGenFleet = importTestFleet(genparam.dataRoot)
+
     # Slim down fleet based on region & year of analysis
     stateColName = "State Name"
     isolateGensInStates(baseGenFleet, genparam.states, stateColName)
@@ -103,7 +104,7 @@ def addCoolingTechnologyAndSource(baseGenFleet, statesForAnalysis, dataRoot):
 
     Imports cooling map and data from EIA 860, then adds them generator fleet
 
-    :param baseGenFleet: generator fleet (2d list)
+    :param baseGenFleet: (2d list) generator fleet (see :py:func:`.importNEEDSFleet`)
     :param statesForAnalysis: states for analysis (1d list)
     :param dataRoot: (string) path to root of data folder
     """
@@ -115,9 +116,9 @@ def addCoolingTechnologyAndSource(baseGenFleet, statesForAnalysis, dataRoot):
 def addCoolingInfoToFleet(baseGenFleet, equipData, unitsToCoolingIDMap):
     """Adds cooling technology and source to fleet
 
-    :param baseGenFleet: generator fleet (2d list)
-    :param equipData: cooling equipment data (EIA 860) (2d list)
-    :param unitsToCoolingIDMap: map of generator ID to cooling ID (dictionary)
+    :param baseGenFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param equipData: (2d list) cooling equipment data (EIA 860)
+    :param unitsToCoolingIDMap: (dictionary) map of generator ID to cooling ID
     """
     coolingHeaders = ['Cooling Tech', 'Cooling Source']
     baseGenFleet[0].extend(coolingHeaders)
@@ -139,10 +140,10 @@ def getCoolingTechAndSource(equipData, orisID, coolingID):
     """Gets cooling tech for given ORIS and cooling ID. Works for generators in NEEDS that have a corresponding
     unit in EIA860.
 
-    :param equipData: cooling tech data (2d list)
-    :param orisID: oris ID (str)
-    :param coolingID: cooling ID (str)
-    :return: cooling technology and source for input generator
+    :param equipData: (2d list) cooling tech data
+    :param orisID: (str) oris ID
+    :param coolingID: (str) cooling ID
+    :return: tuple with cooling technology and source for input generator
     """
     equipHeadersMap = mapHeadersToCols(equipData)
     equipORISCol = equipHeadersMap['Plant Code']
@@ -166,7 +167,7 @@ def getCoolingTechAndSource(equipData, orisID, coolingID):
 def getCoolingTechMap():
     """Maps 2-letter codes to comprehensible cooling techs
 
-    :return: map of cooling tech abbrev to full name (dictionary)
+    :return: dictionary mapping cooling tech abbrev to full name (e.g. {'DC': 'dry cooling'})
     """
     coolingTechMap = {'DC': 'dry cooling', 'OC': 'once through with pond',
                       'ON': 'once through no pond', 'RC': 'recirculating with pond or canal',
@@ -181,10 +182,10 @@ def getCoolingTechMap():
 def mapUnitsToCoolingID(assocData, baseGenFleet, equipData):
     """Maps NEEDS generator IDs to EIA860 cooling IDs
 
-    :param assocData: cooling association data from EIA860 (2d list)
-    :param baseGenFleet: base generator fleet from NEEDS (2d list)
-    :param equipData: map of NEEDS generators to EIA860 cooling ID or 'NoMatch' (dictionary)
-    :return:
+    :param assocData: (2d list) cooling association data from EIA860
+    :param baseGenFleet: (2d list) base generator fleet from NEEDS (see :func:`.importNEEDSFleet`)
+    :param equipData: (2d list) map of NEEDS generators to EIA860 cooling ID or 'NoMatch'
+    :return: dictionary mapping NEEDS generator IDs to EIA860 cooling IDs
     """
     assocHeadersMap = mapHeadersToCols(assocData)
     fleetHeadersMap = mapHeadersToCols(baseGenFleet)
@@ -253,7 +254,7 @@ def getRetirementStatusOfAssocRow(assocRow, assocData, equipData):
     :param assocRow:
     :param assocData:
     :param equipData:
-    :return:
+    :return: (boolean) True if unit is retired. False otherwise
     """
     assocHeadersMap = mapHeadersToCols(assocData)
     assocOrisIDCol = assocHeadersMap['Plant Code']
@@ -268,15 +269,16 @@ def getRetirementStatusOfAssocRow(assocRow, assocData, equipData):
                                        colTo1dList(equipData, equipCoolingIDCol))
     equipRow = search2Lists(equipORISIDs, equipCoolingIDs, orisID, coolingID)
     retiredStatus = equipData[equipRow][equipRetiredCol]
+
     return retiredStatus == 'RE'
 
 
 def get860Data(statesForAnalysis, dataRoot):
     """Imports EIA860 cooling equipment and association data, and isolates equipment data to units in states of analysis
 
-    :param statesForAnalysis: states for analysis (1d list)
-    :param dataRoot:
-    :return: EIA860 cooling IDs and technologies (2d lists)
+    :param statesForAnalysis: (1d list) states for analysis
+    :param dataRoot: (string) path to directory with input data
+    :return: (2d list) EIA860 cooling IDs and technologies
     """
     [assocData, equipData] = import860data(dataRoot)
     # First row is useless data in both lists - remove it
@@ -291,8 +293,8 @@ def get860Data(statesForAnalysis, dataRoot):
 def import860data(dataRoot):
     """Imports 860 equipment and association data
 
-    :param dataRoot:
-    :return: EIA860 cooling assocation and equipment data (2d lists)
+    :param dataRoot: (string) path to directory with input data
+    :return: (2d list) EIA860 cooling association and equipment data
     """
     dir860 = os.path.join(dataRoot, 'EIA8602014')
 
@@ -304,13 +306,14 @@ def import860data(dataRoot):
 
 
 def addEmissionsRates(baseGenFleet, statesForAnalysis, dataRoot):
-    """ADD EMISSION RATES FROM EGRID TO GENERATOR FLEET
+    """Add emission rates from EGrid to generator fleet
 
-    Adds eGRID emissions rates to generator fleet
+    Adds a column with eGRID emissions rates to the 2d list with generator fleet. It modifies the 2d list
+    `baseGenFleet`. This function does not return anything.
 
-    :param baseGenFleet: generator fleet (2d list)
-    :param statesForAnalysis: states for analysis (1d list)
-    :param dataRoot:
+    :param baseGenFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param statesForAnalysis: (1d list) states for analysis
+    :param dataRoot: (string) path to directory with input data
     """
     (egridBoiler, egridPlant) = importeGridData(statesForAnalysis, dataRoot)
     emsHeadersToAdd = ["NOxEmRate(lb/MMBtu)", "SO2EmRate(lb/MMBtu)",
@@ -322,9 +325,14 @@ def addEmissionsRates(baseGenFleet, statesForAnalysis, dataRoot):
     fillMissingEmissionsRates(baseGenFleet, emsHeadersToAdd)
 
 
-# Fills missing generator em rates w/ average for gens w/ same fuel and plant type.
-# IN: generator fleet (2d list), emissions headers to add (1d list)
 def fillMissingEmissionsRates(baseGenFleet, emsHeadersToAdd):
+    """Fills missing generator emission rates with average for gens that have the same fuel and plant type.
+
+    This function does not return anything.
+
+    :param baseGenFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param emsHeadersToAdd: (1d list) emissions headers to add
+    """
     # Get headers and columns
     headersToColsMapBase = mapHeadersToCols(baseGenFleet)
     plantTypeCol = headersToColsMapBase['PlantType']
@@ -344,12 +352,16 @@ def fillMissingEmissionsRates(baseGenFleet, emsHeadersToAdd):
             baseGenFleet[idx][so2Col] = avgso2
             baseGenFleet[idx][co2Col] = avgco2
 
-        # Gets emissions rates of generators w/ given plant & fuel type
 
-
-# IN: generator fleet (2d list), plant and fuel type (str), em rate headers (1d list)
-# OUT: NOx, SO2 and CO2 emissions rates (1d lists)
 def getEmsRatesOfMatchingFuelAndPlantType(baseGenFleet, plantType, fuelType, emsHeadersToAdd):
+    """ Gets emission rates of generators w/ given plant & fuel type
+
+    :param baseGenFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param plantType: (string) name of plant type
+    :param fuelType: (string) name of fuel type
+    :param emsHeadersToAdd: (1d list) emissions headers to add
+    :return: (1d lists) lists with NOx, SO2 and CO2 emissions rates
+    """
     # Get headers
     headersToColsMapBase = mapHeadersToCols(baseGenFleet)
     noxCol = headersToColsMapBase[emsHeadersToAdd[0]]
@@ -385,11 +397,15 @@ def getEmsRatesOfMatchingFuelAndPlantType(baseGenFleet, plantType, fuelType, ems
     return [nox, so2, co2]
 
 
-# Gets row indexes in generator fleet of generators that match given plant & fuel type,
-# filtering out units w/ no emissions rate data.
-# IN: generator fleet (2d list), plant and fuel type (str), col w/ nox ems rate (int)
-# OUT: row indices of matching plant & fuel type (1d list)
 def getMatchingRowsFuelAndPlantType(baseGenFleet, plantType, fuelType, noxCol):
+    """Gets row indexes in generator fleet of generators that match given plant & fuel type, filtering out units w/ no emissions rate data.
+
+    :param baseGenFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param plantType: (string) name of plant type
+    :param fuelType: (string) name of fuel type
+    :param noxCol: (int) index of column with NOx emission rate
+    :return: (1d list) indices of row with matching plant & fuel type
+    """
     headersToColsMapBase = mapHeadersToCols(baseGenFleet)
     plantTypeCol = headersToColsMapBase['PlantType']
     fuelTypeCol = headersToColsMapBase['Modeled Fuels']
@@ -402,11 +418,15 @@ def getMatchingRowsFuelAndPlantType(baseGenFleet, plantType, fuelType, noxCol):
     return matchingRowIdxs
 
 
-# Gets row indexes in generator fleet of gens w/ same fuel type, filtering
-# out units w/ no emissions rate data.
-# IN: generator fleet (2d list), fuel type (str), col w/ nox ems rate (int)
-# OUT: row indices of matching fuel type (1d list)
 def getMatchingRowsFuelType(baseGenFleet, fuelType, noxCol):
+    """Gets row indexes in generator fleet of gens with same fuel type, filtering out units with no emissions rate data.
+
+
+    :param baseGenFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param fuelType: (string) name of fuel type
+    :param noxCol: (int) index of column with NOx emission rate
+    :return: (1d list) indices of row with matching fuel type
+    """
     headersToColsMapBase = mapHeadersToCols(baseGenFleet)
     fuelTypeCol = headersToColsMapBase['Modeled Fuels']
     matchingRowIdxs = []
@@ -418,11 +438,17 @@ def getMatchingRowsFuelType(baseGenFleet, fuelType, noxCol):
     return matchingRowIdxs
 
 
-# Add eGRID emissions rates values to fleet, either using boiler specific
-# data for coal & o/g steam units or plant level average data. Adds
-# ems rate in order of nox, so2, and co2, as set by ems headers in addEmissionsRates.
-# IN: generator fleet (2d list), eGRID boiler and plant data (2d lists)
 def addEmissionsRatesValues(baseFleet, egridBoiler, egridPlant):
+    """Add eGRID emissions rates values to fleet
+
+    This function adds eGRID emissions rates values to fleet, either using boiler specific data for coal & o/g steam
+    units or plant level average data. Adds emission rate in order of nox, so2, and co2, as set by ems headers in
+    addEmissionsRates. This function does not return anything.
+
+    :param baseFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param egridBoiler: (2d list) eGRID boiler data
+    :param egridPlant: (2d list) eGRID plant data
+    """
     headersToColsMapBase = mapHeadersToCols(baseFleet)
     headersToColsMapEgridBlr = mapHeadersToCols(egridBoiler)
     headersToColsMapEgridPlnt = mapHeadersToCols(egridPlant)
@@ -448,11 +474,16 @@ def addEmissionsRatesValues(baseFleet, egridBoiler, egridPlant):
         baseFleet[idx].extend([nox, so2, co2])
 
 
-# Look for boiler-level match of given gen in gen fleet to eGRID data, and return emissions
-# rates if find match.
-# IN: gen fleet (2d list), idx for row in gen fleet (int), boiler data (2d list)
-# OUT: boiler-level nox, so2 & co2 ems rates (1d list)
 def getBlrEmRates(baseFleet, idx, egridBoiler):
+    """Get boiler emission rates
+
+    Look for boiler-level match of given gen in gen fleet to eGRID data, and return emissions rates if find match.
+
+    :param baseFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param idx: (int) index of row in `baseFleet`
+    :param egridBoiler: (2d list) eGRID boiler data
+    :return: (1d list) boiler-level nox, so2 & co2 ems rates
+    """
     # Setup necessary data
     headersToColsMapBase = mapHeadersToCols(baseFleet)
     headersToColsMapEgridBlr = mapHeadersToCols(egridBoiler)
@@ -475,11 +506,17 @@ def getBlrEmRates(baseFleet, idx, egridBoiler):
     return [nox, so2, co2]
 
 
-# Looks for plant-level match of given unit in gen fleet to eGRID plant data,
-# and returns plant-level ems rate of matching plant if found.
-# IN: gen fleet (2d list), idx for row in gen fleet (int), plant data (2d list)
-# OUT: plant-level nox, so2 & co2 ems rate (1d list)
 def getPlantEmRates(baseFleet, idx, egridPlant):
+    """Get plant emission rates
+
+    Looks for plant-level match of given unit in gen fleet to eGRID plant data, and returns plant-level ems rate of
+    matching plant if found.
+
+    :param baseFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param idx: (int) index of row in `baseFleet`
+    :param egridPlant: (2d list) eGRID plant data
+    :return: (1d list) plant-level nox, so2 & co2 ems rate
+    """
     # Setup necessary data
     headersToColsMapBase = mapHeadersToCols(baseFleet)
     headersToColsMapEgridPlnt = mapHeadersToCols(egridPlant)
@@ -499,10 +536,13 @@ def getPlantEmRates(baseFleet, idx, egridPlant):
     return [nox, so2, co2]
 
 
-# Gets boiler-level emissions rates.
-# IN: eGRID boiler data (2d list), row in boiler data (int)
-# OUT: boiler-level emissions rates [lb/mmbtu] (1d list)
 def calculateEmissionsRatesBlr(egridBoiler, egridBoilerRow):
+    """Calculate boiler-level emissions rates.
+
+    :param egridBoiler: (2d list) eGRID boiler data
+    :param egridBoilerRow: (int) row in boiler data
+    :return: (1d list) boiler-level emission rates [lb/mmbtu]
+    """
     scaleTonsToLbs = 2000
     # Define headers
     htInputHeader = 'Boiler unadjusted annual best heat input (MMBtu)'
@@ -527,10 +567,13 @@ def calculateEmissionsRatesBlr(egridBoiler, egridBoilerRow):
     return [noxEmsRate, so2EmsRate, co2EmsRate]
 
 
-# Gets plant-level ems rates.
-# IN: eGRID plant data (2d list), row in plant data (int)
-# OUT: plant-level nox, so2 and co2 ems rates [lb/mmbtu] (1d list)
 def calculateEmissionsRatesPlnt(egridPlant, egridPlantRow):
+    """Calculate plant-level emissions rates.
+
+    :param egridPlant: (2d list) eGRID plant data
+    :param egridPlantRow: (int) row in plant data
+    :return: (1d list) plant-level nox, so2 and co2 emission rates [lb/mmbtu]
+    """
     # Define headers
     noxEmsRateHeader = 'Plant annual NOx input emission rate (lb/MMBtu)'
     so2EmsRateHeader = 'Plant annual SO2 input emission rate (lb/MMBtu)'
@@ -548,20 +591,37 @@ def calculateEmissionsRatesPlnt(egridPlant, egridPlantRow):
                                             toNum(co2EmsRate))
     return [noxEmsRate, so2EmsRate, co2EmsRate]
 
-
+#
 ################################################################################
-
+#
 ################################################################################
-# ADD LAT/LONG FROM EGRID TO FLEET
+#
+
+
 def addLatLong(baseGenFleet, statesForAnalysis, dataRoot):
+    """Add lat/long data to fleet
+
+    This function gets lat/long data from egrid and adds columsn with this data to the generator fleet. This function
+    does not return anything
+
+    :param baseGenFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param statesForAnalysis: (1-d list) list with states included in the analysis
+    :param dataRoot: (string) path of directory wit input data
+    """
     (egridBoiler, egridPlant) = importeGridData(statesForAnalysis, dataRoot)
     latLongHeadersToAdd = ["Latitude", "Longitude"]
     addHeaders(baseGenFleet, latLongHeadersToAdd)
     addLatLongValues(baseGenFleet, egridPlant)
 
 
-# Add lat/long values to base fleet using eGRID plant data
 def addLatLongValues(baseFleet, egridPlant):
+    """ Worker function to add lat/long data to fleet
+
+    This function adds lat/long values to base fleet using eGRID plant data. This function does not return anything
+
+    :param baseFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param egridPlant: (2d list) eGRID plant data
+    """
     headersToColsMapBase = mapHeadersToCols(baseFleet)
     headersToColsMapEgrid = mapHeadersToCols(egridPlant)
     baseOrisCol = headersToColsMapBase['ORIS Plant Code']
@@ -583,28 +643,19 @@ def addLatLongValues(baseFleet, egridPlant):
 
 ################################################################################
 
-def performFleetCompressionORIS(genFleet):
 
-    colclasses = []
-
-    # convert to data frame
-    df = pd.DataFrame(genFleet[1:], columns=genFleet[0])
-
-    aux = df.groupby('ORIS Plant Code')['Capacity (MW)'].apply(lambda x: np.sum(x.astype(float))).reset_index()
-    aux.columns = ['ORIS Plant Code', 'TOTCAP']
-
-    df = pd.merge(df, aux, how='left', on='ORIS Plant Code')
-
-
-
-
-
-
-
-
-################################################################################
-# COMPRESS FLEET BY COMBINING SMALL UNITS
 def performFleetCompression(genFleet, ipmZones, plantTypesCurtailed):
+    """Compress fleet by combining small units
+
+    This function simplifies the generator fleet by combining small units (< 200 MW) of same type into a single plant.
+    Units are combined according to plant type, subregion (ipm zone), age, among other factors. Thermal units that will
+    have capacity deratings will not be combined (since capacity deratings are location-dependent).
+
+    :param genFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param ipmZones: (1-d list) list with names of ipm zones
+    :param plantTypesCurtailed: (1-d list) list with names of plant types that are included in capacity derating simulations
+    :return: (2-d list) updated compressed generator fleet with small units combined
+    """
     fuelAndPlantTypeToCompress = [('Landfill Gas', 'Landfill Gas'),
                                   ('Distillate Fuel Oil', 'Combustion Turbine'), ('MSW', 'Municipal Solid Waste'),
                                   ('Natural Gas', 'Combustion Turbine'), ('Biomass', 'Biomass'),
@@ -612,10 +663,21 @@ def performFleetCompression(genFleet, ipmZones, plantTypesCurtailed):
                                   ('Natural Gas', 'Combined Cycle')]
     for (fuel, plant) in fuelAndPlantTypeToCompress:
         compressFuelAndPlantType(genFleet, fuel, plant, ipmZones, plantTypesCurtailed)
+
     return genFleet
 
 
 def compressFuelAndPlantType(genFleet, fuel, plant, ipmZones, plantTypesCurtailed):
+    """Compress fleet by combining small units of given plant type and fuel type
+
+    This function modifies the 2-d list `genFleet` passed as parameter. It does not return anything
+
+    :param genFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param fuel: (string) name of fuel type
+    :param plant: (string) name of plant type
+    :param ipmZones: (1-d list) list with names of ipm zones
+    :param plantTypesCurtailed: (1-d list) list with names of plant types that are included in capacity derating simulations
+    """
     maxSizeToCombine = 200
     head = genFleet[0]
     (plantCol, fuelCol, capacCol) = (head.index('PlantType'), head.index('Modeled Fuels'),
@@ -623,6 +685,7 @@ def compressFuelAndPlantType(genFleet, fuel, plant, ipmZones, plantTypesCurtaile
     (coolTechCol, coolSourceCol) = (head.index('Cooling Tech'), head.index('Cooling Source'))
     idxsToRemoveAndCombine = []
     startFleetLength = len(genFleet)
+
     for idx in range(1, startFleetLength):
         rowFuel = isolateFirstFuelType(genFleet[idx][fuelCol])
         # Only combine plants that meet criteria AND don't have a cooling tech or source listed
@@ -633,17 +696,32 @@ def compressFuelAndPlantType(genFleet, fuel, plant, ipmZones, plantTypesCurtaile
                     idxsToRemoveAndCombine.append(idx)
             else:
                 idxsToRemoveAndCombine.append(idx)
+
     combineGenerators(genFleet, idxsToRemoveAndCombine, fuel, plant, startFleetLength, ipmZones)
-    for idx in reversed(idxsToRemoveAndCombine): genFleet.pop(idx)
+
+    for idx in reversed(idxsToRemoveAndCombine):
+        genFleet.pop(idx)
 
 
-# Combine generators based on when they came online
 def combineGenerators(genFleet, idxsToRemoveAndCombine, fuel, plant, startFleetLength, ipmZones):
+    """Combine generators based on when they came online
+
+    Small generators of same fuel/plant-type that came online in the same decade will be combined. This function
+    modifies the 2-d list `genFleet` passed as paraemter. It does not return anything
+
+    :param genFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param idxsToRemoveAndCombine: (1-d list) list with indexes of rows of units that are going to be combined (and then removed from fleet)
+    :param fuel: (string) name of fuel type
+    :param plant: (string) name of plant type
+    :param startFleetLength: (int) length of original uncompressed fleet
+    :param ipmZones: (1-d list) list with names of ipm zones
+    """
     onlineYearCol = genFleet[0].index('On Line Year')
     zoneCol = genFleet[0].index('Region Name')
     onlineYears = [int(genFleet[idx][onlineYearCol]) for idx in idxsToRemoveAndCombine]
     (firstYr, lastYr, stepYr) = (1975, 2026, 10)
     yearIntervals = [yr for yr in range(firstYr, lastYr, stepYr)]
+
     for zone in ipmZones:
         for endingYear in yearIntervals:
             if endingYear == firstYr:
@@ -653,6 +731,7 @@ def combineGenerators(genFleet, idxsToRemoveAndCombine, fuel, plant, startFleetL
             idxsInInterval = [idx for idx in idxsToRemoveAndCombine
                               if (beginningYear < int(genFleet[idx][onlineYearCol]) <= endingYear)]
             idxsInIntervalAndZone = [idx for idx in idxsInInterval if genFleet[idx][zoneCol] == zone]
+
             if len(idxsInInterval) > 0:
                 combineGeneratorsInDecade(genFleet, idxsInIntervalAndZone, endingYear - stepYr // 2, fuel, plant,
                                           startFleetLength, zone)
@@ -660,6 +739,19 @@ def combineGenerators(genFleet, idxsToRemoveAndCombine, fuel, plant, startFleetL
 
 def combineGeneratorsInDecade(genFleet, idxsInIntervalAndZone, medianYearInInterval, fuel, plant,
                               startFleetLength, zone):
+    """Combine generators in same decade
+
+    This function does the actual aggregation of generators in the same decade. It combines generators up to 500 MW
+    of combined size. This function modifies the 2-d list `genFleet` passed as parameter. It does not return anything
+
+    :param genFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param idxsInIntervalAndZone: (1-d list) list with units in the time interval and ipm zone that can be combined
+    :param medianYearInInterval: (int) median online year of plants being combined
+    :param fuel: (string) name of fuel type
+    :param plant: (string) name of plant type
+    :param startFleetLength: (int) length of original uncompressed fleet
+    :param zone: (string) name of ipm zone
+    """
     maxCombinedSize = 500
     (runningCombinedSize, idxsToCombine) = (0, [])
     capacCol = genFleet[0].index('Capacity (MW)')
@@ -672,12 +764,27 @@ def combineGeneratorsInDecade(genFleet, idxsInIntervalAndZone, medianYearInInter
         else:
             runningCombinedSize += float(genFleet[idx][capacCol])
             idxsToCombine.append(idx)
+
     if len(idxsToCombine) > 0:  # combine remaining units
         addCombinedIdxsToFleet(genFleet, idxsToCombine, runningCombinedSize, fuel, plant,
                                medianYearInInterval, zone)
 
 
 def addCombinedIdxsToFleet(genFleet, idxsToCombine, combinedCapac, fuel, plant, medianYearInInterval, zone):
+    """Combine generators in given indexes
+
+    This function does the actual aggregation of generators at given rows in the fleet's 2-d list. It also appends
+    the row with the new generator to the fleet. This function modifies the 2-d list `genFleet` passed as parameter.
+    It does not return anything
+
+    :param genFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param idxsToCombine: (1-d list) list with indexes of rows of generators to be combined
+    :param combinedCapac: (float) total capacity of combined power plant
+    :param fuel: (string) name of fuel type
+    :param plant: (string) name of plant type
+    :param medianYearInInterval: (int) median online year of plants being combined
+    :param zone: (string) name of ipm zone
+    """
     headers = genFleet[0]
     newRow = [''] * len(headers)
     rowsToCombine = [genFleet[idx] for idx in idxsToCombine]
@@ -691,10 +798,24 @@ def addCombinedIdxsToFleet(genFleet, idxsToCombine, combinedCapac, fuel, plant, 
         newRow[colNum] = sum(list(map(operator.mul, capacWts, paramVals)))
     newRow[capacCol] = combinedCapac
     addStateZoneOrisFuelOnlineYearAndPlantType(genFleet, newRow, fuel, plant, zone, medianYearInInterval)
+
     genFleet.append(newRow)
 
 
 def addStateZoneOrisFuelOnlineYearAndPlantType(genFleet, newRow, fuel, plant, zone, *onlineYear):
+    """Add additional info to new combined generator
+
+    This function adds State, Zone, Oris, Fuel, OnlineYear, and PlantType to the new generator resulting from the
+    combination of small units. This function modifies the 1-d list `newrow` passed as parameter. It does not return
+    anything
+
+    :param genFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param newRow: (1-d list) list with data of new combined generator that will be added to the fleet
+    :param fuel: (string) name of fuel type
+    :param plant: (string) name of plant type
+    :param zone: (string) name of ipm zone
+    :param onlineYear: (int) online year of new combined generator that will be added to the fleet
+    """
     (stateCol, orisCol) = (genFleet[0].index('State Name'), genFleet[0].index('ORIS Plant Code'))
     (unitCol, fuelCol) = (genFleet[0].index('Unit ID'), genFleet[0].index('Modeled Fuels'))
     (onlineYearCol, ipmRetireCol) = (genFleet[0].index('On Line Year'), genFleet[0].index('Retirement Year'))
@@ -704,21 +825,36 @@ def addStateZoneOrisFuelOnlineYearAndPlantType(genFleet, newRow, fuel, plant, zo
     (newRow[orisCol], newRow[stateCol], newRow[unitCol]) = (maxOris + 1, '', '1')
     (newRow[fuelCol], newRow[plantCol], newRow[zoneCol]) = (fuel, plant, zone)
     newRow[ipmRetireCol] = 9999
+
     if len(onlineYear) > 0: newRow[onlineYearCol] = onlineYear[0]
 
 
 ################################################################################
-
+#
 ################################################################################
-# ADD VARIABLE AND FIXED O&M COSTS
-# Based on plant type
+
+
 def addVOMandFOM(baseGenFleet, vomAndFomData):
+    """Add columns with variable and fixed O&M data to generator fleet
+
+    This function modifies the 2-d list `baseGenFleet` passed as parameter. It does not return anything
+
+    :param baseGenFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param vomAndFomData: (2-d list) 2-d list with variable of fixed O&M data for each plant type
+    """
     vomAndFomHeader = ['VOM($/MWh)', 'FOM($/MW/yr)']
     addHeaders(baseGenFleet, vomAndFomHeader)
     addVomAndFomValues(baseGenFleet, vomAndFomData)
 
 
 def addVomAndFomValues(baseGenFleet, vomAndFomData):
+    """Add variable and fixed O&M data to generator fleet
+
+    This function modifies the 2-d list `baseGenFleet` passed as parameter. It does not return anything
+
+    :param baseGenFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param vomAndFomData: (2-d list) 2-d list with variable of fixed O&M data for each plant type
+    """
     plantTypeColFleet = baseGenFleet[0].index('PlantType')
     (vomColFleet, fomColFleet) = (baseGenFleet[0].index('VOM($/MWh)'), baseGenFleet[0].index('FOM($/MW/yr)'))
     plantTypeColData = vomAndFomData[0].index('PlantType')
@@ -736,7 +872,14 @@ def addVomAndFomValues(baseGenFleet, vomAndFomData):
 
 
 def importVomAndFomData(dataRoot):
+    """Import variable and fixed O&M data from input files
 
+    Variable and fixed O&M data are located in file `VOMandFOMValuesExistingPlants4Aug2016.csv` inside the directory
+    `[dataRoot]/NewPlantData/`
+
+    :param dataRoot: (string) path of directory wit input data
+    :return: (2-d list) 2-d list with variable of fixed O&M data for each plant type
+    """
     dirName = os.path.join(dataRoot, 'NewPlantData')
 
     fileName = 'VOMandFOMValuesExistingPlants4Aug2016.csv'
@@ -746,16 +889,27 @@ def importVomAndFomData(dataRoot):
 
 ################################################################################
 
-################################################################################
-# ADD UNIT COMMITMENT PARAMETERS
-# Based on fuel and plant type; data from PHORUM
 def addUnitCommitmentParameters(baseGenFleet, phorumData):
+    """Add unit commitment parameters to generator fleet
+
+    unit commitment parameters are based on fuel and plant type (data from PHORUM). Columns with UC are added to
+    the `baseGenFleet` 2-d list.
+
+    :param baseGenFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param phorumData: (2d list) table with phorum parameters (see :func:`.importPhorumData`)
+    """
     ucHeaders = ['MinDownTime(hrs)', 'RampRate(MW/hr)', 'MinLoad(MW)', 'StartCost($)']
     addHeaders(baseGenFleet, ucHeaders)
     addUCValues(baseGenFleet, ucHeaders, phorumData)
 
 
 def addUCValues(baseGenFleet, ucHeaders, phorumData):
+    """Worker function to ddd unit commitment parameters to generator fleet
+
+    :param baseGenFleet: (2d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param ucHeaders:  (1d list) list with names of UC parameters that will be added to header of generator fleet
+    :param phorumData: (2d list) table with phorum parameters (see :func:`.importPhorumData`)
+    """
     capacCol = baseGenFleet[0].index('Capacity (MW)')
     fuelCol = baseGenFleet[0].index('Modeled Fuels')
     plantTypeCol = baseGenFleet[0].index('PlantType')
@@ -782,16 +936,16 @@ def addUCValues(baseGenFleet, ucHeaders, phorumData):
                 row[currCol] = valToAdd  # for filling in values after have already added
 
 
-def isolateFirstFuelType(fuel):
-
-    multiFuelDivider = '&'  # some plants have multiple modeled fuels divided by &
-
-    fuel = fuel.split(multiFuelDivider)[0]
-
-    return fuel
-
-
 def getMatchingPhorumValue(phorumData, fuel, plantType, size, paramName):
+    """Get value of UC parameter from Phorum database
+
+    :param phorumData: (2d list) table with phorum parameters (see :func:`.importPhorumData`)
+    :param fuel: (string) fuel name
+    :param plantType: (string) plant type name
+    :param size: (float) installed capacity of plant
+    :param paramName: (string) name of UC parameter
+    :return: (float) value of UC parameter for this plant type & fuel in the phorum database
+    """
     if plantType == 'Fuel Cell': plantType = 'Combustion Turbine'
     fuel = mapFleetFuelToPhorumFuels(fuel)
     phorumPropertyNameCol = phorumData[0].index('PropertyName')
@@ -814,6 +968,11 @@ def getMatchingPhorumValue(phorumData, fuel, plantType, size, paramName):
 
 
 def mapFleetFuelToPhorumFuels(fleetFuel):
+    """Map name of fuel in fleet to Phorum data
+
+    :param fleetFuel: (string) name if fuel in fleet
+    :return: (string) name of fuel in Phorum
+    """
     fleetFuelToPhorumFuelMap = {'Bituminous': 'Coal', 'Petroleum Coke': 'Pet. Coke',
                                 'Subbituminous': 'Coal', 'Lignite': 'Coal', 'Natural Gas': 'NaturalGas',
                                 'Distillate Fuel Oil': 'Oil', 'Hydro': 'Hydro', 'Landfill Gas': 'LF Gas',
@@ -824,6 +983,13 @@ def mapFleetFuelToPhorumFuels(fleetFuel):
 
 
 def mapHeadersToPhorumParamNames():
+    """Get map name of UC parameter in fleet to Phorum
+
+    This function returns a dictionary mapping the names of UC parameters used in the fleet to the ones
+    used in Phorum.
+
+    :return: dictionary {'name in fleet': 'name in phorum'}
+    """
     return {'MinDownTime(hrs)': 'Min Down Time', 'RampRate(MW/hr)': 'Ramp Rate',
             'MinLoad(MW)': 'Min Stable Level', 'StartCost($)': 'Start Cost'}
 
@@ -833,17 +999,39 @@ def mapHeadersToPhorumParamNames():
 ################################################################################
 # ADD FUEL PRICES
 def addFuelPrices(baseGenFleet, currYear, fuelPriceTimeSeries):
+    """Add column with fuel prices to fleet
+
+    This function adds a column of fuel prices to the 2-d list with fleet data
+
+    :param baseGenFleet: (2-d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param currYear: (int) current year
+    :param fuelPriceTimeSeries: (1-d list) list with time series of fuel prices
+    """
     fuelPriceHeader = ['FuelPrice($/MMBtu)']
     addHeaders(baseGenFleet, fuelPriceHeader)
     addFuelPriceValues(baseGenFleet, fuelPriceTimeSeries, currYear)
 
 
 def addFuelPriceValues(baseGenFleet, fuelPriceTimeSeries, currYear):
+    """Add fuel values to column of fuel prices
+
+    :param baseGenFleet: (2-d list) generator fleet (see :func:`.importNEEDSFleet`)
+    :param fuelPriceTimeSeries: (1-d list) list with time series of fuel prices
+    :param currYear: (int) current year
+    """
     fuelCol = baseGenFleet[0].index('Modeled Fuels')
     for row in baseGenFleet[1:]: row.append(getFuelPrice(row, fuelCol, fuelPriceTimeSeries, currYear))
 
 
 def getFuelPrice(fleetRow, fleetFuelCol, fuelPriceTimeSeries, currYear):
+    """Get price of fuel of a specific plant in fleet for current year (adjusted for inflation)
+
+    :param fleetRow: (1-d list) row in generator fleet table with data for a specific plant
+    :param fleetFuelCol: (int) index of column with fuel prices in gen fleet
+    :param fuelPriceTimeSeries: (1-d list) list with time series of fuel prices
+    :param currYear: (int) current year
+    :return: value of price of  fuel adjusted to inflation
+    """
     fuel = fleetRow[fleetFuelCol]
     fuel = isolateFirstFuelType(fuel)
     fuelPriceDollarUnadjusted = getFuelPriceForFuelType(fuel, fuelPriceTimeSeries, currYear)
@@ -851,6 +1039,13 @@ def getFuelPrice(fleetRow, fleetFuelCol, fuelPriceTimeSeries, currYear):
 
 
 def getFuelPriceForFuelType(fuel, fuelPriceTimeSeries, currYear):
+    """Get price value of given fuel for current year (not adjusted for inflation)
+
+    :param fuel: (string) name of fuel
+    :param fuelPriceTimeSeries: (1-d list) list with time series of fuel prices
+    :param currYear: (int) current year
+    :return: value of price of fuel (not adjusted to inflation)
+    """
     fuel = mapFleetFuelToPhorumFuels(fuel)
     fuelPriceFuelCol = fuelPriceTimeSeries[0].index('FuelPrices($/MMBtu)')
     fuelPriceFuels = [row[fuelPriceFuelCol] for row in fuelPriceTimeSeries]
@@ -867,11 +1062,18 @@ def getFuelPriceForFuelType(fuel, fuelPriceTimeSeries, currYear):
 ################################################################################
 
 ################################################################################
-# IMPORT DATA
-# Import base generator fleet from NEEDS
-# OUT: gen fleet (2d list)
-def importNEEDSFleet(dataRoot):
 
+def importNEEDSFleet(dataRoot):
+    """Import base generator fleet from NEEDS
+
+    Reads NEEDS fleet data from a CSV file. This CSV file must be located in the `[dataRoot]/NEEDS` folder
+
+    The CSV file `needs_nocommas.csv` is originated from the NEEDS excel file. Commas in the excel file must be
+    converted to `&`
+
+    :param dataRoot: (string) path to directory with input data
+    :return: (2-d list) 2-d list with headers containing generator fleet data
+    """
     dirName = os.path.join(dataRoot, 'NEEDS')
 
     fileName = 'needs_v515_nocommas.csv'
@@ -879,20 +1081,13 @@ def importNEEDSFleet(dataRoot):
     return readCSVto2dList(fullFileName)
 
 
-def importTestFleet(dataRoot):
-
-    dirName = os.path.join(dataRoot, 'CETestFleet')
-
-    fileName = 'testFleetTiny.csv'
-    fullFileName = os.path.join(dirName, fileName)
-    return readCSVto2dList(fullFileName)
-
-
-# Import eGRID boiler and plant level data, then isolate plants and boilers in state
-# IN: states for analysis (1d list)
-# OUT: eGRID boiler and plant data (2d lists)
 def importeGridData(statesForAnalysis, dataRoot):
+    """Import eGRID boiler and plant level data, then isolate plants and boilers in state
 
+    :param statesForAnalysis: (1d list) states for analysis
+    :param dataRoot: (string) path of directory wit input data
+    :return: (2d lists) eGRID boiler and plant data
+    """
     dirName = os.path.join(dataRoot, 'eGRID2015')
 
     egridBoiler = importeGridBoilerData(dirName)
@@ -904,10 +1099,15 @@ def importeGridData(statesForAnalysis, dataRoot):
     return (egridBoiler, egridPlant)
 
 
-# Import eGRID boiler data and remove extra headers
-# IN: directory w/ egrid data (str)
-# OUT: boiler data (2d list)
 def importeGridBoilerData(dirName):
+    """Import eGRID boiler data and remove extra headers
+
+    The CSV file `egrid_data_boiler.csv` is originated from the eGrid excel file. Commas in the excel file must be
+    converted to `&`
+
+    :param dirName: (string) directory with egrid data
+    :return: (2d list) boiler data
+    """
     fileName = 'egrid2012_data_boiler.csv'
     fullFileName = os.path.join(dirName, fileName)
     boilerData = readCSVto2dList(fullFileName)
@@ -915,10 +1115,15 @@ def importeGridBoilerData(dirName):
     return boilerDataSlim
 
 
-# Import eGRID plant data and remove extra headers
-# IN: directory w/ egrid data (str)
-# OUT: plant data (2d list)
 def importeGridPlantData(dirName):
+    """Import eGRID plant data and remove extra headers
+
+    The CSV file `egrid_data_plant.csv` is originated from the eGrid excel file. Commas in the excel file must be
+    converted to `&`
+
+    :param dirName: (string) directory with egrid data
+    :return: (2d list) plant data
+    """
     fileName = 'egrid2012_data_plant.csv'
     fullFileName = os.path.join(dirName, fileName)
     plantData = readCSVto2dList(fullFileName)
@@ -926,21 +1131,25 @@ def importeGridPlantData(dirName):
     return plantDataSlim
 
 
-# Eliminates first several rows in egrid CSV that has no useful info
-# IN: eGRID fleet (2d list), value in col 0 in first row w/ valid data that want
-# to save (str)
-# OUT: eGRID fleet (2d list)
 def elimExtraneousHeaderInfo(egridFleet, valueInFirstValidRow):
+    """Eliminates first several rows in egrid CSV that has no useful info
+
+    :param egridFleet: (2d list) eGRID fleet
+    :param valueInFirstValidRow: (string) value in col 0 in first row w/ valid data that want to save
+    :return: (2d list) eGRID fleet
+    """
     for idx in range(len(egridFleet)):
         if egridFleet[idx][0] == valueInFirstValidRow:
             egridFleetSlim = copy.deepcopy(egridFleet[idx:])
     return egridFleetSlim
 
 
-# Removes retired units from fleet based on input year
-# IN: gen fleet (2d list), year below which retired units should be removed
-# from fleet (int)
 def removeRetiredUnits(baseGenFleet, retirementYearScreen):
+    """Removes retired units from fleet based on input year
+
+    :param baseGenFleet: (2d list) gen fleet (see :func:`.importNEEDSFleet`)
+    :param retirementYearScreen: (int) year below which retired units should be removed from fleet
+    """
     colName = "Retirement Year"
     colNum = baseGenFleet[0].index(colName)
     rowsToRemove = []
@@ -950,34 +1159,43 @@ def removeRetiredUnits(baseGenFleet, retirementYearScreen):
     if rowsToRemove != []: removeRows(baseGenFleet, rowsToRemove)
 
 
-# Isolates fleet to generators in states of interest
-# IN: gen fleet (2d list), states for analyiss (1d list), col name w/ state data
-# (str)
-# OUT: gen fleet (2d list)
 def isolateGensInStates(baseGenFleet, statesForAnalysis, colName):
-    rowsToRemove = identifyRowsToRemove(baseGenFleet, statesForAnalysis,
-                                        colName)
+    """Isolates fleet to generators in states of interest
+
+    :param baseGenFleet: (2d list) gen fleet data (see :func:`.importNEEDSFleet`)
+    :param statesForAnalysis: (1d list) states for analysis
+    :param colName: (string) name of column name with state data
+    :return: (2d list) updated gen fleet data
+    """
+    rowsToRemove = identifyRowsToRemove(baseGenFleet, statesForAnalysis, colName)
     removeRows(baseGenFleet, rowsToRemove)
     return baseGenFleet
 
 
-# Isolates fleet to generators in power system of interest
-# IN: gen fleet (2d list), power sys for analyiss (1d list)
-# OUT: gen fleet (2d list)
 def isolateGensInPowerSystem(baseGenFleet, ipmZones):
+    """Isolates fleet to generators in in the ipm regions of interest
+
+    :param baseGenFleet: (2d list) gen fleet (see :func:`.importNEEDSFleet`)
+    :param ipmZones: (1d list) list with names of ipm zones included in analysis
+    :return: (2d list) updated gen fleet
+    """
     colName = "Region Name"
-    rowsToRemove = identifyRowsToRemove(baseGenFleet, ipmZones,
-                                        colName)
+    rowsToRemove = identifyRowsToRemove(baseGenFleet, ipmZones, colName)
     removeRows(baseGenFleet, rowsToRemove)
     return baseGenFleet
 
 
-# Import PHORUM data (VOM + UC parameters)
 def importPhorumData(dataRoot):
+    """Import PHORUM data (VOM + UC parameters)
 
+    Phorum data is in a CSV file `PHORUMUCParameters.csv`.
+
+    :param dataRoot: (string) path to directory with input data
+    :return: (2d list) phorum data
+    """
     dirName = os.path.join(dataRoot, 'PHORUM')
 
-    fileName = 'PHORUMUCParameters10Jun2016CapacExpPaper.csv'
+    fileName = 'PHORUMUCParameters.csv'
 
     return readCSVto2dList(os.path.join(dirName, fileName))
 
@@ -985,10 +1203,17 @@ def importPhorumData(dataRoot):
 ################################################################################
 
 ################################################################################
-# ADD RANDOM OP COST ADDER TO FLEET IN NEW COLUMN
-# Add to all fuel types. Use value of 0.05 - makes up ~0.03% on average of fleet.
-# Max addition to op cost of gen in fleet is 0.19%.
+
+
 def addRandomOpCostAdder(baseGenFleet, ocAdderMin, ocAdderMax):
+    """Add random operation cost adder to fleet in new column
+
+    Add to all fuel types. Use value of 0.05 - makes up ~0.03% on average of fleet. Max addition to op cost of gen in fleet is 0.19%.
+
+    :param baseGenFleet: (2d list) gen fleet (see :func:`.importNEEDSFleet`)
+    :param ocAdderMin: (float) min value
+    :param ocAdderMax: (float) max value
+    """
     randValHeader = 'RandOpCostAdder($/MWh)'
     addHeaders(baseGenFleet, [randValHeader])
     randValCol = baseGenFleet[0].index(randValHeader)
@@ -1001,9 +1226,16 @@ def addRandomOpCostAdder(baseGenFleet, ocAdderMin, ocAdderMax):
 ################################################################################
 
 ################################################################################
-# ADD REG OFFER COST AND ELIGIBILITY
-# Based on params in Denholm 2013, Val of energy sto for grid apps
+
+
 def addRegResOfferAndElig(baseGenFleet, regupCostCoeffs):
+    """Add regulated reserve offer costs and eligibility
+
+    (Based on params in Denholm 2013, Val of energy sto for grid apps)
+
+    :param baseGenFleet: (2d list) gen fleet (see :func:`.importNEEDSFleet`)
+    :param regupCostCoeffs:
+    """
     baseGenFleet[0].extend(['RegOfferCost($/MW)', 'RegOfferElig'])
     plantTypeCol = baseGenFleet[0].index('PlantType')
     for row in baseGenFleet[1:]:
@@ -1018,8 +1250,13 @@ def addRegResOfferAndElig(baseGenFleet, regupCostCoeffs):
 ################################################################################
 
 ################################################################################
-# AGGREGATE HYDRO UNITS TO ORIS ID
+
 def aggregatePlantTypeToORIS(genFleet, pt):
+    """Aggregate hydro units to single plant according to ORIS code
+
+    :param genFleet: (2d list) gen fleet (see :func:`.importNEEDSFleet`)
+    :param pt: (string) name of plant type
+    """
     orisCol, plantCol = genFleet[0].index('ORIS Plant Code'), genFleet[0].index('PlantType')
     capacCol = genFleet[0].index('Capacity (MW)')
     # Just sum capacities for each ORIS, keep track of which idxs to remove
@@ -1043,10 +1280,27 @@ def aggregatePlantTypeToORIS(genFleet, pt):
 
 ################################################################################
 # GENERAL UTILITY FUNCTIONS
-# Get abbreviations (which eGRID uses but NEEDS does not)
-# IN: states for analysis (1d list)
-# OUT: map of states names to state abbreviations (dict)
+def isolateFirstFuelType(fuel):
+    """Helper function to split name of fuel
+
+    Some plants have multiple modeled fuels divided by ``&``
+
+    :param fuel: (string) original name of fuel
+    :return: (string) simplified name of fuel
+    """
+    multiFuelDivider = '&'  # some plants have multiple modeled fuels divided by &
+
+    fuel = fuel.split(multiFuelDivider)[0]
+
+    return fuel
+
+
 def getStateAbbrevs(statesForAnalysis):
+    """Get abbreviations (which eGRID uses but NEEDS does not)
+
+    :param statesForAnalysis: (1d list) states for analysis
+    :return: (dict) map of states names to state abbreviations
+    """
     stateAbbreviations = {'Virginia': 'VA', 'North Carolina': 'NC', 'South Carolina': 'SC',
                           'Georgia': 'GA', 'Mississippi': 'MS', 'Alabama': 'AL', 'Louisiana': 'LA',
                           'Missouri': 'MO', 'Arkansas': 'AR', 'Illinois': 'IL',
@@ -1057,11 +1311,14 @@ def getStateAbbrevs(statesForAnalysis):
     return statesForAnalysisAbbrev
 
 
-# Returns a list of rows to remove for values in a given column that don't
-# equal any value in valuesToKeep.
-# IN: any 2d list, values in specified column to keep (1d list), col name (str)
-# OUT: row indices to remove (1d list)
 def identifyRowsToRemove(list2d, valuesToKeep, colName):
+    """Returns a list of rows to remove for values in a given column that don't equal any value in valuesToKeep.
+
+    :param list2d: any 2d list
+    :param valuesToKeep: (1d list) values in specified column to keep
+    :param colName: (string) col name
+    :return: (1d list) row indices to remove
+    """
     headersToColsMap = mapHeadersToCols(list2d)
     colNumber = headersToColsMap[colName]
     rowsToRemove = []
@@ -1071,16 +1328,22 @@ def identifyRowsToRemove(list2d, valuesToKeep, colName):
     return rowsToRemove
 
 
-# IN: data (2d list), row idx to remove (1d list)
 def removeRows(baseGenFleet, rowsToRemove):
+    """ Remove rows of given indexes from 2d list
+
+    :param baseGenFleet: (2d list) data (see :func:`.importNEEDSFleet`)
+    :param rowsToRemove: (1d list) list with row indexes to remove
+    """
     for row in reversed(rowsToRemove):
         baseGenFleet.pop(row)
 
 
-# Returns a dictionary mapping headers to column numbers
-# IN: fleet (2d list)
-# OUT: map of header name to header # (dict)
 def mapHeadersToCols(fleet):
+    """Returns a dictionary mapping headers to column numbers
+
+    :param fleet: (2d list) fleet data with header (see :func:`.importNEEDSFleet`)
+    :return: (dict) map of header name to header
+    """
     headers = fleet[0]
     headersToColsMap = dict()
     for colNum in range(len(headers)):
@@ -1089,14 +1352,22 @@ def mapHeadersToCols(fleet):
     return headersToColsMap
 
 
-# IN: data (2d list), headers to add to first row of data (1d list)
 def addHeaders(fleet, listOfHeaders):
+    """
+
+    :param fleet: (2d list) fleet data (see :func:`.importNEEDSFleet`)
+    :param listOfHeaders: (1d list) headers to add to first row of data
+    """
     for header in listOfHeaders:
         fleet[0].append(header)
 
 
-# Returns average of values in input 1d list
 def avgListVals(listOfVals):
+    """Returns average of values in input 1d list
+
+    :param listOfVals: (1-d list) list with numeric values
+    :return: (float) average value
+    """
     (total, count) = (0, 0)
     for val in listOfVals:
         total += float(val)
@@ -1104,14 +1375,21 @@ def avgListVals(listOfVals):
     return total / count
 
 
-# Removes '.0' from end of ORIS IDs in eGRID
 def removeTrailingDecimalFromEgridORIS(egridORISIDs):
+    """Removes '.0' from end of ORIS IDs in eGRID
+
+    :param egridORISIDs: (1-d list) list with ORIS IDs
+    """
     for idx in range(1, len(egridORISIDs)):
         egridORISIDs[idx] = egridORISIDs[idx][:-2]
 
 
-# Converts a string w/ commas in it to a float
 def toNum(s):
+    """Converts a string w/ commas in it to a float
+
+    :param s: (string) a number in string format
+    :return: (float) numeric value
+    """
     numSegments = s.split(',')
     result = ""
     for segment in numSegments:
@@ -1119,18 +1397,33 @@ def toNum(s):
     return float(result)
 
 
-# Return row idx (or False) where list1=data1 and list2=data2
+
 def search2Lists(list1, list2, data1, data2):
+    """Return row indexes (or False) where list1=data1 and list2=data2
+
+    :param list1: list
+    :param list2: list
+    :param data1: value
+    :param data2: value
+    :return: False if not match. If there is a match, index of match
+    """
     if (data1 not in list1) or (data2 not in list2):
         return False
+
     for idx in range(len(list1)):
         if list1[idx] == data1 and list2[idx] == data2:
             return idx
+
     return False
 
 
-# Convert specified column in 2d list to a 1-d list
 def colTo1dList(data, colNum):
+    """Convert specified column in 2d list to a 1-d list
+
+    :param data: (2-d list) a generic 2-d list
+    :param colNum:  (int) index of column
+    :return: (1-d list) list with data from column
+    """
     listWithColData = []
     for dataRow in data:
         listWithColData.append(dataRow[colNum])

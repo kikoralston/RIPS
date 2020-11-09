@@ -3,7 +3,7 @@
 # Combine all wind and solar units in fleet together (separately for
 # each plant type), then remove all but combined unit from fleet.
 
-from SetupGeneratorFleet import *
+from SetupFleet.SetupGeneratorFleet import *
 
 
 # Inputs: gen fleet (2d list)

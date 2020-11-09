@@ -3,7 +3,7 @@
 #Setup empty 2d list w/ all gens in rows & hours in col,
 #and return that list + 2 dicts mapping genID to row & hour to col
 
-from GAMSAuxFuncs import createGenSymbol,createHourSymbol
+from GAMSUtil.GAMSAuxFuncs import createGenSymbol,createHourSymbol
 import copy
 import pandas as pd
 

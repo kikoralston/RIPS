@@ -3,8 +3,8 @@
 # Determine which coal plants should retire based on CF in PRIOR CE run. (May
 # not retire after prior CE run to maintain planning margin.)
 
-from GAMSAuxFuncs import *
-from ProcessCEResults import markRetiredUnitsFromCE
+from GAMSUtil.GAMSAuxFuncs import *
+from ProcessResults.ProcessCEResults import markRetiredUnitsFromCE
 import pandas as pd
 import numpy as np
 

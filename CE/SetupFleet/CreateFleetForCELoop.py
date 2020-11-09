@@ -1,23 +1,23 @@
-"""
-Michael Craig
-October 4, 2016
-Create fleet for current CE loop by removing retired units from fleet.
-Determines which units retire due to age, and also accounts for past retirements
-for age and economic reasons.
-"""
+
+# Michael Craig
+# October 4, 2016
+
 
 import os, copy
 from AuxFuncs import *
-from GAMSAuxFuncs import createGenSymbol
+from GAMSUtil.GAMSAuxFuncs import createGenSymbol
 
 
 def createFleetForCurrentCELoop(genFleet, currYear, capacExpRetiredUnitsByAge, genparam):
-    """CREATE FLEET FOR CURRENT CE LOOP
+    """Create fleet for current CE iteration
 
-    :param genFleet: gen fleet (2d list)
-    :param currYear: current CE year
-    :param capacExpRetiredUnitsByAge: list of units retired each year (2d list)
-    :param genparam: object of class Generalparameters
+    Create fleet for current CE loop by removing retired units from fleet. Determines which units retire due to age,
+    and also accounts for past retirements for age and economic reasons.
+
+    :param genFleet: (2d list) gen fleet
+    :param currYear: (int) current CE year
+    :param capacExpRetiredUnitsByAge: (2d list) list of units retired each year
+    :param genparam: object of class :mod:`Generalparameters`
     :return: gen fleet w/ retired units removed (2d list)
     """
 
@@ -32,16 +32,16 @@ def createFleetForCurrentCELoop(genFleet, currYear, capacExpRetiredUnitsByAge, g
 
 
 def markAndSaveRetiredUnitsFromAge(genFleet, currYear, capacExpRetiredUnitsByAge, dataRoot, scenario):
-    """RETIRE UNITS BY AGE
+    """Retire units by age
 
     Marks units that retire in gen fleet list due to lifetime and modifies them in list.
     The function returns nothing, but modifies list genFleet.
 
-    :param genFleet: gen fleet (2d list)
-    :param currYear: current CE year
-    :param capacExpRetiredUnitsByAge:
+    :param genFleet: (2d list) gen fleet
+    :param currYear: (int) current CE year
+    :param capacExpRetiredUnitsByAge: (2d list) list of units retired each year
     :param dataRoot: list of units retired each year (2d list)
-    :param scenario:
+    :param scenario: (string) name of plant retirement scenario
     """
     lifetimeByPlantTypeDict = importPlantTypeLifetimes(dataRoot, scenario)
     renewablePlantTypes = ['Geothermal', 'Hydro', 'Pumped Storage', 'Wind', 'Solar PV']
@@ -70,8 +70,8 @@ def importPlantTypeLifetimes(dataRoot, scenario):
 
     This function imports lifetime data for each plant type
 
-    :param dataRoot: string with complete path to root of data folder
-    :param scenario: string with type of scenario being simulated
+    :param dataRoot: (string) complete path to root of data folder
+    :param scenario: (string) type of scenario being simulated
     :return: dictionary with lifetime for each plant type
     """
     lifetimeDir = os.path.join(dataRoot, 'NewPlantData')
@@ -93,8 +93,8 @@ def convert2dListToDictionaryWithIntVals(list2d, keyHeader, valHeader):
     Generic utility function that converts a Zx2 list to dictionary
 
     :param list2d: 2d list (2 cols)
-    :param keyHeader: header of col w/ keys
-    :param valHeader: header of col w/ vals
+    :param keyHeader: (list) header of col w/ keys
+    :param valHeader: (list) header of col w/ vals
     :return: dictionary
     """
     dictResult = dict()
@@ -104,14 +104,14 @@ def convert2dListToDictionaryWithIntVals(list2d, keyHeader, valHeader):
 
 
 def readdRenewablePlant(genFleet, row, currYear):
-    """READ RENEWABLES THAT RETIRE DUE TO AGE
+    """Read renewable plants that retire due to age
 
     If renewable retires due to age, automatically adds new unit to end of fleet
     that is same as old unit except for unit ID & online year.
 
-    :param genFleet: gen fleet (2d list)
-    :param row: row in genFleet of retired RE unit
-    :param currYear: current CE year
+    :param genFleet: (2d list) gen fleet
+    :param row: (1d list) row in genFleet of retired RE unit
+    :param currYear: (int) current CE year
     """
     (unitIdCol, onlineCol) = (genFleet[0].index('Unit ID'), genFleet[0].index('On Line Year'))
     newRow = copy.deepcopy(row)
@@ -121,13 +121,13 @@ def readdRenewablePlant(genFleet, row, currYear):
 
 
 def onlineAndNotRetired(genRow, headers, currYear):
-    """REMOVE UNITS RETIRED FROM FLEET
+    """Remove units retired from fleetREMOVE UNITS RETIRED FROM FLEET
 
     Checks if unit has already gone online and is not retired
 
-    :param genRow: row of gen fleet (1d list)
-    :param headers: headers of gen fleet (1d list)
-    :param currYear: current year
+    :param genRow: (1d list) row of gen fleet
+    :param headers: (1d list) headers of gen fleet
+    :param currYear: (int) current year
     :return: True if online & not retired, False otherwise
     """
     (ipmRetiredCol, ceRetiredCol) = (headers.index('Retirement Year'), headers.index('YearRetiredByCE'))
