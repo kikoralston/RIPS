@@ -182,7 +182,6 @@ class Generalparameters:
         self.gcmranking = []    # list with ranking of GCMs that will be chosen in each CE year (e.g. [3, 9, 15])
         self.rcp = ''           # name of rcp being simulated (rcp45 or rcp85)
 
-
     def __str__(self):
 
         outstr = '#\n# ------ PARAMETER FILE --------\n#\n# Description:\n#\n# End Description.\n#\n'

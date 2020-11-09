@@ -2,22 +2,21 @@
 # Calculate hourly capacity including curtailments for existing generators.
 # Outputs dict of gen:hourly capacities and a 2d list w/ generator ID followed by curtailments.
 
-from AuxFuncs import *
-from GAMSAuxFuncs import *
+from GAMSUtil.GAMSAuxFuncs import *
 import copy
-import os
 
 
 def calculateHourlyCapacsWithCurtailments(genFleet, hrlyCurtailmentsAllGensInTgtYr, currYear):
-    """GET EXISTING GENERATORS HOURLY CAPACITIES WITH THERMAL CONSTRAINTS (Curtailments)
+    """Compute hourly available capacity in MW after deratings for existing fleet
 
-    Returns dictionary of gen symbol to 1d list of hourly capacity for year
+    This function uses the capacity deratings in % of capacity computed by function :fun:`determineHrlyCurtailmentsForExistingGens`
+    and computes time series of available capacity (in MW) for all generators in the fleet.
 
     :param genFleet: 2d list with Generation Fleet data matrix
     :param hrlyCurtailmentsAllGensInTgtYr: dict mapping each gen to 2d list of datetime for year of run to hourly net
                                            capacity curtailments (fraction of total capacity)
     :param currYear: integer representing year being simulated
-    :return: genHourlyCapacs: dictionary of gen symbol: 1d list of hourly capacity for year
+    :return: (dict) a dictionary {gcm: {gen symbol: [hourly available capacity in MW]}}
     """
     genHourlyCapacs = dict()
 
@@ -51,7 +50,7 @@ def calculateHourlyCapacsWithCurtailments(genFleet, hrlyCurtailmentsAllGensInTgt
 
 
 def subtractCurtailmentsFromCapac(hrlyCurtailments, capac, genSymbol):
-    """Computes net available capacity (in MW) of curtailed generator
+    """Computes net available capacity (in MW) of individual generator
 
     :param hrlyCurtailments: list with hourly curtailments for generator in current year (fraction of total capacity)
     :param capac: capacity with generator (MW)
@@ -68,13 +67,16 @@ def subtractCurtailmentsFromCapac(hrlyCurtailments, capac, genSymbol):
 
 
 def calculateHourlyTechCapacsWithCurtailments(newTechsCE, hrlyCurtailmentsAllTechsInTgtYr, currYear, ptCurtailedAll):
-    """GET NEW TECH HOURLY CAPACITIES W/ THERMAL CONSTRAINTS
+    """Compute hourly available capacity of new thermal generators
 
-    :param newTechsCE:
-    :param hrlyCurtailmentsAllTechsInTgtYr:
-    :param currYear:
-    :param ptCurtailedAll:
-    :return:
+    This function uses the capacity deratings in % of capacity computed by function :fun:`determineHrlyCurtailmentsForNewTechs`
+    and computes time series of available capacity (in MW) for all candidate technologies.
+
+    :param newTechsCE: (2d list) list with data for new technologies
+    :param hrlyCurtailmentsAllTechsInTgtYr: (dict) a dictionary {gcm: {(techSymbol, cell): [hourly deratings as fraction of capacity]}}
+    :param currYear: (int) current year
+    :param ptCurtailedAll: (list) list with names of types of plants that are curtailed
+    :return: (dict) a dictionary {gcm: {(techSymbol, cell): [hourly available capacity in MW]}}
     """
     thermalTechHourlyCapacs = dict()
     (fuelTypeCol, capacCol) = (newTechsCE[0].index('FuelType'), newTechsCE[0].index('Capacity(MW)'))

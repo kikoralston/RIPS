@@ -1,1 +1,3 @@
-__all__ = ["Generalparameters", "Reserveparameters", "Curtailmentparameters"]
+from .Curtailmentparameters import *
+from .Reserveparameters import *
+from .Generalparameters import *

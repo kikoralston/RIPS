@@ -1,14 +1,8 @@
-"""
-October 2018
+# October 2018
+# This module has auxiliary functions for reading and processing meteorological and water data from the different GCMs
+# These functions are used by modules ModifyGeneratorCapacityWithWaterTDAta.py, ModifyNewTechCapacityWithWaterTDAta.py, LoadEligibleCellWaterTs.py
+# Previously, most of these functions were spread over these modules, but these was creating some circular references.
 
-This module has auxiliary functions for reading and processing meteorological and water data
-from the different GCMs
-
-These functions are used by modules ModifyGeneratorCapacityWithWaterTDAta.py, ModifyNewTechCapacityWithWaterTDAta.py,
-LoadEligibleCellWaterTs.py
-
-Previously, most of these functions were spread over these modules, but these was creating some circular references.
-"""
 
 import os
 import copy
@@ -21,37 +15,34 @@ import datetime as dt
 
 def loadWaterAndMetData(curtailmentYear, cellLat, cellLong, genparam, curtailparam, gcm, metdatatot=None,
                         waterDatatot=None, netcdf=True):
-    """LOAD WATER AND MET DATA BY CELL ON HOURLY BASIS
+    """Load water and met data of a single cell (and a single gcm) on hourly basis for given year
 
-    Read text files with data for met (air T and rh) and water T data for one specific cell. The data files were
-    created by the pre-processing function 'processRBMDataIntoIndividualCellFiles' and saved in a folder 'rbmOutputDir'.
+    This function can take dictionaries with previously loaded full gridded datasets of weather (`metdatatot`) and
+    water data (`waterDatatot`) and it filters the data of a single grid cell. If these dictionaries have not been
+    loaded previously, the function reads from the netcdf files.
 
-    :param curtailmentYear: integer with year that curtailment is being simulated
-    :param cellLat:
-    :param cellLong:
-    :param genparam:
-    :param curtailparam:
+    :param curtailmentYear: (int) year of simulation
+    :param cellLat: (float) latitude of grid cell
+    :param cellLong: (float) longitude of grid cell
+    :param genparam: object of type :mod:`Generalparameters`
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
     :param gcm: (string) GCM name
-    :param metdatatot: dictionary with complete meteo data from the netcdf file (see 'read_netcdf_full')
-    :param waterDatatot: dict of {cell folder name : [[Datetime],[AverageWaterT(degC)], [AirT], [flow]]}
-    :param netcdf: (boolean) if true reads water data from NETCDF files (new format from August 2018)
-    :return: panda data frame
+    :param metdatatot: dict with pre-loaded complete meteo data from the netcdf file (see :fun:`.read_netcdf_full`).
+                       If this is `None` the function loads the data directly from the netcdf file (:fun:`.read_netcdf`)
+    :param waterDatatot: dict of {cell folder name : [[Datetime],[AverageWaterT(degC)], [AirT], [flow]]}. If value is
+                         `None`, it loads data from netcdf file (see :fun:`.read_waterdata_cell`)
+    :param netcdf: (boolean) if true reads water data from NETCDF files (Old format does not work anymore)
+    :return: panda data frame with hourly water and weather data for given year and given cell
     """
 
     cellFoldername = createBaseFilenameToReadOrWrite(curtailparam.locPrecision, cellLat, cellLong)
 
     if metdatatot is None:
         # if no object with pre loaded meteo data is given, read netcdf file
-
-        # Load netcdf files w/ air T, rh, air pressure and datetime just for current year
-        if genparam.analysisArea == 'test':
-            # for now read with dara from some random
-            metData = read_netcdf(34.3125, -86.6875, curtailmentYear, curtailparam, gcm)
-        else:
-            metData = read_netcdf(cellLat, cellLong, curtailmentYear, curtailparam, gcm)
+        metData = read_netcdf(cellLat, cellLong, curtailmentYear, curtailparam, gcm)
     else:
         # get cell data from pre loaded meteo data
-        metData = read_dict_necdf(cellLat, cellLong, metdatatot)
+        metData = read_dict_netcdf(cellLat, cellLong, metdatatot)
 
     if waterDatatot is None:
         if netcdf:
@@ -88,16 +79,19 @@ def loadWaterAndMetData(curtailmentYear, cellLat, cellLong, genparam, curtailpar
 
 
 def loadCellWaterTs(eligibleCellFolders, allCellFoldersInZone, curtailparam, gcm, currYear=None, netcdf=True):
-    """Returns dict of {cell folder name : [[Datetime], [AverageWaterT(degC)], [AirT], [flow]]}
+    """Load water and weather data for all eligible grid cells in study
 
-    :param eligibleCellFolders:
-    :param allCellFoldersInZone:
-    :param curtailparam: object of class Curtailparameters
+    Returns dict of {cell folder name : [[Datetime, AverageWaterT(degC), flow]]}. Each element in the dictionary is a
+    2d list.
+
+    :param eligibleCellFolders: (list) list with names of eligible cells for study
+    :param allCellFoldersInZone: (list) list with names of cells inside zones included in study
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
     :param gcm: (string) name of gcm being imported
     :param currYear: (integer) year of data being imported. If None, imports all years
     :param netcdf: (boolean) if true reads water data from NETCDF files (new format from August 2018)
 
-    :return: dict of {cell folder name : [[Datetime],[AverageWaterT(degC)], [AirT], [flow]]}
+    :return: dict of {cell folder name : [[Datetime, AverageWaterT(degC), flow]]}
     """
     eligibleCellWaterTs = dict()
 
@@ -109,11 +103,11 @@ def loadCellWaterTs(eligibleCellFolders, allCellFoldersInZone, curtailparam, gcm
         name_gcm = name_gcm.replace('rcp', 'RCP')
 
         fname = curtailparam.basenamestreamT
-        fname = os.path.join(curtailparam.rbmDataDir, fname.format(name_gcm))
+        fname = os.path.join(curtailparam.rbmRootDir, fname.format(name_gcm))
         waterT, date, lons, lats = read_waterdata_netcdf(fname, 'T_stream', currYear)
 
         fname = curtailparam.basenameflow
-        fname = os.path.join(curtailparam.rbmDataDir, fname.format(name_gcm))
+        fname = os.path.join(curtailparam.rbmRootDir, fname.format(name_gcm))
         streamflow = read_waterdata_netcdf(fname, 'streamflow', currYear)[0]
 
         for cellFolder in eligibleCellFolders:
@@ -138,6 +132,7 @@ def loadCellWaterTs(eligibleCellFolders, allCellFoldersInZone, curtailparam, gcm
                     eligibleCellWaterTs[cellFolder] = None
 
     else:
+        # old format
         for cellFolder in eligibleCellFolders:
             if cellFolder in allCellFoldersInZone:
 
@@ -171,9 +166,14 @@ def loadCellWaterTs(eligibleCellFolders, allCellFoldersInZone, curtailparam, gcm
 def read_netcdf_full(currYear, fname, curtailparam):
     """Reads NETCDF file with meteo data for current year
 
+    This function reads the netcdf file and returns a dictionary with 1-d arrays of the dimension variables
+    (time, lat, lon) and 3-d arrays of weather and water data (air temp, air pressure, relative humidity).
+
+    It reads data for all cells. Netcdf files have data for a single year.
+
     :param currYear: (integer) current year
     :param fname: (string) full path to netcdf file
-    :param curtailparam: object of class Curtailmentparameters
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
     :return: dictionary with arrays of data {'var name': array}
     """
 
@@ -208,14 +208,14 @@ def read_netcdf(cellLat, cellLon, currYear, curtailparam, gcm):
     :param cellLat: (numeric) latitude of cell
     :param cellLon:  (numeric) longitude of cell
     :param currYear: (integer) current year
-    :param curtailparam: object of class Curtailmentparameters
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
     :return: pandas data frame with hourly meteo data
     """
     fname = curtailparam.basenamemeteo
 
-    if os.path.isfile(os.path.join(curtailparam.rbmDataDir, fname.format(gcm, currYear))):
+    if os.path.isfile(os.path.join(curtailparam.rbmRootDir, fname.format(gcm, currYear))):
 
-        fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm, currYear))
+        fname = os.path.join(curtailparam.rbmRootDir, fname.format(gcm, currYear))
 
         dataset = nc.Dataset(fname)
 
@@ -243,16 +243,16 @@ def read_netcdf(cellLat, cellLon, currYear, curtailparam, gcm):
         df_out = pd.DataFrame({'date': date_array, 'airT': temp, 'P': air_pressure, 'rh': rel_humid},
                               columns=['date', 'airT', 'rh', 'P'])
     else:
-        print('No METEO data (NETCDF files) on folder {0:} for year {1:4d}!'.format(curtailparam.rbmDataDir, currYear))
+        print('No METEO data (NETCDF files) on folder {0:} for year {1:4d}!'.format(curtailparam.rbmRootDir, currYear))
         df_out = None
 
     return df_out
 
 
-def read_dict_necdf(cellLat, cellLon, meteoData):
-    """Get meteorological data for cell stored in a dictionary that loaded this data from the netcdf file
+def read_dict_netcdf(cellLat, cellLon, meteoData):
+    """Get meteorological data for cell stored in a dictionary with full dataset from the netcdf file
 
-    see function 'read_netcdf_full'
+    see function :fun:`.read_netcdf_full`
 
     :param cellLat: (numeric) latitude of cell
     :param cellLon: (numeric) longitude of cell
@@ -278,11 +278,13 @@ def read_dict_necdf(cellLat, cellLon, meteoData):
 
 
 def get_all_cells_from_netcdf(curtailparam, gcm):
-    """
+    """Get all cells from netcdf file
 
-    :param curtailparam:
-    :param gcm:
-    :return:
+    This function reads a netcdf file for the given gcm and returns a list with cells lat and longs as strings
+
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
+    :param gcm: (string) name of gcm
+    :return: list with cells lat and longs as strings
     """
     fname = curtailparam.basenameflow
     name_gcm = gcm
@@ -293,9 +295,9 @@ def get_all_cells_from_netcdf(curtailparam, gcm):
 
     allCellFolders = None
 
-    if os.path.isfile(os.path.join(curtailparam.rbmDataDir, fname.format(name_gcm))):
+    if os.path.isfile(os.path.join(curtailparam.rbmRootDir, fname.format(name_gcm))):
 
-        dataset1 = nc.Dataset(os.path.join(curtailparam.rbmDataDir, fname.format(name_gcm)))
+        dataset1 = nc.Dataset(os.path.join(curtailparam.rbmRootDir, fname.format(name_gcm)))
 
         lats = dataset1.variables['lat'][:]
         lons = dataset1.variables['lon'][:]
@@ -306,7 +308,7 @@ def get_all_cells_from_netcdf(curtailparam, gcm):
                           for (j, lo) in enumerate(lons) if not mask[i, j]]
         dataset1.close()
     else:
-        print('File {} not found!'.format(os.path.join(curtailparam.rbmDataDir, fname.format(name_gcm))))
+        print('File {} not found!'.format(os.path.join(curtailparam.rbmRootDir, fname.format(name_gcm))))
 
     return allCellFolders
 
@@ -315,8 +317,8 @@ def get_all_cells_in_zone(allCellFolders, genparam, curtailparam):
     """ Compiles list of cells that are inside the ipm zones
 
     :param allCellFolders: list with all cells
-    :param genparam: object of class Generalparameters
-    :param curtailparam: object of class Curtailmentparameters
+    :param curtailparam: object of type :mod:`Generalparameters`
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
     :return: allCellFoldersInZone: list with all cells that are inside the ipm zones
     """
     # read file with dictionary mapping cells to IPM zones (this file must be in the VICS/RBM folder)
@@ -334,13 +336,12 @@ def get_all_cells_in_zone(allCellFolders, genparam, curtailparam):
 def read_waterdata_cell(curtailparam, currYear, cellLat, cellLon, gcm):
     """ Reads netcdf file with water data and returns panda data frame for data for given cell
 
-    :param curtailparam
-    :param currYear:
-    :return:
-            data_values: array with data values
-            date: 1d array with dates
-            lons: 1d array with longitude values
-            lats: 1d array with latitude values
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
+    :param currYear: (int) current year
+    :return: data frame with following columns
+             * date: 1d array with dates
+             * lons: 1d array with longitude values
+             * lats: 1d array with latitude values
     """
 
     # reading flow/streamT file. substitute '_' to '.'
@@ -348,11 +349,11 @@ def read_waterdata_cell(curtailparam, currYear, cellLat, cellLon, gcm):
     gcm = gcm.replace('rcp', 'RCP')
 
     fname = curtailparam.basenamestreamT
-    fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm))
+    fname = os.path.join(curtailparam.rbmRootDir, fname.format(gcm))
     waterT, date, lons, lats = read_waterdata_netcdf(fname, 'T_stream', currYear)
 
     fname = curtailparam.basenameflow
-    fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm))
+    fname = os.path.join(curtailparam.rbmRootDir, fname.format(gcm))
     streamflow = read_waterdata_netcdf(fname, 'streamflow', currYear)[0]
 
     ix = np.argwhere(lats == cellLat).flatten()[0]
@@ -368,16 +369,16 @@ def read_waterdata_cell(curtailparam, currYear, cellLat, cellLon, gcm):
 
 
 def read_waterdata_netcdf(fname, varname, curryear):
-    """ Reads netcdf file with water data and returns arrays with data, lats and longs
+    """ Reads netcdf file with water data and returns arrays with data, lats and longs for given year
 
-    :param fname:
-    :param varname:
-    :param curryear:
-    :return:
-            data_values: array with data values
-            date: 1d array with dates
-            lons: 1d array with longitude values
-            lats: 1d array with latitude values
+    :param fname: (string) complete path fo netcdf file
+    :param varname: (string) name of variable to load from netcdf file
+    :param curryear: (int) current year
+    :return: tuple with following elements
+            * data_values: array with data values
+            * date: 1d array with dates
+            * lons: 1d array with longitude values
+            * lats: 1d array with latitude values
     """
 
     if os.path.isfile(fname):
@@ -430,13 +431,16 @@ def read_waterdata_netcdf(fname, varname, curryear):
 
 
 def order_cells_by_flow(genparam, curtailparam, currYear, n=100, output_list=True):
-    """
+    """Order cells according to average annual water flow across all gcms
 
-    :param genparam:
-    :param curtailparam:
-    :param currYear:
-    :param n:
-    :param output_list: Type of output by zone. If True output is list of cells. If false, output is dataframe with cells and annual flows
+    This function order cells in each zone according to annual average river flow. It returns the `n` cells with largest
+    flow as an ordered list.
+
+    :param genparam: object of type :mod:`Generalparameters`
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
+    :param currYear: (int) current year in simulation
+    :param n: (int) number of cells to consider
+    :param output_list: (boolean) Type of output by zone. If True output is list of cells. If false, output is dataframe with cells and annual flows
     :return: dictionary with a list/dataframe for each zone (depending on output_list)
     """
     gcm = curtailparam.listgcms[0]
@@ -459,7 +463,7 @@ def order_cells_by_flow(genparam, curtailparam, currYear, n=100, output_list=Tru
             gcm = gcm.replace('rcp', 'RCP')
 
         fname = curtailparam.basenameflow
-        fname = os.path.join(curtailparam.rbmDataDir, fname.format(gcm))
+        fname = os.path.join(curtailparam.rbmRootDir, fname.format(gcm))
         streamflow, date, lons, lats = read_waterdata_netcdf(fname, 'streamflow', currYear)
 
         avg_stream_flow = np.mean(streamflow.data[:, :, :], axis=0)
@@ -508,21 +512,19 @@ def order_cells_by_flow(genparam, curtailparam, currYear, n=100, output_list=Tru
 
 
 def convert_2dList_netcdf(listcurtail, curtailparam, fnameuw, fnameout='~/test.nc', ):
-    """
-    This function converts a 2d list with new generator curtailments to a netcdf file
+    """This function converts a 2d list with new generator curtailments to a netcdf file
 
 
-    :param listcurtail: 2d list with curtailment data
-    :param curtailparam: object of class curtailmentparameters
+    :param listcurtail: (2d list) with curtailment data
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
     :param fnameuw: (string) name of netcdf file with original meteo data from UW (no path)
     :param fnameout: (string) name of resulting netcdf file that will be created (full path)
-    :return: nothing
     """
 
     prec = curtailparam.locPrecision
 
     # read netcdf file with meteo data form UW to get spatial limits
-    dataset = nc.Dataset(os.path.join(curtailparam.rbmDataDir, fnameuw))
+    dataset = nc.Dataset(os.path.join(curtailparam.rbmRootDir, fnameuw))
     time = dataset.variables['time'][:]
     lats = dataset.variables['lat'][:]
     lons = dataset.variables['lon'][:]
@@ -592,8 +594,8 @@ def convert_2dList_netcdf(listcurtail, curtailparam, fnameuw, fnameout='~/test.n
 def expand_df_hourly(df):
     """utility function to expand a daily data frame to hourly
 
-    :param df: daily data frame (check names of columns)
-    :return: data frame
+    :param df: (pandas data frame) data frame with daily data (check names of columns)
+    :return: data frame with hourly data
     """
     a = pd.to_datetime(df['date'], format='%Y-%m-%d')
     start_day, end_day = min(a), max(a)
@@ -613,12 +615,58 @@ def expand_df_hourly(df):
     return df2
 
 
+def createBaseFilenameToReadOrWrite(locPrecision, inputLat, inputLong):
+    """Creates string with name of folder with cell data
+
+    This function creates a string with the formatted name of the folder that contains the data
+    for the respective grid cell
+
+    :param locPrecision: number of decimal digits in lat and long values
+    :param inputLat: latitude of grid cell
+    :param inputLong: longitude of grid cell
+    :return: string with name of folder (e.g. '34.4375_-86.4375')
+    """
+    return '%.*f_%.*f' % (locPrecision, inputLat, locPrecision, inputLong)
+
+
+def getCellLatAndLongFromFolderName(dummyFolder):
+    """Get cell lat and long values from formatted string
+
+    This function splits a string with lat and long (format: '{lat}_{lon}') into numeric lat and long values
+
+    See :fun:`.createBaseFilenameToReadOrWrite`
+
+    :param dummyFolder: (string) string with lat an long values
+    :return: tuple with numeric values of lat and long
+    """
+    cellLat, cellLon = dummyFolder.split('_')
+    return float(cellLat), float(cellLon)
+
+
+def check_water_data(genparam, curtailparam, currYear):
+
+    allCellFolders = get_all_cells_from_netcdf(curtailparam)
+
+    for cellname in allCellFolders:
+
+        cellLat, cellLong = tuple(map(float, cellname.split('_')))
+
+        metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam, netcdf=netcdf)
+
+        print('cell: {}_{}'.format(cellLat, cellLong))
+        print('  range water T: {} - {}'.format(metAndWaterData['waterT'].min(), metAndWaterData['waterT'].max()))
+        print('  # na: {}'.format(sum(metAndWaterData['waterT'].isna())))
+        print('  range flow: {} - {}'.format(metAndWaterData['flow'].min(), metAndWaterData['flow'].max()))
+        print('  # na: {}'.format(sum(metAndWaterData['flow'].isna())))
+        print()
+
+
 def read_bulk_water_meteo(currYear, curtailparam):
 
     t0 = time.time()
     basenamemeteo = curtailparam.basenamemeteo
 
-    dataset = nc.Dataset(os.path.join(curtailparam.rbmDataDir, basenamemeteo.format(currYear)))
+    dataset = nc.Dataset(os.path.join(curtailparam.rbmRootDir, basenamemeteo.format(currYear)))
 
     # Extract data from NetCDF file
     lats = dataset.variables['lat'][:]
@@ -672,45 +720,3 @@ def read_bulk_water_meteo(currYear, curtailparam):
     flow = np.ma.array(flow, mask=temp.mask)
 
     print(str_elapsedtime(t0))
-
-
-def check_water_data(genparam, curtailparam, currYear):
-
-    allCellFolders = get_all_cells_from_netcdf(curtailparam)
-
-    for cellname in allCellFolders:
-
-        cellLat, cellLong = tuple(map(float, cellname.split('_')))
-
-        metAndWaterData = loadWaterAndMetData(currYear, cellLat, cellLong, genparam, curtailparam, netcdf=netcdf)
-
-        print('cell: {}_{}'.format(cellLat, cellLong))
-        print('  range water T: {} - {}'.format(metAndWaterData['waterT'].min(), metAndWaterData['waterT'].max()))
-        print('  # na: {}'.format(sum(metAndWaterData['waterT'].isna())))
-        print('  range flow: {} - {}'.format(metAndWaterData['flow'].min(), metAndWaterData['flow'].max()))
-        print('  # na: {}'.format(sum(metAndWaterData['flow'].isna())))
-        print()
-
-
-def createBaseFilenameToReadOrWrite(locPrecision, inputLat, inputLong):
-    """Creates string with name of folder with cell data
-
-    This function creates a string with the formatted name of the folder that contains the data
-    for the respective grid cell
-
-    :param locPrecision: number of decimal digits in lat and long values
-    :param inputLat: latitude of grid cell
-    :param inputLong: longitude of grid cell
-    :return: string with name of folder (e.g. 34.4375_-86.4375)
-    """
-    return '%.*f_%.*f' % (locPrecision, inputLat, locPrecision, inputLong)
-
-
-def getCellLatAndLongFromFolderName(dummyFolder):
-    """
-
-    :param dummyFolder:
-    :return:
-    """
-    cellLat, cellLon = dummyFolder.split('_')
-    return float(cellLat), float(cellLon)

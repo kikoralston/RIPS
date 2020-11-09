@@ -4,26 +4,22 @@
 # Determine hourly capacity factors for candidate new plants in
 # capacity expansion, depending on where they are assigned.
 
-import os, csv, copy
+import os, copy
 from AuxFuncs import *
-from GAMSAuxFuncs import createTechSymbol
+from GAMSUtil.GAMSAuxFuncs import createTechSymbol
 from AssignCellsToIPMZones import mapCellToIPMZone
-from AuxCurtailmentFuncs import loadWaterAndMetData, read_netcdf_full
-from CurtailmentRegressions import (calcCurtailmentForGenOrTech, loadRegCoeffs, getKeyCurtailParamsNewTechs,
-                                    getCoeffsForGenOrTech)
+from thermalderatings.AuxCurtailmentFuncs import loadWaterAndMetData, read_netcdf_full
+from thermalderatings.CurtailmentRegressions import (calcCurtailmentForGenOrTech, loadRegCoeffs, getKeyCurtailParamsNewTechs,
+                                                     getCoeffsForGenOrTech)
 from AssignCellsToStates import getStateOfPt
-import numpy as np
-import pandas as pd
 import progressbar
 import multiprocessing as mp
-import pickle as pk
-import netCDF4 as nc
 
 
 def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam, curtailparam, pbar=True):
     """ Main wrapper function to compute deratings of candidate thermal technologies for capacity expansion simulation.
 
-    This function computes thermal deratings of candidate thechs using parallel multiprocessing. It combines results from
+    This function computes thermal deratings of candidate techs using parallel multiprocessing. It combines results from
     all different GCMs into a single nested dictionary.
 
     :param eligibleCellWaterTs:
@@ -94,7 +90,7 @@ def calculateTechsCurtailments(cellWaterTsForNewTechs, newTechsCE, currYear, gen
         fname = curtailparam.basenamemeteo
         name_gcm = gcm
 
-        fname = os.path.join(curtailparam.rbmDataDir, fname.format(name_gcm, currYear))
+        fname = os.path.join(curtailparam.rbmRootDir, fname.format(name_gcm, currYear))
         meteodata = read_netcdf_full(currYear, fname, curtailparam)
     else:
         meteodata = None
@@ -153,7 +149,7 @@ def getWaterTsInCurrYear(currYear, eligibleCellWaterTs):
 
     :param currYear: (integer)
     :param eligibleCellWaterTs:
-    :return: Returns dict of cell folder name : [[Datetime],[AverageWaterT(degC)]]
+    :return: dict of cell folder name : [[Datetime],[AverageWaterT(degC)]]
     """
     eligibleCellWaterTsCurrYear = dict()
 
@@ -239,26 +235,3 @@ def placeTechInMaxWaterTCell(eligibleCellWaterTsCurrYear, cellsPerZone):
         maxPeakWaterTCellWaterTs[maxPeakWaterTCell] = copy.deepcopy(eligibleCellWaterTsCurrYear[maxPeakWaterTCell])
     return maxPeakWaterTCellWaterTs
 
-
-################################################################################
-################################################################################
-################################################################################
-
-################################################################################
-####### LOAD MET DATA FOR CELL AND SLIM WATER T DATA TO YEAR ###################
-################################################################################
-def loadMetAndAddWaterData(cellLat, cellLong, rbmOutputDir, locPrecision, currYear,
-                           cellWaterTAndDates, resultsDir):
-    metData = loadMetData(cellLat, cellLong, rbmOutputDir, locPrecision, currYear)
-    cellWaterTs = [float(row[cellWaterTAndDates[0].index('AverageWaterT(degC)')])
-                   for row in cellWaterTAndDates[1:]]
-    hourlyWaterT = list(np.array([[val] * 24 for val in cellWaterTs]).flatten())
-    assert (len(hourlyWaterT) == metData.shape[0])
-    metData['waterC'] = pd.Series(hourlyWaterT)
-    metData['waterF'] = metData.loc[:, 'waterC'] * 9 / 5 + 32
-    metData['airF'] = metData.loc[:, 'tC'] * 9 / 5 + 32
-    metData.to_csv(os.path.join(resultsDir, 'metAndWaterTech' + str(cellLat) + '_' + str(cellLong) + '.csv'))
-    return metData
-################################################################################
-################################################################################
-################################################################################

@@ -4,32 +4,40 @@ from ast import literal_eval as lev
 
 
 class Curtailmentparameters:
-    """
-    Curtailmentparameters class
+    """ Curtailmentparameters class
+
+    This class contains parameters needed to configure the
+    
+    :param envRegMaxT: (dict) dictionary with maximum stream water temperature values in each state ({state : max water T (deg C)})
+    :param maxFracFlow: (dict) dictionary with minimum river flow ({state : fraction})
+    :param rbmRootDir: (string) full path to folder of NETCDF files with water and climate date
+    :param rbmDataDir: (string) not used anymore
+    :param rbmOutputDir: (string) not used anymore
+    :param locPrecision: (int) number of decimal digits in cells lat and long values
+    :param listgcms: list() list with gcm values being simulated (this is not used anymore)
+    :param basenamemeteo: 'forcing_maca_hourly_{0}_{1:4d}0101-{1:4d}1231.nc'
+    :param basenamestreamT: 'serc.{}.stream_T.nc'
+    :param basenameflow: 'serc.{}.KW.flow.MACA.regulated.nc'
     """
 
     def __init__(self):
+      
         # Env reg parameters: dict of state : max water T (deg C)
         self.envRegMaxT = dict()
         self.maxFracFlow = dict()
-        # RBM processing parameters
-        self.outputHeaders = []
-        self.locPrecision = 0
-        self.numCellsToProcess = 0
-        self.tempAndSpatFilename = ''
-        self.nsegFilename = ''
+
         # Water T directories
         self.rbmRootDir = './'
         self.rbmDataDir = './'      # name of sub folder inside rbmRootDir
         self.rbmOutputDir = './'    # name of sub folder inside rbmRootDir
         # ----- GCMs ---------
+        self.locPrecision = 0
         self.listgcms = list()
         self.basenamemeteo = 'forcing_maca_hourly_{0}_{1:4d}0101-{1:4d}1231.nc'
         self.basenamestreamT = 'serc.{}.stream_T.nc'
         self.basenameflow = 'serc.{}.KW.flow.MACA.regulated.nc'
 
     def __str__(self):
-
         strout = '#\n#  ------ CURTAILMENT PARAMETER FILE --------\n#\n# Description:\n#\n# End Description.\n#\n'
 
         strout = strout + '# ----- Environ regul parameters ----------\n'
@@ -37,19 +45,12 @@ class Curtailmentparameters:
         strout = strout + 'envRegMaxT = {}\n'.format(self.dict2string(self.envRegMaxT))
         strout = strout + 'python dictionary format (without quotes and curly braces) month : max fractions\n'
         strout = strout + 'maxFracFlow = {}\n'.format(self.dict2string(self.maxFracFlow))
-
-        strout = strout + '# ----- RBM processing parameters ----\n'
-        strout = strout + 'outputHeaders = {}\n'.format(self.outputHeaders)
-        strout = strout + 'locPrecision = {}\n'.format(self.locPrecision)
-        strout = strout + 'numCellsToProcess = {}\n'.format(self.numCellsToProcess)
-        strout = strout + 'tempAndSpatFilename = {}\n'.format(self.tempAndSpatFilename)
-        strout = strout + 'nsegFilename = {}\n'.format(self.nsegFilename)
-
         strout = strout + '# ----- Water T directories ------\n'
         strout = strout + 'rbmRootDir = {}\n'.format(self.rbmRootDir)
         strout = strout + 'rbmDataDir = {}\n'.format(self.rbmDataDir)
         strout = strout + 'rbmOutputDir = {}\n'.format(self.rbmOutputDir)
         strout = strout + '# ----- GCMs ---------\n'
+        strout = strout + 'locPrecision = {}\n'.format(self.locPrecision)
         strout = strout + 'listgcms = {}\n'.format(self.listgcms)
         strout = strout + 'basenamemeteo = {}\n'.format(self.basenamemeteo)
         strout = strout + 'basenamestreamT = {}\n'.format(self.basenamestreamT)
@@ -82,9 +83,9 @@ class Curtailmentparameters:
 
     def load(self, fname):
         """
-        Reads curtailment parameter file and allocates to object
+        Reads formatted txt file with the values of the parameters and allocates to object
 
-        :param fname: string with path to curtailment parameter file
+        :param fname: string with path to parameter file
         """
 
         i = 0
@@ -127,7 +128,10 @@ class Curtailmentparameters:
         self.basenameflow = data[13][1]
 
     def writefile(self, fname):
+        """Writes parameters to a formatted txt file
 
+        :param fname: string with path to parameter file
+        """
         with open(os.path.expanduser(fname), 'w') as csvfile:
             csvfile.write(self.__str__())
 

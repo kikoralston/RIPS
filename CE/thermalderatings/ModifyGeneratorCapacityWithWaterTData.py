@@ -12,33 +12,29 @@
 # UW changed the format of the files with water data to NETCDF. I added a flag 'netcdf' to some functions to read them.
 
 
-import os, csv, copy
 import numpy as np
-import pandas as pd
-import datetime as dt
-import netCDF4 as nc
-import pickle as pk
-import time
-from AuxFuncs import *
 import multiprocessing as mp
-from GAMSAuxFuncs import *
-from AuxCurtailmentFuncs import *
-from CurtailmentRegressions import (calcCurtailmentForGenOrTech, loadRegCoeffs, getKeyCurtailParams,
-                                    getCoeffsForGenOrTech)
+from GAMSUtil.GAMSAuxFuncs import *
+from thermalderatings.AuxCurtailmentFuncs import *
+from thermalderatings.CurtailmentRegressions import (calcCurtailmentForGenOrTech, loadRegCoeffs, getKeyCurtailParams,
+                                                     getCoeffsForGenOrTech)
 import progressbar
 
 
 def determineHrlyCurtailmentsForExistingGens(genFleet, currYear, genparam, curtailparam):
-    """Computes times series of hourly curtailments for EXISTING generators
+    """Computes times series of hourly curtailments for all EXISTING generators
+
+    This is a wrapper function to do the computation using multiprocessing in python
 
     :param genFleet: (list) 2d list with generator fleet data
     :param currYear: (integer) current year
-    :param genparam: object of type Generalparameter
-    :param curtailparam: object of type Curtailmentparameter
-    :return: dictionary of ORIS+UNITID to 2d vertical list of [datetime,curtailment(mw)],
-             list of (ORIS+UNIT,gen lat long, cell lat long)
-
+    :param genparam: object of type :mod:`Generalparameters`
+    :param curtailparam: object of type :mod:`Curtailmentparameters`
+    :return: tuple with:
+             * nested dictionary with {gcm: {orisId: [1d np array with hourly curtailments]}}
+             * list of (ORIS+UNIT,gen lat long, cell lat long)
     """
+
     (genToCellLatLongsDict, cellLatLongToGenDict,
      genToCellLatLongsList) = getGenToCellAndCellToGenDictionaries(genFleet)
 
@@ -63,10 +59,16 @@ def determineHrlyCurtailmentsForExistingGens(genFleet, currYear, genparam, curta
 
 
 def worker_generator_curtailments(list_args):
-    """ Worker function for using multiprocessing with function calculateGeneratorCurtailments
+    """ Worker function for using multiprocessing with function :func:`.calculateGeneratorCurtailments`
 
-    :param list_args: list with arguments for function
-    :return: nested dictionary with {gcm:{orisId: [1d np array with hourly curtailments]}} (see ``calculateGeneratorCurtailments()``
+    :param list_args: list with arguments for function:
+                      * (dict)
+                      * (int) current year
+                      * (2d list) generator fleet data
+                      * object of type :mod:`Generalparameters`
+                      * object of type :mod:`Curtailmentparameters`
+                      * (string) name of gcm
+    :return: dictionary with {orisId: [1d np array with hourly curtailments]}
     """
 
     curtailments_out = calculateGeneratorCurtailments(cellLatLongToGenDict=list_args[0], currYear=list_args[1],
@@ -77,15 +79,16 @@ def worker_generator_curtailments(list_args):
 
 
 def getGenToCellAndCellToGenDictionaries(genFleet):
-    """MAP GENERATORS TO AND FROM RBM GRID CELLS
+    """Map generators to and from VIC/RBM grid cells
 
     Takes the 2d list with generator fleet data and creates dictionaries mapping individual plants to grid cells
     lat and long
 
     :param genFleet: (list) 2d list with generator fleet data
-    :return: genToCellLatLongsDict: dictionary gen:[gen,(gen lat, gen long), (cell lat, cell long)]
-             cellLatLongToGenDict:  dictionary (cell lat, cell long):genID.
-             genToCellLatLongsList: 2d list [[genID,(genlat,genlong),(celllat,celllong)]]
+    :return: tuple with three elements:
+             * genToCellLatLongsDict: dictionary {gen:[gen,(gen lat, gen long), (cell lat, cell long)]}
+             * cellLatLongToGenDict:  dictionary {(cell lat, cell long):genID}
+             * genToCellLatLongsList: 2d list [[genID,(genlat,genlong),(celllat,celllong)]]
 
     """
     (fleetLatCol, fleetLongCol) = (genFleet[0].index('Latitude'), genFleet[0].index('Longitude'))
@@ -111,19 +114,22 @@ def getGenToCellAndCellToGenDictionaries(genFleet):
 def calculateGeneratorCurtailments(cellLatLongToGenDict, currYear, genFleet, genparam, curtailparam, gcm,
                                    netcdf=True, pbar=True):
 
-    """SIMULATE CAPACITY DERATINGS GENERATOR CAPACITY WITH WATER TEMPERATURES AND METEO DATA
+    """Simulate capacity deratings of existing generators
 
-    Calculates generator curtailments. If generator isn't curtailed (not right plant type, cell data not avaialble,
-    etc.), ignored here. ``CalculateHourlyCapacs()`` script handles those cases (assume curtailment = 0).
+    This is the actual function that performs the computation of capacity deratings for existing generators. It performs
+    the computation for a climate conditions under a single climate simulation (defined by the parameter `gcm`).
+    If generator isn't curtailed (not right plant type, cell data not avaialble, etc.), ignored here.
+    :func:`.CalculateHourlyCapacs` script handles those cases (assume curtailment = 0).
 
     :param cellLatLongToGenDict: (dict) dict of (cell lat, cell long):gen ID for all gens w/ lat/lon coords in genFleet, including gens that should nto be curtailed.
     :param currYear: (integer) current year
     :param genFleet: (list) 2d list with generator fleet
     :param genparam: object of type Generalparameter
     :param curtailparam: object of type Curtailmentoparameter
+    :param gcm:
     :param netcdf: (boolean) True if data comes in netcdf format
     :param pbar: (boolean) True to show progress bar
-    :return: hrlyCurtailmentsAllGensInTgtYr: nested dictionary with {gcm:{orisId: [1d np array with hourly curtailments]}}
+    :return: (dict) dictionary with {orisId: [1d np array with hourly curtailments]}
     """
 
     hrlyCurtailmentsAllGensInTgtYr, hrlyCurtailmentsList = dict(), list()
@@ -149,7 +155,7 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, currYear, genFleet, gen
         cellWaterTsForGens = loadCellWaterTs(allCellFolders, allCellFoldersInZone, curtailparam, gcm, currYear)
 
         fname_meteo = curtailparam.basenamemeteo
-        fname_meteo = os.path.join(curtailparam.rbmDataDir, fname_meteo.format(gcm, currYear))
+        fname_meteo = os.path.join(curtailparam.rbmRootDir, fname_meteo.format(gcm, currYear))
         meteodata = read_netcdf_full(currYear, fname_meteo, curtailparam)
     else:
         cellWaterTsForGens = None
@@ -197,8 +203,8 @@ def calculateGeneratorCurtailments(cellLatLongToGenDict, currYear, genFleet, gen
 def find125GridMaurerLatLong(lat, lon):
     """Get (lat,lon) of 1/8 grid cell that a (lat, lon) point falls in
 
-    :param lat: latitude value
-    :param lon:  longitude value
+    :param lat: (float) latitude value
+    :param lon:  (float) longitude value
     :return: tuple (lat_grid, long_grid) of grid cell that contains the point (lat,lon)
     """
 

@@ -1,8 +1,7 @@
-"""
-Michael Craig
-October 4, 2016
-Helper functions for Python-GAMS interaction
-"""
+
+# Michael Craig
+# October 4, 2016
+# Helper functions for Python-GAMS interaction
 
 
 def createGenSymbol(row, headers):

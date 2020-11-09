@@ -5,6 +5,21 @@ import os
 class Reserveparameters:
     """
     Reserveparameter class
+
+    This class contains parameters to configure simulation of regulated reserves.
+
+    :param regLoadFrac: (float) fraction of hourly load in regulated up & down reserves
+    :param contLoadFrac: (float) fraction of hourly load in contingency reserves
+    :param regErrorPercentile: (float) percentile of 10-m wind & 5-m solar forecast errors used in regulated reserves
+    :param flexErrorPercentile: (float) percentile of hourly wind & solar forecast errors used in regulated reserves
+    :param regUpCostCoeffs: (dict) dictionary with regulated reserve costs by type of plant {'Combined Cycle': 6, 'Combined Cycle CCS': 6, 'O/G Steam': 4, 'Coal Steam': 10, 'Coal Steam CCS': 10}  # $/MWh
+    :param regReserveMinutes: (float) timeframe of regulated reserves. Regulated reserves must be provided w/in 5 mins
+    :param flexReserveMinutes: (float) timeframe of spinning reserves. Spin reserves must be provided w/in 10 minutes
+    :param contingencyReserveMinutes: (float) timeframe of contingency res (must be provided w/in 30 minutes)
+    :param minutesPerHour: (float) minutes per hour
+    :param rampRateToRegReserveScalar: (float) computed internally
+    :param rampRateToFlexReserveScalar: (float) computed internally
+    :param rampRateToContReserveScalar: (float) computed internally
     """
 
     def __init__(self):
@@ -72,9 +87,9 @@ class Reserveparameters:
 
     def load(self, fname):
         """
-        Reads reserve parameter file and allocates to object
+        Reads formatted txt file with the values of the parameters and allocates to object
 
-        :param fname: string with path to reserve parameter file
+        :param fname: string with path to parameter file
         """
 
         i = 0

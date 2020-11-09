@@ -10,8 +10,9 @@
 import os, copy, sys
 import numpy as np
 from AssignCellsToIPMZones import mapCellToIPMZone
-from ModifyGeneratorCapacityWithWaterTData import getGenToCellAndCellToGenDictionaries
-from AuxCurtailmentFuncs import get_all_cells_from_netcdf, order_cells_by_flow, get_all_cells_in_zone, loadCellWaterTs, createBaseFilenameToReadOrWrite
+from thermalderatings.ModifyGeneratorCapacityWithWaterTData import getGenToCellAndCellToGenDictionaries
+from thermalderatings.AuxCurtailmentFuncs import (get_all_cells_from_netcdf, order_cells_by_flow, get_all_cells_in_zone,
+                                                  loadCellWaterTs, createBaseFilenameToReadOrWrite)
 import pandas as pd
 
 
@@ -166,14 +167,15 @@ def setCellFolders(genFleet, currYear, genparam, curtailparam, netcdf=True, n_ce
 
 
 def isolateCellsInZones(allCellFolders, genparam):
-    """Isolates ALL cells in zones of analysis and returns list of cell folders in zones
+    # """Isolates ALL cells in zones of analysis and returns list of cell folders in zones
+    #
+    # THIS FUNCTION IS NOT USED ANYMORE WITH THE NETCDF DATA FORMAT. IT WAS USED WITH THE PREVIOUS VERSION OF THE UW DATA.
+    #
+    # :param allCellFolders:
+    # :param genparam:
+    # :return:
+    # """
 
-    THIS FUNCTION IS NOT USED ANYMORE WITH THE NETCDF DATA FORMAT. IT WAS USED WITH THE PREVIOUS VERSION OF THE UW DATA.
-
-    :param allCellFolders:
-    :param genparam:
-    :return:
-    """
     allCellFoldersInZone = list()
 
     for cell in allCellFolders:

@@ -2,7 +2,7 @@
 #October 4, 2016
 #Functions for adding sets to GAMS database. Used for CE & UC models.
 
-from GAMSAuxFuncs import *
+from GAMSUtil.GAMSAuxFuncs import *
 
 
 def addGeneratorSets(db, genFleet):
