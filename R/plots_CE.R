@@ -879,7 +879,11 @@ plot_renewable_cfs <- function(path.output.ce,
 }
 
 
-plot.donut.chart <- function(fileGenfleet, currYear=2050, GW=TRUE) {
+plot.donut.chart <- function(fileGenfleet, currYear=2050, GW=TRUE, 
+                             labels.size=3, center.label=5, 
+                             adjust.labels.1 = c('Natural Gas'='Natural\nGas',
+                                                 'Combined Cycle'='Combined\nCycle'),
+                             adjust.labels.2 = NULL) {
   
   df.fleet <- read.csv(file=fileGenfleet, 
                        stringsAsFactors = FALSE) %>%
@@ -969,6 +973,7 @@ plot.donut.chart <- function(fileGenfleet, currYear=2050, GW=TRUE) {
     mutate(fill=Modeled.Fuels) %>%
     select(name, value, fill) %>% mutate(level = 3) %>%
     select(name, value, level, fill) %>%
+    mutate(name=ifelse(grepl("Hydro", fill) & !is.na(name), NA, name)) %>%
     mutate(fill=ifelse(is.na(name),paste0(fill, '_NA'), fill)) %>%
     mutate(xmin=3.05, xmax=4, ymin=0, ymax=cumsum(value)) %>%
     mutate(ymin=lag(ymax, default=0),
@@ -976,9 +981,7 @@ plot.donut.chart <- function(fileGenfleet, currYear=2050, GW=TRUE) {
            y.avg=(ymin+ymax)/2,
            colour=ifelse(grepl('_NA', fill), FALSE, TRUE)) %>%
     mutate(label=ifelse(value<600 | is.na(name), '', name), size=size.labels)
-  
-  #col.pallete <- brewer.pal(9, 'YlOrBr')
-  
+    
   new.pallete <- rev(col.pallete)
   names(new.pallete) <- plant.types
   missing.cases <- rep("#FFFFFF00", length(new.pallete))
@@ -988,8 +991,17 @@ plot.donut.chart <- function(fileGenfleet, currYear=2050, GW=TRUE) {
   
   df.final <- bind_rows(lvl0, lvl1, lvl2, lvl3) %>%
     mutate(name = as.factor(name)) %>%
-    arrange(fill, name) %>%
-    mutate(level = as.factor(level))
+    arrange(fill, name) 
+  
+  # remove 2nd and 3rd layers of techs that have small capacity (< 600).
+  # (this was created because of small coal in the end)
+  df.final <- df.final %>% mutate(aux=ifelse(value < 600 & level == 1, TRUE, FALSE)) %>%
+    group_by(fill) %>% arrange(fill, level) %>% mutate(aux=aux[1]) %>% ungroup() %>% #print(n=100)
+    mutate(fill=ifelse(level > 1 & aux, paste0(fill, "_NA"), fill),
+           colour=ifelse(grepl('_NA', fill), FALSE, colour)) %>%
+    select(-aux)
+  
+  df.final <- df.final %>% mutate(level = as.factor(level))
   
   # create column for adjusting hjust and vjust of labels
   df.final <- df.final %>%
@@ -1004,9 +1016,19 @@ plot.donut.chart <- function(fileGenfleet, currYear=2050, GW=TRUE) {
            vjust=ifelse(name=='Solar', 0.9, vjust))
   
   # adjust some labels
-  df.final <- df.final %>% 
-    mutate(label=ifelse(label == 'Natural Gas', 'Natural\nGas', label)) %>%
-    mutate(label=ifelse(label == 'Combined Cycle', 'Combined\nCycle', label))
+  if (!is.null(adjust.labels.1)) {
+    for (lab in names(adjust.labels.1)) {
+      df.final <- df.final %>% 
+        mutate(label=ifelse(label == lab, adjust.labels.1[lab], label))
+    }
+  }
+  
+  if (!is.null(adjust.labels.2)) {
+    for (lab in names(adjust.labels.2)) {
+      df.final <- df.final %>% 
+        mutate(label=ifelse(label == lab, adjust.labels.2[lab], label))
+    }
+  }
   
   df.final <- df.final %>% mutate(level= as.numeric(as.character(level)))
   
@@ -1019,11 +1041,11 @@ plot.donut.chart <- function(fileGenfleet, currYear=2050, GW=TRUE) {
     # label for center
     geom_text(data=df.final %>% filter(level == 0), 
               aes(x = x.avg, y = y.avg, label = label, hjust=hjust, 
-                  vjust=vjust), size = rel(5)) +
+                  vjust=vjust), size = rel(center.label)) +
     # label for layers
     geom_text(data=df.final %>% filter(level > 0),
               aes(x = x.avg, y = y.avg, label = label, hjust=hjust, 
-                  vjust=vjust), size = rel(3)) +
+                  vjust=vjust), size = rel(labels.size)) +
     scale_x_continuous(expand = c(0, 0), limits = c(0,4)) +
     scale_y_continuous(expand = c(0, 0)) +
     theme_bw() + 
@@ -1049,7 +1071,7 @@ plot.donut.chart <- function(fileGenfleet, currYear=2050, GW=TRUE) {
 get.generation <- function(y, path.data) {
 
   # y <- 2050
-  # path.gdx <- 
+  # path.data <- '/Volumes/RIPS/CE/results/base_case/'
   
   # get fleet
   df.fleet <- get.fleet(paste0(path.data, "/genFleetAfterCE", y,".csv"), y) %>%
@@ -1153,22 +1175,6 @@ get.generation <- function(y, path.data) {
   
   gexist <- rbind(gexist.renew, gexist.others)
   
-  # ggplot(gexist) + geom_area(aes(x=hour.in.season, y=value, fill=type)) + 
-  #   geom_line(data = pDemand, aes(x=hour.in.season, y=value.demand, linetype='Demand'),
-  #             colour='black') +
-  #   guides(colour=FALSE) + theme_minimal() +
-  #   scale_fill_brewer(type='div', palette = 'Spectral') +
-  #   scale_linetype_manual(values=c('dashed')) +
-  #   #scale_fill_grey() +
-  #   theme(axis.text.x = element_blank(),
-  #         axis.ticks.x = element_blank(),
-  #         panel.spacing = unit(0,'lines'),
-  #         panel.border = element_rect(fill = NA),
-  #         legend.position = 'top') + 
-  #   guides(fill=guide_legend(title=NULL), 
-  #          linetype=guide_legend(title=NULL)) +
-  #   facet_grid(cols = vars(season), rows=vars(g), scales = 'free_x')
-  
   gtechcurt <- rgdx(gdxName = path.gdx, 
                     requestList = list(name='vPtechcurtailed', field='l', compress=FALSE,
                                        form = 'full'))
@@ -1232,62 +1238,60 @@ get.generation <- function(y, path.data) {
   df.total <- df.total %>% group_by(g, h, type) %>% summarise(value = sum(value)) %>% ungroup() %>%
     right_join(df.hours.season, by=c('g','h')) %>% ungroup() 
 
-  # add demand
+  df.total$seasonweights <- 1
   
-  # ggplot(df.total) +
-  #   geom_area(aes(x=hour.in.season, y=value, fill=type)) +
-  #   geom_line(data = pDemand, aes(x=hour.in.season, y=value, linetype='Demand'),
-  #             colour='black') +
-  #   guides(colour=FALSE) + theme_minimal() +
-  #   scale_fill_brewer(type='div', palette = 'Spectral') +
-  #   scale_linetype_manual(values=c('dashed')) +
-  #   #scale_fill_grey() +
-  #   theme(axis.text.x = element_blank(),
-  #         axis.ticks.x = element_blank(),
-  #         panel.spacing = unit(0,'lines'),
-  #         panel.border = element_rect(fill = NA)) +
-  #   guides(fill=guide_legend(title=NULL),
-  #          linetype=guide_legend(title=NULL)) +
-  #   facet_grid(cols = vars(season), rows=vars(g), scales = 'free_x')
+  seasons <- df.total %>% dplyr::filter(season != 'special') %>% select(season) %>% unlist() %>%
+    unique()
+  for (s in seasons) {
+    w.season <- rgdx.scalar(gdxName = path.gdx, symName = sprintf("pWeight%s", s))
+    df.total$seasonweights <- ifelse(df.total$season == s, w.season, df.total$seasonweights)
+  }
   
-  # join all dfs 
-  # gtotal <- pDemand %>% select(g, date, value.demand) %>% 
-  #   left_join(gexist %>% select(g, date, value.exist), by=c('g', 'date'))
-  # 
-  # if (!is.null(charge.ph) && nrow(charge.ph) > 0) {
-  #   gtotal <- gtotal %>% 
-  #     left_join(charge.ph %>% select(g, date, value.charge), by=c('g', 'date'))
-  # } else {
-  #   gtotal$value.charge <- 0
-  # }
-  # 
-  # if (!is.null(gtechcurt) && nrow(gtechcurt) > 0) {
-  #   gtotal <- gtotal %>% 
-  #     left_join(gtechcurt %>% select(g, date, value.tech.curt), by=c('g', 'date'))
-  # } else {
-  #   gtotal$value.tech.curt <- 0
-  # }
-  # 
-  # if (!is.null(gtechnotcurt) && nrow(gtechnotcurt) > 0) {
-  #   gtotal <- gtotal %>% 
-  #     left_join(gtechnotcurt %>% select(g, date, value.tech.not.curt), by=c('g', 'date'))
-  # } else {
-  #   gtotal$value.tech.not.curt <- 0
-  # }
-  # 
-  # if (!is.null(gtechrenew) && nrow(gtechrenew) > 0) {
-  #   gtotal <- gtotal %>% 
-  #     left_join(gtechrenew %>% select(g, date, value.tech.renew), by=c('g', 'date'))
-  # }else {
-  #   gtotal$value.tech.renew <- 0 
-  # }
-  # gtotal <- gtotal %>% ungroup() %>% 
-  #   mutate_at(.vars=vars(value.demand, value.exist, value.charge, value.tech.curt, value.tech.not.curt, value.tech.renew), 
-  #             .funs={function(x){ifelse(is.na(x), 0, x)}}) %>%
-  #   mutate(net=value.exist + value.tech.curt + value.tech.renew - value.demand - value.charge)
- 
   return(df.total) 
   
+}
+
+plot.generation <- function(path.rcps, name.file, year=2050,
+                           width=7, height=7*9/16){
+  
+  list.gen <- list()
+  for (rcp in names(path.rcps)) {
+    list.gen[[rcp]] <- get.generation(year, path.rcps[rcp])
+  }
+  df.gen2 <- ldply(list.gen, data.frame) %>% group_by(.id, season, hour.in.season, type) %>%
+    summarise(value = mean(value)) %>% mutate(type=tolower(type))
+  
+  pDemand.2 <- df.gen2 %>% filter(type == "demand")
+  df.gen2 <- df.gen2 %>% filter(type != "demand")
+  
+  df.gen2 <- df.gen2 %>% ungroup() %>%
+    mutate(type = factor(type, levels = rev(c("other", "hydro","nuclear","coal", "natural gas", "solar", "wind")))) %>%
+    mutate(season = factor(season, levels = c("winter", "spring", "summer", "fall", "special")))
+  
+  pDemand.2 <- pDemand.2 %>% ungroup() %>% mutate(season = factor(season, levels = c("winter", "spring", "summer", "fall", "special")))
+  
+  g <- ggplot(df.gen2) +
+    geom_area(aes(x=hour.in.season, y=value, fill=type)) +
+    geom_line(data = pDemand.2, aes(x=hour.in.season, y=value, linetype='demand'),
+              colour='black') +
+    guides(colour=FALSE) + theme_minimal() +
+    ylab('GWh') + xlab('hour in simulation period') + 
+    scale_fill_brewer(type='div', palette = 'Spectral') +
+    scale_linetype_manual(values=c('dashed')) +
+    theme(axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          panel.spacing = unit(0,'lines'),
+          panel.border = element_rect(fill = NA),
+          legend.position = 'top') +
+    guides(fill=guide_legend(title=NULL, nrow = 1, reverse = TRUE),
+           linetype=guide_legend(title=NULL, nrow = 1)) +
+    facet_grid(cols = vars(season), rows=vars(.id), scales = 'free_x')
+  
+  pdf(name.file, width=width, height=height)
+  print(g)
+  dev.off()
+  
+  return(df.gen2)
 }
 
 simplify.thermal.names <- function(x) {

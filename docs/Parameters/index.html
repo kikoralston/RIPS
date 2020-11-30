@@ -33,7 +33,9 @@
         <link rel="index" title="Index"
               href="../genindex.html"/>
         <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="Capacity Expansion / Unit Commitment and Economic Dispatch under climate change  documentation" href="../index.html"/> 
+    <link rel="top" title="Capacity Expansion / Unit Commitment and Economic Dispatch under climate change  documentation" href="../index.html"/>
+        <link rel="next" title="Setup Fleet" href="../Setup%20Fleet/index.html"/>
+        <link rel="prev" title="Input data" href="../Input%20data/index.html"/> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -78,16 +80,20 @@
           
             
             
-                <!-- Local TOC -->
-                <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Parameters</a><ul>
-<li><a class="reference internal" href="#module-Generalparameters">General Parameters</a></li>
-<li><a class="reference internal" href="#module-Curtailmentparameters">Curtailment Parameters</a></li>
-<li><a class="reference internal" href="#module-Reserveparameters">Reserve Parameters</a></li>
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">Bla</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Input%20data/index.html">Input data</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Parameters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-Generalparameters">General Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-Curtailmentparameters">Curtailment Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-Reserveparameters">Reserve Parameters</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup%20Fleet/index.html">Setup Fleet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Main%20Scripts/index.html">Main Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Thermal%20deratings/index.html">Thermal Deratings</a></li>
 </ul>
-</div>
+
             
           
         </div>
@@ -133,7 +139,7 @@
   <div class="section" id="parameters">
 <span id="id1"></span><h1>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="module-Generalparameters">
-<span id="general-parameters"></span><span id="general-param"></span><h2>General Parameters<a class="headerlink" href="#module-Generalparameters" title="Permalink to this headline">¶</a></h2>
+<span id="general-parameters"></span><h2>General Parameters<a class="headerlink" href="#module-Generalparameters" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="Generalparameters.Generalparameters">
 <em class="property">class </em><code class="sig-name descname">Generalparameters</code><a class="headerlink" href="#Generalparameters.Generalparameters" title="Permalink to this definition">¶</a></dt>
@@ -276,7 +282,7 @@ to make it easier to pass them as argument to the functions.</p>
 <li><p><strong>contLoadFrac</strong> – (float) fraction of hourly load in contingency reserves</p></li>
 <li><p><strong>regErrorPercentile</strong> – (float) percentile of 10-m wind &amp; 5-m solar forecast errors used in regulated reserves</p></li>
 <li><p><strong>flexErrorPercentile</strong> – (float) percentile of hourly wind &amp; solar forecast errors used in regulated reserves</p></li>
-<li><p><strong>=</strong><strong> (</strong><strong>dict</strong><strong>) </strong><strong>{'Combined Cycle'</strong> (<em>regUpCostCoeffs</em>) – 6, ‘Combined Cycle CCS’: 6, ‘O/G Steam’: 4, ‘Coal Steam’: 10, ‘Coal Steam CCS’: 10}  # $/MWh</p></li>
+<li><p><strong>regUpCostCoeffs</strong> – (dict) dictionary with regulated reserve costs by type of plant {‘Combined Cycle’: 6, ‘Combined Cycle CCS’: 6, ‘O/G Steam’: 4, ‘Coal Steam’: 10, ‘Coal Steam CCS’: 10}  # $/MWh</p></li>
 <li><p><strong>regReserveMinutes</strong> – (float) timeframe of regulated reserves. Regulated reserves must be provided w/in 5 mins</p></li>
 <li><p><strong>flexReserveMinutes</strong> – (float) timeframe of spinning reserves. Spin reserves must be provided w/in 10 minutes</p></li>
 <li><p><strong>contingencyReserveMinutes</strong> – (float) timeframe of contingency res (must be provided w/in 30 minutes)</p></li>
@@ -307,6 +313,15 @@ to make it easier to pass them as argument to the functions.</p>
            </div>
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../Setup%20Fleet/index.html" class="btn btn-neutral float-right" title="Setup Fleet" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../Input%20data/index.html" class="btn btn-neutral" title="Input data" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>
@@ -345,6 +360,7 @@ to make it easier to pass them as argument to the functions.</p>
       <script type="text/javascript" src="../_static/underscore.js"></script>
       <script type="text/javascript" src="../_static/doctools.js"></script>
       <script type="text/javascript" src="../_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

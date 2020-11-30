@@ -3,8 +3,6 @@
 Parameters
 ============
 
-.. _general-param:
-
 General Parameters
 ------------------------
 

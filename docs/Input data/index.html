@@ -82,8 +82,13 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../intro.html">Bla</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Input data</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Input data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#general-input-data">General Input data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#climate-and-hydrology-data">Climate and hydrology data</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../Parameters/index.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup%20Fleet/index.html">Setup Fleet</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Main%20Scripts/index.html">Main Scripts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Thermal%20deratings/index.html">Thermal Deratings</a></li>
 </ul>
@@ -132,12 +137,40 @@
             
   <div class="section" id="input-data">
 <h1>Input data<a class="headerlink" href="#input-data" title="Permalink to this headline">¶</a></h1>
-<p>The simulation uses data from different sources. It expects the data to be
-inside a directory with a specific subfolder structure. The path for this
-directory must be specified in the field <cite>dataRoot</cite> of the
-<a class="reference internal" href="../Parameters/index.html#general-param"><span class="std std-ref">General Parameters</span></a> object.</p>
-<p>Because of their potential large size, climate and hydrological data can be stored in a separate
-folder. This diredtory must be specified in the Curtailment Parameters object.</p>
+<p>The simulation uses data from different sources. Input data is located in two different directories:</p>
+<ul class="simple">
+<li><p>a directory for general input data;</p></li>
+<li><p>a directory for climate and hydrology data (which because of its large size may need to be stored in a different location)</p></li>
+</ul>
+<div class="section" id="general-input-data">
+<h2>General Input data<a class="headerlink" href="#general-input-data" title="Permalink to this headline">¶</a></h2>
+<p>General input data is located in a directory with a specific subfolder structure. The path for this directory must be specified in the field <cite>dataRoot</cite> of the
+<a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a> object.</p>
+<p>The diagram below shows the structure of the subfolders in the directory.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dataRoot</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">Curtailment</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">DemandData</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">eGrid</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">EIA860</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">FuelPricesCapacityExpansion</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">GAMS</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">HydroMonthlyDataPNNL</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">NEEDS</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">NewPlantData</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">NRELSolarPVData</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">PHORUM</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">StateShapeFiles</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">Transmission</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">WINDSERCData</span><span class="o">/</span>
+   <span class="o">|--</span><span class="n">cells2zones</span><span class="o">.</span><span class="n">pk</span>
+   <span class="o">|--</span><span class="n">co2values</span><span class="o">.</span><span class="n">json</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="climate-and-hydrology-data">
+<h2>Climate and hydrology data<a class="headerlink" href="#climate-and-hydrology-data" title="Permalink to this headline">¶</a></h2>
+<p>Because of their potential large size, climate and hydrological data can be stored in a separate folder. This directory must be specified in the <a class="reference internal" href="../Parameters/index.html#module-Curtailmentparameters" title="Curtailmentparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Curtailmentparameters</span></code></a> object.</p>
+</div>
 </div>
 
 
@@ -191,6 +224,7 @@ folder. This diredtory must be specified in the Curtailment Parameters object.</
       <script type="text/javascript" src="../_static/underscore.js"></script>
       <script type="text/javascript" src="../_static/doctools.js"></script>
       <script type="text/javascript" src="../_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

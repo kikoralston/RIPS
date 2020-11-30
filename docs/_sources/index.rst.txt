@@ -13,6 +13,7 @@ Capacity expansion / unit commitment and economic dispatch under climate change
    intro
    Input data/index
    Parameters/index
+   Setup Fleet/index
    Main Scripts/index
    Thermal deratings/index
 
@@ -27,6 +28,12 @@ Introduction
 
 To run a CE, UCED, or combined CE/UCED simulation the function ``masterFunction()`` (see :ref:`main-scripts`) must be called within a python script. This python script must also load the parameters needed to execute the simulation and pass them as arguments to ``masterFunction()``.
 
+This is q inline equation If :math:`\sigma_{1}` equals :math:`\sigma_{2}` then etc, etc.
+
+This is a normal equation
+
+.. math::
+   \alpha+\beta=\gamma
 
 A minimal example of how to execute a capacity expansion only analysis from 2015 to 2050 is illustrated below. The txt files are formatted csv files that contain the parameters data. 
 
