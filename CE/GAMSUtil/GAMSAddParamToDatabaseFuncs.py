@@ -6,7 +6,7 @@ import sys
 import copy, math
 import random
 from GAMSUtil.GAMSAuxFuncs import *
-from CalculateOpCost import calcOpCostsTech, calcOpCosts
+from SetupFleet.CalculateOpCost import calcOpCostsTech, calcOpCosts
 from AuxFuncs import convertCostToTgtYr, nested_dict_to_dict
 
 

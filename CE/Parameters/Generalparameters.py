@@ -1,9 +1,7 @@
 import os
 import sys
-from AssignCellsToIPMZones import getIPMPolys, assignCellsToIPMZones
-from AssignCellsToStates import getStatePolys
+from ipmzones.AssignCellsToIPMZones import getIPMPolys, getStatePolys
 from AuxFuncs import *
-from CO2CapCalculations import getCo2Cap, interpolateCO2Cap
 from ast import literal_eval as lev
 import copy
 

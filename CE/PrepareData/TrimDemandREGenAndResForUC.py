@@ -1,19 +1,17 @@
 #Michael Craig
 #October 4, 2016
 
-from GAMSAuxFuncs import *
-
 
 def getDemandAndREGenForUC(day, daysOpt, daysLA, demandScaled, hourlyWindGen, hourlySolarGen):
     """Isolate hourly demand and wind & solar gen for hours input to UC model
 
-    :param day: current UC day
-    :param daysOpt: number of days to optimize for
-    :param daysLA: number of days LA
-    :param demandScaled: hourly annual demand
-    :param hourlyWindGen: hourly wind  gen
-    :param hourlySolarGen: hourly solar gen
-    :return: hourly demand & wind & solar gen for UC hours, UC hours
+    :param day: (int) current UC day
+    :param daysOpt: (int) number of days to optimize for
+    :param daysLA: (int) number of days look ahead
+    :param demandScaled: (list) hourly annual demand
+    :param hourlyWindGen: (list) hourly wind  gen
+    :param hourlySolarGen: (list) hourly solar gen
+    :return: lists with hourly demand & wind & solar gen for UC hours, UC hours
     """
 
     hoursForUC = getUCHours(day, daysOpt, daysLA)
@@ -41,16 +39,16 @@ def getDemandAndREGenForUC(day, daysOpt, daysLA, demandScaled, hourlyWindGen, ho
 
 
 def getResForUC(day, daysOpt, daysLA, hourlyRegUp, hourlyRegDown, hourlyFlex, hourlyCont):
-    """
+    """Get reserve requirements for current UC run
 
-    :param day: current UC day
-    :param daysOpt: number of days to optimize for
-    :param daysLA: number of days LA
-    :param hourlyRegUp: hourly annual reg up
-    :param hourlyRegDown: hourly annual down req
-    :param hourlyFlex:
-    :param hourlyCont:
-    :return: hourly reg up & down req for UC hours
+    :param day: (int) current UC day
+    :param daysOpt: (int) number of days to optimize for
+    :param daysLA: (int) number of days look ahead
+    :param hourlyRegUp: (list) hourly regulated up reserve requirement
+    :param hourlyRegDown: (list) hourly regulated down reserve requirement
+    :param hourlyFlex: (list) hourly flexibility reserve requirement
+    :param hourlyCont: (list) hourly contigency reserve requirement
+    :return: lists with hourly reserve requirements (regulated up & down, flexibility, contigency) for UC hours
     """
 
     hoursForUC = getUCHours(day, daysOpt, daysLA)
@@ -76,11 +74,11 @@ def getResForUC(day, daysOpt, daysLA, hourlyRegUp, hourlyRegDown, hourlyFlex, ho
 
 
 def getUCHours(day, daysOpt, daysLA):
-    """ Get list with hours of year for UC model
+    """ Get list with hours of year for current UC model simulation
 
-    :param day: first day of UC
-    :param daysOpt: num days to optimize for
-    :param daysLA: num days LA
+    :param day: (int) current day of UC simulation
+    :param daysOpt: (int) num days to optimize for
+    :param daysLA: (int) num days look ahead
     :return: 1d list of hours in UC (1-8760 basis)
     """
     (firstHour, lastHour) = ((day-1)*24+1, ((day-1)+(daysOpt+daysLA))*24)
@@ -90,12 +88,12 @@ def getUCHours(day, daysOpt, daysLA):
 
 
 def getDataPastEndOfYear(day, daysOpt, daysLA, hoursForUC, dataList):
-    """Extend data for # of days past end of year
+    """Extend data for number of days past end of year
 
-    :param day:
-    :param daysOpt:
-    :param daysLA:
-    :param hoursForUC:
+    :param day: (int) current day of UC simulation
+    :param daysOpt: (int) num days to optimize for
+    :param daysLA: (int) num days look ahead
+    :param hoursForUC: (1-d list) hours of the year for current UC simulation
     :param dataList:
     :return:
     """

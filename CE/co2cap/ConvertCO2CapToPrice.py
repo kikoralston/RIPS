@@ -5,20 +5,17 @@ Converts annual CO2 cap into a CO2 price. Two methods: run ED model in GAMS
 or use generation stack.
 """
 
-import copy, os
 from operator import *
-from AuxFuncs import *
 from DemandFuncs import *
-from CalculateOpCost import calcOpCosts
-from GetHydroMaxGenPotential import importHydroPotentialGen,getMonthsPotential
+from renewables.GetHydroMaxGenPotential import importHydroPotentialGen,getMonthsPotential
 try:
     from gams import *
 except ImportError:
     print('gams module not found! GAMS functions will not work.')
 
-from GAMSAddParamToDatabaseFuncs import *
-from GAMSAddSetToDatabaseFuncs import *
-from GAMSAuxFuncs import *
+from GAMSUtil.GAMSAddParamToDatabaseFuncs import *
+from GAMSUtil.GAMSAddSetToDatabaseFuncs import *
+from GAMSUtil.GAMSAuxFuncs import *
 from TrimDemandREGenAndResForUC import getDemandAndREGenForUC
 
 

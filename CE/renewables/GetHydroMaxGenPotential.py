@@ -6,7 +6,7 @@ Import monthly hydropower generation from PNNL, and assign to each season consid
 
 import os
 from AuxFuncs import *
-from GAMSAuxFuncs import createGenSymbol
+from GAMSUtil.GAMSAuxFuncs import createGenSymbol
 from DemandFuncsCE import getHoursInMonths
 import pandas as pd
 import pickle as pk

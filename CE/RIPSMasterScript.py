@@ -2,48 +2,26 @@
 # Run capacity expansion and dispatch models w/ climate impacts.
 
 import numpy as np
-import multiprocessing as mp
 import shutil
 import gc
 import platform
-import pickle as pk
 
 try:
     from gams import *
 except ImportError:
     print('gams module not found! GAMS functions will not work.')
 
-from SetupGeneratorFleet import setupGeneratorFleet, aggregatePlantTypeToORIS
-from ForecastDemandWithRegression import forecastZonalDemandWithReg
-from UpdateFuelPriceFuncs import *
-from DemandFuncs import *
-from DemandFuncsCE import *
-from GetHydroMaxGenPotential import getHydroEPotential, importHydroPotentialGen, getDailyHydroPotentialsUC
-from CO2CapCalculations import interpolateCO2Cap
-from SetInitCondsUC import *
-from ImportNewTechs import getNewTechs
-from RetireUnitsCFPriorCE import retireUnitsCFPriorCE
-from CreateFleetForCELoop import createFleetForCurrentCELoop
-from GetRenewableCFs import getRenewableCFData, trimNewRECFsToCEHours
-from AssignCellsToIPMZones import assignCellsToIPMZones
-from LoadEligibleCellWaterTs import loadEligibleCellWaterTs
-from GetHourlyCapacsForCE import getHourlyNonRECapacsForCE, getHourlyCurtailedTechCapacsForCE
-from GetHourlyCapacsForUC import getHourlyCapacitiesForDays
-from CalculateHourlyCapacsWithCurtailments import calculateHourlyCapacsWithCurtailments
-from ProcessCEResults import *
-from CombineWindAndSolarGensToSingleGen import combineWindAndSolarToSinglePlant
-from TrimDemandREGenAndResForUC import getDemandAndREGenForUC, getResForUC
-from GAMSAddSetToDatabaseFuncs import *
-from GAMSAddParamToDatabaseFuncs import *
-from ConvertCO2CapToPrice import convertCo2CapToPrice
-from SetupResultLists import setupHourlyResultsByPlant, setupHourlyPHResults, initializeSystemResultsdf
-from SaveHourlyResults import saveHourlyResultsByPlant, saveHourlySystemResults, saveHourlyPumpedHydroResults
-from WriteUCResults import writeHourlyResultsByPlant, writeHourlyStoResults
-from ReservesWWSIS import calcWWSISReserves
-from SaveCEOperationalResults import saveCapacExpOperationalData
-from LoadCEFleet import loadCEFleet
-from ModifyGeneratorCapacityWithWaterTData import determineHrlyCurtailmentsForExistingGens
-from ModifyNewTechCapacityWithWaterTData import determineHrlyCurtailmentsForNewTechs
+from GAMSUtil import *
+from SetupFleet import *
+from PrepareData import *
+from thermalderatings import *
+from ProcessResults import *
+from co2cap import *
+from renewables import *
+from ipmzones import *
+
+from demand.ForecastDemandWithRegression import forecastZonalDemandWithReg
+from reserves.ReservesWWSIS import calcWWSISReserves
 
 sys.stdout.flush()
 
@@ -94,43 +72,14 @@ def masterFunction(genparam, reserveparam, curtailparam):
     (capacExpModelsEachYear, capacExpBuilds, capacExpGenByGens, capacExpRetiredUnitsByCE,
      capacExpRetiredUnitsByAge) = ([], [['TechnologyType']], [['ORIS+UnitID']], [], [])
 
+    genFleetNoRetiredUnits, genFleetPriorCE, priorCEout_db, priorHoursCE = None, None, None, None
+
     t_start = time.time()
     # begin loop
     for currYear in range(genparam.startYear, genparam.endYear, genparam.yearStepCE):
 
-        if not genparam.referenceCase:
-
-            if genparam.gcmranking is not None:
-
-                file_demand = 'df_demand_{1:}_{0:4d}.pk'.format(currYear, genparam.rcp)
-                file_curtailment = 'curtailments_{1}_{0:4d}.pk'.format(currYear, genparam.rcp)
-
-                # read demand file
-                with open(os.path.join(curtailparam.rbmDataDir, file_demand), 'rb') as f:
-                    df_demand = pk.load(f)
-
-                # compute total hourly system demand
-                df_demand = df_demand.groupby(['gcm', 'hour']).agg({'demand': sum}).reset_index()
-
-                df_demand = df_demand.groupby(['gcm']).agg({'demand': max}).reset_index().sort_values(
-                    by=['demand']).reset_index(drop=True)
-
-                # get names of GCms in according to given ranking in genparam
-                gcms_chosen = list(df_demand.iloc[genparam.gcmranking,]['gcm'].astype('str'))
-            else:
-                # if no ranking was given, just use list of gcms in curtailparam
-                gcms_chosen = list(curtailparam.listgcms)
-
-            print('GCMs used in year {}:'.format(currYear))
-            print(gcms_chosen)
-            print()
-
-            # make copy of curtail param and update list of GCMs
-            curtparam_year = copy.deepcopy(curtailparam)
-            curtparam_year.listgcms = gcms_chosen
-        else:
-            curtparam_year = copy.deepcopy(curtailparam)
-            curtparam_year.listgcms = ['ref{0:02d}'.format(i) for i, p in enumerate(genparam.gcmranking)]
+        # get new curtparam only with subset of GCMs
+        curtparam_year = choose_gcms_for_ce(currYear, genparam, curtailparam)
 
         t_year = time.time()
         print('\n----------------------------------------------------------------\n')
@@ -144,40 +93,9 @@ def masterFunction(genparam, reserveparam, curtailparam):
         if genparam.runCE:
             # run capacity expansion model
 
-            if genparam.coldStart and currYear == genparam.startYear:
-                # if it is cold start and curr year is start year, read results from previous run
-                # (this was created to treat cases when simulation crashes in the middle)
-
-                priorYearCE = genparam.startYear - genparam.yearStepCE
-
-                genFleet = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
-                                                        'genFleetAfterCE{0}.csv'.format(priorYearCE)))
-                genFleetNoRetiredUnits = readCSVto2dList(os.path.join(genparam.resultsDir, 'CEtoUC',
-                                                                      'genFleetCEtoUC{0}.csv'.format(priorYearCE)))
-                genFleetPriorCE = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
-                                                               'genFleetForCE{0}.csv'.format(priorYearCE)))
-
-                priorCEout_db = GamsWorkspace().add_database_from_gdx(os.path.join(genparam.resultsDir, 'CE',
-                                                                                   'gdxOutYear{}.gdx'.format(
-                                                                                       priorYearCE)))
-
-                capacExpBuilds = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
-                                                              'genAdditionsCE{0}.csv'.format(priorYearCE)))
-                capacExpGenByGens = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
-                                                                 'genByGensCE{0}.csv'.format(priorYearCE)))
-                capacExpRetiredUnitsByCE = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
-                                                                        'genRetirementsEconCE{0}.csv'.format(
-                                                                            priorYearCE)))
-                capacExpRetiredUnitsByAge = readCSVto2dList(os.path.join(genparam.resultsDir, 'CE',
-                                                                         'genRetirementsAgeCE{0}.csv'.format(
-                                                                             priorYearCE)))
-
-                with open(os.path.join(genparam.resultsDir, 'CE', 'hoursCE_{0}.pkl'.format(priorYearCE)), 'rb') as f:
-                    priorHoursCE = pk.load(f)
-
-            elif (not genparam.coldStart) and (currYear == genparam.startYear + genparam.yearStepCE):
-                # not cold start and first CE run
-                priorCEout_db, priorHoursCE, genFleetPriorCE = None, None, None  # first CE run
+            get_init_conditions_ce(currYear, genparam, genFleet, genFleetNoRetiredUnits, genFleetPriorCE,
+                                   priorCEout_db, capacExpBuilds, capacExpGenByGens, capacExpRetiredUnitsByCE,
+                                   capacExpRetiredUnitsByAge, priorHoursCE)
 
             # only run model in genparam.startYear if it is a cold start
             if genparam.coldStart or currYear > genparam.startYear:
@@ -240,7 +158,7 @@ def getInitialFleetAndDemand(genparam, reserveparam):
 def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, capacExpModelsEachYear, capacExpBuilds,
                          capacExpGenByGens, capacExpRetiredUnitsByCE, capacExpRetiredUnitsByAge, genFleetPriorCE,
                          priorCEout_db, priorHoursCE, genparam, reserveparam, curtailparam):
-    """Run capacity expansion simulation
+    """Run one annual iteration of the capacity expansion simulation
 
     This function does all the reading and preprocessing before executing capacity expansion optimization
 
@@ -1071,8 +989,18 @@ def runUnitCommitmentSingleGcm(list_args):
         shutil.copytree(os.path.join(genparam.resultsDir, 'GAMS'),
                         os.path.join(resultsDir, 'GAMS'), symlinks=False, ignore=None)
 
+    # copy GAMS files to GAMS dir in results folder
+    try:
+        shutil.copy(os.path.join(genparam.dataRoot, 'GAMS', genparam.ucFilename),
+                    os.path.join(resultsDir, 'GAMS', genparam.ucFilename))
+    except shutil.Error as e:
+        print('Error: {}'.format(e))
+        # eg. source or destination doesn't exist
+    except IOError as e:
+        print('Error: {}'.format(e.strerror))
+
     # redefine resultsDir in local genparam so UC can find GAMS code
-    genparam_local.resultsDir = os.path.join(genparam.resultsDir, 'UC', gcm)
+    genparam_local.resultsDir = resultsDir
 
     # define list of GCMs to only respective gcm
     curtailparam_local.listgcms = [gcm]

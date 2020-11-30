@@ -4,14 +4,12 @@
 # This script gets wind and solar capacity factors for existing and new renewables
 # by mapping capacity to the best available units in each zone.
 
-import os, copy, datetime
-from statistics import mode
+import os
 from AuxFuncs import *
-from AssignCellsToIPMZones import (locInZone, get_centroid_zone)
+from ipmzones.AssignCellsToIPMZones import (locInZone)
 import pandas as pd
 import datetime as dt
 import multiprocessing as mp
-import pickle as pk
 import gc
 
 

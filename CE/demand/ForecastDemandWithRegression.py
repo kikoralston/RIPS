@@ -2,14 +2,14 @@
 # August 3, 2017
 # Script forecasts demand using regressions devleoped by Francisco
 
-import os, sys, copy
+import os, copy
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
 from AuxFuncs import *
-from TempTransformation import *
-from AuxCurtailmentFuncs import read_netcdf
-from ModifyGeneratorCapacityWithWaterTData import find125GridMaurerLatLong
+from demand.TempTransformation import *
+from thermalderatings.AuxCurtailmentFuncs import read_netcdf
+from thermalderatings.ModifyGeneratorCapacityWithWaterTData import find125GridMaurerLatLong
 
 
 def forecastZonalDemandWithReg(yr, genparam, curtailparam):

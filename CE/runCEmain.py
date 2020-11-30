@@ -1,8 +1,8 @@
 import os, sys
 import pandas as pd
 from memory_profiler import profile
-from RIPSMasterScript17Nov2017 import *
-from Parameters import *
+from RIPSMasterScript import *
+import Parameters
 sys.stdout.flush()
 
 
@@ -11,13 +11,13 @@ def runCEmain(cwd=os.getcwd(), case=None, runUC=False):
 
     print('Loading parameters and setting up initial data')
     # Load parameters
-    genparam = Generalparameters.Generalparameters()
+    genparam = Parameters.Generalparameters()
     genparam.load(fname=os.path.join(cwd, 'generalparameters.txt'))
 
-    reserveparam = Reserveparameters.Reserveparameters()
+    reserveparam = Parameters.Reserveparameters()
     reserveparam.load(fname=os.path.join(cwd, 'reserveparameters.txt'))
 
-    curtailparam = Curtailmentparameters.Curtailmentparameters()
+    curtailparam = Parameters.Curtailmentparameters()
     curtailparam.load(fname=os.path.join(cwd, 'curtailmentparameters.txt'))
 
     if case is not None:

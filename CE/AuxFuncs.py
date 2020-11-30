@@ -7,11 +7,12 @@ import time
 import numpy as np
 
 
-################ READ AND WRITE CSV LISTS
-# Read CSV to 2d list
-# Input: full file name including dir (str)
-# Output: 2d list
 def readCSVto2dList(fileNameWithDir):
+    """ Read CSV to 2d list
+
+    :param fileNameWithDir: (str) full file name including dir
+    :return: 2d list
+    """
     with open(fileNameWithDir, 'r') as f:
         f = csv.reader(f)
         f = list(f)

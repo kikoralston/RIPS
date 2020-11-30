@@ -7,11 +7,11 @@
 import os, copy
 from AuxFuncs import *
 from GAMSUtil.GAMSAuxFuncs import createTechSymbol
-from AssignCellsToIPMZones import mapCellToIPMZone
+from ipmzones.AssignCellsToIPMZones import mapCellToIPMZone
 from thermalderatings.AuxCurtailmentFuncs import loadWaterAndMetData, read_netcdf_full
 from thermalderatings.CurtailmentRegressions import (calcCurtailmentForGenOrTech, loadRegCoeffs, getKeyCurtailParamsNewTechs,
                                                      getCoeffsForGenOrTech)
-from AssignCellsToStates import getStateOfPt
+from ipmzones.AssignCellsToIPMZones import getStateOfPt
 import progressbar
 import multiprocessing as mp
 

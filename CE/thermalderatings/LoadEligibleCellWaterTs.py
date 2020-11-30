@@ -9,7 +9,7 @@
 
 import os, copy, sys
 import numpy as np
-from AssignCellsToIPMZones import mapCellToIPMZone
+from ipmzones.AssignCellsToIPMZones import mapCellToIPMZone
 from thermalderatings.ModifyGeneratorCapacityWithWaterTData import getGenToCellAndCellToGenDictionaries
 from thermalderatings.AuxCurtailmentFuncs import (get_all_cells_from_netcdf, order_cells_by_flow, get_all_cells_in_zone,
                                                   loadCellWaterTs, createBaseFilenameToReadOrWrite)

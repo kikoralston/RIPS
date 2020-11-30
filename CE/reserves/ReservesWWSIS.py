@@ -1,18 +1,17 @@
-"""
-Michael Craig
-December 16, 2016
+#
+# Michael Craig
+# December 16, 2016
 
-Calculates spinning reserve requirements per WWSIS
-Regulation: geometric sum (square root of sum of squared values) of
-1% load, 95th percentile of 10-min forecast erros for wind and solar.
-Contingency: 3% load
-Flexibility: geometric sum of 70th percentile of 1-hour forecast errors for wind and solar
+# Calculates spinning reserve requirements per WWSIS
+# Regulation: geometric sum (square root of sum of squared values) of
+# 1% load, 95th percentile of 10-min forecast erros for wind and solar.
+# Contingency: 3% load
+# Flexibility: geometric sum of 70th percentile of 1-hour forecast errors for wind and solar
 
-"""
 
-import csv, os, copy, operator
+import copy, operator
 from AuxFuncs import *
-from GetRenewableCFs import getFleetToCapacDict
+from renewables.GetRenewableCFs import getFleetToCapacDict
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime as dt

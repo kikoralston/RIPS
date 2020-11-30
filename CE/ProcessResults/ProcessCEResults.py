@@ -7,7 +7,7 @@ import copy, os, random
 from AuxFuncs import *
 from GAMSUtil.GAMSAuxFuncs import *
 from SetupFleet.CreateFleetForCELoop import onlineAndNotRetired
-from AssignCellsToIPMZones import getStateOfPt
+from ipmzones.AssignCellsToIPMZones import getStateOfPt
 import pandas as pd
 
 

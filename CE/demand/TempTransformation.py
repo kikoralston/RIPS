@@ -9,12 +9,9 @@ import numpy as np
 def createTempComponents(temp, temp_breaks=[0, 10, 20, 30]):
     """Computes temperature components for piecewise linear model
 
-    Keyword arguments:
-    temp -- vector of temperatures (degrees celsius)
-    temp_breaks -- temperature break points of piecewise linear function
-    
-    Returns:
-    matrix with components in columns
+    :param temp: vector of temperatures (degrees celsius)
+    :param temp_breaks: (list) temperature break points of piecewise linear function
+    :return: matrix with components in columns
     """
 
     temp = np.array(temp)
@@ -43,17 +40,15 @@ def createTempComponents(temp, temp_breaks=[0, 10, 20, 30]):
 
 def convertDewPoint2RelHum(dew_point, temp):
     """Converts dew point to relative humidity
-    uses inverse of formula (8) in:
+
+    Uses inverse of formula (8) in:
     http://journals.ametsoc.org/doi/pdf/10.1175/BAMS-86-2-225
-    
-    Args:
-    dew_point: dew point value in Celsius. Can be a vector or an atomic
-    temp: air temperature in Celsius. Can be vector or atomic
-    
-    OBS: if both arguments are vectors, they must be the same length 
-    
-    Returns:
-    relative humidity in %
+
+    OBS: if both arguments are vectors, they must be the same length
+
+    :param dew_point: dew point value in Celsius. Can be a vector or an atomic
+    :param temp: air temperature in Celsius. Can be vector or atomic
+    :return: relative humidity in %
     """
 
     # convert to numpy array (in case it is a list) and convert number to vector
@@ -83,17 +78,15 @@ def convertDewPoint2RelHum(dew_point, temp):
 
 def convertRelHum2DewPoint(rh, temp):
     """Converts relative humidity to dew point
+
     uses inverse of formula (8) in:
     http://journals.ametsoc.org/doi/pdf/10.1175/BAMS-86-2-225
-    
-    Args:
-    rh: relative humidity value in % (0 to 100). Can be a vector or an atomic
-    temp: air temperature in Celsius. Can be vector or atomic
-    
+
     OBS: if both arguments are vectors, they must be the same length
-    
-    Returns:
-    dew point in Celsius
+
+    :param rh: relative humidity value in % (0 to 100). Can be a vector or an atomic
+    :param temp: air temperature in Celsius. Can be vector or atomic
+    :return: dew point in Celsius
     """
 
     # convert to numpy array (in case it is a list) and convert number to vector
