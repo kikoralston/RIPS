@@ -79,7 +79,7 @@ class Generalparameters:
     :param lineCapacs: (list) used internally only. should not be set by user.
     :param ncores_py: (integer) number of cores to use for parallel simulation in python
     :param ncores_gams: (integer) number of cores to use for parallel simulation in gams
-    :param coldStart: (boolean) "Cold Start" for CE and UC models. Read files with initial conditions in first run
+    :param hotStart: (boolean) "Hot Start" for CE and UC models. Read files with initial conditions in first run
     :param gcmranking: (list) list with ranking of GCMs that will be chosen in each CE year (e.g. [3, 9, 15])
     :param rcp: (string) name of rcp being simulated (rcp45 or rcp85)
     """
@@ -176,7 +176,7 @@ class Generalparameters:
         # OTHER
         self.ncores_py = 1      # number of cores to use for parallel simulation in python
         self.ncores_gams = 1    # number of cores to use for parallel simulation in gams
-        self.coldStart = False  # "Cold Start" for CE and UC models. Read files with initial conditions in first run
+        self.hotStart = False  # "Cold Start" for CE and UC models. Read files with initial conditions in first run
         self.gcmranking = []    # list with ranking of GCMs that will be chosen in each CE year (e.g. [3, 9, 15])
         self.rcp = ''           # name of rcp being simulated (rcp45 or rcp85)
 
@@ -272,7 +272,7 @@ class Generalparameters:
         outstr = outstr + '#\n# -------- OTHER PARAMETERS --------\n#\n'
         outstr = outstr + 'ncores_py = {}   # number of cores to use for parallel simulation in python\n'.format(self.ncores_py)
         outstr = outstr + 'ncores_gams = {} # number of cores to use for parallel simulation in gams\n'.format(self.ncores_gams)
-        outstr = outstr + 'coldStart = {}   # "Cold Start" for CE and UC models. Read files with initial conditions in first run\n'.format(self.coldStart)
+        outstr = outstr + 'hotStart = {}   # "Hot Start" for CE and UC models. Read files with initial conditions in first run\n'.format(self.hotStart)
         outstr = outstr + 'gcmranking = {}  # list with ranking of GCMs that will be chosen in each CE year (e.g. [3, 9, 15])\n'.format(self.list2string(self.gcmranking))
         outstr = outstr + 'rcp = {}  # name of rcp being simulated (rcp45 or rcp85)\n'.format(self.rcp)
 

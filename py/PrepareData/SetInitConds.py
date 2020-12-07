@@ -193,7 +193,7 @@ def get_init_conditions_ce(currYear, genparam, genFleet, genFleetNoRetiredUnits,
     a previous iteration in order to restart a CE simulation in the middle of the simulation horizon.
 
     For example, if the CE simulation has an original simulation horizon between 2015 and 2050 but it crashes during the
-    2035 iteration, the user can restart it by setting the `genparam.coldStart = True` and `genparam.startYear = 2035`.
+    2035 iteration, the user can restart it by setting the `genparam.hotStart = True` and `genparam.startYear = 2035`.
     This function will read the relevant results from the previous completed iteration (e.g. 2030) and will use them as
     starting condition for the 2035 iteration.
 
@@ -209,7 +209,7 @@ def get_init_conditions_ce(currYear, genparam, genFleet, genFleetNoRetiredUnits,
     :param capacExpRetiredUnitsByAge:
     :param priorHoursCE:
     """
-    if genparam.coldStart and currYear == genparam.startYear:
+    if genparam.hotStart and currYear == genparam.startYear:
         # if it is cold start and curr year is start year, read results from previous run
         # (this was created to treat cases when simulation crashes in the middle)
 
@@ -240,7 +240,7 @@ def get_init_conditions_ce(currYear, genparam, genFleet, genFleetNoRetiredUnits,
         with open(os.path.join(genparam.resultsDir, 'CE', 'hoursCE_{0}.pkl'.format(priorYearCE)), 'rb') as f:
             priorHoursCE = pk.load(f)
 
-    elif (not genparam.coldStart) and (currYear == genparam.startYear + genparam.yearStepCE):
+    elif (not genparam.hotStart) and (currYear == genparam.startYear + genparam.yearStepCE):
 
         # not cold start and first CE run
         priorCEout_db, priorHoursCE, genFleetPriorCE = None, None, None  # first CE run

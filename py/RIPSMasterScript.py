@@ -98,7 +98,7 @@ def masterFunction(genparam, reserveparam, curtailparam):
                                    capacExpRetiredUnitsByAge, priorHoursCE)
 
             # only run model in genparam.startYear if it is a cold start
-            if genparam.coldStart or currYear > genparam.startYear:
+            if genparam.hotStart or currYear > genparam.startYear:
                 (genFleet, genFleetNoRetiredUnits, genFleetPriorCE, priorCEout_db,
                  priorHoursCE) = runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap,
                                                       capacExpModelsEachYear, capacExpBuilds, capacExpGenByGens,
@@ -110,8 +110,8 @@ def masterFunction(genparam, reserveparam, curtailparam):
                 with open(os.path.join(genparam.resultsDir, 'CE', 'hoursCE_{0}.pkl'.format(currYear)), 'wb') as f:
                     pk.dump(priorHoursCE, f, pk.HIGHEST_PROTOCOL)
 
-            # since model was executed successfully, set coldStart to False before running next year
-            genparam.coldStart = False
+            # since model was executed successfully, set hotStart to False before running next year
+            genparam.hotStart = False
 
         if genparam.runUC:
             # Either only runs 2015, or runs in all but 2015
@@ -162,24 +162,30 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
 
     This function does all the reading and preprocessing before executing capacity expansion optimization
 
-    :param genFleet: 2d list with original existing generator fleet (in the first year of the simulation)
-    :param zonalDemandProfile: nested dictionary with hourly demand by ipm zone in each gcm case being simulated.
+    (capacExpModelsEachYear, capacExpBuilds, capacExpGenByGens, capacExpRetiredUnitsByCE,
+     capacExpRetiredUnitsByAge) = ([], [['TechnologyType']], [['ORIS+UnitID']], [], [])
+
+    :param genFleet: (2d list) with original existing generator fleet (in the first year of the simulation)
+    :param zonalDemandProfile: (dict) nested dictionary with hourly demand by ipm zone in each gcm case being simulated.
                                Dictionary is {gcm: {zone: [hourly demand]}}
-    :param currYear: integer with year of simulation
+    :param currYear: (int) year of simulation
     :param currCo2Cap: float with value in MMton/year of CO2 emission limit
-    :param capacExpModelsEachYear:
-    :param capacExpBuilds:
-    :param capacExpGenByGens:
-    :param capacExpRetiredUnitsByCE:
-    :param capacExpRetiredUnitsByAge:
+    :param capacExpModelsEachYear: (list) list with gams models in previous CE simulation years
+    :param capacExpBuilds: (2d list) list with complete builds (by plant type) of capacity expansion model
+    :param capacExpGenByGens: (2d list) list with generation of each individual plant in previous simulation year
+                              (used to compute retirements)
+    :param capacExpRetiredUnitsByCE: (list) list with retired units because of low CF
+    :param capacExpRetiredUnitsByAge: (list) list with retired units because of age
     :param genFleetPriorCE: 2d list with existing generator fleet in current year of simulation
                             (including prior additions)
-    :param priorCEout_db:
-    :param priorHoursCE:
+    :param priorCEout_db: gams data base object with results of capacity expansion iteration in previous simulation year
+    :param priorHoursCE: (dict) dictionary with hours considered in previous CE simulation year
     :param genparam: object of class :mod:`Generalparameters`
     :param reserveparam: object of class :mod:`Reserveparameters`
     :param curtailparam: object of class :mod:`Curtailmentparameters`
-    :return:
+    :return: resulting generator fleet (including retired units), resulting generator fleet (excluding retired units),
+             generator fleet before CE expansion decisions, gams data base with results, dictionary with hours of the
+             year used in CE simulation.
     """
 
     resultsDir = os.path.join(genparam.resultsDir, 'CE')
@@ -334,8 +340,8 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
     print('  Got eligible cells: ' + str_elapsedtime(start_time))
 
     # hrlyCurtailmentsAllTechsInTgtYr is a dict of (tech,cell):[hourlycapac]
-    hrlyCurtailmentsAllTechsInTgtYr = \
-        determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear, genparam, curtailparam)
+    hrlyCurtailmentsAllTechsInTgtYr = determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYear,
+                                                                           genparam, curtailparam)
 
     writeDictToCSV(hrlyCurtailmentsAllTechsInTgtYr, os.path.join(resultsDir, 'curtailmentsTechHourly' +
                                                                  str(currYear) + '.csv'))
@@ -370,12 +376,12 @@ def runCapacityExpansion(genFleet, zonalDemandProfile, currYear, currCo2Cap, cap
     # Run CE
     print('Set inputs, running CE model...')
     t0 = time.time()
-    (capacExpModel, ms, ss, curtailedTechs, renewTechs, notCurtailedTechs,
-     pumpedHydroSymbs) = callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapacsCE,
-                                               hourlyWindGenCEZonal, hourlySolarGenCEZonal, demandCEZonal, newTechsCE,
-                                               planningReserveZonal, hoursForCE, newWindCFsCEZonal, newSolarCFsCEZonal,
-                                               currCo2Cap, seasonDemandWeights, repHrsBySeason, specialHrs,
-                                               peakDemandHourZonal, cellsToZones, hydroPotPerSeason, genparam)
+
+    (capacExpModel, ms, ss) = callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapacsCE,
+                                                    hourlyWindGenCEZonal, hourlySolarGenCEZonal, demandCEZonal, newTechsCE,
+                                                    planningReserveZonal, hoursForCE, newWindCFsCEZonal, newSolarCFsCEZonal,
+                                                    currCo2Cap, seasonDemandWeights, repHrsBySeason, specialHrs,
+                                                    peakDemandHourZonal, cellsToZones, hydroPotPerSeason, genparam)
 
     write2dListToCSV([['ms', 'ss'], [ms, ss]], os.path.join(resultsDir, 'msAndSsCE' + str(currYear) + '.csv'))
     print('Time (secs) for CE year {0:4d}: {1:.2f}'.format(currYear, (time.time() - t0)))
@@ -546,22 +552,15 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
     blocksSolar.sort()
 
     # Add sets and parameters to database
-    (genSet, genSymbols, hourSet, hourSymbols, techSet, techSymbols, techCurtailedSet, techCurtailedSymbols,
-     renewTechSet, renewTechSymbols, techNotCurtailedSymbols, hydroGenSet, hydroGenSymbols, zoneSet, zoneSymbols,
-     lineSet, cellSet, peakHourSet, peakHrSymbols, pumpHydroGenSet, pumpHydroGenSymbols, gcmSet) = \
-        addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeason, specialHrs, peakDemandHourZonal,
-                            cellsToZones, genparam, blocksWind=blocksWind, blocksSolar=blocksSolar)
+    x = addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeason, specialHrs,
+                            peakDemandHourZonal, cellsToZones, genparam, blocksWind=blocksWind,
+                            blocksSolar=blocksSolar)
 
-    addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySolarGenCEZonal, demandCEZonal,
-                              newTechsCE, genFleetForCE, genSet, genSymbols, hydroGenSet, hoursForCE, hourSet,
-                              hourSymbols, techSet, techSymbols, techCurtailedSet, techCurtailedSymbols, renewTechSet,
-                              renewTechSymbols, planningReserveZonal, discountRate, newWindCFsCEZonal,
-                              newSolarCFsCEZonal, scaleMWtoGW, scaleDollarsToThousands, currCo2Cap,
-                              seasonDemandWeights, hourlyCurtailedTechCapacsCE, scaleLbToShortTon,
-                              maxAddedZonalCapacPerTech, zoneSet, zoneSymbols, lineSet, ipmZones, ipmZoneNums,
-                              lineList, lineCapacs, cellsToZones, cellSet, peakDemandHourZonal, peakHourSet,
-                              peakHrSymbols, hydroPotPerSeason, ptCurtailedAll, pumpHydroGenSet, pumpHydroGenSymbols,
-                              phEff, phMaxSoc, phInitSoc, gcmSet)
+    addParametersToDatabaseCE(db, genparam, hoursForCE, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySolarGenCEZonal,
+                              demandCEZonal, newTechsCE, genFleetForCE, planningReserveZonal, newWindCFsCEZonal,
+                              newSolarCFsCEZonal, currCo2Cap, seasonDemandWeights, hourlyCurtailedTechCapacsCE,
+                              cellsToZones, hydroPotPerSeason)
+
     # Load GAMS model
     capacExpFile = capacExpFilename
     capacExpModel = ws.add_job_from_file(capacExpFile)
@@ -629,7 +628,7 @@ def callCapacityExpansion(genFleetForCE, hourlyCapacsCE, hourlyCurtailedTechCapa
         print()
         sys.exit()
 
-    return capacExpModel, ms, ss, techCurtailedSymbols, renewTechSymbols, techNotCurtailedSymbols, pumpHydroGenSymbols
+    return capacExpModel, ms, ss
 
 
 def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeason, specialHrs, peakDemandHourZonal,
@@ -638,7 +637,7 @@ def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeaso
 
     This function adds the sets to the GAMS database that are needed to run the capacity expansion optimization
 
-    :param db:
+    :param db: gams database
     :param genFleetForCE: 2d list (matrix) with data of generator fleet
     :param hoursForCE:
     :param newTechsCE:
@@ -646,7 +645,7 @@ def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeaso
     :param specialHrs:
     :param peakDemandHourZonal:
     :param cellsToZones:
-    :param genparam: object of class :mod:`Generalparameters`
+    :param genparam: object of type :mod:`Generalparameters`
     :param blocksWind:
     :param blocksSolar:
     :return:
@@ -709,74 +708,38 @@ def addSetsToDatabaseCE(db, genFleetForCE, hoursForCE, newTechsCE, repHrsBySeaso
             peakHrSymbols, pumpHydroGenSet, pumpHydroGenSymbols, gcmSet)
 
 
-def addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySolarGenCEZonal, demandCEZonal,
-                              newTechsCE, genFleetForCE, genSet, genSymbols, hydroGenSet, hoursForCE, hourSet,
-                              hourSymbols, techSet, techSymbols, techCurtailedSet, techCurtailedSymbols, renewTechSet,
-                              renewTechSymbols, planningReserveZonal, discountRate, newWindCFsCEZonal,
-                              newSolarCFsCEZonal, scaleMWtoGW, scaleDollarsToThousands, currCo2Cap, seasonDemandWeights,
-                              hourlyCurtailedTechCapacsCE, scaleLbToShortTon, maxAddedZonalCapacPerTech, zoneSet,
-                              zoneSymbols, lineSet, ipmZones, ipmZoneNums, lineList, lineCapacs, cellsToZones,
-                              cellSet, peakDemandHourZonal, peakHourSet, peakHrSymbols, hydroPotPerSeason,
-                              ptCurtailedAll, pumpHydroGenSet, pumpHydroGenSymbols, phEff, phMaxSoc, phInitSoc,
-                              gcmSet):
+def addParametersToDatabaseCE(db, genparam, hoursForCE, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySolarGenCEZonal,
+                              demandCEZonal, newTechsCE, genFleetForCE, planningReserveZonal,  newWindCFsCEZonal,
+                              newSolarCFsCEZonal, currCo2Cap, seasonDemandWeights, hourlyCurtailedTechCapacsCE,
+                              cellsToZones, hydroPotPerSeason):
     """Add parameters needed to GAMS database
 
     This function adds the parameters to the GAMS database that are needed to run the capacity expansion optimization
 
-    :param db:
+    :param db: gams database object
+    :param genparam: object of type :mod:`Generalparameters`
+    :param hoursForCE: (dict) hours of the year considered in CE simulation
     :param hourlyCapacsCE:
     :param hourlyWindGenCEZonal:
     :param hourlySolarGenCEZonal:
     :param demandCEZonal:
     :param newTechsCE:
-    :param genFleetForCE: 2d list (matrix) with data of generator fleet
-    :param genSet:
-    :param genSymbols:
-    :param hydroGenSet:
-    :param hoursForCE:
-    :param hourSet:
-    :param hourSymbols:
-    :param techSet:
-    :param techSymbols:
-    :param techCurtailedSet:
-    :param techCurtailedSymbols:
-    :param renewTechSet:
-    :param renewTechSymbols:
+    :param genFleetForCE:
     :param planningReserveZonal:
-    :param discountRate:
     :param newWindCFsCEZonal:
     :param newSolarCFsCEZonal:
-    :param scaleMWtoGW:
-    :param scaleDollarsToThousands:
-    :param currCo2Cap:
+    :param currCo2Cap: (float) value of co2 cap
     :param seasonDemandWeights:
     :param hourlyCurtailedTechCapacsCE:
-    :param scaleLbToShortTon:
-    :param maxAddedZonalCapacPerTech:
-    :param zoneSet:
-    :param zoneSymbols:
-    :param lineSet:
-    :param ipmZones:
-    :param ipmZoneNums:
-    :param lineList:
-    :param lineCapacs:
     :param cellsToZones:
-    :param cellSet:
-    :param peakDemandHourZonal:
-    :param peakHourSet:
-    :param peakHrSymbols:
     :param hydroPotPerSeason:
-    :param ptCurtailedAll:
-    :param pumpHydroGenSet:
-    :param pumpHydroGenSymbols:
-    :param phEff:
-    :param phMaxSoc:
-    :param phInitSoc:
-    :param gcmSet:
     """
     # update newTechsCE to account for blocks of Wind and Solar with different CF
     newTechsCEcopy = copy.deepcopy(newTechsCE)
     techCol = newTechsCEcopy[0].index('TechnologyType')
+
+    renewTechSet = db.get_set('techrenew')
+    renewTechSymbols = [symb.keys[0] for symb in renewTechSet.__iter__()]
 
     # wind
     windTechs = [t for t in renewTechSymbols if 'Wind' in t]
@@ -800,56 +763,76 @@ def addParametersToDatabaseCE(db, hourlyCapacsCE, hourlyWindGenCEZonal, hourlySo
         row[techCol] = t
         newTechsCEcopy.append(row)
 
-    addTechParams(db, newTechsCEcopy, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon, ptCurtailedAll)
+    addTechParams(db, newTechsCEcopy, genparam.scaleMWtoGW, genparam.scaleDollarsToThousands,
+                  genparam.scaleLbToShortTon, genparam.ptCurtailedAll)
 
-    addEguParams(db, genFleetForCE, genSet, genSymbols, ipmZones, ipmZoneNums, scaleLbToShortTon, scaleMWtoGW)
-    addPumpHydroParams(db, genFleetForCE, phEff, phMaxSoc, phInitSoc, pumpHydroGenSet, pumpHydroGenSymbols, scaleMWtoGW)
-    addDiscountRateParam(db, discountRate)
+    genSet = db.get_set('egu')
+    genSymbols = [symb.keys[0] for symb in genSet.__iter__()]
+    addEguParams(db, genFleetForCE, genSet, genSymbols, genparam.ipmZones, genparam.ipmZoneNums,
+                 genparam.scaleLbToShortTon, genparam.scaleMWtoGW)
+
+    pumpHydroGenSet = db.get_set('pumphydroegu')
+    pumpHydroGenSymbols = [symb.keys[0] for symb in pumpHydroGenSet.__iter__()]
+    addPumpHydroParams(db, genFleetForCE, genparam.phEff, genparam.phMaxSoc, genparam.phInitSoc, pumpHydroGenSet,
+                       pumpHydroGenSymbols, genparam.scaleMWtoGW)
+
+    addDiscountRateParam(db, genparam.discountRate)
     addCppEmissionsCap(db, currCo2Cap)
     addSeasonDemandWeights(db, seasonDemandWeights)
 
 #    addMaxNumNewBuilds(db, newTechsCE, zoneSet, ipmZones, ipmZoneNums, typeSet, maxAddedZonalCapacPerTech,
 #                       ptCurtailedAll)
 
-    addMaxNumNewRenew(db, newWindCFsCEZonal, newSolarCFsCEZonal, ipmZones, ipmZoneNums)
+    addMaxNumNewRenew(db, newWindCFsCEZonal, newSolarCFsCEZonal, genparam.ipmZones, genparam.ipmZoneNums)
 
     # Add hydro max gen per time block
-    addHydroMaxGenPerSeason(db, hydroGenSet, gcmSet, hydroPotPerSeason, scaleMWtoGW)
+    hydroGenSet = db.get_set('hydroegu')
+    gcmSet = db.get_set('g')
+    addHydroMaxGenPerSeason(db, hydroGenSet, gcmSet, hydroPotPerSeason, genparam.scaleMWtoGW)
 
     # Add zonal demand, planning margin, and RE generation
-    addDemandParam(db, demandCEZonal, zoneSet, hourSet, gcmSet, hoursForCE, ipmZones, ipmZoneNums, scaleMWtoGW)
+    zoneSet = db.get_set('z')
+    zoneSymbols = [symb.keys[0] for symb in zoneSet.__iter__()]
+    hourSet = db.get_set('h')
+    addDemandParam(db, demandCEZonal, zoneSet, hourSet, gcmSet, hoursForCE, genparam.ipmZones, genparam.ipmZoneNums,
+                   genparam.scaleMWtoGW)
 
-    addPlanningReserveParam(db, planningReserveZonal, ipmZones, ipmZoneNums, zoneSet, zoneSymbols, scaleMWtoGW)
+    addPlanningReserveParam(db, planningReserveZonal, genparam.ipmZones, genparam.ipmZoneNums, zoneSet, zoneSymbols,
+                            genparam.scaleMWtoGW)
     #    addPeakHourToZoneParam(db, peakDemandHourZonal, peakHourSet, peakHrSymbols, ipmZones, ipmZoneNums)
 
-    addExistingRenewableMaxGenParams(db, gcmSet, zoneSet, ipmZones, ipmZoneNums, hourSet, hoursForCE,
-                                     hourlySolarGenCEZonal, hourlyWindGenCEZonal, scaleMWtoGW)
+    addExistingRenewableMaxGenParams(db, gcmSet, zoneSet, genparam.ipmZones, genparam.ipmZoneNums, hourSet, hoursForCE,
+                                     hourlySolarGenCEZonal, hourlyWindGenCEZonal, genparam.scaleMWtoGW)
 
     addRenewTechCFParams(db, renewTechSet, renewTechSymbols, gcmSet, zoneSet, hourSet, hoursForCE,
-                         newWindCFsCEZonal, newSolarCFsCEZonal, ipmZones, ipmZoneNums)
+                         newWindCFsCEZonal, newSolarCFsCEZonal, genparam.ipmZones, genparam.ipmZoneNums)
 
     # Add hourly capacity for curtailed techs
+    cellSet = db.get_set('c')
+    techCurtailedSet = db.get_set('techcurtailed')
     addTechCurtailedHourlyCapac(db, hourlyCurtailedTechCapacsCE, gcmSet, cellSet, techCurtailedSet, hourSet, hoursForCE,
-                                scaleMWtoGW)
+                                genparam.scaleMWtoGW)
 
     # Add tech heat rate and op cost params that reflect degradation
-    addEguHourlyParams(db, hourlyCapacsCE, gcmSet, genSet, hourSet, hoursForCE, scaleMWtoGW)
+    addEguHourlyParams(db, hourlyCapacsCE, gcmSet, genSet, hourSet, hoursForCE, genparam.scaleMWtoGW)
 
-    addEguOpCostParam(db, genFleetForCE, genSet, genSymbols, scaleLbToShortTon, scaleMWtoGW, scaleDollarsToThousands)
+    addEguOpCostParam(db, genFleetForCE, genSet, genSymbols, genparam.scaleLbToShortTon, genparam.scaleMWtoGW,
+                      genparam.scaleDollarsToThousands)
 
     # Add zone & line parameters
-    addLineCapacs(db, lineCapacs, lineSet, lineList, scaleMWtoGW)
-    addLineSourceAndSink(db, lineSet, lineList, ipmZones, ipmZoneNums)
-    addCellsToZones(db, cellSet, cellsToZones, ipmZones, ipmZoneNums)
+    lineSet = db.get_set('l')
+    addLineCapacs(db, genparam.lineCapacs, lineSet, genparam.lineList, genparam.scaleMWtoGW)
+    addLineSourceAndSink(db, lineSet, genparam.lineList, genparam.ipmZones, genparam.ipmZoneNums)
+    addCellsToZones(db, cellSet, cellsToZones, genparam.ipmZones, genparam.ipmZoneNums)
 
 
 def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam, reserveparam, curtailparam):
-    """Run unit commitment simulation
+    """Run unit commitment simulation for all climate simulations in parallel for the complete simulation period
 
     :param genFleet: 2d list with generator fleet for UCED simulation
-    :param zonalDemandProfile:
+    :param zonalDemandProfile: (2d list) list with hourly demand in each zone
     :param ucYear: integer with year of UCED run
-    :param currCo2Cap:
+    :param currCo2Cap: (float) value of CO2 cap
     :param genparam: object of class :mod:`Generalparameters`
     :param reserveparam: object of type :mod:`Reserveparameters`
     :param curtailparam: object of type :mod:`Curtailmentparameters`
@@ -944,10 +927,28 @@ def runUnitCommitment(genFleet, zonalDemandProfile, ucYear, currCo2Cap, genparam
 
 
 def runUnitCommitmentSingleGcm(list_args):
-    """
+    """Run unit commitment simulation for one single climate simulation for the complete simulation period
 
-    :param list_args:
-    :return:
+    This function was prepared to be ran using parallel simulation (multicore) so its argument is a list packing
+    all arguments. To reduce simulation time, some arrays that do not depend on climate simulations (in our model)
+    are executed outside of this function and passed as arguments (such as solar/wind generation)
+
+    :param list_args: (list) a list packing all arguments for this function
+                      - gcm: (string) name of gcm
+                      - fleetUC: (2d list) table of generator fleet
+                      - zonalDemandProfile: (2d list) hourly demand for complete simulation period for each zone
+                      - ucYear: (int) year of simulation
+                      - currCo2Cap: (float) value of co2 cap
+                      - genparam: object of type :mod:`Generalparameters`
+                      - reserveparam: object of type :mod:`Reserveparameters`
+                      - curtailparam: object of type :mod:`Curtailmentparameters`
+                      - zonalHourlyWindGen: (2d list) hourly wind generation for complete simulation period for each zone
+                      - zonalHourlySolarGen: (2d list) hourly solar generation for complete simulation period for each zone
+                      - zonalHourlyDfWind: (pd data frame) hourly wind generation for complete simulation period for each zone
+                      - zonalHourlyDfSolar: (pd data frame) hourly solar generation for complete simulation period for each zone
+                      - zonalSubhourlyDfWind: (pd data frame) sub-hourly wind generation for complete simulation period for each zone
+                      - zonalSubhourlyDfSolar: (pd data frame) sub-hourly solar generation for complete simulation period for each zone
+    :return: this function returns the integer value 0
     """
     # unpack list with arguments fot this function
     gcm, fleetUC, zonalDemandProfile, ucYear = list_args[0], list_args[1], list_args[2], list_args[3]
@@ -1234,8 +1235,10 @@ def runUnitCommitmentSingleGcm(list_args):
 def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenUC, hydroPotentialUC, demandUC,
                        hoursForUC, onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSoc, co2Price, regUpUC,
                        regDownUC, flexUC, contUC, genparam, reserveparam):
-    """RUN UNIT COMMITMENT MODEL
+    """Run the unit commintment and economic dispatch optimization for a single day
 
+    This function is called sequentially in order to simulate dispatch over all days in the complete simulation
+    horizon
 
     :param fleetUC: 2d list with generator fleet for UCED simulation
     :param hourlyCapacsUC:
@@ -1258,12 +1261,6 @@ def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenU
     :return:
 
     """
-    currDir = os.getcwd()
-
-    (ucFilename, dataRoot, scaleMWtoGW, scaleDollarsToThousands,
-     scaleLbToShortTon) = (genparam.ucFilename, genparam.dataRoot, genparam.scaleMWtoGW,
-                           genparam.scaleDollarsToThousands, genparam.scaleLbToShortTon)
-
     gamsFileDir = os.path.join(genparam.resultsDir, 'GAMS')
     gamsSysDir = genparam.pathSysGams.strip()
 
@@ -1276,19 +1273,14 @@ def callUnitCommitment(fleetUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenU
 
     # Add sets and parameters to GAMS database
 
-    # cost of non supplied energy (deficit)
-    cnse = genparam.costnse
-
-    (genSet, genSymbols, hydroGenSet, hydroGenSymbols, hourSet, hourSymbols, zoneSet, zoneSymbols,
-     lineSet) = addSetsToDatabaseUC(dbUC, fleetUC, hoursForUC, genparam)
+    x = addSetsToDatabaseUC(dbUC, fleetUC, hoursForUC, genparam)
 
     addParametersToDatabaseUC(dbUC, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenUC, hydroPotentialUC, demandUC,
-                              fleetUC, genSet, genSymbols, hydroGenSet, hydroGenSymbols, hourSet, hourSymbols, zoneSet,
-                              zoneSymbols, lineSet, cnse, onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSoc,
-                              co2Price, hoursForUC, flexUC, contUC, regUpUC, regDownUC, genparam, reserveparam)
+                              fleetUC, onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSoc, co2Price,
+                              hoursForUC, flexUC, contUC, regUpUC, regDownUC, genparam, reserveparam)
 
     # Load and run GAMS model
-    ucModel = wsUC.add_job_from_file(ucFilename)
+    ucModel = wsUC.add_job_from_file(genparam.ucFilename)
     optUC = GamsOptions(wsUC)
     optUC.defines['gdxincname'] = dbUC.name
     ucModel.run(optUC, databases=dbUC, output=sys.stdout)
@@ -1329,9 +1321,8 @@ def addSetsToDatabaseUC(db, fleetUC, hoursForUC, genparam):
 
 
 def addParametersToDatabaseUC(db, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGenUC, hydroPotentialUC, demandUC,
-                              fleetUC, genSet, genSymbols, hydroGenSet, hydroGenSymbols, hourSet, hourSymbols, zoneSet,
-                              zoneSymbols, lineSet, cnse, onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSoc,
-                              co2Price, hoursForUC, flexUC, contUC, regUpUC, regDownUC, genparam, reserveparam):
+                              fleetUC, onOffInitial, genAboveMinInitial, mdtCarriedInitial, initSoc, co2Price,
+                              hoursForUC, flexUC, contUC, regUpUC, regDownUC, genparam, reserveparam):
     """Add parameters to GAMS database
 
     This function adds the parameters to the GAMS database needed to run the UCED optimization
@@ -1343,21 +1334,11 @@ def addParametersToDatabaseUC(db, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGe
     :param hydroPotentialUC:
     :param demandUC:
     :param fleetUC: 2d list with generator fleet for UCED simulation
-    :param genSet:
-    :param genSymbols:
-    :param hydroGenSet:
-    :param hydroGenSymbols:
-    :param hourSet:
-    :param hourSymbols:
-    :param zoneSet:
-    :param zoneSymbols:
-    :param lineSet:
-    :param cnse:
     :param onOffInitial:
     :param genAboveMinInitial:
     :param mdtCarriedInitial:
     :param initSoc: initial state of charge for pumped storage
-    :param co2Price:
+    :param co2Price: (float) price of co2
     :param hoursForUC: 1d list with hours (1-8760) that will be used in this UCED run
     :param flexUC:
     :param contUC:
@@ -1366,6 +1347,18 @@ def addParametersToDatabaseUC(db, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGe
     :param genparam: object of class :mod:`Generalparameters`
     :param reserveparam: object of type :mod:`Reserveparameters`
     """
+
+    # get needed sets and set symbols from data base
+    genSet = db.get_set('egu')
+    genSymbols = [symb.keys[0] for symb in genSet.__iter__()]
+
+    hydroGenSet = db.get_set('hydroegu')
+
+    hourSet = db.get_set('h')
+
+    zoneSet = db.get_set('z')
+
+    lineSet = db.get_set('l')
 
     (rrToRegTime, rrToFlexTime, rrToContTime) = (reserveparam.rampRateToRegReserveScalar,
                                                  reserveparam.rampRateToFlexReserveScalar,
@@ -1404,7 +1397,7 @@ def addParametersToDatabaseUC(db, hourlyCapacsUC, hourlyWindGenUC, hourlySolarGe
     addFlexReserveParameters(db, flexUC, rrToFlexTime, hourSet, hoursForUC, zoneSet, 'UC', genparam)
     addContReserveParameters(db, contUC, rrToContTime, hourSet, hoursForUC, zoneSet, genparam)
 
-    addCostNonservedEnergy(db, cnse, genparam.scaleMWtoGW, genparam.scaleDollarsToThousands)
+    addCostNonservedEnergy(db, genparam.cnse, genparam.scaleMWtoGW, genparam.scaleDollarsToThousands)
 
     addCo2Price(db, co2Price, genparam.scaleDollarsToThousands)
 
