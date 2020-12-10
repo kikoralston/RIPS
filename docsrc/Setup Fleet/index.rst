@@ -3,6 +3,6 @@
 Setup Fleet
 ===========
 
-.. automodule:: SetupGeneratorFleet
+.. automodule:: SetupFleet.SetupGeneratorFleet
     :members:
 

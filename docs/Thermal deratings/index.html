@@ -34,7 +34,7 @@
               href="../genindex.html"/>
         <link rel="search" title="Search" href="../search.html"/>
     <link rel="top" title="Capacity Expansion / Unit Commitment and Economic Dispatch under climate change  documentation" href="../index.html"/>
-        <link rel="prev" title="Main Scripts" href="../Main%20Scripts/index.html"/> 
+        <link rel="prev" title="Main Scripts" href="../Main Scripts/index.html"/> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -81,10 +81,10 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../intro.html">Bla</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Input%20data/index.html">Input data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Input data/index.html">Input data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Parameters/index.html">Parameters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Setup%20Fleet/index.html">Setup Fleet</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Main%20Scripts/index.html">Main Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup Fleet/index.html">Setup Fleet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Main Scripts/index.html">Main Scripts</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Thermal Deratings</a></li>
 </ul>
 
@@ -130,66 +130,74 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="module-LoadEligibleCellWaterTs">
-<span id="id1"></span><span id="thermal-deratings"></span><h1>Thermal Deratings<a class="headerlink" href="#module-LoadEligibleCellWaterTs" title="Permalink to this headline">¶</a></h1>
-<dl class="py function">
-<dt id="LoadEligibleCellWaterTs.loadEligibleCellWaterTs">
-<code class="sig-name descname">loadEligibleCellWaterTs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">currYear</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">curtailparam</span></em>, <em class="sig-param"><span class="n">netcdf</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">n_cells</span><span class="o">=</span><span class="default_value">100</span></em><span class="sig-paren">)</span><a class="headerlink" href="#LoadEligibleCellWaterTs.loadEligibleCellWaterTs" title="Permalink to this definition">¶</a></dt>
+  <div class="section" id="module-thermalderatings.LoadEligibleCellWaterTs">
+<span id="id1"></span><span id="thermal-deratings"></span><h1>Thermal Deratings<a class="headerlink" href="#module-thermalderatings.LoadEligibleCellWaterTs" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="thermalderatings.LoadEligibleCellWaterTs.loadEligibleCellWaterTs">
+<code class="descname">loadEligibleCellWaterTs</code><span class="sig-paren">(</span><em>genFleet</em>, <em>currYear</em>, <em>genparam</em>, <em>curtailparam</em>, <em>netcdf=True</em>, <em>n_cells=100</em><span class="sig-paren">)</span><a class="headerlink" href="#thermalderatings.LoadEligibleCellWaterTs.loadEligibleCellWaterTs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load daily average water temperatures for grid cells for current simulation year</p>
 <p>This function selects the eligible grid cells that will be used in the analysis and loads the water data of current
 simulation year.</p>
 <p>Current options for which cells can host new plants:</p>
 <ul class="simple">
-<li><p>‘All’ (get all cell data)</p></li>
-<li><p>‘WithGen’ (get data for cells that have generator inside at beginning of CE runs).</p></li>
-<li><p>‘max_flow’ (get data for the first <code class="docutils literal notranslate"><span class="pre">n_cells</span></code> cells with max average flow in current year.).</p></li>
-<li><p>‘macrocell’ (get data for cells defined in a file ‘macrocells.csv’ that defines the centers of spatial clusters of cells. This was done to decrease computational burden.).</p></li>
+<li>‘All’ (get all cell data)</li>
+<li>‘WithGen’ (get data for cells that have generator inside at beginning of CE runs).</li>
+<li>‘max_flow’ (get data for the first <code class="docutils literal notranslate"><span class="pre">n_cells</span></code> cells with max average flow in current year.).</li>
+<li>‘macrocell’ (get data for cells defined in a file ‘macrocells.csv’ that defines the centers of spatial clusters of cells. This was done to decrease computational burden.).</li>
 </ul>
 <p>This option must be defined in the object <code class="docutils literal notranslate"><span class="pre">curtailparam</span></code> in the field <code class="docutils literal notranslate"><span class="pre">cellsEligibleForNewPlants</span></code></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>genFleet</strong> – (list) 2d list with generator fleet</p></li>
-<li><p><strong>currYear</strong> – (integer) current year of simulation</p></li>
-<li><p><strong>genparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
-<li><p><strong>curtailparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Curtailmentparameters" title="Curtailmentparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Curtailmentparameters</span></code></a></p></li>
-<li><p><strong>netcdf</strong> – (boolean) True if files are in netcdf format</p></li>
-<li><p><strong>n_cells</strong> – (integer) number of cells to consider in ‘max_flow’ option</p></li>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>genFleet</strong> – (list) 2d list with generator fleet</li>
+<li><strong>currYear</strong> – (integer) current year of simulation</li>
+<li><strong>genparam</strong> – object of type <code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></li>
+<li><strong>curtailparam</strong> – object of type <code class="xref py py-mod docutils literal notranslate"><span class="pre">Curtailmentparameters</span></code></li>
+<li><strong>netcdf</strong> – (boolean) True if files are in netcdf format</li>
+<li><strong>n_cells</strong> – (integer) number of cells to consider in ‘max_flow’ option</li>
 </ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>dict of {cell folder name : [[Datetime],[AverageWaterT(degC)], [AirT], [flow]]}</p>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">dict of {cell folder name : [[Datetime],[AverageWaterT(degC)], [AirT], [flow]]}</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
-<dl class="py function">
-<dt id="LoadEligibleCellWaterTs.setCellFolders">
-<code class="sig-name descname">setCellFolders</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">currYear</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">curtailparam</span></em>, <em class="sig-param"><span class="n">netcdf</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">n_cells</span><span class="o">=</span><span class="default_value">100</span></em><span class="sig-paren">)</span><a class="headerlink" href="#LoadEligibleCellWaterTs.setCellFolders" title="Permalink to this definition">¶</a></dt>
+<dl class="function">
+<dt id="thermalderatings.LoadEligibleCellWaterTs.setCellFolders">
+<code class="descname">setCellFolders</code><span class="sig-paren">(</span><em>genFleet</em>, <em>currYear</em>, <em>genparam</em>, <em>curtailparam</em>, <em>netcdf=True</em>, <em>n_cells=100</em><span class="sig-paren">)</span><a class="headerlink" href="#thermalderatings.LoadEligibleCellWaterTs.setCellFolders" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get list of eligible cells with future data in each ipm zone</p>
 <p>Current options for which cells can host new plants:</p>
 <ul class="simple">
-<li><p>‘All’ (get all cell data)</p></li>
-<li><p>‘WithGen’ (get data for cells that have generator inside at beginning of CE runs).</p></li>
-<li><p>‘max_flow’ (get data for the first <code class="docutils literal notranslate"><span class="pre">n_cells</span></code> cells with max average flow in current year.).</p></li>
-<li><p>‘macrocell’ (get data for cells defined in a file ‘macrocells.csv’ that defines the centers of spatial clusters of cells. This was done to decrease computational burden.).</p></li>
+<li>‘All’ (get all cell data)</li>
+<li>‘WithGen’ (get data for cells that have generator inside at beginning of CE runs).</li>
+<li>‘max_flow’ (get data for the first <code class="docutils literal notranslate"><span class="pre">n_cells</span></code> cells with max average flow in current year.).</li>
+<li>‘macrocell’ (get data for cells defined in a file ‘macrocells.csv’ that defines the centers of spatial clusters of cells. This was done to decrease computational burden.).</li>
 </ul>
 <p>This option must be defined in the object <code class="docutils literal notranslate"><span class="pre">curtailparam</span></code> in the field <code class="docutils literal notranslate"><span class="pre">cellsEligibleForNewPlants</span></code></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>genFleet</strong> – 2d list with generator fleet</p></li>
-<li><p><strong>currYear</strong> – (integer) current year of simulation</p></li>
-<li><p><strong>genparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a></p></li>
-<li><p><strong>curtailparam</strong> – object of type <a class="reference internal" href="../Parameters/index.html#module-Curtailmentparameters" title="Curtailmentparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Curtailmentparameters</span></code></a></p></li>
-<li><p><strong>netcdf</strong> – (boolean) if true reads water data from NETCDF files (new format from August 2018)</p></li>
-<li><p><strong>n_cells</strong> – (integer)  number of cells to consider in ‘max_flow’ option</p></li>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>genFleet</strong> – 2d list with generator fleet</li>
+<li><strong>currYear</strong> – (integer) current year of simulation</li>
+<li><strong>genparam</strong> – object of type <code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></li>
+<li><strong>curtailparam</strong> – object of type <code class="xref py py-mod docutils literal notranslate"><span class="pre">Curtailmentparameters</span></code></li>
+<li><strong>netcdf</strong> – (boolean) if true reads water data from NETCDF files (new format from August 2018)</li>
+<li><strong>n_cells</strong> – (integer)  number of cells to consider in ‘max_flow’ option</li>
 </ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
@@ -202,7 +210,7 @@ simulation year.</p>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
       
-        <a href="../Main%20Scripts/index.html" class="btn btn-neutral" title="Main Scripts" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../Main Scripts/index.html" class="btn btn-neutral" title="Main Scripts" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -243,7 +251,7 @@ simulation year.</p>
       <script type="text/javascript" src="../_static/underscore.js"></script>
       <script type="text/javascript" src="../_static/doctools.js"></script>
       <script type="text/javascript" src="../_static/language_data.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

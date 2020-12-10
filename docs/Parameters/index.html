@@ -34,8 +34,8 @@
               href="../genindex.html"/>
         <link rel="search" title="Search" href="../search.html"/>
     <link rel="top" title="Capacity Expansion / Unit Commitment and Economic Dispatch under climate change  documentation" href="../index.html"/>
-        <link rel="next" title="Setup Fleet" href="../Setup%20Fleet/index.html"/>
-        <link rel="prev" title="Input data" href="../Input%20data/index.html"/> 
+        <link rel="next" title="Setup Fleet" href="../Setup Fleet/index.html"/>
+        <link rel="prev" title="Input data" href="../Input data/index.html"/> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -82,16 +82,16 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../intro.html">Bla</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Input%20data/index.html">Input data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Input data/index.html">Input data</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Parameters</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#module-Generalparameters">General Parameters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-Curtailmentparameters">Curtailment Parameters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-Reserveparameters">Reserve Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-Parameters.Generalparameters">General Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-Parameters.Curtailmentparameters">Curtailment Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-Parameters.Reserveparameters">Reserve Parameters</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../Setup%20Fleet/index.html">Setup Fleet</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Main%20Scripts/index.html">Main Scripts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Thermal%20deratings/index.html">Thermal Deratings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup Fleet/index.html">Setup Fleet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Main Scripts/index.html">Main Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Thermal deratings/index.html">Thermal Deratings</a></li>
 </ul>
 
             
@@ -138,170 +138,210 @@
             
   <div class="section" id="parameters">
 <span id="id1"></span><h1>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="module-Generalparameters">
-<span id="general-parameters"></span><h2>General Parameters<a class="headerlink" href="#module-Generalparameters" title="Permalink to this headline">¶</a></h2>
-<dl class="py class">
-<dt id="Generalparameters.Generalparameters">
-<em class="property">class </em><code class="sig-name descname">Generalparameters</code><a class="headerlink" href="#Generalparameters.Generalparameters" title="Permalink to this definition">¶</a></dt>
+<div class="section" id="module-Parameters.Generalparameters">
+<span id="general-parameters"></span><h2>General Parameters<a class="headerlink" href="#module-Parameters.Generalparameters" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="Parameters.Generalparameters.Generalparameters">
+<em class="property">class </em><code class="descname">Generalparameters</code><a class="headerlink" href="#Parameters.Generalparameters.Generalparameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generalparameters class</p>
 <p>This class contains all general parameters used in the simulation. I aggregated all of them inside this class
 to make it easier to pass them as argument to the functions.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dataRoot</strong> – (string) path to folder with general input data</p></li>
-<li><p><strong>pathSysGams</strong> – (string) path to gams installation</p></li>
-<li><p><strong>runCE</strong> – (boolean) if True run CE simulation</p></li>
-<li><p><strong>runUC</strong> – (boolean) if True run UCED simulation</p></li>
-<li><p><strong>runFirstUCYear</strong> – (boolean) if True run UCED in initial year of simulation</p></li>
-<li><p><strong>startYear</strong> – (integer) first year of simulation</p></li>
-<li><p><strong>endYear</strong> – (integer) end year of simulation</p></li>
-<li><p><strong>yearStepCE</strong> – (integer) size of steps (in years) in CE simulation</p></li>
-<li><p><strong>daysPerSeason</strong> – (integer) number of days in each season considered in CE simulation</p></li>
-<li><p><strong>analysisArea</strong> – (string) analysis area</p></li>
-<li><p><strong>useLineLimits</strong> – (boolean) if True, tries to read file with transmission limits (dataRoot/Transmission/). If False, limits = +Inf</p></li>
-<li><p><strong>referenceCase</strong> – (boolean) If True, run case without curtailments or effects of climate change in demand</p></li>
-<li><p><strong>incDemandCC</strong> – (boolean) If True, run case WITH effects of climate change in demand</p></li>
-<li><p><strong>incHydroCC</strong> – (boolean) If True, run case WITH effects of climate change in hydropower</p></li>
-<li><p><strong>incCurtailments</strong> – (boolean) whether to model curtailments,whether to model env regs on water T</p></li>
-<li><p><strong>incRegs</strong> – (boolean) whether to model curtailments,whether to model env regs on water T</p></li>
-<li><p><strong>ptCurtailed</strong> – (set) types of power plants for which thermal deratings simulations will be performed (default: {‘Coal Steam’, ‘Combined Cycle’, ‘Nuclear’})</p></li>
-<li><p><strong>ptCurtailedRegs</strong> – (set) types of power plants for which thermal curtailments due to enviro regulations simulations will be performed (default: {‘Coal Steam’, ‘Coal Steam CCS’, ‘Combined Cycle’, ‘Combined Cycle CCS’, ‘Nuclear’})</p></li>
-<li><p><strong>ptCurtailedAll</strong> – (set) used internally only. should not be set by user. Union of ptCurtailed and ptCurtailedRegs</p></li>
-<li><p><strong>cellsEligibleForNewPlants</strong> – (string) Determines which cells new plants can be sited in; can be all all cells or those w/ gens already. ‘all’ (all cells) or ‘withGens’ (only cells with gen inside)</p></li>
-<li><p><strong>cellNewTechCriteria</strong> – (string) Of those cells given above parameter, whether input all of them or just the one w/ max wtr T per zone. ‘all’ or ‘maxWaterT’ (maxWaterT: only include cell w/ max water T in CE.)</p></li>
-<li><p><strong>compressFleet</strong> – (boolean) Compress fleet by agregating small generators?</p></li>
-<li><p><strong>co2CapPercentage</strong> – (float) Cap of co2 emission in final year of analysis <strong>as percentage of emission in base year</strong> (i.e., 100% - %reduction)</p></li>
-<li><p><strong>scenario</strong> – (string) File with fossil fuel cost scenario (e.g. ‘FuelPriceTimeSeries.csv’)</p></li>
-<li><p><strong>fuelPricesTimeSeries</strong> – (list) used internally only. should not be set by user.</p></li>
-<li><p><strong>resultsDir</strong> – (string) path to folder where output data will be saved</p></li>
-<li><p><strong>tzAnalysis</strong> – (string) timezone of analysis (default: ‘EST’)</p></li>
-<li><p><strong>projectName</strong> – (string) project name</p></li>
-<li><p><strong>windGenDataYr</strong> – (integer) year of wind database that will be used for wind generation simulations (e.g.: 2009, this was picked somewhat arbitrarily - average CF of all years in WIND data)</p></li>
-<li><p><strong>capacExpFilename</strong> – (string) name of gams file with capacity expansion model (e.g., ‘CERIPS24July2017PS.gms’)</p></li>
-<li><p><strong>maxAddedZonalCapacPerTech</strong> – (integer) maximum number of new techs (by type) that can be added in each CE xtep</p></li>
-<li><p><strong>incITC</strong> – (boolean) include ITC?</p></li>
-<li><p><strong>retirementCFCutoff</strong> – (float) retire units w/ CF lower than this value</p></li>
-<li><p><strong>ptEligRetCF</strong> – (list) types of power plants that can be retired due to low CF</p></li>
-<li><p><strong>selectCurtailDays</strong> – (boolean) add days with maximum curtailment to special days</p></li>
-<li><p><strong>planningReserve</strong> – (float) planning reserve as fraction of peak demand</p></li>
-<li><p><strong>discountRate</strong> – (float) discount rate used for computation of annualized costs</p></li>
-<li><p><strong>allowCoalWithoutCCS</strong> – (boolean) allow Coal without CCS?</p></li>
-<li><p><strong>onlyNSPSUnits</strong> – (boolean) allow only NSPS Units?</p></li>
-<li><p><strong>permitOncethru</strong> – (boolean) permit adding power plants with Once-through cooling?</p></li>
-<li><p><strong>retireOldPlants</strong> – (boolean) retire Old Plants?</p></li>
-<li><p><strong>ucFilename</strong> – (string) ‘UCRIPS18April2017.gms’</p></li>
-<li><p><strong>calculateCO2Price</strong> – (boolean) True</p></li>
-<li><p><strong>daysOpt</strong> – (integer) number of days being optimized in each individual UC run</p></li>
-<li><p><strong>daysLA</strong> – (integer) number of “Look Ahead Days” in each individual UC run</p></li>
-<li><p><strong>ocAdderMin</strong> – (float) 0</p></li>
-<li><p><strong>ocAdderMax</strong> – (float) 0.05 $/MWh</p></li>
-<li><p><strong>ucDayInitial</strong> – (integer) initial day of the year for complete UC annual simulation</p></li>
-<li><p><strong>ucDayEnd</strong> – (integer) final day of the year for complete UC annual simulation</p></li>
-<li><p><strong>costnse</strong> – (float) cost of non supplied energy (cnse) in $/MWh</p></li>
-<li><p><strong>phEff</strong> – (float) pumped storage efficiency</p></li>
-<li><p><strong>phMaxSoc</strong> – (float) maximum state of charge of pumped hydro. Max soc as multiple of capacity</p></li>
-<li><p><strong>phInitSoc</strong> – (float) initial state of charge of pumped hydro. Init SOC as fraction of max soc</p></li>
-<li><p><strong>scaleMWtoGW</strong> – 1000</p></li>
-<li><p><strong>scaleDollarsToThousands</strong> – 1000</p></li>
-<li><p><strong>scaleLbToShortTon</strong> – 2000</p></li>
-<li><p><strong>states</strong> – (list) used internally only. should not be set by user.</p></li>
-<li><p><strong>statesAbbrev</strong> – (list) used internally only. should not be set by user.</p></li>
-<li><p><strong>ipmZones</strong> – (list) used internally only. should not be set by user.</p></li>
-<li><p><strong>fipsToZones</strong> – (list) used internally only. should not be set by user.</p></li>
-<li><p><strong>fipsToPolys</strong> – (list) used internally only. should not be set by user.</p></li>
-<li><p><strong>statePolys</strong> – (list) used internally only. should not be set by user.</p></li>
-<li><p><strong>ipmZoneNums</strong> – (list) used internally only. should not be set by user.</p></li>
-<li><p><strong>lineList</strong> – (list) used internally only. should not be set by user.</p></li>
-<li><p><strong>lineCapacs</strong> – (list) used internally only. should not be set by user.</p></li>
-<li><p><strong>ncores_py</strong> – (integer) number of cores to use for parallel simulation in python</p></li>
-<li><p><strong>ncores_gams</strong> – (integer) number of cores to use for parallel simulation in gams</p></li>
-<li><p><strong>coldStart</strong> – (boolean) “Cold Start” for CE and UC models. Read files with initial conditions in first run</p></li>
-<li><p><strong>gcmranking</strong> – (list) list with ranking of GCMs that will be chosen in each CE year (e.g. [3, 9, 15])</p></li>
-<li><p><strong>rcp</strong> – (string) name of rcp being simulated (rcp45 or rcp85)</p></li>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>dataRoot</strong> – (string) path to folder with general input data</li>
+<li><strong>pathSysGams</strong> – (string) path to gams installation</li>
+<li><strong>runCE</strong> – (boolean) if True run CE simulation</li>
+<li><strong>runUC</strong> – (boolean) if True run UCED simulation</li>
+<li><strong>runFirstUCYear</strong> – (boolean) if True run UCED in initial year of simulation</li>
+<li><strong>startYear</strong> – (integer) first year of simulation</li>
+<li><strong>endYear</strong> – (integer) end year of simulation</li>
+<li><strong>yearStepCE</strong> – (integer) size of steps (in years) in CE simulation</li>
+<li><strong>daysPerSeason</strong> – (integer) number of days in each season considered in CE simulation</li>
+<li><strong>analysisArea</strong> – (string) analysis area</li>
+<li><strong>useLineLimits</strong> – (boolean) if True, tries to read file with transmission limits (dataRoot/Transmission/). If False, limits = +Inf</li>
+<li><strong>referenceCase</strong> – (boolean) If True, run case without curtailments or effects of climate change in demand</li>
+<li><strong>incDemandCC</strong> – (boolean) If True, run case WITH effects of climate change in demand</li>
+<li><strong>incHydroCC</strong> – (boolean) If True, run case WITH effects of climate change in hydropower</li>
+<li><strong>incCurtailments</strong> – (boolean) whether to model curtailments,whether to model env regs on water T</li>
+<li><strong>incRegs</strong> – (boolean) whether to model curtailments,whether to model env regs on water T</li>
+<li><strong>ptCurtailed</strong> – (set) types of power plants for which thermal deratings simulations will be performed (default: {‘Coal Steam’, ‘Combined Cycle’, ‘Nuclear’})</li>
+<li><strong>ptCurtailedRegs</strong> – (set) types of power plants for which thermal curtailments due to enviro regulations simulations will be performed (default: {‘Coal Steam’, ‘Coal Steam CCS’, ‘Combined Cycle’, ‘Combined Cycle CCS’, ‘Nuclear’})</li>
+<li><strong>ptCurtailedAll</strong> – (set) used internally only. should not be set by user. Union of ptCurtailed and ptCurtailedRegs</li>
+<li><strong>cellsEligibleForNewPlants</strong> – (string) Determines which cells new plants can be sited in; can be all all cells or those w/ gens already. ‘all’ (all cells) or ‘withGens’ (only cells with gen inside)</li>
+<li><strong>cellNewTechCriteria</strong> – (string) Of those cells given above parameter, whether input all of them or just the one w/ max wtr T per zone. ‘all’ or ‘maxWaterT’ (maxWaterT: only include cell w/ max water T in CE.)</li>
+<li><strong>compressFleet</strong> – (boolean) Compress fleet by agregating small generators?</li>
+<li><strong>co2CapPercentage</strong> – (float) Cap of co2 emission in final year of analysis <strong>as percentage of emission in base year</strong> (i.e., 100% - %reduction)</li>
+<li><strong>scenario</strong> – (string) File with fossil fuel cost scenario (e.g. ‘FuelPriceTimeSeries.csv’)</li>
+<li><strong>fuelPricesTimeSeries</strong> – (list) used internally only. should not be set by user.</li>
+<li><strong>resultsDir</strong> – (string) path to folder where output data will be saved</li>
+<li><strong>tzAnalysis</strong> – (string) timezone of analysis (default: ‘EST’)</li>
+<li><strong>projectName</strong> – (string) project name</li>
+<li><strong>windGenDataYr</strong> – (integer) year of wind database that will be used for wind generation simulations (e.g.: 2009, this was picked somewhat arbitrarily - average CF of all years in WIND data)</li>
+<li><strong>capacExpFilename</strong> – (string) name of gams file with capacity expansion model (e.g., ‘CERIPS24July2017PS.gms’)</li>
+<li><strong>maxAddedZonalCapacPerTech</strong> – (integer) maximum number of new techs (by type) that can be added in each CE xtep</li>
+<li><strong>incITC</strong> – (boolean) include ITC?</li>
+<li><strong>retirementCFCutoff</strong> – (float) retire units w/ CF lower than this value</li>
+<li><strong>ptEligRetCF</strong> – (list) types of power plants that can be retired due to low CF</li>
+<li><strong>selectCurtailDays</strong> – (boolean) add days with maximum curtailment to special days</li>
+<li><strong>planningReserve</strong> – (float) planning reserve as fraction of peak demand</li>
+<li><strong>discountRate</strong> – (float) discount rate used for computation of annualized costs</li>
+<li><strong>allowCoalWithoutCCS</strong> – (boolean) allow Coal without CCS?</li>
+<li><strong>onlyNSPSUnits</strong> – (boolean) allow only NSPS Units?</li>
+<li><strong>permitOncethru</strong> – (boolean) permit adding power plants with Once-through cooling?</li>
+<li><strong>retireOldPlants</strong> – (boolean) retire Old Plants?</li>
+<li><strong>ucFilename</strong> – (string) ‘UCRIPS18April2017.gms’</li>
+<li><strong>calculateCO2Price</strong> – (boolean) True</li>
+<li><strong>daysOpt</strong> – (integer) number of days being optimized in each individual UC run</li>
+<li><strong>daysLA</strong> – (integer) number of “Look Ahead Days” in each individual UC run</li>
+<li><strong>ocAdderMin</strong> – (float) 0</li>
+<li><strong>ocAdderMax</strong> – (float) 0.05 $/MWh</li>
+<li><strong>ucDayInitial</strong> – (integer) initial day of the year for complete UC annual simulation</li>
+<li><strong>ucDayEnd</strong> – (integer) final day of the year for complete UC annual simulation</li>
+<li><strong>costnse</strong> – (float) cost of non supplied energy (cnse) in $/MWh</li>
+<li><strong>phEff</strong> – (float) pumped storage efficiency</li>
+<li><strong>phMaxSoc</strong> – (float) maximum state of charge of pumped hydro. Max soc as multiple of capacity</li>
+<li><strong>phInitSoc</strong> – (float) initial state of charge of pumped hydro. Init SOC as fraction of max soc</li>
+<li><strong>scaleMWtoGW</strong> – 1000</li>
+<li><strong>scaleDollarsToThousands</strong> – 1000</li>
+<li><strong>scaleLbToShortTon</strong> – 2000</li>
+<li><strong>states</strong> – (list) used internally only. should not be set by user.</li>
+<li><strong>statesAbbrev</strong> – (list) used internally only. should not be set by user.</li>
+<li><strong>ipmZones</strong> – (list) used internally only. should not be set by user.</li>
+<li><strong>fipsToZones</strong> – (list) used internally only. should not be set by user.</li>
+<li><strong>fipsToPolys</strong> – (list) used internally only. should not be set by user.</li>
+<li><strong>statePolys</strong> – (list) used internally only. should not be set by user.</li>
+<li><strong>ipmZoneNums</strong> – (list) used internally only. should not be set by user.</li>
+<li><strong>lineList</strong> – (list) used internally only. should not be set by user.</li>
+<li><strong>lineCapacs</strong> – (list) used internally only. should not be set by user.</li>
+<li><strong>ncores_py</strong> – (integer) number of cores to use for parallel simulation in python</li>
+<li><strong>ncores_gams</strong> – (integer) number of cores to use for parallel simulation in gams</li>
+<li><strong>hotStart</strong> – (boolean) “Hot Start” for CE and UC models. Read files with initial conditions in first run</li>
+<li><strong>gcmranking</strong> – (list) list with ranking of GCMs that will be chosen in each CE year (e.g. [3, 9, 15])</li>
+<li><strong>rcp</strong> – (string) name of rcp being simulated (rcp45 or rcp85)</li>
 </ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt id="Generalparameters.Generalparameters.load">
-<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Generalparameters.Generalparameters.load" title="Permalink to this definition">¶</a></dt>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="Parameters.Generalparameters.Generalparameters.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>fname</em><span class="sig-paren">)</span><a class="headerlink" href="#Parameters.Generalparameters.Generalparameters.load" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reads formatted txt file with the values of the parameters and allocates to object</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>fname</strong> – string with path to parameter file</p>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fname</strong> – string with path to parameter file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
 
 </div>
-<div class="section" id="module-Curtailmentparameters">
-<span id="curtailment-parameters"></span><span id="curtail-param"></span><h2>Curtailment Parameters<a class="headerlink" href="#module-Curtailmentparameters" title="Permalink to this headline">¶</a></h2>
-<dl class="py class">
-<dt id="Curtailmentparameters.Curtailmentparameters">
-<em class="property">class </em><code class="sig-name descname">Curtailmentparameters</code><a class="headerlink" href="#Curtailmentparameters.Curtailmentparameters" title="Permalink to this definition">¶</a></dt>
+<div class="section" id="module-Parameters.Curtailmentparameters">
+<span id="curtailment-parameters"></span><span id="curtail-param"></span><h2>Curtailment Parameters<a class="headerlink" href="#module-Parameters.Curtailmentparameters" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="Parameters.Curtailmentparameters.Curtailmentparameters">
+<em class="property">class </em><code class="descname">Curtailmentparameters</code><a class="headerlink" href="#Parameters.Curtailmentparameters.Curtailmentparameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Curtailmentparameters class</p>
 <p>This class contains parameters needed to configure the</p>
-<dl class="py method">
-<dt id="Curtailmentparameters.Curtailmentparameters.load">
-<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Curtailmentparameters.Curtailmentparameters.load" title="Permalink to this definition">¶</a></dt>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>envRegMaxT</strong> – (dict) dictionary with maximum stream water temperature values in each state ({state : max water T (deg C)})</li>
+<li><strong>maxFracFlow</strong> – (dict) dictionary with minimum river flow ({state : fraction})</li>
+<li><strong>rbmRootDir</strong> – (string) full path to folder of NETCDF files with water and climate date</li>
+<li><strong>rbmDataDir</strong> – (string) not used anymore</li>
+<li><strong>rbmOutputDir</strong> – (string) not used anymore</li>
+<li><strong>locPrecision</strong> – (int) number of decimal digits in cells lat and long values</li>
+<li><strong>listgcms</strong> – list() list with gcm values being simulated (this is not used anymore)</li>
+<li><strong>basenamemeteo</strong> – ‘forcing_maca_hourly_{0}_{1:4d}0101-{1:4d}1231.nc’</li>
+<li><strong>basenamestreamT</strong> – ‘serc.{}.stream_T.nc’</li>
+<li><strong>basenameflow</strong> – ‘serc.{}.KW.flow.MACA.regulated.nc’</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="Parameters.Curtailmentparameters.Curtailmentparameters.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>fname</em><span class="sig-paren">)</span><a class="headerlink" href="#Parameters.Curtailmentparameters.Curtailmentparameters.load" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reads formatted txt file with the values of the parameters and allocates to object</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>fname</strong> – string with path to parameter file</p>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fname</strong> – string with path to parameter file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
-<dl class="py method">
-<dt id="Curtailmentparameters.Curtailmentparameters.writefile">
-<code class="sig-name descname">writefile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Curtailmentparameters.Curtailmentparameters.writefile" title="Permalink to this definition">¶</a></dt>
+<dl class="method">
+<dt id="Parameters.Curtailmentparameters.Curtailmentparameters.writefile">
+<code class="descname">writefile</code><span class="sig-paren">(</span><em>fname</em><span class="sig-paren">)</span><a class="headerlink" href="#Parameters.Curtailmentparameters.Curtailmentparameters.writefile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes parameters to a formatted txt file</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>fname</strong> – string with path to parameter file</p>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fname</strong> – string with path to parameter file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
 
 </div>
-<div class="section" id="module-Reserveparameters">
-<span id="reserve-parameters"></span><span id="reserve-param"></span><h2>Reserve Parameters<a class="headerlink" href="#module-Reserveparameters" title="Permalink to this headline">¶</a></h2>
-<dl class="py class">
-<dt id="Reserveparameters.Reserveparameters">
-<em class="property">class </em><code class="sig-name descname">Reserveparameters</code><a class="headerlink" href="#Reserveparameters.Reserveparameters" title="Permalink to this definition">¶</a></dt>
+<div class="section" id="module-Parameters.Reserveparameters">
+<span id="reserve-parameters"></span><span id="reserve-param"></span><h2>Reserve Parameters<a class="headerlink" href="#module-Parameters.Reserveparameters" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="Parameters.Reserveparameters.Reserveparameters">
+<em class="property">class </em><code class="descname">Reserveparameters</code><a class="headerlink" href="#Parameters.Reserveparameters.Reserveparameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reserveparameter class</p>
 <p>This class contains parameters to configure simulation of regulated reserves.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>regLoadFrac</strong> – (float) fraction of hourly load in regulated up &amp; down reserves</p></li>
-<li><p><strong>contLoadFrac</strong> – (float) fraction of hourly load in contingency reserves</p></li>
-<li><p><strong>regErrorPercentile</strong> – (float) percentile of 10-m wind &amp; 5-m solar forecast errors used in regulated reserves</p></li>
-<li><p><strong>flexErrorPercentile</strong> – (float) percentile of hourly wind &amp; solar forecast errors used in regulated reserves</p></li>
-<li><p><strong>regUpCostCoeffs</strong> – (dict) dictionary with regulated reserve costs by type of plant {‘Combined Cycle’: 6, ‘Combined Cycle CCS’: 6, ‘O/G Steam’: 4, ‘Coal Steam’: 10, ‘Coal Steam CCS’: 10}  # $/MWh</p></li>
-<li><p><strong>regReserveMinutes</strong> – (float) timeframe of regulated reserves. Regulated reserves must be provided w/in 5 mins</p></li>
-<li><p><strong>flexReserveMinutes</strong> – (float) timeframe of spinning reserves. Spin reserves must be provided w/in 10 minutes</p></li>
-<li><p><strong>contingencyReserveMinutes</strong> – (float) timeframe of contingency res (must be provided w/in 30 minutes)</p></li>
-<li><p><strong>minutesPerHour</strong> – (float) minutes per hour</p></li>
-<li><p><strong>rampRateToRegReserveScalar</strong> – (float) computed internally</p></li>
-<li><p><strong>rampRateToFlexReserveScalar</strong> – (float) computed internally</p></li>
-<li><p><strong>rampRateToContReserveScalar</strong> – (float) computed internally</p></li>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>regLoadFrac</strong> – (float) fraction of hourly load in regulated up &amp; down reserves</li>
+<li><strong>contLoadFrac</strong> – (float) fraction of hourly load in contingency reserves</li>
+<li><strong>regErrorPercentile</strong> – (float) percentile of 10-m wind &amp; 5-m solar forecast errors used in regulated reserves</li>
+<li><strong>flexErrorPercentile</strong> – (float) percentile of hourly wind &amp; solar forecast errors used in regulated reserves</li>
+<li><strong>regUpCostCoeffs</strong> – (dict) dictionary with regulated reserve costs by type of plant {‘Combined Cycle’: 6, ‘Combined Cycle CCS’: 6, ‘O/G Steam’: 4, ‘Coal Steam’: 10, ‘Coal Steam CCS’: 10}  # $/MWh</li>
+<li><strong>regReserveMinutes</strong> – (float) timeframe of regulated reserves. Regulated reserves must be provided w/in 5 mins</li>
+<li><strong>flexReserveMinutes</strong> – (float) timeframe of spinning reserves. Spin reserves must be provided w/in 10 minutes</li>
+<li><strong>contingencyReserveMinutes</strong> – (float) timeframe of contingency res (must be provided w/in 30 minutes)</li>
+<li><strong>minutesPerHour</strong> – (float) minutes per hour</li>
+<li><strong>rampRateToRegReserveScalar</strong> – (float) computed internally</li>
+<li><strong>rampRateToFlexReserveScalar</strong> – (float) computed internally</li>
+<li><strong>rampRateToContReserveScalar</strong> – (float) computed internally</li>
 </ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt id="Reserveparameters.Reserveparameters.load">
-<code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#Reserveparameters.Reserveparameters.load" title="Permalink to this definition">¶</a></dt>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="Parameters.Reserveparameters.Reserveparameters.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>fname</em><span class="sig-paren">)</span><a class="headerlink" href="#Parameters.Reserveparameters.Reserveparameters.load" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reads formatted txt file with the values of the parameters and allocates to object</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>fname</strong> – string with path to parameter file</p>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fname</strong> – string with path to parameter file</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -316,10 +356,10 @@ to make it easier to pass them as argument to the functions.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../Setup%20Fleet/index.html" class="btn btn-neutral float-right" title="Setup Fleet" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../Setup Fleet/index.html" class="btn btn-neutral float-right" title="Setup Fleet" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="../Input%20data/index.html" class="btn btn-neutral" title="Input data" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../Input data/index.html" class="btn btn-neutral" title="Input data" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -360,7 +400,7 @@ to make it easier to pass them as argument to the functions.</p>
       <script type="text/javascript" src="../_static/underscore.js"></script>
       <script type="text/javascript" src="../_static/doctools.js"></script>
       <script type="text/javascript" src="../_static/language_data.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

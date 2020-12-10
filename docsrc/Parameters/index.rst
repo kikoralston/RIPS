@@ -6,7 +6,7 @@ Parameters
 General Parameters
 ------------------------
 
-.. automodule:: Generalparameters
+.. automodule:: Parameters.Generalparameters
     :members:
 
 .. _curtail-param:
@@ -14,7 +14,7 @@ General Parameters
 Curtailment Parameters
 ------------------------
 
-.. automodule:: Curtailmentparameters
+.. automodule:: Parameters.Curtailmentparameters
     :members:
 
 .. _reserve-param:
@@ -22,5 +22,5 @@ Curtailment Parameters
 Reserve Parameters
 ------------------------
 
-.. automodule:: Reserveparameters
+.. automodule:: Parameters.Reserveparameters
     :members:

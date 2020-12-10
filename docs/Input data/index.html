@@ -88,9 +88,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../Parameters/index.html">Parameters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Setup%20Fleet/index.html">Setup Fleet</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Main%20Scripts/index.html">Main Scripts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Thermal%20deratings/index.html">Thermal Deratings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup Fleet/index.html">Setup Fleet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Main Scripts/index.html">Main Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Thermal deratings/index.html">Thermal Deratings</a></li>
 </ul>
 
             
@@ -139,13 +139,13 @@
 <h1>Input data<a class="headerlink" href="#input-data" title="Permalink to this headline">¶</a></h1>
 <p>The simulation uses data from different sources. Input data is located in two different directories:</p>
 <ul class="simple">
-<li><p>a directory for general input data;</p></li>
-<li><p>a directory for climate and hydrology data (which because of its large size may need to be stored in a different location)</p></li>
+<li>a directory for general input data;</li>
+<li>a directory for climate and hydrology data (which because of its large size may need to be stored in a different location)</li>
 </ul>
 <div class="section" id="general-input-data">
 <h2>General Input data<a class="headerlink" href="#general-input-data" title="Permalink to this headline">¶</a></h2>
 <p>General input data is located in a directory with a specific subfolder structure. The path for this directory must be specified in the field <cite>dataRoot</cite> of the
-<a class="reference internal" href="../Parameters/index.html#module-Generalparameters" title="Generalparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></a> object.</p>
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code> object.</p>
 <p>The diagram below shows the structure of the subfolders in the directory.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dataRoot</span><span class="o">/</span>
    <span class="o">|--</span><span class="n">Curtailment</span><span class="o">/</span>
@@ -166,10 +166,28 @@
    <span class="o">|--</span><span class="n">co2values</span><span class="o">.</span><span class="n">json</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li>Curtailment: this folder contains the json files with the parameters used to simulate climate induced capacity deratings in thermal generators</li>
+<li>DemandData: this folder contains the csv files with parameters of the regression function used to simulate electricity demand</li>
+<li>eGrid: this folder contains csv files extracted from the eGrid model that are used to create the initial fleet</li>
+<li>EIA860: this folder contains csv files extracted from the EIA860 with cooling data that are used to create the initial fleet</li>
+<li>FuelPricesCapacityExpansion: this folder contains the csv file with fuel prices projections</li>
+<li>GAMS: this folder contains the GAMS files with the optimization models</li>
+<li>HydroMonthlyDataPNNL: this folder contains pre-processed pickle files with hydro potential data for existing hydro plants</li>
+<li>NEEDS: this folder contains csv files extracted from the NEEDS model that are used to create the initial fleet</li>
+<li>NewPlantData: this folder contains csv files with the parameters of new technologies used in the CE model</li>
+<li>NRELSolarPVData: this folder contains csv files with solar potential data (source: NREL)</li>
+<li>PHORUM: this folder contains csv files with PHORUM data used in the UCED model</li>
+<li>StateShapeFiles: this folder contains shapefiles with the</li>
+<li>Transmission: this folder contains a csv file with transmission line capacity</li>
+<li>WINDSERCData: this folder contains csv files with wind potential data (source: NREL)</li>
+<li>cells2zones.pk: this pickle file contains a pre-processed dictionary that maps each cell to its IPM zone</li>
+<li>co2values.json: this json file defines the configuration of the CO2 cap (see function readInitialCondCO2)</li>
+</ul>
 </div>
 <div class="section" id="climate-and-hydrology-data">
 <h2>Climate and hydrology data<a class="headerlink" href="#climate-and-hydrology-data" title="Permalink to this headline">¶</a></h2>
-<p>Because of their potential large size, climate and hydrological data can be stored in a separate folder. This directory must be specified in the <a class="reference internal" href="../Parameters/index.html#module-Curtailmentparameters" title="Curtailmentparameters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">Curtailmentparameters</span></code></a> object.</p>
+<p>Because of their potential large size, climate and hydrological data can be stored in a separate folder. This directory must be specified in the <code class="xref py py-mod docutils literal notranslate"><span class="pre">Curtailmentparameters</span></code> object.</p>
 </div>
 </div>
 
@@ -224,7 +242,7 @@
       <script type="text/javascript" src="../_static/underscore.js"></script>
       <script type="text/javascript" src="../_static/doctools.js"></script>
       <script type="text/javascript" src="../_static/language_data.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

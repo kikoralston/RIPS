@@ -3,6 +3,6 @@
 Thermal Deratings
 ===================
 
-.. automodule:: LoadEligibleCellWaterTs
+.. automodule:: thermalderatings.LoadEligibleCellWaterTs
     :members:
 
