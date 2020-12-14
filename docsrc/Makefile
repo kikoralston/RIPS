@@ -20,5 +20,11 @@ help:
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 github:
+	@echo "---- Compiling latex file of diagram ------"
+	@pdflatex -output-directory=./texsource/diagram/ ./texsource/diagram/diagram_models.tex > ./texsource/diagram/pdflatex.log
+	@echo "---- Converting pdf to png ------"
+	@convert -density 400 ./texsource/diagram/diagram_models.pdf ./_static/diagram_models.png
+	@echo "---- Building html files ------"
 	@make html
+	@echo "---- Copying html files to ../docs/ ------"
 	@cp -a _build/html/. ../docs/

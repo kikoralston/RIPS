@@ -22,7 +22,7 @@ Introduction
 =============
 
 
-.. figure::  ./_static/diagram_models.jpg
+.. figure::  ./_static/diagram_models.png
    :align:   center
 
 

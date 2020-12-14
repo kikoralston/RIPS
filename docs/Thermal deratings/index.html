@@ -130,9 +130,14 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="module-thermalderatings.LoadEligibleCellWaterTs">
-<span id="id1"></span><span id="thermal-deratings"></span><h1>Thermal Deratings<a class="headerlink" href="#module-thermalderatings.LoadEligibleCellWaterTs" title="Permalink to this headline">¶</a></h1>
-<dl class="function">
+  <div class="section" id="thermal-deratings">
+<span id="id1"></span><h1>Thermal Deratings<a class="headerlink" href="#thermal-deratings" title="Permalink to this headline">¶</a></h1>
+<p>The thermal deratings modules includes all functions used to simulate capacity deratings of thermal generators (existing or hypothetical).</p>
+<p>This modules uses data from climate models (in netcdf format); hydrological simulations from the VIC, RBM, and MOSART-WM models (netcdf format);
+and the pre-defined parameters of the operating response functions of thermal generators to ambient conditions (in json format).</p>
+<p>While these functions were implemented within the CE/UCED simulation models, they can be called separately from the main model in order
+to just compute spatially- and temporally diferentialted thermal deratings of existing or hypothetical thermal power plants.</p>
+<span class="target" id="module-thermalderatings.LoadEligibleCellWaterTs"></span><dl class="function">
 <dt id="thermalderatings.LoadEligibleCellWaterTs.loadEligibleCellWaterTs">
 <code class="descname">loadEligibleCellWaterTs</code><span class="sig-paren">(</span><em>genFleet</em>, <em>currYear</em>, <em>genparam</em>, <em>curtailparam</em>, <em>netcdf=True</em>, <em>n_cells=100</em><span class="sig-paren">)</span><a class="headerlink" href="#thermalderatings.LoadEligibleCellWaterTs.loadEligibleCellWaterTs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load daily average water temperatures for grid cells for current simulation year</p>
