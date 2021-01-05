@@ -9,8 +9,25 @@ This modules uses data from climate models (in netcdf format); hydrological simu
 and the pre-defined parameters of the operating response functions of thermal generators to ambient conditions (in json format).
 
 While these functions were implemented within the CE/UCED simulation models, they can be called separately from the main model in order
-to just compute spatially- and temporally diferentialted thermal deratings of existing or hypothetical thermal power plants.
+to just compute spatially- and temporally differentiated thermal deratings of existing or hypothetical thermal power plants.
+
+
+
+.. automodule:: thermalderatings.CalculateHourlyCapacsWithCurtailments
+    :members:
+
+.. automodule:: thermalderatings.ModifyGeneratorCapacityWithWaterTData
+    :members:
+
+.. automodule:: thermalderatings.ModifyNewTechCapacityWithWaterTData
+    :members:
 
 .. automodule:: thermalderatings.LoadEligibleCellWaterTs
+    :members:
+
+.. automodule:: thermalderatings.CurtailmentRegressions
+    :members:
+
+.. automodule:: thermalderatings.AuxCurtailmentFuncs
     :members:
 

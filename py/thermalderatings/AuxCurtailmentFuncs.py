@@ -27,10 +27,10 @@ def loadWaterAndMetData(curtailmentYear, cellLat, cellLong, genparam, curtailpar
     :param genparam: object of type :mod:`Generalparameters`
     :param curtailparam: object of type :mod:`Curtailmentparameters`
     :param gcm: (string) GCM name
-    :param metdatatot: dict with pre-loaded complete meteo data from the netcdf file (see :fun:`.read_netcdf_full`).
-                       If this is `None` the function loads the data directly from the netcdf file (:fun:`.read_netcdf`)
+    :param metdatatot: dict with pre-loaded complete meteo data from the netcdf file (see :func:`.read_netcdf_full`).
+                       If this is `None` the function loads the data directly from the netcdf file (:func:`.read_netcdf`)
     :param waterDatatot: dict of {cell folder name : [[Datetime],[AverageWaterT(degC)], [AirT], [flow]]}. If value is
-                         `None`, it loads data from netcdf file (see :fun:`.read_waterdata_cell`)
+                         `None`, it loads data from netcdf file (see :func:`.read_waterdata_cell`)
     :param netcdf: (boolean) if true reads water data from NETCDF files (Old format does not work anymore)
     :return: panda data frame with hourly water and weather data for given year and given cell
     """
@@ -252,7 +252,7 @@ def read_netcdf(cellLat, cellLon, currYear, curtailparam, gcm):
 def read_dict_netcdf(cellLat, cellLon, meteoData):
     """Get meteorological data for cell stored in a dictionary with full dataset from the netcdf file
 
-    see function :fun:`.read_netcdf_full`
+    see function :func:`.read_netcdf_full`
 
     :param cellLat: (numeric) latitude of cell
     :param cellLon: (numeric) longitude of cell
@@ -624,7 +624,7 @@ def createBaseFilenameToReadOrWrite(locPrecision, inputLat, inputLong):
     :param locPrecision: number of decimal digits in lat and long values
     :param inputLat: latitude of grid cell
     :param inputLong: longitude of grid cell
-    :return: string with name of folder (e.g. '34.4375_-86.4375')
+    :return: string with name of folder (e.g. 34.4375\_-86.4375)
     """
     return '%.*f_%.*f' % (locPrecision, inputLat, locPrecision, inputLong)
 
@@ -634,7 +634,7 @@ def getCellLatAndLongFromFolderName(dummyFolder):
 
     This function splits a string with lat and long (format: '{lat}_{lon}') into numeric lat and long values
 
-    See :fun:`.createBaseFilenameToReadOrWrite`
+    See :func:`.createBaseFilenameToReadOrWrite`
 
     :param dummyFolder: (string) string with lat an long values
     :return: tuple with numeric values of lat and long

@@ -22,8 +22,8 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
     This function computes thermal deratings of candidate techs using parallel multiprocessing. It combines results from
     all different GCMs into a single nested dictionary.
 
-    :param eligibleCellWaterTs:
-    :param newTechsCE:
+    :param eligibleCellWaterTs: (dict) dictionary with time-series of water temperatures in each cell
+    :param newTechsCE: (2d list) table of parameters of new techs
     :param currYear: (integer) current year of simulation
     :param genparam: object of class :mod:`Generalparameters`
     :param curtailparam: object of class :mod:`Curtailmentparameters`
@@ -58,7 +58,7 @@ def determineHrlyCurtailmentsForNewTechs(eligibleCellWaterTs, newTechsCE, currYe
 def worker_new_tech_curtailments(list_args):
     """ Worker function for using multiprocessing with function calculateGeneratorCurtailments.
 
-    :param list_args: list with arguments for function
+    :param list_args: list with arguments for function (see :func:`.calculateTechsCurtailments`)
     :return: dict of {(plant+cooltype,cell): [hrly tech curtailments]} (see function calculateGeneratorCurtailments)
     """
 
@@ -71,8 +71,8 @@ def worker_new_tech_curtailments(list_args):
 def calculateTechsCurtailments(cellWaterTsForNewTechs, newTechsCE, currYear, genparam, curtailparam, gcm, pbar=True):
     """ Computes deratings of candidate thermal technologies for capacity expansion simulation
 
-    :param cellWaterTsForNewTechs:
-    :param newTechsCE:
+    :param cellWaterTsForNewTechs: dictionary with time-series of water temperatures in each cell
+    :param newTechsCE: (2d list) table of parameters of new techs
     :param currYear: (integer) current year of simulation
     :param genparam: object of class :mod:`Generalparameters`
     :param curtailparam: object of class :mod:`Curtailmentparameters`
@@ -145,11 +145,11 @@ def calculateTechsCurtailments(cellWaterTsForNewTechs, newTechsCE, currYear, gen
 
 
 def getWaterTsInCurrYear(currYear, eligibleCellWaterTs):
-    """ISOLATE AVG WATER TS FOR CURRENT YEAR FOR EACH CELL
+    """Isolate average water temps for current year for each cell
 
-    :param currYear: (integer)
-    :param eligibleCellWaterTs:
-    :return: dict of cell folder name : [[Datetime],[AverageWaterT(degC)]]
+    :param currYear: (integer) current year
+    :param eligibleCellWaterTs: dictionary with time-series of water temperatures in each cell
+    :return: (dict) { cell folder name : [[Datetime],[AverageWaterT(degC)]]} filtered to current year only
     """
     eligibleCellWaterTsCurrYear = dict()
 
@@ -171,20 +171,20 @@ def getWaterTsInCurrYear(currYear, eligibleCellWaterTs):
 def selectCells(eligibleCellWaterTsCurrYear, cellNewTechCriteria, fipsToZones, fipsToPolys):
     """Filter list of grid cells that can host new techs
 
-    This function filters the list of eligible cells and chooses only the ones with maximum water temperature in each zone
-    if the criteria is 'maxWaterT'
+    This function filters the list of eligible cells and chooses only the ones with maximum water temperature in each zone if the criteria is 'maxWaterT'
 
-    The parameter ``cellNewTechCriteria` is defined in the :mod:`Generalparameters` object. It accepts two options:
+    The parameter ``cellNewTechCriteria`` is defined in the :mod:`Generalparameters` object. It accepts two options:
 
     * 'all': no filtering is applied. All eligible cells are considered
     * 'maxWaterT': only the cell with maximum water temeprature in each zone is considered
 
-    :param eligibleCellWaterTsCurrYear:
-    :param cellNewTechCriteria:
-    :param fipsToZones:
-    :param fipsToPolys:
-    :return:
+    :param eligibleCellWaterTsCurrYear: dictionary with time-series of water temperatures in each cell
+    :param cellNewTechCriteria: (string) cell filtering criteria
+    :param fipsToZones: (dict) {fips: ipm zone name}
+    :param fipsToPolys: (dict) {fips: polys object of each zone}
+    :return: dictionary with time-series of water temperatures in each cell (subset of cells)
     """
+
     if cellNewTechCriteria == 'all':
         cellWaterTsForNewTechs = copy.deepcopy(eligibleCellWaterTsCurrYear)
 
@@ -202,9 +202,9 @@ def getCellsInEachZone(eligibleCellWaterTsCurrYear, fipsToZones, fipsToPolys):
     """Takes in dict of cell:waterTs, and returns dict of zone:all cells in that zone
 
     :param eligibleCellWaterTsCurrYear:
-    :param fipsToZones:
-    :param fipsToPolys:
-    :return:
+    :param fipsToZones: (dict) {fips: ipm zone name}
+    :param fipsToPolys: (dict) {fips: polys object of each zone}
+    :return: dict of zone:all cells in that zone
     """
     cellsPerZone = dict()
     for cell in eligibleCellWaterTsCurrYear:

@@ -61,13 +61,16 @@ def determineHrlyCurtailmentsForExistingGens(genFleet, currYear, genparam, curta
 def worker_generator_curtailments(list_args):
     """ Worker function for using multiprocessing with function :func:`.calculateGeneratorCurtailments`
 
-    :param list_args: list with arguments for function:
-                      * (dict)
-                      * (int) current year
-                      * (2d list) generator fleet data
-                      * object of type :mod:`Generalparameters`
-                      * object of type :mod:`Curtailmentparameters`
-                      * (string) name of gcm
+    ``list_args``:
+
+    * (dict) dict of (cell lat, cell long):gen ID for all gens w/ lat/lon coords in genFleet
+    * (int) current year
+    * (2d list) generator fleet data
+    * object of type :mod:`Generalparameters`
+    * object of type :mod:`Curtailmentparameters`
+    * (string) name of gcm
+
+    :param list_args: list with arguments for function
     :return: dictionary with {orisId: [1d np array with hourly curtailments]}
     """
 

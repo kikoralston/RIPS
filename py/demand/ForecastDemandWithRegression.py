@@ -21,10 +21,8 @@ def forecastZonalDemandWithReg(yr, genparam, curtailparam):
     :param genparam: object of class Generalparameters
     :param curtailparam: object of class Curtailmentparameters
 
-    :return: zonalDemand: nested dictionary with hourly load data for each zone in current year in each gcm.
-                          {gcm:zone:[hourly demand]}
-             zonalTempDfs: nested dictionary with data frames with meteo and load data for each zone in current year
-                           in each gcm. {gcm: zone: Df}
+    :return: - **zonalDemand:** nested dictionary with hourly load data for each zone in current year in each gcm. {gcm:zone:[hourly demand]}
+             - **zonalTempDfs:** nested dictionary with data frames with meteo and load data for each zone in current year in each gcm. {gcm: zone: Df}
     """
 
     totalDemandDict, totalDemandDictDf = OrderedDict(), OrderedDict()
@@ -82,7 +80,14 @@ def loadRegData(genparam, currYear, zone, curtailparam, idx_gcm, netcdf=False):
     :param curtailparam: object of class Curtailmentparameters
     :param idx_gcm: (int) index of GCM being considered (within curtailparam.listgcms)
     :param netcdf: (boolean) true if format of meteo data is netcdf
-    :return:
+
+    :return: - data: dataframe with weather data
+             - tempCoefs: dataframe with temperature coefficients
+             - intCoefs: dataframe with interactions coefficients (generally not used)
+             - fixEffHr: dataframe with fixed effects for each hour of day
+             - fixEffYr: data frame with fixed effects of each year
+             - intercept: dataframe with intercept
+             - holidays: dataframe with list of holidays
     """
 
     dataDir = os.path.join(genparam.dataRoot, 'DemandData')
@@ -153,9 +158,9 @@ def getStationForZone(dataDir, zone):
 def isolateYrData(data, yr):
     """Add datetime to each row of data, then isolate year and data of interest.
 
-    :param data:
-    :param yr:
-    :return:
+    :param data: dataframe with weather data
+    :param yr: (int) current year
+    :return: dataframe with data of current year
     """
     startDt, endDt = '1/1/1950 00:00:00', '12/31/2099 23:00:00'
     data['date'] = pd.date_range(start=startDt, end=endDt, freq='H')  # ,tz='US/Central')
@@ -167,9 +172,9 @@ def isolateYrData(data, yr):
 def addTimeDummies(dataYr, yr, holidays):
     """Add indicators for day of week, type of day (weekend versus weekday), and season to DF.
 
-    :param dataYr:
-    :param yr:
-    :param holidays:
+    :param dataYr: dataframe with data of current year
+    :param yr: (int) current year
+    :param holidays: dataframe with holidays
     """
     # Add whether weekday or weekend
     addWeekdayOrWeekend(dataYr, holidays)
@@ -190,8 +195,8 @@ def addWeekdayOrWeekend(dataYr, holidays):
     """Adds column that indicates whether weekday or weekend. Import list of holidays from Francisco that also are
     labeled as weekends.
 
-    :param dataYr:
-    :param holidays:
+    :param dataYr: dataframe with data of current year
+    :param holidays: dataframe with holidays
     """
     dataYr['dayofweek'] = dataYr['date'].dt.dayofweek
     dataYr['type.day'] = 'weekday'
@@ -207,11 +212,10 @@ def predictDemand(dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, yr
 
     Predict value as:
 
-    y = beta*Tbin + alpha*Tbin*dewPt + FEyr + FEhr + intercept
+    .. math::
+       y=\\beta_0+\\beta_1*T_{bin}+\\beta_2*[T_{bin}*dp]+FE_{yr}+FE_{hr}
 
-    Note that Tbin*dewPt is element-wise, then multiplied via dot product into alpha.
-
-    All subfucntions return np array of 8760x1.
+    All subfunctions return np array of 8760x1.
 
     :param dataYr: data frame with data for regression
     :param tempCoefs: temperature coefficients
@@ -236,11 +240,11 @@ def predictDemand(dataYr, tempCoefs, intCoefs, fixEffHr, fixEffYr, intercept, yr
 
 
 def getTempVals(dataYr, tempCoefs):
-    """Estimate temperature values by first putting T into bins (2d array), then multiplying by per-bin coefficients.
+    """Estimate temperature dependent load values by first putting T into bins (2d array), then multiplying by per-bin coefficients.
 
-    :param dataYr:
-    :param tempCoefs:
-    :return:
+    :param dataYr: data frame with data for regression
+    :param tempCoefs: dataframe with coefficients for temperature
+    :return: numoy array of estimated load values
     """
 
     if 'tC' in dataYr.columns:
@@ -261,8 +265,8 @@ def getTempVals(dataYr, tempCoefs):
 def getInteractionVals(dataYr, intCoefs):
     """Element-wise of binned T by dew pt, then dot w/ coefficients
 
-    :param dataYr:
-    :param intCoefs:
+    :param dataYr: data frame with data for regression
+    :param intCoefs: dataframe with coefficients for interaction temp * humidity
     :return:
     """
 
@@ -279,8 +283,8 @@ def getInteractionVals(dataYr, intCoefs):
 def getFixEffHrVals(dataYr, fixEffHr):
     """Add FE hour vals (by season, time of day, and type of day) to DF, then return FEs
 
-    :param dataYr:
-    :param fixEffHr:
+    :param dataYr: data frame with data for regression
+    :param fixEffHr: dataframe with fixed effect for hour of day
     :return:
     """
     dataYrWithFE = dataYr.merge(fixEffHr, how='left', on=['season', 'type.day', 'hour.of.day'])

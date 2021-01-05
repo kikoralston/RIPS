@@ -38,7 +38,7 @@ The diagram below shows the structure of the subfolders in the directory.
 * Curtailment: this folder contains the json files with the parameters used to simulate climate induced capacity deratings in thermal generators
 * DemandData: this folder contains the csv files with parameters of the regression function used to simulate electricity demand
 * eGrid: this folder contains csv files extracted from the eGrid model that are used to create the initial fleet
-* EIA860: this folder contains csv files extracted from the EIA860 with cooling data that are used to create the initial fleet
+* EIA860: this folder contains csv files extracted from the excel files in the EIA860 form with cooling data that are used to create the initial fleet
 * FuelPricesCapacityExpansion: this folder contains the csv file with fuel prices projections
 * GAMS: this folder contains the GAMS files with the optimization models
 * HydroMonthlyDataPNNL: this folder contains pre-processed pickle files with hydro potential data for existing hydro plants

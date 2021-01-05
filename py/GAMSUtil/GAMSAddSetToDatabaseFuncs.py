@@ -6,13 +6,13 @@ from GAMSUtil.GAMSAuxFuncs import *
 
 
 def addGeneratorSets(db, genFleet):
-    """ADD GENERATOR SETS
+    """Add generator sets to database
 
     Add gen sets & subsets
 
     :param db: gams database object
     :param genFleet: 2d list ith generator fleet data
-    :return:
+    :return: list with gams sets created
     """
     genSymbols = isolateGenSymbols(genFleet, '')
     (genSetName, genSetDescription, genSetDimension) = ('egu', 'existing generators', 1)
@@ -42,7 +42,7 @@ def isolateGenSymbols(genFleet, genPlantType):
 
     :param genFleet: 2d list with generator fleet data
     :param genPlantType: string with PlantType
-    :return:
+    :return: list with generator symbols
     """
     if genPlantType == '': #all generators
         genSymbols = [createGenSymbol(row, genFleet[0]) for row in genFleet[1:]]
@@ -54,13 +54,13 @@ def isolateGenSymbols(genFleet, genPlantType):
 
 
 def addHourSet(db, hours):
-    """ADD HOUR SETS
+    """Add set with simulation hours to database
 
     Add all hours
 
     :param db: GAMS database object
     :param hours: 1d list with hours to be included on set
-    :return:
+    :return: list with: gams set with simulation hours and list with hour symbols
     """
     hourSymbols = [createHourSymbol(hour) for hour in hours]
     (hourSetName, hourSetDescrip, hourSetDim) = ('h', 'hour', 1)
@@ -115,7 +115,7 @@ def addPeakHourSubset(db, peakDemandHourZonal, genparam):
 
     :param db: GAMS database object
     :param peakDemandHourZonal:
-    :return:
+    :return: list with: gams set with peak hours and list with peak hour symbols
     """
     # create new dict which converts zone names (e.g. S_C_TVA) to zone symbols (e.g, z1) and gets hour symbol
     auxDict = dict()
@@ -140,11 +140,11 @@ def addPeakHourSubset(db, peakDemandHourZonal, genparam):
 
 
 def addZoneSets(db, ipmZoneNums):
-    """ADD ZONE SETS
+    """Add sets with zones to database
 
     :param db: GAMS database object
     :param ipmZoneNums:
-    :return:
+    :return: list with: gams set with zones and list with zone symbols
     """
     zoneSymbols = [createZoneSymbol(num) for num in ipmZoneNums]
     (zoneName, zoneDesc, zoneDim) = ('z', 'zones', 1)
@@ -153,11 +153,11 @@ def addZoneSets(db, ipmZoneNums):
 
 
 def addLineSets(db, lines):
-    """ADD LINE SETS
+    """Add line sets
 
     :param db: GAMS database object
-    :param lines:
-    :return:
+    :param lines: list with line names
+    :return: gams set with line names
     """
     (lName, lDesc, lDim) = ('l', 'lines', 1)
     lineSet = addSet(db, lines, lName, lDesc, lDim)
@@ -168,23 +168,21 @@ def addCellSet(db,cellsToZones):
     """ADD CELLS FOR NEW TECHS SET
 
     :param db: GAMS database object
-    :param cellsToZones:
-    :return:
+    :param cellsToZones: (dict) dictionary mapping cells to zones
+    :return: gams set with cell names
     """
-    (cellname,celldesc,celldim) = ('c', 'cells',1)
-    cellset = addSet(db,[cell for cell in cellsToZones],cellname,celldesc,celldim)
+    (cellname, celldesc,celldim) = ('c', 'cells', 1)
+    cellset = addSet(db, [cell for cell in cellsToZones], cellname, celldesc, celldim)
     return cellset
 
 
 def addNewTechsSets(db, newTechsCE, plantTypesCurtailed, blocksWind=None, blocksSolar=None):
-    """ADD NEW TECH SETS
-
-    Inputs: GAMS db, new techs (2d list)
+    """Add set with new techs to database
 
     :param db: GAMS database object
-    :param newTechsCE:
-    :param plantTypesCurtailed:
-    :return:
+    :param newTechsCE: (2d list) new techs
+    :param plantTypesCurtailed: (list) types of plants that have climate-induced capacity deratings
+    :return: list with all gams sets and lists with symbols created
     """
     (techSymbols, techCurtailedSymbols,
      renewTechSymbols, techNotCurtailedSymbols) = isolateTechSymbols(newTechsCE, plantTypesCurtailed, blocksWind,
@@ -211,14 +209,13 @@ def addNewTechsSets(db, newTechsCE, plantTypesCurtailed, blocksWind=None, blocks
 
 
 def isolateTechSymbols(newTechsCE, ptCurtailed, blocksWind=None, blocksSolar=None):
-    """Takes in new techs (2d list), and returns tech types as: all types, renew (wind or solar) types, or types
-    that can be curtailed
+    """Takes in new techs (2d list), and returns tech types as: all types, renew (wind or solar) types, or types that can be curtailed
 
     :param newTechsCE: 2d list with new techs data
     :param ptCurtailed: 1-d list with plant types that are curtailed
     :param blocksWind: 1-d list with indexes of blocks of wind
     :param blocksSolar: 1-d list with indexes of blocks of solar
-    :return:
+    :return: lists with symbols created for each set (techSymbols, techCurtailedSymbols, techRenewSymbols, techNotCurtailedSymbols)
     """
     techSymbols = [createTechSymbol(row, newTechsCE[0], ptCurtailed) for row in newTechsCE[1:]]
 
@@ -250,16 +247,14 @@ def isolateTechSymbols(newTechsCE, ptCurtailed, blocksWind=None, blocksSolar=Non
 
 
 def addSet(db, setSymbols, setName, setDescription, setDim):
-    """GENERIC FUNCTION TO ADD SET TO DATABASE
-
-    Adds set to GAMS db
+    """Generic function to add set to gams database
 
     :param db: GAMS database object
-    :param setSymbols:
-    :param setName:
-    :param setDescription:
-    :param setDim:
-    :return:
+    :param setSymbols: (list) list with symbols of each element
+    :param setName: (string) name of set
+    :param setDescription: (string) description of set
+    :param setDim: (int) dimension of set
+    :return: gams set created
     """
     addedSet = db.add_set(setName, setDim, setDescription)
     for symbol in setSymbols:

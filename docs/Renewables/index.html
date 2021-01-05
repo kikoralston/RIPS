@@ -1,0 +1,665 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Renewables &mdash; CE/UCED under climate change  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Electricity demand" href="../Demand/index.html" />
+    <link rel="prev" title="Parameters" href="../Parameters/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> CE/UCED under climate change
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../example.html">Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Input%20data/index.html">Input data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../GAMS/index.html">GAMS utility functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Parameters/index.html">Parameters</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Renewables</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-renewables.GetRenewableCFs">Wind and Solar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-renewables.GetHydroMaxGenPotential">Hydro</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../Demand/index.html">Electricity demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup%20Fleet/index.html">Setup Fleet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Thermal%20deratings/index.html">Thermal Deratings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Main%20Scripts/index.html">Main Scripts</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CE/UCED under climate change</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Renewables</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/Renewables/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="renewables">
+<h1>Renewables<a class="headerlink" href="#renewables" title="Permalink to this headline">¶</a></h1>
+<p>This module has the functions used to compute available generation for wind and solar generators and potential energy for hydro generators.</p>
+<p>Impacts of climate change on wind and solar generators was not simulated in this application. Wind and solar available generation is imported
+from NREL databases (<a class="bibtex reference internal" href="../index.html#usnationalrenewableenergylaboratory2010" id="id1">[15]</a><a class="bibtex reference internal" href="../index.html#draxl2015" id="id2">[3]</a>). Impacts of climate change on hydro generators was simulated
+only for existing generators, since we assumed that there would be no new hydro generators built in the southeast U.S.</p>
+<div class="section" id="module-renewables.GetRenewableCFs">
+<span id="wind-and-solar"></span><h2>Wind and Solar<a class="headerlink" href="#module-renewables.GetRenewableCFs" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="renewables.GetRenewableCFs.wrapperwind">
+<code class="sig-name descname">wrapperwind</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">list_args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetRenewableCFs.wrapperwind" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to read and process wind data in parallel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>list_args</strong> – a list with arguments for function getWindSiteCfs_2</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list with:
+- 1d list with hourly CFs for wind site
+- 1d list with subhourly CFs for wind site
+- string with siteId
+- segment/block that this site is allocated
+- original capacity of site in Wind data base (MW)
+- capacity of site used for fleet computation (MW)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetRenewableCFs.wrappersolar">
+<code class="sig-name descname">wrappersolar</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">site</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetRenewableCFs.wrappersolar" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function to read and process solar data in parallel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>site</strong> – a list with arguments for function getSolarSiteCfs_2</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list with:
+- 1d list with hourly CFs for wind site
+- 1d list with subhourly CFs for wind site
+- string with site file name
+- segment/block that this site is allocated
+- original capacity of site in solar data base (MW)
+- capacity of site used for fleet computation (MW)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetRenewableCFs.getRenewableCFData">
+<code class="sig-name descname">getRenewableCFData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">currZone</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">sizeSegment</span><span class="o">=</span><span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">fleetCap</span><span class="o">=</span><span class="default_value">70</span></em>, <em class="sig-param"><span class="n">capacInCurrFleet</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">type</span><span class="o">=</span><span class="default_value">'wind'</span></em>, <em class="sig-param"><span class="n">existing</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">subHour</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetRenewableCFs.getRenewableCFData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compile wind/solar potential data</p>
+<p>This is the main function to compile wind/solar potential generation data for both existing and new solar/wind
+generators. It reads data from the databases and prepares a dataframe with hourly generation potential</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>currZone</strong> – (string) name of ipm zone being simulated</p></li>
+<li><p><strong>genparam</strong> – object of type <code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></p></li>
+<li><p><strong>sizeSegment</strong> – (int) size of segment (in MW)</p></li>
+<li><p><strong>fleetCap</strong> – (float) capacity in MW of each site</p></li>
+<li><p><strong>capacInCurrFleet</strong> – (float) existing total installed capacity in MW of wind or solar</p></li>
+<li><p><strong>type</strong> – (string) ‘wind’ or ‘solar’</p></li>
+<li><p><strong>existing</strong> – (boolean) If True process data for existing power plants. If False process data for new
+candidate plants</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>two data frame with hourly data and subhourly data</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetRenewableCFs.getPlantInfoInZone">
+<code class="sig-name descname">getPlantInfoInZone</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">metadata</span></em>, <em class="sig-param"><span class="n">cfCol</span></em>, <em class="sig-param"><span class="n">capacCol</span></em>, <em class="sig-param"><span class="n">siteNumberOrFileCol</span></em>, <em class="sig-param"><span class="n">fipsToZones</span></em>, <em class="sig-param"><span class="n">fipsToPolys</span></em>, <em class="sig-param"><span class="n">currZone</span></em>, <em class="sig-param"><span class="n">return_df</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetRenewableCFs.getPlantInfoInZone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all meta data of renewable sites in current zone</p>
+<p>Match by zone</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metadata</strong> – 2-d list with metadata of solar or wind sites</p></li>
+<li><p><strong>cfCol</strong> – (int) index of column with CF data</p></li>
+<li><p><strong>capacCol</strong> – (int) index of column with capacity data (in MW)</p></li>
+<li><p><strong>siteNumberOrFileCol</strong> – (int) index of column with site ID</p></li>
+<li><p><strong>fipsToZones</strong> – (dict) dictionary mapping FIPS to zones</p></li>
+<li><p><strong>fipsToPolys</strong> – (dict) dictionary mapping FIPS to poly shapes</p></li>
+<li><p><strong>currZone</strong> – (string) ipm zone</p></li>
+<li><p><strong>return_df</strong> – if True return data frame as output with columns cfs, capacs, sitenumbers.
+If False returns tuple with three 1-d lists cfs, capacs, sitenumbers.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a data frame with three columns or a tuple with 3 lists:
+- CFs
+- capacs
+- sites IDs</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetRenewableCFs.getWindSiteCfs_2">
+<code class="sig-name descname">getWindSiteCfs_2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">windDir</span></em>, <em class="sig-param"><span class="n">siteId</span></em>, <em class="sig-param"><span class="n">siteCapac</span></em>, <em class="sig-param"><span class="n">desiredTz</span></em>, <em class="sig-param"><span class="n">windGenDataYr</span></em>, <em class="sig-param"><span class="n">subHour</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">listout</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetRenewableCFs.getWindSiteCfs_2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read wind data for a single site</p>
+<p>optimized version of function getWindSiteCfs using pandas (75% faster)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>windDir</strong> – dir w/ wind data</p></li>
+<li><p><strong>siteId</strong> – site ID to get gen data for</p></li>
+<li><p><strong>siteCapac</strong> – wind site capac</p></li>
+<li><p><strong>desiredTz</strong> – desired timezone</p></li>
+<li><p><strong>windGenDataYr</strong> – year for wind gen data</p></li>
+<li><p><strong>subHour</strong> – if True reads sub hourly data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>2 2d lists, both have first row = datetime. 1 2d list = hourly CFs, 2nd 2d list = subhourly CFs.
+Also row labels</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetRenewableCFs.getSolarSiteCfs_2">
+<code class="sig-name descname">getSolarSiteCfs_2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">solarDir</span></em>, <em class="sig-param"><span class="n">siteFilename</span></em>, <em class="sig-param"><span class="n">datasetSiteCapac</span></em>, <em class="sig-param"><span class="n">siteTz</span></em>, <em class="sig-param"><span class="n">desiredTz</span></em>, <em class="sig-param"><span class="n">subHour</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">listout</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetRenewableCFs.getSolarSiteCfs_2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read solar data for a single site</p>
+<p>Optimized version of getSolarSiteCfs. This function uses Pandas in order to get more efficient processing</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>solarDir</strong> – </p></li>
+<li><p><strong>siteFilename</strong> – </p></li>
+<li><p><strong>datasetSiteCapac</strong> – </p></li>
+<li><p><strong>siteTz</strong> – </p></li>
+<li><p><strong>desiredTz</strong> – </p></li>
+<li><p><strong>listout</strong> – True if final result should be converted to list (same format as original function)</p></li>
+<li><p><strong>subHour</strong> – True if subhourly values should be returned</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetRenewableCFs.convert_pandas_to_list">
+<code class="sig-name descname">convert_pandas_to_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">header</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetRenewableCFs.convert_pandas_to_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>converts a pandas data frame to a list</p>
+<p>To maintain compatibility with older functions, uses same dimension convention as the previous version. It does
+not follow the ordinary dimension convention of pd.tolist(). Each column in the data frame is a list (pd.tolist()
+transforms each row to a list).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – data frame</p></li>
+<li><p><strong>header</strong> – list of strings with header. If None, no header is added</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetRenewableCFs.trimNewRECFsToCEHours">
+<code class="sig-name descname">trimNewRECFsToCEHours</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">zonalNewWindCFs</span></em>, <em class="sig-param"><span class="n">zonalNewSolarCFs</span></em>, <em class="sig-param"><span class="n">hoursForCE</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetRenewableCFs.trimNewRECFsToCEHours" title="Permalink to this definition">¶</a></dt>
+<dd><p>Trim hours of new renewable CFs to hours of CE simulation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>zonalNewWindCFs</strong> – hourly CFs for new wind &amp; solar builds (1d lists)</p></li>
+<li><p><strong>zonalNewSolarCFs</strong> – hourly CFs for new wind &amp; solar builds (1d lists)</p></li>
+<li><p><strong>hoursForCE</strong> – hours included in CE (1d list, 1-8760 basis)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>zonal hourly CFs for new wind and solar builds only for CE hours as dict of zone:
+[CFs (1-8760 basis, 1d list)]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-renewables.GetHydroMaxGenPotential">
+<span id="hydro"></span><h2>Hydro<a class="headerlink" href="#module-renewables.GetHydroMaxGenPotential" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.getHydroEPotential">
+<code class="sig-name descname">getHydroEPotential</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fleet</span></em>, <em class="sig-param"><span class="n">demandZonal</span></em>, <em class="sig-param"><span class="n">repAndSpeHoursDict</span></em>, <em class="sig-param"><span class="n">currYear</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">curtailparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.getHydroEPotential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes maximum hydro potential for each hydro generator</p>
+<p>This function computes the maximum hydro potential for each hydro generator using PNNL data. Hydro potential is
+indexed by hydro unit and time block (special hours, summer, winter, …). This max hydro potential will be used
+as upper bound in hourly hydro generation by the GAMS model. Scales potential</p>
+<p>July 2018: Currently we have only one hydro potential value per season. The objective is to decompose monthly
+potential to daily potential</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fleet</strong> – gen fleet</p></li>
+<li><p><strong>demandZonal</strong> – zonal demand (dict)</p></li>
+<li><p><strong>repAndSpeHoursDict</strong> – rep hrs per season or special block (dict of block:rep hrs, where seasons are labeled by name and special hours are ‘special’)</p></li>
+<li><p><strong>currYear</strong> – current year</p></li>
+<li><p><strong>genparam</strong> – object of class Generalparameters</p></li>
+<li><p><strong>curtailparam</strong> – object of class Curtailmentparameters</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>nested dict of {gcm:{season:{genSymbol:generation potential}}}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.importHydroPotentialGen">
+<code class="sig-name descname">importHydroPotentialGen</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">currYear</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">gcm</span></em>, <em class="sig-param"><span class="n">format</span><span class="o">=</span><span class="default_value">'new'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.importHydroPotentialGen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns hydro potential gen for current year in 2d list w/ col 1 = plant IDs</p>
+<p>Read file with monthly hydro potential created by PNNL</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>currYear</strong> – (integer)</p></li>
+<li><p><strong>genparam</strong> – object of class Generalparameters</p></li>
+<li><p><strong>gcm</strong> – (string) name of gcm model</p></li>
+<li><p><strong>format</strong> – (string) ‘new’ refers to the new hydro potential file format from october 2018</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>2d list w/ col 1 = plant IDs</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.getMonthsOfRepHrs">
+<code class="sig-name descname">getMonthsOfRepHrs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">repHrs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.getMonthsOfRepHrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function determines which months representative hours fall in, and outputs those months in a 1d list</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>repHrs</strong> – 1d list of hours in a given season</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>1d list of months</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.getMonthlyDemand">
+<code class="sig-name descname">getMonthlyDemand</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">demandZonal</span></em>, <em class="sig-param"><span class="n">months</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.getMonthlyDemand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes total accumulated demand (in MWh) in given months</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>demandZonal</strong> – 1d list of hourly demand</p></li>
+<li><p><strong>months</strong> – 1d list of months</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dict of zone:total demand in those months</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.getRepHrsDemand">
+<code class="sig-name descname">getRepHrsDemand</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">demandZonal</span></em>, <em class="sig-param"><span class="n">repHrs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.getRepHrsDemand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes total accumulated demand (in MWh) in given subset of representative hours</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>demandZonal</strong> – 1d list of demand zonal (dict of zone:hourly demand),</p></li>
+<li><p><strong>repHrs</strong> – 1d list of rep hrs per season</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dict of zone:total demand in those rep hrs</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.sumDemandInHours">
+<code class="sig-name descname">sumDemandInHours</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">demand</span></em>, <em class="sig-param"><span class="n">hours</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.sumDemandInHours" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get total demand in subset of hours</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>demand</strong> – 1d list of demand (0-8759 idx)</p></li>
+<li><p><strong>hours</strong> – 1d list of hours (1-8760 idx).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>sum of demand in those hours</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.getMonthsPotential">
+<code class="sig-name descname">getMonthsPotential</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">oris</span></em>, <em class="sig-param"><span class="n">hydroPotentials</span></em>, <em class="sig-param"><span class="n">months</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.getMonthsPotential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets total hydropower generation potential for month(s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>oris</strong> – ORIS ID</p></li>
+<li><p><strong>hydroPotentials</strong> – hydro potential generation (2d list) for curr year</p></li>
+<li><p><strong>months</strong> – months of interest</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>total potential generation for month(s)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.assignPotentialsToMissingUnits">
+<code class="sig-name descname">assignPotentialsToMissingUnits</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">unitsNoData</span></em>, <em class="sig-param"><span class="n">fleet</span></em>, <em class="sig-param"><span class="n">seasonDict</span></em>, <em class="sig-param"><span class="n">repHrs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.assignPotentialsToMissingUnits" title="Permalink to this definition">¶</a></dt>
+<dd><p>For ORIS units not in PNNL data, assign them potential for season based on
+average potential as CF of rest of fleet for that season. Modifies seasonDict to include other units</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>unitsNoData</strong> – gen symbols (oris+unit ID) for units w/out data, ,</p></li>
+<li><p><strong>fleet</strong> – 2d list with gen fleet</p></li>
+<li><p><strong>seasonDict</strong> – dict of season:genSymbol:potential</p></li>
+<li><p><strong>repHrs</strong> – 1d list of rep hrs per season</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.getFleetAverageCF">
+<code class="sig-name descname">getFleetAverageCF</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genSymbols</span></em>, <em class="sig-param"><span class="n">capacs</span></em>, <em class="sig-param"><span class="n">seasonDict</span></em>, <em class="sig-param"><span class="n">repHrs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.getFleetAverageCF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets average fleet CF for rep hours in given season.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genSymbols</strong> – 1d list of all hydro gen symbols</p></li>
+<li><p><strong>capacs</strong> – 1d list of all hydro capac,</p></li>
+<li><p><strong>seasonDict</strong> – dict of season:gensymbol:potential,</p></li>
+<li><p><strong>repHrs</strong> – rep hours (1d list)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>average fleet CF in season</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.getListOfDaysInMonth">
+<code class="sig-name descname">getListOfDaysInMonth</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">m</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.getListOfDaysInMonth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets list with days of the year in given month m</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>m</strong> – month (1-12 basis)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of days of the year in given month (0-364 basis)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.getDailyHydroPotentialsUC">
+<code class="sig-name descname">getDailyHydroPotentialsUC</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fleetUC</span></em>, <em class="sig-param"><span class="n">hydroData</span></em>, <em class="sig-param"><span class="n">daysUC</span></em>, <em class="sig-param"><span class="n">ucYear</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.getDailyHydroPotentialsUC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compiles dict with daily hydro potentials</p>
+<p>Compiles dict with daily hydro potentials for individual hydro gens for UC run from list with monthly potentials</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fleetUC</strong> – 2d list with complete generator fleet</p></li>
+<li><p><strong>hydroData</strong> – 2d list with monthly hydro potentials for simulation year</p></li>
+<li><p><strong>daysUC</strong> – list with days of the year (1-365) that UC simulation will be performed</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dict with {genID: hydro energy MWh}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.compute_max_daily_hydro">
+<code class="sig-name descname">compute_max_daily_hydro</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fleet</span></em>, <em class="sig-param"><span class="n">currYear</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">gcm</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.compute_max_daily_hydro" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts monthly hydro capacity for each plant to daily hydro capacity</p>
+<p>This conversion follows a simple linear rule with simulated water releases simulated by PNNL.</p>
+<div class="math notranslate nohighlight">
+\[P^{MAX}_{day} = P_{month}^{PNNL}\frac{r_{day}^{PNNL}}{\sum_{day \in month} r_{day}^{PNNL}}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fleet</strong> – (2d list) gen fleet</p></li>
+<li><p><strong>currYear</strong> – (int) current year</p></li>
+<li><p><strong>dataRoot</strong> – (string) folder with input data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary with daily hydro capacity {gensymbol: 1d list of daily capacities}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.importHydroDailyReleases">
+<code class="sig-name descname">importHydroDailyReleases</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">currYear</span></em>, <em class="sig-param"><span class="n">dataRoot</span></em>, <em class="sig-param"><span class="n">gcm</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.importHydroDailyReleases" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns hydro daily releases for current year</p>
+<p>Read file with daily hydro releases created by PNNL (Assumes format is the same as the monthly file)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>currYear</strong> – (integer) current year</p></li>
+<li><p><strong>dataRoot</strong> – (string) path to folder with input data</p></li>
+<li><p><strong>gcm</strong> – (string) name of climate model instance (GCM_RCP)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="renewables.GetHydroMaxGenPotential.getReleasesForUnit">
+<code class="sig-name descname">getReleasesForUnit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">oris</span></em>, <em class="sig-param"><span class="n">daily_releases</span></em><span class="sig-paren">)</span><a class="headerlink" href="#renewables.GetHydroMaxGenPotential.getReleasesForUnit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets total hydropower generation potential for month(s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>oris</strong> – ORIS ID</p></li>
+<li><p><strong>daily_releases</strong> – hydro daily releases (2d list) for curr year</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>1d list with daily release for hydro unit in curr year (index of first year is 0)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../Demand/index.html" class="btn btn-neutral float-right" title="Electricity demand" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../Parameters/index.html" class="btn btn-neutral float-left" title="Parameters" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

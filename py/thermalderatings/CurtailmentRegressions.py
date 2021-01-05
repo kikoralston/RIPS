@@ -75,8 +75,7 @@ def setEnvRegCurtailments(coolType, capac, pt, ppDeltaT, metAndWaterData, maxT, 
 def calculateMixedTemperature(inputs):
     """Computes final stream temperature after water discharge by power plant
 
-    :param inputs: a list with stream T, stream flow, temperature rise through power plant
-    cooling system, power plant discharge flow.
+    :param inputs: a list with stream T, stream flow, temperature rise through power plant cooling system, power plant discharge flow.
     :return: 1d list with time series of final mixed stream T
     """
 
@@ -170,7 +169,7 @@ def runCurtailRegression(metAndWaterData, coeffs, incCurtailments, pt, coolType,
     """Compute list with hourly thermal deratings for given plant
 
     Output 1d list w/ hourly curtailment (% of capacity) for individual generator. It uses the results from
-    :fun:`.setAvivaCurtailments` and returns a 1-d list. This function controls if simulation is considering this
+    :func:`.setAvivaCurtailments` and returns a 1-d list. This function controls if simulation is considering this
     type of derating simulation (`incCurtailments`) and if the plant type is included in the list of plants that
     should have derating simulation (`ptCurtailed`)
 
@@ -243,7 +242,7 @@ def getCoeffsForGenOrTech(plantType, coolType, plantTypesCurtailed, regCoeffs, c
     """Get coefficients for a particular generator or technology
 
     If plant not eligible for curtailment or cool type not included in reg coeffs (e.g., wind),
-    assume no curtailment. See :fun:loadRegCoeffs for structure of coeffs.
+    assume no curtailment. See :func:loadRegCoeffs for structure of coeffs.
 
     Inputs: parameters for getting reg coeffs, and regCoeffs (dict of cool type: cool design T: parameter:coefficient)
 

@@ -9,15 +9,15 @@ import copy
 def calculateHourlyCapacsWithCurtailments(genFleet, hrlyCurtailmentsAllGensInTgtYr, currYear):
     """Compute hourly available capacity in MW after deratings for existing fleet
 
-    This function uses the capacity deratings in % of capacity computed by function :fun:`determineHrlyCurtailmentsForExistingGens`
+    This function uses the capacity deratings in % of capacity computed by function :func:`determineHrlyCurtailmentsForExistingGens`
     and computes time series of available capacity (in MW) for all generators in the fleet.
 
     :param genFleet: 2d list with Generation Fleet data matrix
-    :param hrlyCurtailmentsAllGensInTgtYr: dict mapping each gen to 2d list of datetime for year of run to hourly net
-                                           capacity curtailments (fraction of total capacity)
+    :param hrlyCurtailmentsAllGensInTgtYr: dict mapping each gen to 2d list of datetime for year of run to hourly net capacity curtailments (fraction of total capacity)
     :param currYear: integer representing year being simulated
     :return: (dict) a dictionary {gcm: {gen symbol: [hourly available capacity in MW]}}
     """
+
     genHourlyCapacs = dict()
 
     fuelTypeCol, capacCol = genFleet[0].index('Modeled Fuels'), genFleet[0].index('Capacity (MW)')
@@ -69,7 +69,7 @@ def subtractCurtailmentsFromCapac(hrlyCurtailments, capac, genSymbol):
 def calculateHourlyTechCapacsWithCurtailments(newTechsCE, hrlyCurtailmentsAllTechsInTgtYr, currYear, ptCurtailedAll):
     """Compute hourly available capacity of new thermal generators
 
-    This function uses the capacity deratings in % of capacity computed by function :fun:`determineHrlyCurtailmentsForNewTechs`
+    This function uses the capacity deratings in % of capacity computed by function :func:`ModifyNewTechCapacityWithWaterTData.determineHrlyCurtailmentsForNewTechs`
     and computes time series of available capacity (in MW) for all candidate technologies.
 
     :param newTechsCE: (2d list) list with data for new technologies

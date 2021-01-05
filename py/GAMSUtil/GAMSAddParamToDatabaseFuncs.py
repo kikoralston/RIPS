@@ -15,18 +15,18 @@ from AuxFuncs import convertCostToTgtYr, nested_dict_to_dict
 #
 def addDemandParam(db, demandCEZonal, zoneSet, hourSet, gcmSet, hoursForCE, ipmZones, ipmZoneNums, scaleMWtoGW):
     """
-    ADD HOURLY DEMAND parameters (either dict of gcm:zone:hourly demand or dict of zone:demand)
+    Add hourly demand parameters (either dict of gcm:zone:hourly demand or dict of zone:demand)
     for both CE and UC models
 
-    :param db:
-    :param demandCEZonal:
-    :param zoneSet:
-    :param hourSet:
-    :param gcmSet:
-    :param hourSymbols:
-    :param ipmZones:
-    :param ipmZoneNums:
-    :param scaleMWtoGW:
+    :param db: gams data base object
+    :param demandCEZonal: (dict) nested dictionary with hourly demand by gcm/zone
+    :param zoneSet: gams set object with zone names
+    :param hourSet: gams set object with hours of simulation
+    :param gcmSet: gams set object with gcm names
+    :param hourSymbols: list with hours of simulation
+    :param ipmZones: list with zone names
+    :param ipmZoneNums: list with zone numbers
+    :param scaleMWtoGW: (float) scaling factor MW to GW
     """
 
     demandDict = dict()
@@ -48,15 +48,15 @@ def addDemandParam(db, demandCEZonal, zoneSet, hourSet, gcmSet, hoursForCE, ipmZ
 
 
 def createDictIndexedByZone(dataDict, ipmZones, ipmZoneNums, *args):
-    """
+    """creates a dictionary indexed by zone names used in GAMS (z1, z2,...)
 
     Inputs: dictionary of zone:list, optional scalar. Outputs: dictionary of zone symbol:list.
 
-    :param dataDict:
-    :param ipmZones:
-    :param ipmZoneNums:
-    :param args:
-    :return:
+    :param dataDict: dictionary with data indexed by zone (using actual zone names)
+    :param ipmZones: list with zones names
+    :param ipmZoneNums: list with zone numbers
+    :param args: additional arguments (scaling factors)
+    :return: dictionary indexed by zone names used in GAMS (z1, z2,...)
     """
     zoneDict = dict()
     for zone in ipmZones:
@@ -72,8 +72,8 @@ def addEguParams(db, genFleet, genSet, genSymbols, ipmZones, ipmZoneNums, scaleL
 
     :param db: data base object
     :param genFleet: 2d list with gen fleet
-    :param genSet: gams set variable with existing generators
-    :param genSymbols: symbols of generators
+    :param genSet: gams set object with existing generators
+    :param genSymbols: list with symbols of generators
     :param ipmZones: symbols of ipm zones (symbols follow gams model nomenclature)
     :param ipmZoneNums: indexes of ipm zones
     :param scaleLbToShortTon: (float) conversion factor (pounds to short tons)
@@ -104,13 +104,13 @@ def addEguParams(db, genFleet, genSet, genSymbols, ipmZones, ipmZoneNums, scaleL
 
 
 def getEguParamZoneDict(genFleet, zoneCol, ipmZones, ipmZoneNums):
-    """ Return dict of {genSymbol:zone num}
+    """Create a dictionary mapping generator to ipm zone
 
     :param genFleet: 2d list with gen fleet
-    :param zoneCol:
-    :param ipmZones:
-    :param ipmZoneNums:
-    :return:
+    :param zoneCol: (int) column with zone name
+    :param ipmZones: list with ipm zone names
+    :param ipmZoneNums: list with ipm zone numbers
+    :return: dict of {genSymbol:zone num}
     """
     zoneCol = genFleet[0].index(zoneCol)
     zoneDict = dict()
@@ -125,12 +125,12 @@ def addEguOpCostParam(db, genFleet, genSet, genSymbols, scaleLbToShortTon, scale
 
     :param db: data base object
     :param genFleet: 2d list with gen fleet
-    :param genSet:
-    :param genSymbols:
-    :param scaleLbToShortTon:
-    :param scaleMWtoGW:
-    :param scaleDollarsToThousands:
-    :param co2Price:
+    :param genSet: gams set object with existing generators
+    :param genSymbols: list with symbols of generators
+    :param scaleLbToShortTon: (float) conversion factor lb to short ton
+    :param scaleMWtoGW: (float) conversion factor MW to GW (1/1000)
+    :param scaleDollarsToThousands: (float) conversion factor dollars to thousand dollars
+    :param co2Price: (float) value of CO2 price
     """
     ocDict = getEguOpCostDict(genFleet, scaleLbToShortTon, scaleMWtoGW, scaleDollarsToThousands, co2Price)
     (ocName, ocDescrip) = ('pOpcost', 'op cost (thousand$/GWh)')
@@ -138,17 +138,17 @@ def addEguOpCostParam(db, genFleet, genSet, genSymbols, scaleLbToShortTon, scale
 
 
 def addEguHourlyParams(db, hourlyCapacsCE, gcmSet, genSet, hourSet, hoursForCE, scaleMWtoGW):
-    """ ADD EXISTING GENERATOR HOURLY CAPACITIES
+    """ Add existing generator hourly capacities to gdx database
 
     Add hourly HR & capac param
 
-    :param db:
-    :param hourlyCapacsCE:
-    :param gcmSet:
-    :param genSet:
-    :param hourSet:
-    :param hoursForCE:
-    :param scaleMWtoGW:
+    :param db: gams data base object
+    :param hourlyCapacsCE: (dict) hourly capacities of existing generators
+    :param gcmSet: gams set object with gcm names
+    :param genSet: gams set object with existing generators
+    :param hourSet: gams set object with hours of simulation
+    :param hoursForCE: list with hours of simulation
+    :param scaleMWtoGW: (float) conversion factor MW to GW (1/1000)
     """
 
     capacDict = dict()
@@ -169,12 +169,14 @@ def addEguHourlyParams(db, hourlyCapacsCE, gcmSet, genSet, hourSet, hoursForCE, 
 
 
 def getHourly2dParamDict(hourlyParam, hoursForCE, scalar):
-    """Creates dictionary of (key,hourSymbol):param (for capac or HR, key=gen; for demand or wind & solar gen, key=zone)
+    """Creates dictionary of (key,hourSymbol)
 
-    :param hourlyParam:
-    :param hoursForCE:
-    :param scalar:
-    :return:
+    for capac or HR, key=gen; for demand or wind & solar gen, key=zone
+
+    :param hourlyParam: (dict) nested dictionary with hourly parameters
+    :param hoursForCE: (list) hours of simulation (considering all gcms)
+    :param scalar: (float) scaling factor
+    :return: dictionary with tuples (key,hourSymbol) as keys
     """
     paramDict = dict()
     for key in hourlyParam:
@@ -186,19 +188,19 @@ def getHourly2dParamDict(hourlyParam, hoursForCE, scalar):
 
 def addExistingRenewableMaxGenParams(db, gcmSet, zoneSet, ipmZones, ipmZoneNums, hourSet, hoursForCE,
                                      hourlySolarGenCEZonal, hourlyWindGenCEZonal, scaleMWtoGW):
-    """ADD EXISTING RENEWABLE COMBINED MAXIMUM GENERATION VALUES
+    """Add existing renewable combined maximum generation values to database
 
     Converts 1d list of param vals to hour-indexed dicts, then adds dicts to GAMS db
 
-    :param db:
-    :param zoneSet:
-    :param ipmZones:
-    :param ipmZoneNums:
-    :param hourSet:
-    :param hourSymbols:
-    :param hourlySolarGenCEZonal:
-    :param hourlyWindGenCEZonal:
-    :param scaleMWtoGW:
+    :param db: gams data base object
+    :param zoneSet: gams set object with zones
+    :param ipmZones: list with ipm zones
+    :param ipmZoneNums: list with ipm zone numbers
+    :param hourSet: gams set object with hours of simulation
+    :param hourSymbols: list with symbols of hours of simulation
+    :param hourlySolarGenCEZonal: (dict) hourly solar generation by zone
+    :param hourlyWindGenCEZonal: (dict) hourly wind generation by zone
+    :param scaleMWtoGW: (float) scaling factors MW to GW
     """
 
     maxSolarGenDict = dict()
@@ -244,15 +246,15 @@ def getParamIndexedByHourDict(paramVals, hourSymbols, *scalar):
 
 
 def addLineSourceAndSink(db, lineSet, lines, ipmZones, ipmZoneNums):
-    """ ADD ZONE AND LINE CONSTRAINTS
+    """ Add zone and line constraints
 
     Add parameter mapping lines to zone sources & sinks (pLinesources(l),pLinesinks(l))
 
-    :param db:
-    :param lineSet:
-    :param lines:
-    :param ipmZones:
-    :param ipmZoneNums:
+    :param db: gams data base object
+    :param lineSet: gams set object with lines names
+    :param lines: list with lines names
+    :param ipmZones: list with zone names
+    :param ipmZoneNums: list with zone numbers
     """
     lineSources, lineSinks = dict(), dict()
     for line in lines:
@@ -270,11 +272,11 @@ def addLineCapacs(db, lineCapacs, lineSet, lines, scaleMWtoGW):
 
     convert to GW
 
-    :param db:
-    :param lineCapacs:
-    :param lineSet:
-    :param lines:
-    :param scaleMWtoGW:
+    :param db: gams data base object
+    :param lineCapacs: (dict) capacities of transmission lines
+    :param lineSet: gams set with lines names
+    :param lines: list with lines names
+    :param scaleMWtoGW: (float) scaling factor MW to GW
     """
     lineCapacsGW = dict()
     for key in lineCapacs: lineCapacsGW[key] = lineCapacs[key] * 1 / scaleMWtoGW
@@ -286,14 +288,14 @@ def addPumpHydroParams(db, genFleetForCE, phEff, phMaxSoc, phInitSoc, pumpHydroG
                        scaleMWtoGW):
     """ ADD PUMPED HYDRO PARAMETERS
 
-    :param db:
-    :param genFleetForCE:
-    :param phEff:
-    :param phMaxSoc:
-    :param phInitSoc:
-    :param pumpHydroGenSet:
-    :param pumpHydroGenSymbols:
-    :param scaleMWtoGW:
+    :param db: gams data base object
+    :param genFleetForCE: 2d list with gen fleet
+    :param phEff: (float) pumped hydro efficiency (%)
+    :param phMaxSoc: (float) pumped hydro maximum state of charge (multiplier of capacity)
+    :param phInitSoc: (float) pumped hydro initial state of charge (% of maxsoc)
+    :param pumpHydroGenSet: gams set with pumped hydro generators
+    :param pumpHydroGenSymbols: list with pumped hydro generators symbols
+    :param scaleMWtoGW: (float) scaling factor MW to GW
     """
     effDict = dict()
     for symb in pumpHydroGenSymbols: effDict[symb] = phEff
@@ -313,11 +315,11 @@ def addPumpHydroParams(db, genFleetForCE, phEff, phMaxSoc, phInitSoc, pumpHydroG
 def getSocDict(genFleetForCE, phMaxSoc, pumpHydroGenSymbols, scaleMWtoGW):
     """ Get state of charge for pumped hydro. phMaxSoc equals multiple of capacity
 
-    :param genFleetForCE:
-    :param phMaxSoc:
-    :param pumpHydroGenSymbols:
-    :param scaleMWtoGW:
-    :return:
+    :param genFleetForCE: 2d list with gen fleet
+    :param phMaxSoc: (float) pumped hydro maximum state of charge (multiplier of capacity)
+    :param pumpHydroGenSymbols: list with pumped hydro generators symbols
+    :param scaleMWtoGW: (float) scaling factor MW to GW
+    :return: (dict) {pumped hydro symbol: max state of charge (in MW)}
     """
     capacCol = genFleetForCE[0].index('Capacity (MW)')
     socDict = dict()
@@ -331,14 +333,14 @@ def getSocDict(genFleetForCE, phMaxSoc, pumpHydroGenSymbols, scaleMWtoGW):
 # ********************************* CAPACITY EXPANSION PARAMETERS *********************************
 #
 def addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbToShortTon, ptCurtailed):
-    """ ADD NEW TECH PARAMS FOR CE
+    """ Add new tech parameters to gdx database for CE
 
-    :param db:
-    :param newTechsCE:
-    :param scaleMWtoGW:
-    :param scaleDollarsToThousands:
-    :param scaleLbToShortTon:
-    :param ptCurtailed:
+    :param db: gams data base object
+    :param newTechsCE: 2d list with parameters of new techs
+    :param scaleMWtoGW: (float) scaling factor MW to GW
+    :param scaleDollarsToThousands: (float) scaling factor dollars to thousands
+    :param scaleLbToShortTon: (float) scaling factor lb to short tons
+    :param ptCurtailed: (list) list of techs that have climate-induced capacity derating
     """
     # get sets written to data base
     cellSet = db.get_set('c')
@@ -476,12 +478,12 @@ def addTechParams(db, newTechsCE, scaleMWtoGW, scaleDollarsToThousands, scaleLbT
 def getTechParamDict(newTechsCE, techSymbols, paramColName, ptCurtailed, *scalar):
     """Creates dict of (techSymbol:paramVal) for given parameter name
 
-    :param newTechsCE:
-    :param techSymbols:
-    :param paramColName:
-    :param ptCurtailed:
-    :param scalar:
-    :return:
+    :param newTechsCE: 2d list with parameters of new techs
+    :param techSymbols: (list) names of new techs
+    :param paramColName: (int) index of column of desired parameter in newTechsCE
+    :param ptCurtailed: (list) list of techs that have climate-induced capacity derating
+    :param scalar: (float) scaling factor
+    :return: dict of (techSymbol:paramVal) for given parameter name
     """
     techCol = newTechsCE[0].index('TechnologyType')
     paramCol = newTechsCE[0].index(paramColName)
@@ -501,10 +503,10 @@ def getTechParamDict(newTechsCE, techSymbols, paramColName, ptCurtailed, *scalar
 def getTechOpCostDict(newTechs, ptCurtailed, scalar):
     """Takes in techs and returns dictionary of (tech:opCost)
 
-    :param newTechs:
-    :param ptCurtailed:
-    :param scalar:
-    :return:
+    :param newTechs: 2d list with parameters of new techs
+    :param ptCurtailed: (list) list of techs that have climate-induced capacity derating
+    :param scalar: (float) scaling factor
+    :return: dictionary of {tech:opCost}
     """
     opCosts = calcOpCostsTech(newTechs)
     paramDict = dict()
@@ -520,13 +522,13 @@ def addTechCurtailedHourlyCapac(db, hourlyCurtailedTechCapacsCE, gcmSet, cellSet
 
     Input capacs: (tech,loc):[capacs]. Output dict added to db: idxed by (loc,tech,hr)
 
-    :param db:
+    :param db: gams data base object
     :param hourlyCurtailedTechCapacsCE:
-    :param cellSet:
-    :param techCurtailedSet:
-    :param hourSet:
-    :param hoursForCE:
-    :param scaleMWtoGW:
+    :param cellSet: gams set with grid cell names
+    :param techCurtailedSet: gams set with names of techs that have climate-induced capacity deratings
+    :param hourSet: gams set with hours of simulation
+    :param hoursForCE: list with hours of simulation
+    :param scaleMWtoGW: (float) scaling factor MW to GW
     """
     capacDict = dict()
     for gcm in hourlyCurtailedTechCapacsCE:
@@ -542,10 +544,10 @@ def getHourlyTechParamDict(hourlyParam, hoursForCE, scalar):
     """Creates dictionary of (gcm, locSymbol, techSymbol, hourSymbol):capac or HR
 
 
-    :param hourlyParam:
-    :param hoursForCE:
-    :param scalar:
-    :return:
+    :param hourlyParam: (dict) dictionary with hourly values for (tech, cell) tuples
+    :param hoursForCE: list with hours of simulation
+    :param scalar: (float) scaling factor
+    :return: (dict) {(gcm, locSymbol, techSymbol, hourSymbol): value}
     """
     paramDict = dict()
     for (techSymbol, locSymbol) in hourlyParam:
@@ -558,11 +560,11 @@ def getHourlyTechParamDict(hourlyParam, hoursForCE, scalar):
 def addCellsToZones(db, cellSet, cellsToZones, ipmZones, ipmZoneNums):
     """ ADD MAP FROM CELLS TO ZONES
 
-    :param db:
-    :param cellSet:
-    :param cellsToZones:
-    :param ipmZones:
-    :param ipmZoneNums:
+    :param db: gams data base object
+    :param cellSet: gams set with grid cell names
+    :param cellsToZones: (dict) dictionary mapping cells to zones
+    :param ipmZones: list with ipm zone names
+    :param ipmZoneNums: list with ipm zone numbers
     """
     cellsToZoneNums, cellSymbols = dict(), list()
     for cell in cellsToZones:
@@ -573,17 +575,17 @@ def addCellsToZones(db, cellSet, cellsToZones, ipmZones, ipmZoneNums):
 
 
 def addPlanningReserveParam(db, planningReserveZonal, ipmZones, ipmZoneNums, zoneSet, zoneSymbols, scaleMWtoGW):
-    """ ADD PLANNING RESERVE MARGIN FRACTION PARAMETER
+    """ Add planning reserve margin fraction parameters
 
     Add zonal planning reserve
 
-    :param db:
-    :param planningReserveZonal:
-    :param ipmZones:
-    :param ipmZoneNums:
-    :param zoneSet:
-    :param zoneSymbols:
-    :param scaleMWtoGW:
+    :param db: gams data base object
+    :param planningReserveZonal: (dict) dictionary with planning reserve margin (in MW) for each zone
+    :param ipmZones: list with ipm zone names
+    :param ipmZoneNums: list with ipm zone numbers
+    :param zoneSet: gams set with zone names
+    :param zoneSymbols: list with zone names
+    :param scaleMWtoGW: (float) scaling factor MW to GW
     """
     reserveDict = createDictIndexedByZone(planningReserveZonal, ipmZones, ipmZoneNums, 1 / scaleMWtoGW)
     planName, planDesc = 'pPlanningreserve', 'planning reserve'
@@ -593,12 +595,12 @@ def addPlanningReserveParam(db, planningReserveZonal, ipmZones, ipmZoneNums, zon
 def addPeakHourToZoneParam(db, peakDemandHourZonal, peakHourSet, peakHrSymbols, ipmZones, ipmZoneNums):
     """ Add map of peak hour to zone
 
-    :param db:
-    :param peakDemandHourZonal:
-    :param peakHourSet:
-    :param peakHrSymbols:
-    :param ipmZones:
-    :param ipmZoneNums:
+    :param db: gams data base object
+    :param peakDemandHourZonal: (dict) hours of peak demand in each zone
+    :param peakHourSet: gams set with peak hours
+    :param peakHrSymbols: list with peak hours
+    :param ipmZones: list with ipm zone names
+    :param ipmZoneNums: list with ipm zone numbers
     """
     peakDict = dict()
     for zone in peakDemandHourZonal:
@@ -608,23 +610,23 @@ def addPeakHourToZoneParam(db, peakDemandHourZonal, peakHourSet, peakHrSymbols, 
 
 
 def addDiscountRateParam(db, discountRate):
-    """ ADD DISCOUNT RATE PARAMETER
+    """ Add discount rate parameter to gdx database
 
-    :param db:
-    :param discountRate:
+    :param db: gams data base object
+    :param discountRate: (float) annual discount rate
     """
     add0dParam(db, 'pR', 'discount rate', discountRate)
 
 
 def addExistingPlantFirmFractions(db, genFleet, genSet, genSymbols, firmCapacityCreditsExistingGens):
-    """ ADD FIRM FRACTION FOR EXISTING GENERATORS
+    """ Add firm fraction for existing generators
 
     Firm fraction goes towards meeting planning reserve margin
 
-    :param db:
-    :param genFleet:
-    :param genSet:
-    :param genSymbols:
+    :param db: gams data base object
+    :param genFleet: 2d list with gen fleet
+    :param genSet: gams set object with existing generators
+    :param genSymbols: list with symbols of generators
     :param firmCapacityCreditsExistingGens:
     """
     firmCreditDict = getFirmCreditExistingGenDict(genFleet, firmCapacityCreditsExistingGens)
@@ -635,7 +637,7 @@ def addExistingPlantFirmFractions(db, genFleet, genSet, genSymbols, firmCapacity
 def getFirmCreditExistingGenDict(genFleet, firmCapacityCreditsExistingGens):
     """ Returns dict of (genSymbol:capacCredit) based on plant type of each generator
 
-    :param genFleet:
+    :param genFleet: 2d list with gen fleet
     :param firmCapacityCreditsExistingGens:
     :return:
     """
@@ -651,22 +653,22 @@ def getFirmCreditExistingGenDict(genFleet, firmCapacityCreditsExistingGens):
 
 def addRenewTechCFParams(db, renewTechSet, renewTechSymbols, gcmSet, zoneSet, hourSet, hoursForCE, newWindCFsCEZonal,
                          newSolarCFsCEZonal, ipmZones, ipmZoneNums):
-    """ADD HOURLY CAPACITY FACTORS FOR NEW RENEWABLE TECHS
+    """Add hourly capacity factors for new renewable techs
 
     Add CFs for new renew builds. Input: CFs as zone:[CF]
 
     Output: dict added to GAMS file as (z,tech,h):[CFs]
 
-    :param db:
-    :param renewTechSet:
-    :param renewTechSymbols:
-    :param zoneSet:
-    :param hourSet:
-    :param hourSymbols:
-    :param newWindCFsCEZonal:
-    :param newSolarCFsCEZonal:
-    :param ipmZones:
-    :param ipmZoneNums:
+    :param db: gams data base object
+    :param renewTechSet: gams set with renewable techs
+    :param renewTechSymbols: list with renewable tech names
+    :param zoneSet: gams set with zone names
+    :param hourSet: gams set with hours of simulation
+    :param hourSymbols: list with hours of simulation
+    :param newWindCFsCEZonal: dict with CFs for new wind gens
+    :param newSolarCFsCEZonal: dict with CFs for new solar gens
+    :param ipmZones: list with ipm zone names
+    :param ipmZoneNums: list with ipm zone numbers
     """
     renewtechCfDict = dict()
 
@@ -697,18 +699,18 @@ def addRenewTechCFParams(db, renewTechSet, renewTechSymbols, gcmSet, zoneSet, ho
 
 
 def addCppEmissionsCap(db, co2CppSercCurrYearLimit):
-    """ADD CO2 EMISSIONS CAP FOR CE MODEL
+    """Add co2 emission caps for CE model
 
-    :param db: data base object
+    :param db: gams data base object
     :param co2CppSercCurrYearLimit: annual co2 upper bound (in short tons)
     """
     add0dParam(db, 'pCO2emcap', 'CPP co2 emissions cap [10^3 short tons]', co2CppSercCurrYearLimit/1e3)
 
 
 def addSeasonDemandWeights(db, seasonDemandWeights):
-    """ADD WEIGHTS TO SCALE REPRESENTATIVE SEASONAL DEMAND UP TO COMPLETE SEASON PERIOD
+    """Add weights to scale representative seasonal demand up to complete season period
 
-    :param db: data base object
+    :param db: gams data base object
     :param seasonDemandWeights: dictionary with season weights
     """
     for season in seasonDemandWeights:
@@ -716,7 +718,7 @@ def addSeasonDemandWeights(db, seasonDemandWeights):
 
 
 def addMaxNumNewRenew(db, newWindCFsCEZonal, newSolarCFsCEZonal, ipmZones, ipmZoneNums):
-    """ ADD LIMIT ON MAX NUMBER OF NEW RENEWABLE BUILDS (Wind and Solar) per zone and aggregated block
+    """ Add limit on max number of new renewable builds (Wind and Solar) per zone and aggregated block
 
     :param db: GAMS database object
     """
@@ -756,16 +758,16 @@ def addMaxNumNewRenew(db, newWindCFsCEZonal, newSolarCFsCEZonal, ipmZones, ipmZo
 
 
 def addMaxNumNewBuilds(db, newTechsCE, zoneSet, ipmZones, ipmZoneNums, typeSet, maxAddedZonalCapacPerTech, ptCurtailed):
-    """ ADD LIMIT ON MAX NUMBER OF NEW BUILDS PER PLANT TYPE BY ZONE
+    """ Add limit of max number of new builds per plant type in each zone
 
-    :param db:
-    :param newTechsCE:
-    :param zoneSet:
-    :param ipmZones:
-    :param ipmZoneNums:
-    :param typeSet:
-    :param maxAddedZonalCapacPerTech:
-    :param ptCurtailed:
+    :param db: gams data base object
+    :param newTechsCE: 2d list with parameters of new techs
+    :param zoneSet: gams set object with zone names
+    :param ipmZones: list with ipm zone names
+    :param ipmZoneNums: list with ipm zone numbers
+    :param typeSet: gams set object with types of new techs (no cooling info)
+    :param maxAddedZonalCapacPerTech: (numeric or dict) maximum of each type per zone
+    :param ptCurtailed: list with techs that have climate-induced capacity deratings
     """
     capacCol = newTechsCE[0].index('Capacity(MW)')
     techCol = newTechsCE[0].index('TechnologyType')
@@ -808,16 +810,16 @@ def addMaxNumNewBuilds(db, newTechsCE, zoneSet, ipmZones, ipmZoneNums, typeSet, 
 
 
 def addHydroMaxGenPerSeason(db, hydroGenSet, gcmSet, hydroPotPerSeason, scaleMWtoGW):
-    """ ADD MAX HYDRO GEN PER TIME BLOCK
+    """ Add max hydro generation per time block
 
     hydroPotPerSeason is a dict of season:genSymbol:gen (MWh), so just need to scale it.
     Note that sesaon can be 'special'!
 
-    :param db:
-    :param hydroGenSet:
-    :param hydroGenSymbols:
-    :param hydroPotPerSeason:
-    :param scaleMWtoGW:
+    :param db: gams data base object
+    :param hydroGenSet: gams set object with hydro generators
+    :param hydroGenSymbols: list with names of hydro generators
+    :param hydroPotPerSeason: (dict) {season:genSymbol:gen (MWh)}
+    :param scaleMWtoGW: (float) scaling factor MW to GW
     """
 
     seasonList = hydroPotPerSeason[list(hydroPotPerSeason.keys())[0]].keys()
@@ -837,14 +839,12 @@ def addHydroMaxGenPerSeason(db, hydroGenSet, gcmSet, hydroPotPerSeason, scaleMWt
 
 
 def addHydroMaxGenUC(db, hydroGenSet, hydroPot, scaleMWtoGW):
-    """ ADD MAX HYDRO GEN FOR DAYS IN UC RUN
+    """ Add max hydro gen for days in UC run
 
-    hydroPot is a dict of genSymbol:gen (MWh), so just need to scale it.
-
-    :param db:
-    :param hydroGenSet:
-    :param hydroPot:
-    :param scaleMWtoGW:
+    :param db: gams data base object
+    :param hydroGenSet: gams set object with hydro generators
+    :param hydroPot: dict of genSymbol:gen (MWh)
+    :param scaleMWtoGW: (float) scaling factor MW to GW
     """
 
     maxGenDict = {genId: hydroPot[genId]/scaleMWtoGW for genId in hydroPot}
@@ -859,12 +859,12 @@ def addHydroMaxGenUC(db, hydroGenSet, hydroPot, scaleMWtoGW):
 def addEguUCParams(db, fleetUC, genSet, genSymbols, scaleMWtoGW, scaleDollarsToThousands):
     """ Add UC parameters
 
-    :param db:
-    :param fleetUC:
-    :param genSet:
-    :param genSymbols:
-    :param scaleMWtoGW:
-    :param scaleDollarsToThousands:
+    :param db: gams data base object
+    :param fleetUC: 2d list with gen fleet
+    :param genSet: gams set object with existing generators
+    :param genSymbols: list with symbols of generators
+    :param scaleMWtoGW: (float) scaling factor MW to GW
+    :param scaleDollarsToThousands: (float) scaling factor dollars to thousands
     """
     # Min load
     minLoadDict = getEguParamDict(fleetUC, 'MinLoad(MW)', 1 / scaleMWtoGW)
@@ -890,15 +890,15 @@ def addEguUCParams(db, fleetUC, genSet, genSymbols, scaleMWtoGW, scaleDollarsToT
 def addRegReserveParameters(db, regUp, regDown, rrToRegTime, hourSet, hourSymbols, zoneSet, modelName, genparam):
     """ Add reg reserve parameters
 
-    :param db:
-    :param regUp:
-    :param regDown:
-    :param rrToRegTime:
-    :param hourSet:
-    :param hourSymbols:
-    :param zoneSet:
-    :param modelName:
-    :param genparam:
+    :param db: gams data base object
+    :param regUp: (2d list) hourly values of regulated up reserve by zone
+    :param regDown: (2d list) hourly values of regulated down reserve by zone
+    :param rrToRegTime: (float) scaling factor for reserve time frame
+    :param hourSet: gams set with hours of simulation
+    :param hourSymbols: list with simulation hours
+    :param zoneSet: gams set with zones
+    :param modelName: (string) name of model
+    :param genparam: object of class :mod:`Generalparameters`
     """
     rampToRegParam = db.add_parameter('pRampratetoregreservescalar', 0, 'convert ramp rate to reg timeframe')
     rampToRegParam.add_record().value = rrToRegTime
@@ -931,14 +931,14 @@ def addRegReserveParameters(db, regUp, regDown, rrToRegTime, hourSet, hourSymbol
 def addFlexReserveParameters(db, flexRes, rrToFlexTime, hourSet, hourSymbols, zoneSet, modelName, genparam):
     """ Add reserve parameter quantities
 
-    :param db:
-    :param flexRes:
-    :param rrToFlexTime:
-    :param hourSet:
-    :param hourSymbols:
-    :param zoneSet:
-    :param modelName:
-    :param genparam:
+    :param db: gams data base object
+    :param flexRes: (2d list) hourly values of flexibility reserve by zone
+    :param rrToFlexTime: (float) scaling factor for flexibility reserve time frame
+    :param hourSet: gams set with hours of simulation
+    :param hourSymbols: list with simulation hours
+    :param zoneSet: gams set with zones
+    :param modelName: (string) name of model
+    :param genparam: object of class :mod:`Generalparameters`
     """
     rampToFlexParam = db.add_parameter('pRampratetoflexreservescalar', 0, 'convert ramp rate to flex timeframe')
     rampToFlexParam.add_record().value = rrToFlexTime
@@ -957,7 +957,16 @@ def addFlexReserveParameters(db, flexRes, rrToFlexTime, hourSet, hourSymbols, zo
 
 
 def addContReserveParameters(db, contRes, rrToContTime, hourSet, hourSymbols, zoneSet, genparam):
+    """
 
+    :param db: gams data base object
+    :param contRes: (2d list) hourly values of contigency reserve by zone
+    :param rrToContTime: (float) scaling factor for contigency reserve time frame
+    :param hourSet: gams set with hours of simulation
+    :param hourSymbols: list with simulation hours
+    :param zoneSet: gams set with zones
+    :param genparam: object of class :mod:`Generalparameters`
+    """
     rampToContParam = db.add_parameter('pRampratetocontreservescalar', 0, 'convert ramp rate to cont timeframe')
     rampToContParam.add_record().value = rrToContTime
 
@@ -973,14 +982,14 @@ def addEguInitialConditions(db, genSet, genSymbols, fleetUC, onOffInitial, genAb
                             scaleMWtoGW):
     """ Add initial conditions
 
-    :param db:
-    :param genSet:
-    :param genSymbols:
-    :param fleetUC:
-    :param onOffInitial:
-    :param genAboveMinInitial:
-    :param mdtCarriedInitial:
-    :param scaleMWtoGW:
+    :param db: gams data base object
+    :param genSet: gams set object with existing generators
+    :param genSymbols: list with symbols of generators
+    :param fleetUC: 2d list with gen fleet
+    :param onOffInitial: (list) initial status of generator (on/off)
+    :param genAboveMinInitial: (list) initial state of generation above minimum for each generator
+    :param mdtCarriedInitial: (list) initial state of min down time for each generator
+    :param scaleMWtoGW: (float) scaling factor MW to GW
     """
     onOffInitialDict = getInitialCondsDict(fleetUC, onOffInitial, 1)
     (onOffInitialName, onOffInitialDescrip) = ('pOnoroffinitial', 'whether initially on (1) or off (0) based on last UC')
@@ -996,7 +1005,13 @@ def addEguInitialConditions(db, genSet, genSymbols, fleetUC, onOffInitial, genAb
 
 
 def getInitialCondsDict(fleetUC, initialCondValues, *scalar):
+    """ Create dictionary with initial conditions for individual generators for UC run
 
+    :param fleetUC: 2d list with gen fleet
+    :param initialCondValues: (1d list) values of intial conditions (same order of gen fleet)
+    :param scalar: (float) scaling factor
+    :return: (dict) {gen symbol: value}
+    """
     initCondsDict = dict()
     for rowNum in range(1, len(fleetUC)):
         initCondsDict[createGenSymbol(fleetUC[rowNum], fleetUC[0])] = initialCondValues[rowNum - 1] * scalar[0]
@@ -1005,14 +1020,14 @@ def getInitialCondsDict(fleetUC, initialCondValues, *scalar):
 
 
 def addEguEligibleToProvideRes(db, fleetUC, genSet, genSymbols, *stoMarket):
-    """ WHICH GENERATORS ARE ELIGIBLE TO PROVIDE RESERVES
+    """ Which generators are eligible to provide reserves
 
     Add parameter for which existing generators can provide flex, cont, or reg reserves
 
-    :param db:
-    :param fleetUC:
-    :param genSet:
-    :param genSymbols:
+    :param db: gams data base object
+    :param fleetUC: 2d list with gen fleet
+    :param genSet: gams set object with existing generators
+    :param genSymbols: list with symbols of generators
     :param stoMarket:
     """
     fleetOrTechsFlag = 'fleet'
@@ -1125,12 +1140,12 @@ def add_NdParam(db, paramDict, list_idxSet, paramName, paramDescrip):
     paramDict is a simple dictionary (it MUST NOT BE a nested dictionary). See function 'nested_dict_to_dict()'
     to convert a nested dictionary into a simple dictionary where the key is a tuple with combination of nested keys
 
-    :param db: database object
+    :param db: gams database object
     :param paramDict: simple dictionary with data. keys must be a tuple with N values
     :param list_idxSet: 1d list of size N with GAMS sets for domain of parameters (must be in the correct orders)
-    :param paramName: (string)
-    :param paramDescrip: (string)
-    :return:
+    :param paramName: (string) name of parameter
+    :param paramDescrip: (string) description of parameter
+    :return: gams parameter object
     """
     addedParam = db.add_parameter_dc(paramName, list_idxSet, paramDescrip)
     for k, v in iter(paramDict.items()):

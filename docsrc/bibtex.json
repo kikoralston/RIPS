@@ -1,0 +1,28 @@
+{
+    "cited": {
+        "Demand/index": [
+            "RalstonFonseca2019"
+        ],
+        "Renewables/index": [
+            "USNationalRenewableEnergyLaboratory2010",
+            "Draxl2015"
+        ],
+        "index": [
+            "Taylor:2012jg",
+            "Abatzoglou:2012kc",
+            "RalstonFonseca2019",
+            "Cheng2020",
+            "Liang2004",
+            "Li2013",
+            "Voisin2013",
+            "Voisin2017",
+            "Yearsley2009",
+            "IECM:2018",
+            "Zhai2011",
+            "Loew2020",
+            "USNationalRenewableEnergyLaboratory2010",
+            "Draxl2015",
+            "RalstonFonseca2020"
+        ]
+    }
+}

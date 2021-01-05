@@ -1,59 +1,58 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Setup Fleet &mdash; Capacity Expansion / Unit Commitment and Economic Dispatch under climate change  documentation</title>
+  <title>Setup Fleet &mdash; CE/UCED under climate change  documentation</title>
   
 
   
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
   
 
   
-
-  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
     
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
-  
-
-  
-  
-    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="../genindex.html"/>
-        <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="Capacity Expansion / Unit Commitment and Economic Dispatch under climate change  documentation" href="../index.html"/>
-        <link rel="next" title="Main Scripts" href="../Main Scripts/index.html"/>
-        <link rel="prev" title="Parameters" href="../Parameters/index.html"/> 
-
-  
-  <script src="../_static/js/modernizr.min.js"></script>
-
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Thermal Deratings" href="../Thermal%20deratings/index.html" />
+    <link rel="prev" title="Electricity demand" href="../Demand/index.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
+   
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
-            <a href="../index.html" class="icon icon-home"> Capacity Expansion / Unit Commitment and Economic Dispatch under climate change
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> CE/UCED under climate change
           
 
           
@@ -76,56 +75,84 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
             
-                <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../intro.html">Bla</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Input data/index.html">Input data</a></li>
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../example.html">Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Input%20data/index.html">Input data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../GAMS/index.html">GAMS utility functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Parameters/index.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Renewables/index.html">Renewables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Demand/index.html">Electricity demand</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Setup Fleet</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Main Scripts/index.html">Main Scripts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Thermal deratings/index.html">Thermal Deratings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Thermal%20deratings/index.html">Thermal Deratings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Main%20Scripts/index.html">Main Scripts</a></li>
 </ul>
 
             
           
         </div>
+        
       </div>
     </nav>
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="../index.html">Capacity Expansion / Unit Commitment and Economic Dispatch under climate change</a>
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CE/UCED under climate change</a>
+        
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="../index.html">Docs</a> &raquo;</li>
-      
-    <li>Setup Fleet</li>
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Setup Fleet</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
+            
             <a href="../_sources/Setup Fleet/index.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -133,9 +160,9 @@
             
   <div class="section" id="module-SetupFleet.SetupGeneratorFleet">
 <span id="id1"></span><span id="setup-fleet"></span><h1>Setup Fleet<a class="headerlink" href="#module-SetupFleet.SetupGeneratorFleet" title="Permalink to this headline">¶</a></h1>
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.setupGeneratorFleet">
-<code class="descname">setupGeneratorFleet</code><span class="sig-paren">(</span><em>currYear</em>, <em>genparam</em>, <em>reserveparam</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.setupGeneratorFleet" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">setupGeneratorFleet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">currYear</span></em>, <em class="sig-param"><span class="n">genparam</span></em>, <em class="sig-param"><span class="n">reserveparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.setupGeneratorFleet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Imports fleet data</p>
 <p>This is the main function to compile the existing power plant fleet that will be used in the simulation</p>
 <p>Uses pre defined parameters of this analysis (states, year, &amp; power system for analysis) to import data
@@ -144,1263 +171,1045 @@ adds emissions rates and cooling information.</p>
 <p>Constructs base generator fleet w/ cooling information, emissions rates, VOM, fuel price, and unit commitment
 parameters. Then the fleet is compressed.</p>
 <p>DATA SOURCES: fleet - NEEDS; cooling information - EIA860; emissions rates - eGRID; VOM &amp; UC parameters - PHORUM.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>currYear</strong> – (int) year of fleet</li>
-<li><strong>genparam</strong> – object of class <code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></li>
-<li><strong>reserveparam</strong> – object of class <code class="xref py py-mod docutils literal notranslate"><span class="pre">Reserveparameters</span></code></li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>currYear</strong> – (int) year of fleet</p></li>
+<li><p><strong>genparam</strong> – object of class <code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></p></li>
+<li><p><strong>reserveparam</strong> – object of class <code class="xref py py-mod docutils literal notranslate"><span class="pre">Reserveparameters</span></code></p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(2d list) generator fleet data</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(2d list) generator fleet data</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addCoolingTechnologyAndSource">
-<code class="descname">addCoolingTechnologyAndSource</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>statesForAnalysis</em>, <em>dataRoot</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addCoolingTechnologyAndSource" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addCoolingTechnologyAndSource</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">statesForAnalysis</span></em>, <em class="sig-param"><span class="n">dataRoot</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addCoolingTechnologyAndSource" title="Permalink to this definition">¶</a></dt>
 <dd><p>ADD COOLING TECHNOLOGY AND SOURCE TO FLEET</p>
 <p>Imports cooling map and data from EIA 860, then adds them generator fleet</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>statesForAnalysis</strong> – states for analysis (1d list)</li>
-<li><strong>dataRoot</strong> – (string) path to root of data folder</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>statesForAnalysis</strong> – states for analysis (1d list)</p></li>
+<li><p><strong>dataRoot</strong> – (string) path to root of data folder</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addCoolingInfoToFleet">
-<code class="descname">addCoolingInfoToFleet</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>equipData</em>, <em>unitsToCoolingIDMap</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addCoolingInfoToFleet" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addCoolingInfoToFleet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">equipData</span></em>, <em class="sig-param"><span class="n">unitsToCoolingIDMap</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addCoolingInfoToFleet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds cooling technology and source to fleet</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>equipData</strong> – (2d list) cooling equipment data (EIA 860)</li>
-<li><strong>unitsToCoolingIDMap</strong> – (dictionary) map of generator ID to cooling ID</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>equipData</strong> – (2d list) cooling equipment data (EIA 860)</p></li>
+<li><p><strong>unitsToCoolingIDMap</strong> – (dictionary) map of generator ID to cooling ID</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.getCoolingTechAndSource">
-<code class="descname">getCoolingTechAndSource</code><span class="sig-paren">(</span><em>equipData</em>, <em>orisID</em>, <em>coolingID</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getCoolingTechAndSource" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">getCoolingTechAndSource</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">equipData</span></em>, <em class="sig-param"><span class="n">orisID</span></em>, <em class="sig-param"><span class="n">coolingID</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getCoolingTechAndSource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets cooling tech for given ORIS and cooling ID. Works for generators in NEEDS that have a corresponding
 unit in EIA860.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>equipData</strong> – (2d list) cooling tech data</li>
-<li><strong>orisID</strong> – (str) oris ID</li>
-<li><strong>coolingID</strong> – (str) cooling ID</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>equipData</strong> – (2d list) cooling tech data</p></li>
+<li><p><strong>orisID</strong> – (str) oris ID</p></li>
+<li><p><strong>coolingID</strong> – (str) cooling ID</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">tuple with cooling technology and source for input generator</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tuple with cooling technology and source for input generator</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.getCoolingTechMap">
-<code class="descname">getCoolingTechMap</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getCoolingTechMap" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">getCoolingTechMap</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getCoolingTechMap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Maps 2-letter codes to comprehensible cooling techs</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dictionary mapping cooling tech abbrev to full name (e.g. {‘DC’: ‘dry cooling’})</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dictionary mapping cooling tech abbrev to full name (e.g. {‘DC’: ‘dry cooling’})</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.mapUnitsToCoolingID">
-<code class="descname">mapUnitsToCoolingID</code><span class="sig-paren">(</span><em>assocData</em>, <em>baseGenFleet</em>, <em>equipData</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.mapUnitsToCoolingID" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">mapUnitsToCoolingID</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">assocData</span></em>, <em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">equipData</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.mapUnitsToCoolingID" title="Permalink to this definition">¶</a></dt>
 <dd><p>Maps NEEDS generator IDs to EIA860 cooling IDs</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>assocData</strong> – (2d list) cooling association data from EIA860</li>
-<li><strong>baseGenFleet</strong> – (2d list) base generator fleet from NEEDS (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>equipData</strong> – (2d list) map of NEEDS generators to EIA860 cooling ID or ‘NoMatch’</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>assocData</strong> – (2d list) cooling association data from EIA860</p></li>
+<li><p><strong>baseGenFleet</strong> – (2d list) base generator fleet from NEEDS (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>equipData</strong> – (2d list) map of NEEDS generators to EIA860 cooling ID or ‘NoMatch’</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">dictionary mapping NEEDS generator IDs to EIA860 cooling IDs</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary mapping NEEDS generator IDs to EIA860 cooling IDs</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.getRetirementStatusOfAssocRow">
-<code class="descname">getRetirementStatusOfAssocRow</code><span class="sig-paren">(</span><em>assocRow</em>, <em>assocData</em>, <em>equipData</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getRetirementStatusOfAssocRow" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">getRetirementStatusOfAssocRow</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">assocRow</span></em>, <em class="sig-param"><span class="n">assocData</span></em>, <em class="sig-param"><span class="n">equipData</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getRetirementStatusOfAssocRow" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check if cooling tech associated with cooling ID for ORIS ID match is retired. Returns true if unit is retired.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>assocRow</strong> – </li>
-<li><strong>assocData</strong> – </li>
-<li><strong>equipData</strong> – </li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>assocRow</strong> – </p></li>
+<li><p><strong>assocData</strong> – </p></li>
+<li><p><strong>equipData</strong> – </p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(boolean) True if unit is retired. False otherwise</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(boolean) True if unit is retired. False otherwise</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.get860Data">
-<code class="descname">get860Data</code><span class="sig-paren">(</span><em>statesForAnalysis</em>, <em>dataRoot</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.get860Data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get860Data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">statesForAnalysis</span></em>, <em class="sig-param"><span class="n">dataRoot</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.get860Data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Imports EIA860 cooling equipment and association data, and isolates equipment data to units in states of analysis</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>statesForAnalysis</strong> – (1d list) states for analysis</li>
-<li><strong>dataRoot</strong> – (string) path to directory with input data</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>statesForAnalysis</strong> – (1d list) states for analysis</p></li>
+<li><p><strong>dataRoot</strong> – (string) path to directory with input data</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(2d list) EIA860 cooling IDs and technologies</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(2d list) EIA860 cooling IDs and technologies</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.import860data">
-<code class="descname">import860data</code><span class="sig-paren">(</span><em>dataRoot</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.import860data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">import860data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataRoot</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.import860data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Imports 860 equipment and association data</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dataRoot</strong> – (string) path to directory with input data</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(2d list) EIA860 cooling association and equipment data</td>
-</tr>
-</tbody>
-</table>
+<p>This function reads two csv files (6_1_EnviroAssoc_cooling.csv and 6_2_EnviroEquip_cooling.csv) created directly
+from the EIA860 excel files with similar names.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dataRoot</strong> – (string) path to directory with input data</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(2d list) EIA860 cooling association and equipment data</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addEmissionsRates">
-<code class="descname">addEmissionsRates</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>statesForAnalysis</em>, <em>dataRoot</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addEmissionsRates" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addEmissionsRates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">statesForAnalysis</span></em>, <em class="sig-param"><span class="n">dataRoot</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addEmissionsRates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add emission rates from EGrid to generator fleet</p>
 <p>Adds a column with eGRID emissions rates to the 2d list with generator fleet. It modifies the 2d list
 <cite>baseGenFleet</cite>. This function does not return anything.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>statesForAnalysis</strong> – (1d list) states for analysis</li>
-<li><strong>dataRoot</strong> – (string) path to directory with input data</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>statesForAnalysis</strong> – (1d list) states for analysis</p></li>
+<li><p><strong>dataRoot</strong> – (string) path to directory with input data</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.fillMissingEmissionsRates">
-<code class="descname">fillMissingEmissionsRates</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>emsHeadersToAdd</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.fillMissingEmissionsRates" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">fillMissingEmissionsRates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">emsHeadersToAdd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.fillMissingEmissionsRates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fills missing generator emission rates with average for gens that have the same fuel and plant type.</p>
 <p>This function does not return anything.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>emsHeadersToAdd</strong> – (1d list) emissions headers to add</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>emsHeadersToAdd</strong> – (1d list) emissions headers to add</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.getEmsRatesOfMatchingFuelAndPlantType">
-<code class="descname">getEmsRatesOfMatchingFuelAndPlantType</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>plantType</em>, <em>fuelType</em>, <em>emsHeadersToAdd</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getEmsRatesOfMatchingFuelAndPlantType" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">getEmsRatesOfMatchingFuelAndPlantType</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">plantType</span></em>, <em class="sig-param"><span class="n">fuelType</span></em>, <em class="sig-param"><span class="n">emsHeadersToAdd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getEmsRatesOfMatchingFuelAndPlantType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets emission rates of generators w/ given plant &amp; fuel type</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>plantType</strong> – (string) name of plant type</li>
-<li><strong>fuelType</strong> – (string) name of fuel type</li>
-<li><strong>emsHeadersToAdd</strong> – (1d list) emissions headers to add</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>plantType</strong> – (string) name of plant type</p></li>
+<li><p><strong>fuelType</strong> – (string) name of fuel type</p></li>
+<li><p><strong>emsHeadersToAdd</strong> – (1d list) emissions headers to add</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(1d lists) lists with NOx, SO2 and CO2 emissions rates</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(1d lists) lists with NOx, SO2 and CO2 emissions rates</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.getMatchingRowsFuelAndPlantType">
-<code class="descname">getMatchingRowsFuelAndPlantType</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>plantType</em>, <em>fuelType</em>, <em>noxCol</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getMatchingRowsFuelAndPlantType" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">getMatchingRowsFuelAndPlantType</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">plantType</span></em>, <em class="sig-param"><span class="n">fuelType</span></em>, <em class="sig-param"><span class="n">noxCol</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getMatchingRowsFuelAndPlantType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets row indexes in generator fleet of generators that match given plant &amp; fuel type, filtering out units w/ no emissions rate data.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>plantType</strong> – (string) name of plant type</li>
-<li><strong>fuelType</strong> – (string) name of fuel type</li>
-<li><strong>noxCol</strong> – (int) index of column with NOx emission rate</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>plantType</strong> – (string) name of plant type</p></li>
+<li><p><strong>fuelType</strong> – (string) name of fuel type</p></li>
+<li><p><strong>noxCol</strong> – (int) index of column with NOx emission rate</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(1d list) indices of row with matching plant &amp; fuel type</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(1d list) indices of row with matching plant &amp; fuel type</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.getMatchingRowsFuelType">
-<code class="descname">getMatchingRowsFuelType</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>fuelType</em>, <em>noxCol</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getMatchingRowsFuelType" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">getMatchingRowsFuelType</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">fuelType</span></em>, <em class="sig-param"><span class="n">noxCol</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getMatchingRowsFuelType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets row indexes in generator fleet of gens with same fuel type, filtering out units with no emissions rate data.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>fuelType</strong> – (string) name of fuel type</li>
-<li><strong>noxCol</strong> – (int) index of column with NOx emission rate</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>fuelType</strong> – (string) name of fuel type</p></li>
+<li><p><strong>noxCol</strong> – (int) index of column with NOx emission rate</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(1d list) indices of row with matching fuel type</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(1d list) indices of row with matching fuel type</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addEmissionsRatesValues">
-<code class="descname">addEmissionsRatesValues</code><span class="sig-paren">(</span><em>baseFleet</em>, <em>egridBoiler</em>, <em>egridPlant</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addEmissionsRatesValues" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addEmissionsRatesValues</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseFleet</span></em>, <em class="sig-param"><span class="n">egridBoiler</span></em>, <em class="sig-param"><span class="n">egridPlant</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addEmissionsRatesValues" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add eGRID emissions rates values to fleet</p>
 <p>This function adds eGRID emissions rates values to fleet, either using boiler specific data for coal &amp; o/g steam
 units or plant level average data. Adds emission rate in order of nox, so2, and co2, as set by ems headers in
 addEmissionsRates. This function does not return anything.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>egridBoiler</strong> – (2d list) eGRID boiler data</li>
-<li><strong>egridPlant</strong> – (2d list) eGRID plant data</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>egridBoiler</strong> – (2d list) eGRID boiler data</p></li>
+<li><p><strong>egridPlant</strong> – (2d list) eGRID plant data</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.getBlrEmRates">
-<code class="descname">getBlrEmRates</code><span class="sig-paren">(</span><em>baseFleet</em>, <em>idx</em>, <em>egridBoiler</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getBlrEmRates" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">getBlrEmRates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseFleet</span></em>, <em class="sig-param"><span class="n">idx</span></em>, <em class="sig-param"><span class="n">egridBoiler</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getBlrEmRates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get boiler emission rates</p>
 <p>Look for boiler-level match of given gen in gen fleet to eGRID data, and return emissions rates if find match.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>baseFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>idx</strong> – (int) index of row in <cite>baseFleet</cite></li>
-<li><strong>egridBoiler</strong> – (2d list) eGRID boiler data</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>idx</strong> – (int) index of row in <cite>baseFleet</cite></p></li>
+<li><p><strong>egridBoiler</strong> – (2d list) eGRID boiler data</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(1d list) boiler-level nox, so2 &amp; co2 ems rates</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(1d list) boiler-level nox, so2 &amp; co2 ems rates</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.getPlantEmRates">
-<code class="descname">getPlantEmRates</code><span class="sig-paren">(</span><em>baseFleet</em>, <em>idx</em>, <em>egridPlant</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getPlantEmRates" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">getPlantEmRates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseFleet</span></em>, <em class="sig-param"><span class="n">idx</span></em>, <em class="sig-param"><span class="n">egridPlant</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getPlantEmRates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get plant emission rates</p>
 <p>Looks for plant-level match of given unit in gen fleet to eGRID plant data, and returns plant-level ems rate of
 matching plant if found.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>baseFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>idx</strong> – (int) index of row in <cite>baseFleet</cite></li>
-<li><strong>egridPlant</strong> – (2d list) eGRID plant data</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>idx</strong> – (int) index of row in <cite>baseFleet</cite></p></li>
+<li><p><strong>egridPlant</strong> – (2d list) eGRID plant data</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(1d list) plant-level nox, so2 &amp; co2 ems rate</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(1d list) plant-level nox, so2 &amp; co2 ems rate</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.calculateEmissionsRatesBlr">
-<code class="descname">calculateEmissionsRatesBlr</code><span class="sig-paren">(</span><em>egridBoiler</em>, <em>egridBoilerRow</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.calculateEmissionsRatesBlr" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">calculateEmissionsRatesBlr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">egridBoiler</span></em>, <em class="sig-param"><span class="n">egridBoilerRow</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.calculateEmissionsRatesBlr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate boiler-level emissions rates.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>egridBoiler</strong> – (2d list) eGRID boiler data</li>
-<li><strong>egridBoilerRow</strong> – (int) row in boiler data</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>egridBoiler</strong> – (2d list) eGRID boiler data</p></li>
+<li><p><strong>egridBoilerRow</strong> – (int) row in boiler data</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(1d list) boiler-level emission rates [lb/mmbtu]</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(1d list) boiler-level emission rates [lb/mmbtu]</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.calculateEmissionsRatesPlnt">
-<code class="descname">calculateEmissionsRatesPlnt</code><span class="sig-paren">(</span><em>egridPlant</em>, <em>egridPlantRow</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.calculateEmissionsRatesPlnt" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">calculateEmissionsRatesPlnt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">egridPlant</span></em>, <em class="sig-param"><span class="n">egridPlantRow</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.calculateEmissionsRatesPlnt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate plant-level emissions rates.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>egridPlant</strong> – (2d list) eGRID plant data</li>
-<li><strong>egridPlantRow</strong> – (int) row in plant data</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>egridPlant</strong> – (2d list) eGRID plant data</p></li>
+<li><p><strong>egridPlantRow</strong> – (int) row in plant data</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(1d list) plant-level nox, so2 and co2 emission rates [lb/mmbtu]</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(1d list) plant-level nox, so2 and co2 emission rates [lb/mmbtu]</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addLatLong">
-<code class="descname">addLatLong</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>statesForAnalysis</em>, <em>dataRoot</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addLatLong" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addLatLong</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">statesForAnalysis</span></em>, <em class="sig-param"><span class="n">dataRoot</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addLatLong" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add lat/long data to fleet</p>
 <p>This function gets lat/long data from egrid and adds columsn with this data to the generator fleet. This function
 does not return anything</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>statesForAnalysis</strong> – (1-d list) list with states included in the analysis</li>
-<li><strong>dataRoot</strong> – (string) path of directory wit input data</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>statesForAnalysis</strong> – (1-d list) list with states included in the analysis</p></li>
+<li><p><strong>dataRoot</strong> – (string) path of directory wit input data</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addLatLongValues">
-<code class="descname">addLatLongValues</code><span class="sig-paren">(</span><em>baseFleet</em>, <em>egridPlant</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addLatLongValues" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addLatLongValues</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseFleet</span></em>, <em class="sig-param"><span class="n">egridPlant</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addLatLongValues" title="Permalink to this definition">¶</a></dt>
 <dd><p>Worker function to add lat/long data to fleet</p>
 <p>This function adds lat/long values to base fleet using eGRID plant data. This function does not return anything</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>egridPlant</strong> – (2d list) eGRID plant data</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>egridPlant</strong> – (2d list) eGRID plant data</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.performFleetCompression">
-<code class="descname">performFleetCompression</code><span class="sig-paren">(</span><em>genFleet</em>, <em>ipmZones</em>, <em>plantTypesCurtailed</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.performFleetCompression" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">performFleetCompression</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">plantTypesCurtailed</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.performFleetCompression" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compress fleet by combining small units</p>
 <p>This function simplifies the generator fleet by combining small units (&lt; 200 MW) of same type into a single plant.
 Units are combined according to plant type, subregion (ipm zone), age, among other factors. Thermal units that will
 have capacity deratings will not be combined (since capacity deratings are location-dependent).</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>genFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>ipmZones</strong> – (1-d list) list with names of ipm zones</li>
-<li><strong>plantTypesCurtailed</strong> – (1-d list) list with names of plant types that are included in capacity derating simulations</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>ipmZones</strong> – (1-d list) list with names of ipm zones</p></li>
+<li><p><strong>plantTypesCurtailed</strong> – (1-d list) list with names of plant types that are included in capacity derating simulations</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(2-d list) updated compressed generator fleet with small units combined</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(2-d list) updated compressed generator fleet with small units combined</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.compressFuelAndPlantType">
-<code class="descname">compressFuelAndPlantType</code><span class="sig-paren">(</span><em>genFleet</em>, <em>fuel</em>, <em>plant</em>, <em>ipmZones</em>, <em>plantTypesCurtailed</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.compressFuelAndPlantType" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">compressFuelAndPlantType</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">fuel</span></em>, <em class="sig-param"><span class="n">plant</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">plantTypesCurtailed</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.compressFuelAndPlantType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compress fleet by combining small units of given plant type and fuel type</p>
 <p>This function modifies the 2-d list <cite>genFleet</cite> passed as parameter. It does not return anything</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>genFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>fuel</strong> – (string) name of fuel type</li>
-<li><strong>plant</strong> – (string) name of plant type</li>
-<li><strong>ipmZones</strong> – (1-d list) list with names of ipm zones</li>
-<li><strong>plantTypesCurtailed</strong> – (1-d list) list with names of plant types that are included in capacity derating simulations</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>fuel</strong> – (string) name of fuel type</p></li>
+<li><p><strong>plant</strong> – (string) name of plant type</p></li>
+<li><p><strong>ipmZones</strong> – (1-d list) list with names of ipm zones</p></li>
+<li><p><strong>plantTypesCurtailed</strong> – (1-d list) list with names of plant types that are included in capacity derating simulations</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.combineGenerators">
-<code class="descname">combineGenerators</code><span class="sig-paren">(</span><em>genFleet</em>, <em>idxsToRemoveAndCombine</em>, <em>fuel</em>, <em>plant</em>, <em>startFleetLength</em>, <em>ipmZones</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.combineGenerators" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">combineGenerators</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">idxsToRemoveAndCombine</span></em>, <em class="sig-param"><span class="n">fuel</span></em>, <em class="sig-param"><span class="n">plant</span></em>, <em class="sig-param"><span class="n">startFleetLength</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.combineGenerators" title="Permalink to this definition">¶</a></dt>
 <dd><p>Combine generators based on when they came online</p>
 <p>Small generators of same fuel/plant-type that came online in the same decade will be combined. This function
 modifies the 2-d list <cite>genFleet</cite> passed as paraemter. It does not return anything</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>genFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>idxsToRemoveAndCombine</strong> – (1-d list) list with indexes of rows of units that are going to be combined (and then removed from fleet)</li>
-<li><strong>fuel</strong> – (string) name of fuel type</li>
-<li><strong>plant</strong> – (string) name of plant type</li>
-<li><strong>startFleetLength</strong> – (int) length of original uncompressed fleet</li>
-<li><strong>ipmZones</strong> – (1-d list) list with names of ipm zones</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>idxsToRemoveAndCombine</strong> – (1-d list) list with indexes of rows of units that are going to be combined (and then removed from fleet)</p></li>
+<li><p><strong>fuel</strong> – (string) name of fuel type</p></li>
+<li><p><strong>plant</strong> – (string) name of plant type</p></li>
+<li><p><strong>startFleetLength</strong> – (int) length of original uncompressed fleet</p></li>
+<li><p><strong>ipmZones</strong> – (1-d list) list with names of ipm zones</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.combineGeneratorsInDecade">
-<code class="descname">combineGeneratorsInDecade</code><span class="sig-paren">(</span><em>genFleet</em>, <em>idxsInIntervalAndZone</em>, <em>medianYearInInterval</em>, <em>fuel</em>, <em>plant</em>, <em>startFleetLength</em>, <em>zone</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.combineGeneratorsInDecade" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">combineGeneratorsInDecade</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">idxsInIntervalAndZone</span></em>, <em class="sig-param"><span class="n">medianYearInInterval</span></em>, <em class="sig-param"><span class="n">fuel</span></em>, <em class="sig-param"><span class="n">plant</span></em>, <em class="sig-param"><span class="n">startFleetLength</span></em>, <em class="sig-param"><span class="n">zone</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.combineGeneratorsInDecade" title="Permalink to this definition">¶</a></dt>
 <dd><p>Combine generators in same decade</p>
 <p>This function does the actual aggregation of generators in the same decade. It combines generators up to 500 MW
 of combined size. This function modifies the 2-d list <cite>genFleet</cite> passed as parameter. It does not return anything</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>genFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>idxsInIntervalAndZone</strong> – (1-d list) list with units in the time interval and ipm zone that can be combined</li>
-<li><strong>medianYearInInterval</strong> – (int) median online year of plants being combined</li>
-<li><strong>fuel</strong> – (string) name of fuel type</li>
-<li><strong>plant</strong> – (string) name of plant type</li>
-<li><strong>startFleetLength</strong> – (int) length of original uncompressed fleet</li>
-<li><strong>zone</strong> – (string) name of ipm zone</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>idxsInIntervalAndZone</strong> – (1-d list) list with units in the time interval and ipm zone that can be combined</p></li>
+<li><p><strong>medianYearInInterval</strong> – (int) median online year of plants being combined</p></li>
+<li><p><strong>fuel</strong> – (string) name of fuel type</p></li>
+<li><p><strong>plant</strong> – (string) name of plant type</p></li>
+<li><p><strong>startFleetLength</strong> – (int) length of original uncompressed fleet</p></li>
+<li><p><strong>zone</strong> – (string) name of ipm zone</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addCombinedIdxsToFleet">
-<code class="descname">addCombinedIdxsToFleet</code><span class="sig-paren">(</span><em>genFleet</em>, <em>idxsToCombine</em>, <em>combinedCapac</em>, <em>fuel</em>, <em>plant</em>, <em>medianYearInInterval</em>, <em>zone</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addCombinedIdxsToFleet" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addCombinedIdxsToFleet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">idxsToCombine</span></em>, <em class="sig-param"><span class="n">combinedCapac</span></em>, <em class="sig-param"><span class="n">fuel</span></em>, <em class="sig-param"><span class="n">plant</span></em>, <em class="sig-param"><span class="n">medianYearInInterval</span></em>, <em class="sig-param"><span class="n">zone</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addCombinedIdxsToFleet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Combine generators in given indexes</p>
 <p>This function does the actual aggregation of generators at given rows in the fleet’s 2-d list. It also appends
 the row with the new generator to the fleet. This function modifies the 2-d list <cite>genFleet</cite> passed as parameter.
 It does not return anything</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>genFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>idxsToCombine</strong> – (1-d list) list with indexes of rows of generators to be combined</li>
-<li><strong>combinedCapac</strong> – (float) total capacity of combined power plant</li>
-<li><strong>fuel</strong> – (string) name of fuel type</li>
-<li><strong>plant</strong> – (string) name of plant type</li>
-<li><strong>medianYearInInterval</strong> – (int) median online year of plants being combined</li>
-<li><strong>zone</strong> – (string) name of ipm zone</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>idxsToCombine</strong> – (1-d list) list with indexes of rows of generators to be combined</p></li>
+<li><p><strong>combinedCapac</strong> – (float) total capacity of combined power plant</p></li>
+<li><p><strong>fuel</strong> – (string) name of fuel type</p></li>
+<li><p><strong>plant</strong> – (string) name of plant type</p></li>
+<li><p><strong>medianYearInInterval</strong> – (int) median online year of plants being combined</p></li>
+<li><p><strong>zone</strong> – (string) name of ipm zone</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addStateZoneOrisFuelOnlineYearAndPlantType">
-<code class="descname">addStateZoneOrisFuelOnlineYearAndPlantType</code><span class="sig-paren">(</span><em>genFleet</em>, <em>newRow</em>, <em>fuel</em>, <em>plant</em>, <em>zone</em>, <em>*onlineYear</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addStateZoneOrisFuelOnlineYearAndPlantType" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addStateZoneOrisFuelOnlineYearAndPlantType</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">newRow</span></em>, <em class="sig-param"><span class="n">fuel</span></em>, <em class="sig-param"><span class="n">plant</span></em>, <em class="sig-param"><span class="n">zone</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">onlineYear</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addStateZoneOrisFuelOnlineYearAndPlantType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add additional info to new combined generator</p>
 <p>This function adds State, Zone, Oris, Fuel, OnlineYear, and PlantType to the new generator resulting from the
 combination of small units. This function modifies the 1-d list <cite>newrow</cite> passed as parameter. It does not return
 anything</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>genFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>newRow</strong> – (1-d list) list with data of new combined generator that will be added to the fleet</li>
-<li><strong>fuel</strong> – (string) name of fuel type</li>
-<li><strong>plant</strong> – (string) name of plant type</li>
-<li><strong>zone</strong> – (string) name of ipm zone</li>
-<li><strong>onlineYear</strong> – (int) online year of new combined generator that will be added to the fleet</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>newRow</strong> – (1-d list) list with data of new combined generator that will be added to the fleet</p></li>
+<li><p><strong>fuel</strong> – (string) name of fuel type</p></li>
+<li><p><strong>plant</strong> – (string) name of plant type</p></li>
+<li><p><strong>zone</strong> – (string) name of ipm zone</p></li>
+<li><p><strong>onlineYear</strong> – (int) online year of new combined generator that will be added to the fleet</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addVOMandFOM">
-<code class="descname">addVOMandFOM</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>vomAndFomData</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addVOMandFOM" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addVOMandFOM</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">vomAndFomData</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addVOMandFOM" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add columns with variable and fixed O&amp;M data to generator fleet</p>
 <p>This function modifies the 2-d list <cite>baseGenFleet</cite> passed as parameter. It does not return anything</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>vomAndFomData</strong> – (2-d list) 2-d list with variable of fixed O&amp;M data for each plant type</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>vomAndFomData</strong> – (2-d list) 2-d list with variable of fixed O&amp;M data for each plant type</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addVomAndFomValues">
-<code class="descname">addVomAndFomValues</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>vomAndFomData</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addVomAndFomValues" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addVomAndFomValues</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">vomAndFomData</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addVomAndFomValues" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add variable and fixed O&amp;M data to generator fleet</p>
 <p>This function modifies the 2-d list <cite>baseGenFleet</cite> passed as parameter. It does not return anything</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>vomAndFomData</strong> – (2-d list) 2-d list with variable of fixed O&amp;M data for each plant type</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>vomAndFomData</strong> – (2-d list) 2-d list with variable of fixed O&amp;M data for each plant type</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.importVomAndFomData">
-<code class="descname">importVomAndFomData</code><span class="sig-paren">(</span><em>dataRoot</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.importVomAndFomData" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">importVomAndFomData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataRoot</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.importVomAndFomData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Import variable and fixed O&amp;M data from input files</p>
-<p>Variable and fixed O&amp;M data are located in file <cite>VOMandFOMValuesExistingPlants4Aug2016.csv</cite> inside the directory
+<p>Variable and fixed O&amp;M data are located in file <cite>VOMandFOMValuesExistingPlants.csv</cite> inside the directory
 <cite>[dataRoot]/NewPlantData/</cite></p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dataRoot</strong> – (string) path of directory wit input data</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(2-d list) 2-d list with variable of fixed O&amp;M data for each plant type</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dataRoot</strong> – (string) path of directory wit input data</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(2-d list) 2-d list with variable of fixed O&amp;M data for each plant type</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addUnitCommitmentParameters">
-<code class="descname">addUnitCommitmentParameters</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>phorumData</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addUnitCommitmentParameters" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addUnitCommitmentParameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">phorumData</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addUnitCommitmentParameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add unit commitment parameters to generator fleet</p>
 <p>unit commitment parameters are based on fuel and plant type (data from PHORUM). Columns with UC are added to
 the <cite>baseGenFleet</cite> 2-d list.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>phorumData</strong> – (2d list) table with phorum parameters (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importPhorumData" title="SetupFleet.SetupGeneratorFleet.importPhorumData"><code class="xref py py-func docutils literal notranslate"><span class="pre">importPhorumData()</span></code></a>)</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>phorumData</strong> – (2d list) table with phorum parameters (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importPhorumData" title="SetupFleet.SetupGeneratorFleet.importPhorumData"><code class="xref py py-func docutils literal notranslate"><span class="pre">importPhorumData()</span></code></a>)</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addUCValues">
-<code class="descname">addUCValues</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>ucHeaders</em>, <em>phorumData</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addUCValues" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addUCValues</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">ucHeaders</span></em>, <em class="sig-param"><span class="n">phorumData</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addUCValues" title="Permalink to this definition">¶</a></dt>
 <dd><p>Worker function to ddd unit commitment parameters to generator fleet</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>ucHeaders</strong> – (1d list) list with names of UC parameters that will be added to header of generator fleet</li>
-<li><strong>phorumData</strong> – (2d list) table with phorum parameters (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importPhorumData" title="SetupFleet.SetupGeneratorFleet.importPhorumData"><code class="xref py py-func docutils literal notranslate"><span class="pre">importPhorumData()</span></code></a>)</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>ucHeaders</strong> – (1d list) list with names of UC parameters that will be added to header of generator fleet</p></li>
+<li><p><strong>phorumData</strong> – (2d list) table with phorum parameters (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importPhorumData" title="SetupFleet.SetupGeneratorFleet.importPhorumData"><code class="xref py py-func docutils literal notranslate"><span class="pre">importPhorumData()</span></code></a>)</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.getMatchingPhorumValue">
-<code class="descname">getMatchingPhorumValue</code><span class="sig-paren">(</span><em>phorumData</em>, <em>fuel</em>, <em>plantType</em>, <em>size</em>, <em>paramName</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getMatchingPhorumValue" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">getMatchingPhorumValue</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">phorumData</span></em>, <em class="sig-param"><span class="n">fuel</span></em>, <em class="sig-param"><span class="n">plantType</span></em>, <em class="sig-param"><span class="n">size</span></em>, <em class="sig-param"><span class="n">paramName</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getMatchingPhorumValue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get value of UC parameter from Phorum database</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>phorumData</strong> – (2d list) table with phorum parameters (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importPhorumData" title="SetupFleet.SetupGeneratorFleet.importPhorumData"><code class="xref py py-func docutils literal notranslate"><span class="pre">importPhorumData()</span></code></a>)</li>
-<li><strong>fuel</strong> – (string) fuel name</li>
-<li><strong>plantType</strong> – (string) plant type name</li>
-<li><strong>size</strong> – (float) installed capacity of plant</li>
-<li><strong>paramName</strong> – (string) name of UC parameter</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>phorumData</strong> – (2d list) table with phorum parameters (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importPhorumData" title="SetupFleet.SetupGeneratorFleet.importPhorumData"><code class="xref py py-func docutils literal notranslate"><span class="pre">importPhorumData()</span></code></a>)</p></li>
+<li><p><strong>fuel</strong> – (string) fuel name</p></li>
+<li><p><strong>plantType</strong> – (string) plant type name</p></li>
+<li><p><strong>size</strong> – (float) installed capacity of plant</p></li>
+<li><p><strong>paramName</strong> – (string) name of UC parameter</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(float) value of UC parameter for this plant type &amp; fuel in the phorum database</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(float) value of UC parameter for this plant type &amp; fuel in the phorum database</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.mapFleetFuelToPhorumFuels">
-<code class="descname">mapFleetFuelToPhorumFuels</code><span class="sig-paren">(</span><em>fleetFuel</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.mapFleetFuelToPhorumFuels" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">mapFleetFuelToPhorumFuels</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fleetFuel</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.mapFleetFuelToPhorumFuels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Map name of fuel in fleet to Phorum data</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fleetFuel</strong> – (string) name if fuel in fleet</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(string) name of fuel in Phorum</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fleetFuel</strong> – (string) name if fuel in fleet</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(string) name of fuel in Phorum</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.mapHeadersToPhorumParamNames">
-<code class="descname">mapHeadersToPhorumParamNames</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.mapHeadersToPhorumParamNames" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">mapHeadersToPhorumParamNames</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.mapHeadersToPhorumParamNames" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get map name of UC parameter in fleet to Phorum</p>
 <p>This function returns a dictionary mapping the names of UC parameters used in the fleet to the ones
 used in Phorum.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dictionary {‘name in fleet’: ‘name in phorum’}</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dictionary {‘name in fleet’: ‘name in phorum’}</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addFuelPrices">
-<code class="descname">addFuelPrices</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>currYear</em>, <em>fuelPriceTimeSeries</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addFuelPrices" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addFuelPrices</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">currYear</span></em>, <em class="sig-param"><span class="n">fuelPriceTimeSeries</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addFuelPrices" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add column with fuel prices to fleet</p>
 <p>This function adds a column of fuel prices to the 2-d list with fleet data</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2-d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>currYear</strong> – (int) current year</li>
-<li><strong>fuelPriceTimeSeries</strong> – (1-d list) list with time series of fuel prices</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2-d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>currYear</strong> – (int) current year</p></li>
+<li><p><strong>fuelPriceTimeSeries</strong> – (1-d list) list with time series of fuel prices</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addFuelPriceValues">
-<code class="descname">addFuelPriceValues</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>fuelPriceTimeSeries</em>, <em>currYear</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addFuelPriceValues" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addFuelPriceValues</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">fuelPriceTimeSeries</span></em>, <em class="sig-param"><span class="n">currYear</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addFuelPriceValues" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add fuel values to column of fuel prices</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2-d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>fuelPriceTimeSeries</strong> – (1-d list) list with time series of fuel prices</li>
-<li><strong>currYear</strong> – (int) current year</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2-d list) generator fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>fuelPriceTimeSeries</strong> – (1-d list) list with time series of fuel prices</p></li>
+<li><p><strong>currYear</strong> – (int) current year</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.getFuelPrice">
-<code class="descname">getFuelPrice</code><span class="sig-paren">(</span><em>fleetRow</em>, <em>fleetFuelCol</em>, <em>fuelPriceTimeSeries</em>, <em>currYear</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getFuelPrice" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">getFuelPrice</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fleetRow</span></em>, <em class="sig-param"><span class="n">fleetFuelCol</span></em>, <em class="sig-param"><span class="n">fuelPriceTimeSeries</span></em>, <em class="sig-param"><span class="n">currYear</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getFuelPrice" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get price of fuel of a specific plant in fleet for current year (adjusted for inflation)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>fleetRow</strong> – (1-d list) row in generator fleet table with data for a specific plant</li>
-<li><strong>fleetFuelCol</strong> – (int) index of column with fuel prices in gen fleet</li>
-<li><strong>fuelPriceTimeSeries</strong> – (1-d list) list with time series of fuel prices</li>
-<li><strong>currYear</strong> – (int) current year</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fleetRow</strong> – (1-d list) row in generator fleet table with data for a specific plant</p></li>
+<li><p><strong>fleetFuelCol</strong> – (int) index of column with fuel prices in gen fleet</p></li>
+<li><p><strong>fuelPriceTimeSeries</strong> – (1-d list) list with time series of fuel prices</p></li>
+<li><p><strong>currYear</strong> – (int) current year</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">value of price of  fuel adjusted to inflation</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>value of price of  fuel adjusted to inflation</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.getFuelPriceForFuelType">
-<code class="descname">getFuelPriceForFuelType</code><span class="sig-paren">(</span><em>fuel</em>, <em>fuelPriceTimeSeries</em>, <em>currYear</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getFuelPriceForFuelType" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">getFuelPriceForFuelType</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fuel</span></em>, <em class="sig-param"><span class="n">fuelPriceTimeSeries</span></em>, <em class="sig-param"><span class="n">currYear</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getFuelPriceForFuelType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get price value of given fuel for current year (not adjusted for inflation)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>fuel</strong> – (string) name of fuel</li>
-<li><strong>fuelPriceTimeSeries</strong> – (1-d list) list with time series of fuel prices</li>
-<li><strong>currYear</strong> – (int) current year</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fuel</strong> – (string) name of fuel</p></li>
+<li><p><strong>fuelPriceTimeSeries</strong> – (1-d list) list with time series of fuel prices</p></li>
+<li><p><strong>currYear</strong> – (int) current year</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">value of price of fuel (not adjusted to inflation)</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>value of price of fuel (not adjusted to inflation)</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.importNEEDSFleet">
-<code class="descname">importNEEDSFleet</code><span class="sig-paren">(</span><em>dataRoot</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">importNEEDSFleet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataRoot</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Import base generator fleet from NEEDS</p>
 <p>Reads NEEDS fleet data from a CSV file. This CSV file must be located in the <cite>[dataRoot]/NEEDS</cite> folder</p>
 <p>The CSV file <cite>needs_nocommas.csv</cite> is originated from the NEEDS excel file. Commas in the excel file must be
 converted to <cite>&amp;</cite></p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dataRoot</strong> – (string) path to directory with input data</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(2-d list) 2-d list with headers containing generator fleet data</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dataRoot</strong> – (string) path to directory with input data</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(2-d list) 2-d list with headers containing generator fleet data</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.importeGridData">
-<code class="descname">importeGridData</code><span class="sig-paren">(</span><em>statesForAnalysis</em>, <em>dataRoot</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.importeGridData" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">importeGridData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">statesForAnalysis</span></em>, <em class="sig-param"><span class="n">dataRoot</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.importeGridData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Import eGRID boiler and plant level data, then isolate plants and boilers in state</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>statesForAnalysis</strong> – (1d list) states for analysis</li>
-<li><strong>dataRoot</strong> – (string) path of directory wit input data</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>statesForAnalysis</strong> – (1d list) states for analysis</p></li>
+<li><p><strong>dataRoot</strong> – (string) path of directory wit input data</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(2d lists) eGRID boiler and plant data</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(2d lists) eGRID boiler and plant data</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.importeGridBoilerData">
-<code class="descname">importeGridBoilerData</code><span class="sig-paren">(</span><em>dirName</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.importeGridBoilerData" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">importeGridBoilerData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dirName</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.importeGridBoilerData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Import eGRID boiler data and remove extra headers</p>
 <p>The CSV file <cite>egrid_data_boiler.csv</cite> is originated from the eGrid excel file. Commas in the excel file must be
 converted to <cite>&amp;</cite></p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dirName</strong> – (string) directory with egrid data</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(2d list) boiler data</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dirName</strong> – (string) directory with egrid data</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(2d list) boiler data</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.importeGridPlantData">
-<code class="descname">importeGridPlantData</code><span class="sig-paren">(</span><em>dirName</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.importeGridPlantData" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">importeGridPlantData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dirName</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.importeGridPlantData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Import eGRID plant data and remove extra headers</p>
 <p>The CSV file <cite>egrid_data_plant.csv</cite> is originated from the eGrid excel file. Commas in the excel file must be
 converted to <cite>&amp;</cite></p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dirName</strong> – (string) directory with egrid data</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(2d list) plant data</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dirName</strong> – (string) directory with egrid data</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(2d list) plant data</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.elimExtraneousHeaderInfo">
-<code class="descname">elimExtraneousHeaderInfo</code><span class="sig-paren">(</span><em>egridFleet</em>, <em>valueInFirstValidRow</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.elimExtraneousHeaderInfo" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">elimExtraneousHeaderInfo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">egridFleet</span></em>, <em class="sig-param"><span class="n">valueInFirstValidRow</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.elimExtraneousHeaderInfo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Eliminates first several rows in egrid CSV that has no useful info</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>egridFleet</strong> – (2d list) eGRID fleet</li>
-<li><strong>valueInFirstValidRow</strong> – (string) value in col 0 in first row w/ valid data that want to save</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>egridFleet</strong> – (2d list) eGRID fleet</p></li>
+<li><p><strong>valueInFirstValidRow</strong> – (string) value in col 0 in first row w/ valid data that want to save</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(2d list) eGRID fleet</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(2d list) eGRID fleet</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.removeRetiredUnits">
-<code class="descname">removeRetiredUnits</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>retirementYearScreen</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.removeRetiredUnits" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">removeRetiredUnits</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">retirementYearScreen</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.removeRetiredUnits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Removes retired units from fleet based on input year</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2d list) gen fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>retirementYearScreen</strong> – (int) year below which retired units should be removed from fleet</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) gen fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>retirementYearScreen</strong> – (int) year below which retired units should be removed from fleet</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.isolateGensInStates">
-<code class="descname">isolateGensInStates</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>statesForAnalysis</em>, <em>colName</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.isolateGensInStates" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">isolateGensInStates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">statesForAnalysis</span></em>, <em class="sig-param"><span class="n">colName</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.isolateGensInStates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Isolates fleet to generators in states of interest</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>baseGenFleet</strong> – (2d list) gen fleet data (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>statesForAnalysis</strong> – (1d list) states for analysis</li>
-<li><strong>colName</strong> – (string) name of column name with state data</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) gen fleet data (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>statesForAnalysis</strong> – (1d list) states for analysis</p></li>
+<li><p><strong>colName</strong> – (string) name of column name with state data</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(2d list) updated gen fleet data</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(2d list) updated gen fleet data</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.isolateGensInPowerSystem">
-<code class="descname">isolateGensInPowerSystem</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>ipmZones</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.isolateGensInPowerSystem" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">isolateGensInPowerSystem</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.isolateGensInPowerSystem" title="Permalink to this definition">¶</a></dt>
 <dd><p>Isolates fleet to generators in in the ipm regions of interest</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>baseGenFleet</strong> – (2d list) gen fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>ipmZones</strong> – (1d list) list with names of ipm zones included in analysis</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) gen fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>ipmZones</strong> – (1d list) list with names of ipm zones included in analysis</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(2d list) updated gen fleet</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(2d list) updated gen fleet</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.importPhorumData">
-<code class="descname">importPhorumData</code><span class="sig-paren">(</span><em>dataRoot</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.importPhorumData" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">importPhorumData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataRoot</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.importPhorumData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Import PHORUM data (VOM + UC parameters)</p>
 <p>Phorum data is in a CSV file <cite>PHORUMUCParameters.csv</cite>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dataRoot</strong> – (string) path to directory with input data</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(2d list) phorum data</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dataRoot</strong> – (string) path to directory with input data</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(2d list) phorum data</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addRandomOpCostAdder">
-<code class="descname">addRandomOpCostAdder</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>ocAdderMin</em>, <em>ocAdderMax</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addRandomOpCostAdder" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addRandomOpCostAdder</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">ocAdderMin</span></em>, <em class="sig-param"><span class="n">ocAdderMax</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addRandomOpCostAdder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add random operation cost adder to fleet in new column</p>
 <p>Add to all fuel types. Use value of 0.05 - makes up ~0.03% on average of fleet. Max addition to op cost of gen in fleet is 0.19%.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2d list) gen fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>ocAdderMin</strong> – (float) min value</li>
-<li><strong>ocAdderMax</strong> – (float) max value</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) gen fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>ocAdderMin</strong> – (float) min value</p></li>
+<li><p><strong>ocAdderMax</strong> – (float) max value</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addRegResOfferAndElig">
-<code class="descname">addRegResOfferAndElig</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>regupCostCoeffs</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addRegResOfferAndElig" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">addRegResOfferAndElig</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">regupCostCoeffs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addRegResOfferAndElig" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add regulated reserve offer costs and eligibility</p>
 <p>(Based on params in Denholm 2013, Val of energy sto for grid apps)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2d list) gen fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>regupCostCoeffs</strong> – </li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) gen fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>regupCostCoeffs</strong> – </p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.aggregatePlantTypeToORIS">
-<code class="descname">aggregatePlantTypeToORIS</code><span class="sig-paren">(</span><em>genFleet</em>, <em>pt</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.aggregatePlantTypeToORIS" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">aggregatePlantTypeToORIS</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">pt</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.aggregatePlantTypeToORIS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Aggregate hydro units to single plant according to ORIS code</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>genFleet</strong> – (2d list) gen fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>pt</strong> – (string) name of plant type</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – (2d list) gen fleet (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>pt</strong> – (string) name of plant type</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.isolateFirstFuelType">
-<code class="descname">isolateFirstFuelType</code><span class="sig-paren">(</span><em>fuel</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.isolateFirstFuelType" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">isolateFirstFuelType</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fuel</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.isolateFirstFuelType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function to split name of fuel</p>
 <p>Some plants have multiple modeled fuels divided by <code class="docutils literal notranslate"><span class="pre">&amp;</span></code></p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fuel</strong> – (string) original name of fuel</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(string) simplified name of fuel</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fuel</strong> – (string) original name of fuel</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(string) simplified name of fuel</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.getStateAbbrevs">
-<code class="descname">getStateAbbrevs</code><span class="sig-paren">(</span><em>statesForAnalysis</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getStateAbbrevs" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">getStateAbbrevs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">statesForAnalysis</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.getStateAbbrevs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get abbreviations (which eGRID uses but NEEDS does not)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>statesForAnalysis</strong> – (1d list) states for analysis</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(dict) map of states names to state abbreviations</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>statesForAnalysis</strong> – (1d list) states for analysis</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(dict) map of states names to state abbreviations</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.identifyRowsToRemove">
-<code class="descname">identifyRowsToRemove</code><span class="sig-paren">(</span><em>list2d</em>, <em>valuesToKeep</em>, <em>colName</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.identifyRowsToRemove" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">identifyRowsToRemove</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">list2d</span></em>, <em class="sig-param"><span class="n">valuesToKeep</span></em>, <em class="sig-param"><span class="n">colName</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.identifyRowsToRemove" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of rows to remove for values in a given column that don’t equal any value in valuesToKeep.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>list2d</strong> – any 2d list</li>
-<li><strong>valuesToKeep</strong> – (1d list) values in specified column to keep</li>
-<li><strong>colName</strong> – (string) col name</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>list2d</strong> – any 2d list</p></li>
+<li><p><strong>valuesToKeep</strong> – (1d list) values in specified column to keep</p></li>
+<li><p><strong>colName</strong> – (string) col name</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(1d list) row indices to remove</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(1d list) row indices to remove</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.removeRows">
-<code class="descname">removeRows</code><span class="sig-paren">(</span><em>baseGenFleet</em>, <em>rowsToRemove</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.removeRows" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">removeRows</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">baseGenFleet</span></em>, <em class="sig-param"><span class="n">rowsToRemove</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.removeRows" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove rows of given indexes from 2d list</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>baseGenFleet</strong> – (2d list) data (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>rowsToRemove</strong> – (1d list) list with row indexes to remove</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>baseGenFleet</strong> – (2d list) data (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>rowsToRemove</strong> – (1d list) list with row indexes to remove</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.mapHeadersToCols">
-<code class="descname">mapHeadersToCols</code><span class="sig-paren">(</span><em>fleet</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.mapHeadersToCols" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">mapHeadersToCols</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fleet</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.mapHeadersToCols" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a dictionary mapping headers to column numbers</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fleet</strong> – (2d list) fleet data with header (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(dict) map of header name to header</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fleet</strong> – (2d list) fleet data with header (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(dict) map of header name to header</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.addHeaders">
-<code class="descname">addHeaders</code><span class="sig-paren">(</span><em>fleet</em>, <em>listOfHeaders</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addHeaders" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>fleet</strong> – (2d list) fleet data (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</li>
-<li><strong>listOfHeaders</strong> – (1d list) headers to add to first row of data</li>
+<code class="sig-name descname">addHeaders</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fleet</span></em>, <em class="sig-param"><span class="n">listOfHeaders</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.addHeaders" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fleet</strong> – (2d list) fleet data (see <a class="reference internal" href="#SetupFleet.SetupGeneratorFleet.importNEEDSFleet" title="SetupFleet.SetupGeneratorFleet.importNEEDSFleet"><code class="xref py py-func docutils literal notranslate"><span class="pre">importNEEDSFleet()</span></code></a>)</p></li>
+<li><p><strong>listOfHeaders</strong> – (1d list) headers to add to first row of data</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.avgListVals">
-<code class="descname">avgListVals</code><span class="sig-paren">(</span><em>listOfVals</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.avgListVals" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">avgListVals</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">listOfVals</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.avgListVals" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns average of values in input 1d list</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>listOfVals</strong> – (1-d list) list with numeric values</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(float) average value</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>listOfVals</strong> – (1-d list) list with numeric values</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(float) average value</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.removeTrailingDecimalFromEgridORIS">
-<code class="descname">removeTrailingDecimalFromEgridORIS</code><span class="sig-paren">(</span><em>egridORISIDs</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.removeTrailingDecimalFromEgridORIS" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">removeTrailingDecimalFromEgridORIS</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">egridORISIDs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.removeTrailingDecimalFromEgridORIS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Removes ‘.0’ from end of ORIS IDs in eGRID</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>egridORISIDs</strong> – (1-d list) list with ORIS IDs</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>egridORISIDs</strong> – (1-d list) list with ORIS IDs</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.toNum">
-<code class="descname">toNum</code><span class="sig-paren">(</span><em>s</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.toNum" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">toNum</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">s</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.toNum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts a string w/ commas in it to a float</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>s</strong> – (string) a number in string format</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(float) numeric value</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>s</strong> – (string) a number in string format</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(float) numeric value</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.search2Lists">
-<code class="descname">search2Lists</code><span class="sig-paren">(</span><em>list1</em>, <em>list2</em>, <em>data1</em>, <em>data2</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.search2Lists" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">search2Lists</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">list1</span></em>, <em class="sig-param"><span class="n">list2</span></em>, <em class="sig-param"><span class="n">data1</span></em>, <em class="sig-param"><span class="n">data2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.search2Lists" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return row indexes (or False) where list1=data1 and list2=data2</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>list1</strong> – list</li>
-<li><strong>list2</strong> – list</li>
-<li><strong>data1</strong> – value</li>
-<li><strong>data2</strong> – value</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>list1</strong> – list</p></li>
+<li><p><strong>list2</strong> – list</p></li>
+<li><p><strong>data1</strong> – value</p></li>
+<li><p><strong>data2</strong> – value</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">False if not match. If there is a match, index of match</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>False if not match. If there is a match, index of match</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="SetupFleet.SetupGeneratorFleet.colTo1dList">
-<code class="descname">colTo1dList</code><span class="sig-paren">(</span><em>data</em>, <em>colNum</em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.colTo1dList" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">colTo1dList</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">colNum</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SetupFleet.SetupGeneratorFleet.colTo1dList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert specified column in 2d list to a 1-d list</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>data</strong> – (2-d list) a generic 2-d list</li>
-<li><strong>colNum</strong> – (int) index of column</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – (2-d list) a generic 2-d list</p></li>
+<li><p><strong>colNum</strong> – (int) index of column</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(1-d list) list with data from column</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(1-d list) list with data from column</p>
+</dd>
+</dl>
 </dd></dl>
 
 </div>
 
 
            </div>
+           
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../Main Scripts/index.html" class="btn btn-neutral float-right" title="Main Scripts" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../Thermal%20deratings/index.html" class="btn btn-neutral float-right" title="Thermal Deratings" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="../Parameters/index.html" class="btn btn-neutral" title="Parameters" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../Demand/index.html" class="btn btn-neutral float-left" title="Electricity demand" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -1409,11 +1218,19 @@ converted to <cite>&amp;</cite></p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2020, Francisco.
+        
+        &copy; Copyright 
 
     </p>
   </div>
-  &copy; 2015 HPED LP | <a href="http://www8.hp.com/us/en/hpe/legal/terms-of-use.html">Terms of Use</a> | <a href="https://www.hpe.com/us/en/legal/privacy.html">Privacy</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -1425,38 +1242,15 @@ converted to <cite>&amp;</cite></p>
   </div>
   
 
-
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../',
-            VERSION:'',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
-        };
-    </script>
-      <script type="text/javascript" src="../_static/jquery.js"></script>
-      <script type="text/javascript" src="../_static/underscore.js"></script>
-      <script type="text/javascript" src="../_static/doctools.js"></script>
-      <script type="text/javascript" src="../_static/language_data.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

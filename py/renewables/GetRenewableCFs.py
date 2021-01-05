@@ -60,7 +60,10 @@ def wrappersolar(site):
 
 def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacInCurrFleet=0, type='wind',
                        existing=False, subHour = False):
-    """
+    """Compile wind/solar potential data
+
+    This is the main function to compile wind/solar potential generation data for both existing and new solar/wind
+    generators. It reads data from the databases and prepares a dataframe with hourly generation potential
 
     :param currZone: (string) name of ipm zone being simulated
     :param genparam: object of type :mod:`Generalparameters`
@@ -70,6 +73,7 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
     :param type: (string) 'wind' or 'solar'
     :param existing: (boolean) If True process data for existing power plants. If False process data for new
                      candidate plants
+    :return: two data frame with hourly data and subhourly data
 
     """
     t_start = time.time()
@@ -85,7 +89,7 @@ def getRenewableCFData(currZone, genparam, sizeSegment=1000, fleetCap=70, capacI
         metadata.rename(columns={'capacity_factor': 'cfs', 'capacity': 'capacs', 'sitenumbers': 'site_id'},
                         inplace=True)
     else:
-        renewableDir = os.path.join(genparam.dataRoot, 'NRELSolarPVData', 'SERC')
+        renewableDir = os.path.join(genparam.dataRoot, 'NRELSolarPVData')
         metadata = pd.read_csv(os.path.join(renewableDir, 'SolarCapacityFactorsNRELSERC_zones.csv'))
         metadata.rename(columns={'CF': 'cfs', 'PlantSize': 'capacs', 'File': 'site_id'},
                         inplace=True)
@@ -328,7 +332,9 @@ def getPlantInfoInZone(metadata, cfCol, capacCol, siteNumberOrFileCol, fipsToZon
 
 
 def getWindSiteCfs_2(windDir, siteId, siteCapac, desiredTz, windGenDataYr, subHour=False, listout=True):
-    """optimized version of function getWindSiteCfs using pandas (75% faster)
+    """Read wind data for a single site
+
+    optimized version of function getWindSiteCfs using pandas (75% faster)
 
     :param windDir: dir w/ wind data
     :param siteId: site ID to get gen data for
@@ -395,7 +401,9 @@ def getWindSiteCfs_2(windDir, siteId, siteCapac, desiredTz, windGenDataYr, subHo
 
 
 def getSolarSiteCfs_2(solarDir, siteFilename, datasetSiteCapac, siteTz, desiredTz, subHour=False, listout=True):
-    """Optimized version of getSolarSiteCfs. This function uses Pandas in order to get more efficient processing
+    """Read solar data for a single site
+
+    Optimized version of getSolarSiteCfs. This function uses Pandas in order to get more efficient processing
 
     :param solarDir:
     :param siteFilename:
@@ -413,8 +421,8 @@ def getSolarSiteCfs_2(solarDir, siteFilename, datasetSiteCapac, siteTz, desiredT
                     'ESTtoEST': 0}
     timezoneOffset = tzOffsetDict[siteTz + 'to' + desiredTz]
 
-    if os.path.exists(os.path.join(solarDir, 'AllSERC', siteFilename)):
-        subhourly = pd.read_csv(os.path.join(solarDir, 'AllSERC', siteFilename), dtype=column_types)
+    if os.path.exists(os.path.join(solarDir, 'SERC', siteFilename)):
+        subhourly = pd.read_csv(os.path.join(solarDir, 'SERC', siteFilename), dtype=column_types)
 
         # convert from string to datetime
         subhourly['LocalTime'] = pd.to_datetime(subhourly['LocalTime'], format='%m/%d/%y %H:%M')
@@ -543,7 +551,7 @@ def siteEastOfLine(line, siteLat, siteLong):
 
 
 def trimNewRECFsToCEHours(zonalNewWindCFs, zonalNewSolarCFs, hoursForCE):
-    """TRIM HOURS OF NEW RENEWABLE CFS TO HOURS OF CE
+    """Trim hours of new renewable CFs to hours of CE simulation
 
     :param zonalNewWindCFs: hourly CFs for new wind & solar builds (1d lists)
     :param zonalNewSolarCFs: hourly CFs for new wind & solar builds (1d lists)

@@ -1,0 +1,1465 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>GAMS utility functions &mdash; CE/UCED under climate change  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Parameters" href="../Parameters/index.html" />
+    <link rel="prev" title="Input data" href="../Input%20data/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> CE/UCED under climate change
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../example.html">Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Input%20data/index.html">Input data</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">GAMS utility functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Parameters/index.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Renewables/index.html">Renewables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Demand/index.html">Electricity demand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup%20Fleet/index.html">Setup Fleet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Thermal%20deratings/index.html">Thermal Deratings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Main%20Scripts/index.html">Main Scripts</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CE/UCED under climate change</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>GAMS utility functions</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/GAMS/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="gams-utility-functions">
+<h1>GAMS utility functions<a class="headerlink" href="#gams-utility-functions" title="Permalink to this headline">¶</a></h1>
+<p>This module has the utility functions used to populate the GAMS databases used in the GAMS model.</p>
+<span class="target" id="module-GAMSUtil.GAMSAddSetToDatabaseFuncs"></span><dl class="py function">
+<dt id="GAMSUtil.GAMSAddSetToDatabaseFuncs.addGeneratorSets">
+<code class="sig-name descname">addGeneratorSets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">genFleet</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddSetToDatabaseFuncs.addGeneratorSets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add generator sets to database</p>
+<p>Add gen sets &amp; subsets</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams database object</p></li>
+<li><p><strong>genFleet</strong> – 2d list ith generator fleet data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list with gams sets created</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddSetToDatabaseFuncs.isolateGenSymbols">
+<code class="sig-name descname">isolateGenSymbols</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">genPlantType</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddSetToDatabaseFuncs.isolateGenSymbols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gen symbols: g1, g2, etc., where # = row in gen fleet</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – 2d list with generator fleet data</p></li>
+<li><p><strong>genPlantType</strong> – string with PlantType</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list with generator symbols</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddSetToDatabaseFuncs.addHourSet">
+<code class="sig-name descname">addHourSet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">hours</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddSetToDatabaseFuncs.addHourSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add set with simulation hours to database</p>
+<p>Add all hours</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – GAMS database object</p></li>
+<li><p><strong>hours</strong> – 1d list with hours to be included on set</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list with: gams set with simulation hours and list with hour symbols</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddSetToDatabaseFuncs.addHourSeasonSubsets">
+<code class="sig-name descname">addHourSeasonSubsets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">repHrsBySeason</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddSetToDatabaseFuncs.addHourSeasonSubsets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define season subsets of hours</p>
+<p>Inputs: GAMS db, dict of (season:rep hrs)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – GAMS database object</p></li>
+<li><p><strong>repHrsBySeason</strong> – dict of (season:rep hrs)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddSetToDatabaseFuncs.addHourSpecialSubset">
+<code class="sig-name descname">addHourSpecialSubset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">specialHrs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddSetToDatabaseFuncs.addHourSpecialSubset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define special subsets of hours</p>
+<p>Inputs: GAMS db, 1d list of special hours</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – GAMS database object</p></li>
+<li><p><strong>specialHrs</strong> – 1d list of special hours</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddSetToDatabaseFuncs.addPeakHourSubset">
+<code class="sig-name descname">addPeakHourSubset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">peakDemandHourZonal</span></em>, <em class="sig-param"><span class="n">genparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddSetToDatabaseFuncs.addPeakHourSubset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define peak demand hour subset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – GAMS database object</p></li>
+<li><p><strong>peakDemandHourZonal</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list with: gams set with peak hours and list with peak hour symbols</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddSetToDatabaseFuncs.addZoneSets">
+<code class="sig-name descname">addZoneSets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddSetToDatabaseFuncs.addZoneSets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add sets with zones to database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – GAMS database object</p></li>
+<li><p><strong>ipmZoneNums</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list with: gams set with zones and list with zone symbols</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddSetToDatabaseFuncs.addLineSets">
+<code class="sig-name descname">addLineSets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">lines</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddSetToDatabaseFuncs.addLineSets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add line sets</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – GAMS database object</p></li>
+<li><p><strong>lines</strong> – list with line names</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>gams set with line names</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddSetToDatabaseFuncs.addCellSet">
+<code class="sig-name descname">addCellSet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">cellsToZones</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddSetToDatabaseFuncs.addCellSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>ADD CELLS FOR NEW TECHS SET</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – GAMS database object</p></li>
+<li><p><strong>cellsToZones</strong> – (dict) dictionary mapping cells to zones</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>gams set with cell names</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddSetToDatabaseFuncs.addNewTechsSets">
+<code class="sig-name descname">addNewTechsSets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">newTechsCE</span></em>, <em class="sig-param"><span class="n">plantTypesCurtailed</span></em>, <em class="sig-param"><span class="n">blocksWind</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">blocksSolar</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddSetToDatabaseFuncs.addNewTechsSets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add set with new techs to database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – GAMS database object</p></li>
+<li><p><strong>newTechsCE</strong> – (2d list) new techs</p></li>
+<li><p><strong>plantTypesCurtailed</strong> – (list) types of plants that have climate-induced capacity deratings</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list with all gams sets and lists with symbols created</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddSetToDatabaseFuncs.isolateTechSymbols">
+<code class="sig-name descname">isolateTechSymbols</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">newTechsCE</span></em>, <em class="sig-param"><span class="n">ptCurtailed</span></em>, <em class="sig-param"><span class="n">blocksWind</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">blocksSolar</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddSetToDatabaseFuncs.isolateTechSymbols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes in new techs (2d list), and returns tech types as: all types, renew (wind or solar) types, or types that can be curtailed</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>newTechsCE</strong> – 2d list with new techs data</p></li>
+<li><p><strong>ptCurtailed</strong> – 1-d list with plant types that are curtailed</p></li>
+<li><p><strong>blocksWind</strong> – 1-d list with indexes of blocks of wind</p></li>
+<li><p><strong>blocksSolar</strong> – 1-d list with indexes of blocks of solar</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>lists with symbols created for each set (techSymbols, techCurtailedSymbols, techRenewSymbols, techNotCurtailedSymbols)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddSetToDatabaseFuncs.addSet">
+<code class="sig-name descname">addSet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">setSymbols</span></em>, <em class="sig-param"><span class="n">setName</span></em>, <em class="sig-param"><span class="n">setDescription</span></em>, <em class="sig-param"><span class="n">setDim</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddSetToDatabaseFuncs.addSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic function to add set to gams database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – GAMS database object</p></li>
+<li><p><strong>setSymbols</strong> – (list) list with symbols of each element</p></li>
+<li><p><strong>setName</strong> – (string) name of set</p></li>
+<li><p><strong>setDescription</strong> – (string) description of set</p></li>
+<li><p><strong>setDim</strong> – (int) dimension of set</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>gams set created</p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-GAMSUtil.GAMSAddParamToDatabaseFuncs"></span><dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addDemandParam">
+<code class="sig-name descname">addDemandParam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">demandCEZonal</span></em>, <em class="sig-param"><span class="n">zoneSet</span></em>, <em class="sig-param"><span class="n">hourSet</span></em>, <em class="sig-param"><span class="n">gcmSet</span></em>, <em class="sig-param"><span class="n">hoursForCE</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addDemandParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add hourly demand parameters (either dict of gcm:zone:hourly demand or dict of zone:demand)
+for both CE and UC models</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>demandCEZonal</strong> – (dict) nested dictionary with hourly demand by gcm/zone</p></li>
+<li><p><strong>zoneSet</strong> – gams set object with zone names</p></li>
+<li><p><strong>hourSet</strong> – gams set object with hours of simulation</p></li>
+<li><p><strong>gcmSet</strong> – gams set object with gcm names</p></li>
+<li><p><strong>hourSymbols</strong> – list with hours of simulation</p></li>
+<li><p><strong>ipmZones</strong> – list with zone names</p></li>
+<li><p><strong>ipmZoneNums</strong> – list with zone numbers</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) scaling factor MW to GW</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.createDictIndexedByZone">
+<code class="sig-name descname">createDictIndexedByZone</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataDict</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.createDictIndexedByZone" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates a dictionary indexed by zone names used in GAMS (z1, z2,…)</p>
+<p>Inputs: dictionary of zone:list, optional scalar. Outputs: dictionary of zone symbol:list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataDict</strong> – dictionary with data indexed by zone (using actual zone names)</p></li>
+<li><p><strong>ipmZones</strong> – list with zones names</p></li>
+<li><p><strong>ipmZoneNums</strong> – list with zone numbers</p></li>
+<li><p><strong>args</strong> – additional arguments (scaling factors)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary indexed by zone names used in GAMS (z1, z2,…)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addEguParams">
+<code class="sig-name descname">addEguParams</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">genSet</span></em>, <em class="sig-param"><span class="n">genSymbols</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em>, <em class="sig-param"><span class="n">scaleLbToShortTon</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addEguParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>ADD EXISTING GENERATOR PARAMETERS</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – data base object</p></li>
+<li><p><strong>genFleet</strong> – 2d list with gen fleet</p></li>
+<li><p><strong>genSet</strong> – gams set object with existing generators</p></li>
+<li><p><strong>genSymbols</strong> – list with symbols of generators</p></li>
+<li><p><strong>ipmZones</strong> – symbols of ipm zones (symbols follow gams model nomenclature)</p></li>
+<li><p><strong>ipmZoneNums</strong> – indexes of ipm zones</p></li>
+<li><p><strong>scaleLbToShortTon</strong> – (float) conversion factor (pounds to short tons)</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) conversions factor (MW to GW)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.getEguParamZoneDict">
+<code class="sig-name descname">getEguParamZoneDict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">zoneCol</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.getEguParamZoneDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dictionary mapping generator to ipm zone</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – 2d list with gen fleet</p></li>
+<li><p><strong>zoneCol</strong> – (int) column with zone name</p></li>
+<li><p><strong>ipmZones</strong> – list with ipm zone names</p></li>
+<li><p><strong>ipmZoneNums</strong> – list with ipm zone numbers</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dict of {genSymbol:zone num}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addEguOpCostParam">
+<code class="sig-name descname">addEguOpCostParam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">genSet</span></em>, <em class="sig-param"><span class="n">genSymbols</span></em>, <em class="sig-param"><span class="n">scaleLbToShortTon</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em>, <em class="sig-param"><span class="n">scaleDollarsToThousands</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">co2Price</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addEguOpCostParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add op cost parameter for existing gens</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – data base object</p></li>
+<li><p><strong>genFleet</strong> – 2d list with gen fleet</p></li>
+<li><p><strong>genSet</strong> – gams set object with existing generators</p></li>
+<li><p><strong>genSymbols</strong> – list with symbols of generators</p></li>
+<li><p><strong>scaleLbToShortTon</strong> – (float) conversion factor lb to short ton</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) conversion factor MW to GW (1/1000)</p></li>
+<li><p><strong>scaleDollarsToThousands</strong> – (float) conversion factor dollars to thousand dollars</p></li>
+<li><p><strong>co2Price</strong> – (float) value of CO2 price</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addEguHourlyParams">
+<code class="sig-name descname">addEguHourlyParams</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">hourlyCapacsCE</span></em>, <em class="sig-param"><span class="n">gcmSet</span></em>, <em class="sig-param"><span class="n">genSet</span></em>, <em class="sig-param"><span class="n">hourSet</span></em>, <em class="sig-param"><span class="n">hoursForCE</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addEguHourlyParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add existing generator hourly capacities to gdx database</p>
+<p>Add hourly HR &amp; capac param</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>hourlyCapacsCE</strong> – (dict) hourly capacities of existing generators</p></li>
+<li><p><strong>gcmSet</strong> – gams set object with gcm names</p></li>
+<li><p><strong>genSet</strong> – gams set object with existing generators</p></li>
+<li><p><strong>hourSet</strong> – gams set object with hours of simulation</p></li>
+<li><p><strong>hoursForCE</strong> – list with hours of simulation</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) conversion factor MW to GW (1/1000)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.getHourly2dParamDict">
+<code class="sig-name descname">getHourly2dParamDict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">hourlyParam</span></em>, <em class="sig-param"><span class="n">hoursForCE</span></em>, <em class="sig-param"><span class="n">scalar</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.getHourly2dParamDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates dictionary of (key,hourSymbol)</p>
+<p>for capac or HR, key=gen; for demand or wind &amp; solar gen, key=zone</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hourlyParam</strong> – (dict) nested dictionary with hourly parameters</p></li>
+<li><p><strong>hoursForCE</strong> – (list) hours of simulation (considering all gcms)</p></li>
+<li><p><strong>scalar</strong> – (float) scaling factor</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary with tuples (key,hourSymbol) as keys</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addExistingRenewableMaxGenParams">
+<code class="sig-name descname">addExistingRenewableMaxGenParams</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">gcmSet</span></em>, <em class="sig-param"><span class="n">zoneSet</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em>, <em class="sig-param"><span class="n">hourSet</span></em>, <em class="sig-param"><span class="n">hoursForCE</span></em>, <em class="sig-param"><span class="n">hourlySolarGenCEZonal</span></em>, <em class="sig-param"><span class="n">hourlyWindGenCEZonal</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addExistingRenewableMaxGenParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add existing renewable combined maximum generation values to database</p>
+<p>Converts 1d list of param vals to hour-indexed dicts, then adds dicts to GAMS db</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>zoneSet</strong> – gams set object with zones</p></li>
+<li><p><strong>ipmZones</strong> – list with ipm zones</p></li>
+<li><p><strong>ipmZoneNums</strong> – list with ipm zone numbers</p></li>
+<li><p><strong>hourSet</strong> – gams set object with hours of simulation</p></li>
+<li><p><strong>hourSymbols</strong> – list with symbols of hours of simulation</p></li>
+<li><p><strong>hourlySolarGenCEZonal</strong> – (dict) hourly solar generation by zone</p></li>
+<li><p><strong>hourlyWindGenCEZonal</strong> – (dict) hourly wind generation by zone</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) scaling factors MW to GW</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.getParamIndexedByHourDict">
+<code class="sig-name descname">getParamIndexedByHourDict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">paramVals</span></em>, <em class="sig-param"><span class="n">hourSymbols</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">scalar</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.getParamIndexedByHourDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores set of values into dictionary keyed by hour</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>paramVals</strong> – set of param values (1d list)</p></li>
+<li><p><strong>hourSymbols</strong> – hour symbols (1d list)</p></li>
+<li><p><strong>scalar</strong> – optional scalar</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary of (hour symbol:param val)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addLineSourceAndSink">
+<code class="sig-name descname">addLineSourceAndSink</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">lineSet</span></em>, <em class="sig-param"><span class="n">lines</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addLineSourceAndSink" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add zone and line constraints</p>
+<p>Add parameter mapping lines to zone sources &amp; sinks (pLinesources(l),pLinesinks(l))</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>lineSet</strong> – gams set object with lines names</p></li>
+<li><p><strong>lines</strong> – list with lines names</p></li>
+<li><p><strong>ipmZones</strong> – list with zone names</p></li>
+<li><p><strong>ipmZoneNums</strong> – list with zone numbers</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addLineCapacs">
+<code class="sig-name descname">addLineCapacs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">lineCapacs</span></em>, <em class="sig-param"><span class="n">lineSet</span></em>, <em class="sig-param"><span class="n">lines</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addLineCapacs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add line capacities (pLinecapacs(l)). lineCapacs already a dict of line:capac;</p>
+<p>convert to GW</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>lineCapacs</strong> – (dict) capacities of transmission lines</p></li>
+<li><p><strong>lineSet</strong> – gams set with lines names</p></li>
+<li><p><strong>lines</strong> – list with lines names</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) scaling factor MW to GW</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addPumpHydroParams">
+<code class="sig-name descname">addPumpHydroParams</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">genFleetForCE</span></em>, <em class="sig-param"><span class="n">phEff</span></em>, <em class="sig-param"><span class="n">phMaxSoc</span></em>, <em class="sig-param"><span class="n">phInitSoc</span></em>, <em class="sig-param"><span class="n">pumpHydroGenSet</span></em>, <em class="sig-param"><span class="n">pumpHydroGenSymbols</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addPumpHydroParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>ADD PUMPED HYDRO PARAMETERS</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>genFleetForCE</strong> – 2d list with gen fleet</p></li>
+<li><p><strong>phEff</strong> – (float) pumped hydro efficiency (%)</p></li>
+<li><p><strong>phMaxSoc</strong> – (float) pumped hydro maximum state of charge (multiplier of capacity)</p></li>
+<li><p><strong>phInitSoc</strong> – (float) pumped hydro initial state of charge (% of maxsoc)</p></li>
+<li><p><strong>pumpHydroGenSet</strong> – gams set with pumped hydro generators</p></li>
+<li><p><strong>pumpHydroGenSymbols</strong> – list with pumped hydro generators symbols</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) scaling factor MW to GW</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.getSocDict">
+<code class="sig-name descname">getSocDict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleetForCE</span></em>, <em class="sig-param"><span class="n">phMaxSoc</span></em>, <em class="sig-param"><span class="n">pumpHydroGenSymbols</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.getSocDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get state of charge for pumped hydro. phMaxSoc equals multiple of capacity</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleetForCE</strong> – 2d list with gen fleet</p></li>
+<li><p><strong>phMaxSoc</strong> – (float) pumped hydro maximum state of charge (multiplier of capacity)</p></li>
+<li><p><strong>pumpHydroGenSymbols</strong> – list with pumped hydro generators symbols</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) scaling factor MW to GW</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(dict) {pumped hydro symbol: max state of charge (in MW)}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addTechParams">
+<code class="sig-name descname">addTechParams</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">newTechsCE</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em>, <em class="sig-param"><span class="n">scaleDollarsToThousands</span></em>, <em class="sig-param"><span class="n">scaleLbToShortTon</span></em>, <em class="sig-param"><span class="n">ptCurtailed</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addTechParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add new tech parameters to gdx database for CE</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>newTechsCE</strong> – 2d list with parameters of new techs</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) scaling factor MW to GW</p></li>
+<li><p><strong>scaleDollarsToThousands</strong> – (float) scaling factor dollars to thousands</p></li>
+<li><p><strong>scaleLbToShortTon</strong> – (float) scaling factor lb to short tons</p></li>
+<li><p><strong>ptCurtailed</strong> – (list) list of techs that have climate-induced capacity derating</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.getTechParamDict">
+<code class="sig-name descname">getTechParamDict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">newTechsCE</span></em>, <em class="sig-param"><span class="n">techSymbols</span></em>, <em class="sig-param"><span class="n">paramColName</span></em>, <em class="sig-param"><span class="n">ptCurtailed</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">scalar</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.getTechParamDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates dict of (techSymbol:paramVal) for given parameter name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>newTechsCE</strong> – 2d list with parameters of new techs</p></li>
+<li><p><strong>techSymbols</strong> – (list) names of new techs</p></li>
+<li><p><strong>paramColName</strong> – (int) index of column of desired parameter in newTechsCE</p></li>
+<li><p><strong>ptCurtailed</strong> – (list) list of techs that have climate-induced capacity derating</p></li>
+<li><p><strong>scalar</strong> – (float) scaling factor</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dict of (techSymbol:paramVal) for given parameter name</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.getTechOpCostDict">
+<code class="sig-name descname">getTechOpCostDict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">newTechs</span></em>, <em class="sig-param"><span class="n">ptCurtailed</span></em>, <em class="sig-param"><span class="n">scalar</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.getTechOpCostDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes in techs and returns dictionary of (tech:opCost)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>newTechs</strong> – 2d list with parameters of new techs</p></li>
+<li><p><strong>ptCurtailed</strong> – (list) list of techs that have climate-induced capacity derating</p></li>
+<li><p><strong>scalar</strong> – (float) scaling factor</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary of {tech:opCost}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addTechCurtailedHourlyCapac">
+<code class="sig-name descname">addTechCurtailedHourlyCapac</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">hourlyCurtailedTechCapacsCE</span></em>, <em class="sig-param"><span class="n">gcmSet</span></em>, <em class="sig-param"><span class="n">cellSet</span></em>, <em class="sig-param"><span class="n">techCurtailedSet</span></em>, <em class="sig-param"><span class="n">hourSet</span></em>, <em class="sig-param"><span class="n">hoursForCE</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addTechCurtailedHourlyCapac" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add hourly curtailed tech capac.</p>
+<p>Input capacs: (tech,loc):[capacs]. Output dict added to db: idxed by (loc,tech,hr)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>hourlyCurtailedTechCapacsCE</strong> – </p></li>
+<li><p><strong>cellSet</strong> – gams set with grid cell names</p></li>
+<li><p><strong>techCurtailedSet</strong> – gams set with names of techs that have climate-induced capacity deratings</p></li>
+<li><p><strong>hourSet</strong> – gams set with hours of simulation</p></li>
+<li><p><strong>hoursForCE</strong> – list with hours of simulation</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) scaling factor MW to GW</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.getHourlyTechParamDict">
+<code class="sig-name descname">getHourlyTechParamDict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">hourlyParam</span></em>, <em class="sig-param"><span class="n">hoursForCE</span></em>, <em class="sig-param"><span class="n">scalar</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.getHourlyTechParamDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates dictionary of (gcm, locSymbol, techSymbol, hourSymbol):capac or HR</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hourlyParam</strong> – (dict) dictionary with hourly values for (tech, cell) tuples</p></li>
+<li><p><strong>hoursForCE</strong> – list with hours of simulation</p></li>
+<li><p><strong>scalar</strong> – (float) scaling factor</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(dict) {(gcm, locSymbol, techSymbol, hourSymbol): value}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addCellsToZones">
+<code class="sig-name descname">addCellsToZones</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">cellSet</span></em>, <em class="sig-param"><span class="n">cellsToZones</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addCellsToZones" title="Permalink to this definition">¶</a></dt>
+<dd><p>ADD MAP FROM CELLS TO ZONES</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>cellSet</strong> – gams set with grid cell names</p></li>
+<li><p><strong>cellsToZones</strong> – (dict) dictionary mapping cells to zones</p></li>
+<li><p><strong>ipmZones</strong> – list with ipm zone names</p></li>
+<li><p><strong>ipmZoneNums</strong> – list with ipm zone numbers</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addPlanningReserveParam">
+<code class="sig-name descname">addPlanningReserveParam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">planningReserveZonal</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em>, <em class="sig-param"><span class="n">zoneSet</span></em>, <em class="sig-param"><span class="n">zoneSymbols</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addPlanningReserveParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add planning reserve margin fraction parameters</p>
+<p>Add zonal planning reserve</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>planningReserveZonal</strong> – (dict) dictionary with planning reserve margin (in MW) for each zone</p></li>
+<li><p><strong>ipmZones</strong> – list with ipm zone names</p></li>
+<li><p><strong>ipmZoneNums</strong> – list with ipm zone numbers</p></li>
+<li><p><strong>zoneSet</strong> – gams set with zone names</p></li>
+<li><p><strong>zoneSymbols</strong> – list with zone names</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) scaling factor MW to GW</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addPeakHourToZoneParam">
+<code class="sig-name descname">addPeakHourToZoneParam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">peakDemandHourZonal</span></em>, <em class="sig-param"><span class="n">peakHourSet</span></em>, <em class="sig-param"><span class="n">peakHrSymbols</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addPeakHourToZoneParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add map of peak hour to zone</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>peakDemandHourZonal</strong> – (dict) hours of peak demand in each zone</p></li>
+<li><p><strong>peakHourSet</strong> – gams set with peak hours</p></li>
+<li><p><strong>peakHrSymbols</strong> – list with peak hours</p></li>
+<li><p><strong>ipmZones</strong> – list with ipm zone names</p></li>
+<li><p><strong>ipmZoneNums</strong> – list with ipm zone numbers</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addDiscountRateParam">
+<code class="sig-name descname">addDiscountRateParam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">discountRate</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addDiscountRateParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add discount rate parameter to gdx database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>discountRate</strong> – (float) annual discount rate</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addExistingPlantFirmFractions">
+<code class="sig-name descname">addExistingPlantFirmFractions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">genSet</span></em>, <em class="sig-param"><span class="n">genSymbols</span></em>, <em class="sig-param"><span class="n">firmCapacityCreditsExistingGens</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addExistingPlantFirmFractions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add firm fraction for existing generators</p>
+<p>Firm fraction goes towards meeting planning reserve margin</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>genFleet</strong> – 2d list with gen fleet</p></li>
+<li><p><strong>genSet</strong> – gams set object with existing generators</p></li>
+<li><p><strong>genSymbols</strong> – list with symbols of generators</p></li>
+<li><p><strong>firmCapacityCreditsExistingGens</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.getFirmCreditExistingGenDict">
+<code class="sig-name descname">getFirmCreditExistingGenDict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genFleet</span></em>, <em class="sig-param"><span class="n">firmCapacityCreditsExistingGens</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.getFirmCreditExistingGenDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns dict of (genSymbol:capacCredit) based on plant type of each generator</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genFleet</strong> – 2d list with gen fleet</p></li>
+<li><p><strong>firmCapacityCreditsExistingGens</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addRenewTechCFParams">
+<code class="sig-name descname">addRenewTechCFParams</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">renewTechSet</span></em>, <em class="sig-param"><span class="n">renewTechSymbols</span></em>, <em class="sig-param"><span class="n">gcmSet</span></em>, <em class="sig-param"><span class="n">zoneSet</span></em>, <em class="sig-param"><span class="n">hourSet</span></em>, <em class="sig-param"><span class="n">hoursForCE</span></em>, <em class="sig-param"><span class="n">newWindCFsCEZonal</span></em>, <em class="sig-param"><span class="n">newSolarCFsCEZonal</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addRenewTechCFParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add hourly capacity factors for new renewable techs</p>
+<p>Add CFs for new renew builds. Input: CFs as zone:[CF]</p>
+<p>Output: dict added to GAMS file as (z,tech,h):[CFs]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>renewTechSet</strong> – gams set with renewable techs</p></li>
+<li><p><strong>renewTechSymbols</strong> – list with renewable tech names</p></li>
+<li><p><strong>zoneSet</strong> – gams set with zone names</p></li>
+<li><p><strong>hourSet</strong> – gams set with hours of simulation</p></li>
+<li><p><strong>hourSymbols</strong> – list with hours of simulation</p></li>
+<li><p><strong>newWindCFsCEZonal</strong> – dict with CFs for new wind gens</p></li>
+<li><p><strong>newSolarCFsCEZonal</strong> – dict with CFs for new solar gens</p></li>
+<li><p><strong>ipmZones</strong> – list with ipm zone names</p></li>
+<li><p><strong>ipmZoneNums</strong> – list with ipm zone numbers</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addCppEmissionsCap">
+<code class="sig-name descname">addCppEmissionsCap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">co2CppSercCurrYearLimit</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addCppEmissionsCap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add co2 emission caps for CE model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>co2CppSercCurrYearLimit</strong> – annual co2 upper bound (in short tons)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addSeasonDemandWeights">
+<code class="sig-name descname">addSeasonDemandWeights</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">seasonDemandWeights</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addSeasonDemandWeights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add weights to scale representative seasonal demand up to complete season period</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>seasonDemandWeights</strong> – dictionary with season weights</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addMaxNumNewRenew">
+<code class="sig-name descname">addMaxNumNewRenew</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">newWindCFsCEZonal</span></em>, <em class="sig-param"><span class="n">newSolarCFsCEZonal</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addMaxNumNewRenew" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add limit on max number of new renewable builds (Wind and Solar) per zone and aggregated block</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>db</strong> – GAMS database object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addMaxNumNewBuilds">
+<code class="sig-name descname">addMaxNumNewBuilds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">newTechsCE</span></em>, <em class="sig-param"><span class="n">zoneSet</span></em>, <em class="sig-param"><span class="n">ipmZones</span></em>, <em class="sig-param"><span class="n">ipmZoneNums</span></em>, <em class="sig-param"><span class="n">typeSet</span></em>, <em class="sig-param"><span class="n">maxAddedZonalCapacPerTech</span></em>, <em class="sig-param"><span class="n">ptCurtailed</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addMaxNumNewBuilds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add limit of max number of new builds per plant type in each zone</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>newTechsCE</strong> – 2d list with parameters of new techs</p></li>
+<li><p><strong>zoneSet</strong> – gams set object with zone names</p></li>
+<li><p><strong>ipmZones</strong> – list with ipm zone names</p></li>
+<li><p><strong>ipmZoneNums</strong> – list with ipm zone numbers</p></li>
+<li><p><strong>typeSet</strong> – gams set object with types of new techs (no cooling info)</p></li>
+<li><p><strong>maxAddedZonalCapacPerTech</strong> – (numeric or dict) maximum of each type per zone</p></li>
+<li><p><strong>ptCurtailed</strong> – list with techs that have climate-induced capacity deratings</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addHydroMaxGenPerSeason">
+<code class="sig-name descname">addHydroMaxGenPerSeason</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">hydroGenSet</span></em>, <em class="sig-param"><span class="n">gcmSet</span></em>, <em class="sig-param"><span class="n">hydroPotPerSeason</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addHydroMaxGenPerSeason" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add max hydro generation per time block</p>
+<p>hydroPotPerSeason is a dict of season:genSymbol:gen (MWh), so just need to scale it.
+Note that sesaon can be ‘special’!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>hydroGenSet</strong> – gams set object with hydro generators</p></li>
+<li><p><strong>hydroGenSymbols</strong> – list with names of hydro generators</p></li>
+<li><p><strong>hydroPotPerSeason</strong> – (dict) {season:genSymbol:gen (MWh)}</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) scaling factor MW to GW</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addHydroMaxGenUC">
+<code class="sig-name descname">addHydroMaxGenUC</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">hydroGenSet</span></em>, <em class="sig-param"><span class="n">hydroPot</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addHydroMaxGenUC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add max hydro gen for days in UC run</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>hydroGenSet</strong> – gams set object with hydro generators</p></li>
+<li><p><strong>hydroPot</strong> – dict of genSymbol:gen (MWh)</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) scaling factor MW to GW</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addEguUCParams">
+<code class="sig-name descname">addEguUCParams</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">fleetUC</span></em>, <em class="sig-param"><span class="n">genSet</span></em>, <em class="sig-param"><span class="n">genSymbols</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em>, <em class="sig-param"><span class="n">scaleDollarsToThousands</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addEguUCParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add UC parameters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>fleetUC</strong> – 2d list with gen fleet</p></li>
+<li><p><strong>genSet</strong> – gams set object with existing generators</p></li>
+<li><p><strong>genSymbols</strong> – list with symbols of generators</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) scaling factor MW to GW</p></li>
+<li><p><strong>scaleDollarsToThousands</strong> – (float) scaling factor dollars to thousands</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addRegReserveParameters">
+<code class="sig-name descname">addRegReserveParameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">regUp</span></em>, <em class="sig-param"><span class="n">regDown</span></em>, <em class="sig-param"><span class="n">rrToRegTime</span></em>, <em class="sig-param"><span class="n">hourSet</span></em>, <em class="sig-param"><span class="n">hourSymbols</span></em>, <em class="sig-param"><span class="n">zoneSet</span></em>, <em class="sig-param"><span class="n">modelName</span></em>, <em class="sig-param"><span class="n">genparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addRegReserveParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add reg reserve parameters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>regUp</strong> – (2d list) hourly values of regulated up reserve by zone</p></li>
+<li><p><strong>regDown</strong> – (2d list) hourly values of regulated down reserve by zone</p></li>
+<li><p><strong>rrToRegTime</strong> – (float) scaling factor for reserve time frame</p></li>
+<li><p><strong>hourSet</strong> – gams set with hours of simulation</p></li>
+<li><p><strong>hourSymbols</strong> – list with simulation hours</p></li>
+<li><p><strong>zoneSet</strong> – gams set with zones</p></li>
+<li><p><strong>modelName</strong> – (string) name of model</p></li>
+<li><p><strong>genparam</strong> – object of class <code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addFlexReserveParameters">
+<code class="sig-name descname">addFlexReserveParameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">flexRes</span></em>, <em class="sig-param"><span class="n">rrToFlexTime</span></em>, <em class="sig-param"><span class="n">hourSet</span></em>, <em class="sig-param"><span class="n">hourSymbols</span></em>, <em class="sig-param"><span class="n">zoneSet</span></em>, <em class="sig-param"><span class="n">modelName</span></em>, <em class="sig-param"><span class="n">genparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addFlexReserveParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add reserve parameter quantities</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>flexRes</strong> – (2d list) hourly values of flexibility reserve by zone</p></li>
+<li><p><strong>rrToFlexTime</strong> – (float) scaling factor for flexibility reserve time frame</p></li>
+<li><p><strong>hourSet</strong> – gams set with hours of simulation</p></li>
+<li><p><strong>hourSymbols</strong> – list with simulation hours</p></li>
+<li><p><strong>zoneSet</strong> – gams set with zones</p></li>
+<li><p><strong>modelName</strong> – (string) name of model</p></li>
+<li><p><strong>genparam</strong> – object of class <code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addContReserveParameters">
+<code class="sig-name descname">addContReserveParameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">contRes</span></em>, <em class="sig-param"><span class="n">rrToContTime</span></em>, <em class="sig-param"><span class="n">hourSet</span></em>, <em class="sig-param"><span class="n">hourSymbols</span></em>, <em class="sig-param"><span class="n">zoneSet</span></em>, <em class="sig-param"><span class="n">genparam</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addContReserveParameters" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>contRes</strong> – (2d list) hourly values of contigency reserve by zone</p></li>
+<li><p><strong>rrToContTime</strong> – (float) scaling factor for contigency reserve time frame</p></li>
+<li><p><strong>hourSet</strong> – gams set with hours of simulation</p></li>
+<li><p><strong>hourSymbols</strong> – list with simulation hours</p></li>
+<li><p><strong>zoneSet</strong> – gams set with zones</p></li>
+<li><p><strong>genparam</strong> – object of class <code class="xref py py-mod docutils literal notranslate"><span class="pre">Generalparameters</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addEguInitialConditions">
+<code class="sig-name descname">addEguInitialConditions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">genSet</span></em>, <em class="sig-param"><span class="n">genSymbols</span></em>, <em class="sig-param"><span class="n">fleetUC</span></em>, <em class="sig-param"><span class="n">onOffInitial</span></em>, <em class="sig-param"><span class="n">genAboveMinInitial</span></em>, <em class="sig-param"><span class="n">mdtCarriedInitial</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addEguInitialConditions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add initial conditions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>genSet</strong> – gams set object with existing generators</p></li>
+<li><p><strong>genSymbols</strong> – list with symbols of generators</p></li>
+<li><p><strong>fleetUC</strong> – 2d list with gen fleet</p></li>
+<li><p><strong>onOffInitial</strong> – (list) initial status of generator (on/off)</p></li>
+<li><p><strong>genAboveMinInitial</strong> – (list) initial state of generation above minimum for each generator</p></li>
+<li><p><strong>mdtCarriedInitial</strong> – (list) initial state of min down time for each generator</p></li>
+<li><p><strong>scaleMWtoGW</strong> – (float) scaling factor MW to GW</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.getInitialCondsDict">
+<code class="sig-name descname">getInitialCondsDict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fleetUC</span></em>, <em class="sig-param"><span class="n">initialCondValues</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">scalar</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.getInitialCondsDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create dictionary with initial conditions for individual generators for UC run</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fleetUC</strong> – 2d list with gen fleet</p></li>
+<li><p><strong>initialCondValues</strong> – (1d list) values of intial conditions (same order of gen fleet)</p></li>
+<li><p><strong>scalar</strong> – (float) scaling factor</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(dict) {gen symbol: value}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addEguEligibleToProvideRes">
+<code class="sig-name descname">addEguEligibleToProvideRes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">fleetUC</span></em>, <em class="sig-param"><span class="n">genSet</span></em>, <em class="sig-param"><span class="n">genSymbols</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">stoMarket</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addEguEligibleToProvideRes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Which generators are eligible to provide reserves</p>
+<p>Add parameter for which existing generators can provide flex, cont, or reg reserves</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams data base object</p></li>
+<li><p><strong>fleetUC</strong> – 2d list with gen fleet</p></li>
+<li><p><strong>genSet</strong> – gams set object with existing generators</p></li>
+<li><p><strong>genSymbols</strong> – list with symbols of generators</p></li>
+<li><p><strong>stoMarket</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.getEligibleSpinDict">
+<code class="sig-name descname">getEligibleSpinDict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fleetOrTechsData</span></em>, <em class="sig-param"><span class="n">fleetOrTechsFlag</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">stoMktOrPtCurt</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.getEligibleSpinDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns dict of whether units can provide spin reserves or not based on the plant type</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fleetOrTechsData</strong> – </p></li>
+<li><p><strong>fleetOrTechsFlag</strong> – </p></li>
+<li><p><strong>stoMktOrPtCurt</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addCostNonservedEnergy">
+<code class="sig-name descname">addCostNonservedEnergy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">cnse</span></em>, <em class="sig-param"><span class="n">scaleMWtoGW</span></em>, <em class="sig-param"><span class="n">scaleDollarsToThousands</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addCostNonservedEnergy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add cost of CNSE</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – GAMS database object</p></li>
+<li><p><strong>cnse</strong> – value of cost of non served energy ($/MWh)</p></li>
+<li><p><strong>scaleMWtoGW</strong> – conversion factor MW to GW</p></li>
+<li><p><strong>scaleDollarsToThousands</strong> – conversion factor to thousands dollars</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.addCo2Price">
+<code class="sig-name descname">addCo2Price</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">co2Price</span></em>, <em class="sig-param"><span class="n">scaleDollarsToThousands</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.addCo2Price" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add CO2 price</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – GAMS database object</p></li>
+<li><p><strong>co2Price</strong> – value of CO2 price ($/MWh)</p></li>
+<li><p><strong>scaleDollarsToThousands</strong> – conversion factor to thousands dollars</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.add_NdParam">
+<code class="sig-name descname">add_NdParam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">paramDict</span></em>, <em class="sig-param"><span class="n">list_idxSet</span></em>, <em class="sig-param"><span class="n">paramName</span></em>, <em class="sig-param"><span class="n">paramDescrip</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.add_NdParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic function to add a N-dimensional parameter to database</p>
+<p>paramDict is a simple dictionary (it MUST NOT BE a nested dictionary). See function ‘nested_dict_to_dict()’
+to convert a nested dictionary into a simple dictionary where the key is a tuple with combination of nested keys</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams database object</p></li>
+<li><p><strong>paramDict</strong> – simple dictionary with data. keys must be a tuple with N values</p></li>
+<li><p><strong>list_idxSet</strong> – 1d list of size N with GAMS sets for domain of parameters (must be in the correct orders)</p></li>
+<li><p><strong>paramName</strong> – (string) name of parameter</p></li>
+<li><p><strong>paramDescrip</strong> – (string) description of parameter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>gams parameter object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-GAMSUtil.GAMSAuxFuncs"></span><dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.createGenSymbol">
+<code class="sig-name descname">createGenSymbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">row</span></em>, <em class="sig-param"><span class="n">headers</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.createGenSymbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>CREATE GEN SYMBOLS</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>row</strong> – row of genFleet 2d list with data of single generator</p></li>
+<li><p><strong>headers</strong> – list of headers</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>strinf with gen code</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.createTechSymbol">
+<code class="sig-name descname">createTechSymbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">row</span></em>, <em class="sig-param"><span class="n">headers</span></em>, <em class="sig-param"><span class="n">ptCurtailed</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.createTechSymbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>CREATE COOLING TECH SYMBOLS</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>row</strong> – row of genFleet 2d list with data of single generator</p></li>
+<li><p><strong>headers</strong> – 1-d list with header</p></li>
+<li><p><strong>ptCurtailed</strong> – 1-d list with curtailed technologies</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.separateGenSymbol">
+<code class="sig-name descname">separateGenSymbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">genSymbol</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.separateGenSymbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split generator symbol into plant code and unit code</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>genSymbol</strong> – string with gen symbol</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tuple with strings of plant code and unit code</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.getTechFromTechSymbol">
+<code class="sig-name descname">getTechFromTechSymbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">techSymbol</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.getTechFromTechSymbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tech type from tech symbol</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>techSymbol</strong> – string with tech symbol</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>string with tech type</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.getTechAndCoolFromTechSymbol">
+<code class="sig-name descname">getTechAndCoolFromTechSymbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">techSymbol</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.getTechAndCoolFromTechSymbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tech and cooling types from tech symbol</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>techSymbol</strong> – string with tech symbol</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tuple with string of tech name and cooling type</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.createZoneSymbol">
+<code class="sig-name descname">createZoneSymbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">zoneNum</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.createZoneSymbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>create zone symbol for GAMS (z1, z2,, …)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>zoneNum</strong> – number of zone</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>string with zone symbol</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.getZoneNumFromSymbol">
+<code class="sig-name descname">getZoneNumFromSymbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">symbol</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.getZoneNumFromSymbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get zone number from zone symbol</p>
+<p>NOTE THAT THIS FUNCTION ONLY WORKS FOR UP TO 9 ZONES (IT ASSUMES ZONE NUMBER IS ONE DIGIT)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>symbol</strong> – string with zone symbol (z1, z2, …)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>integer with number of zone</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.createHourSymbol">
+<code class="sig-name descname">createHourSymbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">hour</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.createHourSymbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>create hour of the year symbol for GAMS (h1, h2, h744, h8760, …)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>hour</strong> – integer with hour of the year</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>string with hour symbol</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.createTechAndLocLabel">
+<code class="sig-name descname">createTechAndLocLabel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tech</span></em>, <em class="sig-param"><span class="n">loc</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.createTechAndLocLabel" title="Permalink to this definition">¶</a></dt>
+<dd><p>create tech and location symbol for GAMS</p>
+<p>IF MODIFY THIS FUNCTION, MODIFY NEXT FUNCTION!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tech</strong> – </p></li>
+<li><p><strong>loc</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.splitTechAndLocLabel">
+<code class="sig-name descname">splitTechAndLocLabel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">label</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.splitTechAndLocLabel" title="Permalink to this definition">¶</a></dt>
+<dd><p>split string with label of tech and location into tuple</p>
+<p>IF MODIFY THIS FUNCTION, MODIFY PRIOR FUNCTION!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>label</strong> – label if tech and location candidate</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tuple with strings of tech and location</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.extract0dVarResultsFromGAMSModel">
+<code class="sig-name descname">extract0dVarResultsFromGAMSModel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gamsModel</span></em>, <em class="sig-param"><span class="n">varName</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.extract0dVarResultsFromGAMSModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract results from GAMS of variable of dimension 0 (scalar)</p>
+<p>Reads resulting GAMS model and extracts values of variable varName</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gamsModel</strong> – GAMS model object</p></li>
+<li><p><strong>varName</strong> – string with variable name</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>value of variable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.extract1dVarResultsFromGAMSModel">
+<code class="sig-name descname">extract1dVarResultsFromGAMSModel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">modelResults</span></em>, <em class="sig-param"><span class="n">varName</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.extract1dVarResultsFromGAMSModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract results from GAMS of variable of dimension 1 (vector)</p>
+<p>Reads resulting GAMS model and extracts values of variable varName</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>modelResults</strong> – GAMS model object</p></li>
+<li><p><strong>varName</strong> – string with variable name</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list with value of variable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.extract2dVarResultsIntoDict">
+<code class="sig-name descname">extract2dVarResultsIntoDict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">modelResults</span></em>, <em class="sig-param"><span class="n">varName</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.extract2dVarResultsIntoDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract results from GAMS of variable of dimension 2 (2d array)</p>
+<p>Reads resulting GAMS model and extracts values of variable varName and saves to dictionary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>modelResults</strong> – GAMS model object</p></li>
+<li><p><strong>varName</strong> – string with variable name</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dict with value of variable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.extract2dVarResultsIntoList">
+<code class="sig-name descname">extract2dVarResultsIntoList</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">modelResults</span></em>, <em class="sig-param"><span class="n">varName</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.extract2dVarResultsIntoList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract results from GAMS of variable of dimension 2 (2d array)</p>
+<p>Reads resulting GAMS model and extracts values of variable varName and saves to 2d list</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>modelResults</strong> – GAMS model object</p></li>
+<li><p><strong>varName</strong> – string with variable name</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>2d list with value of variable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.extractTechBuildResults">
+<code class="sig-name descname">extractTechBuildResults</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">modelResults</span></em>, <em class="sig-param"><span class="n">varName</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.extractTechBuildResults" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts Tech build results</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>modelResults</strong> – GAMS model object</p></li>
+<li><p><strong>varName</strong> – string with variable name</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>2d list with value of variable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.extract2dVarResultsIntoDictNoLA">
+<code class="sig-name descname">extract2dVarResultsIntoDictNoLA</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">modelResults</span></em>, <em class="sig-param"><span class="n">varName</span></em>, <em class="sig-param"><span class="n">hoursOpt</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.extract2dVarResultsIntoDictNoLA" title="Permalink to this definition">¶</a></dt>
+<dd><p>EXTRACT RESULTS</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>modelResults</strong> – </p></li>
+<li><p><strong>varName</strong> – </p></li>
+<li><p><strong>hoursOpt</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../Parameters/index.html" class="btn btn-neutral float-right" title="Parameters" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../Input%20data/index.html" class="btn btn-neutral float-left" title="Input data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

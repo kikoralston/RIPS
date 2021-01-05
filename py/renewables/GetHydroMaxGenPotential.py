@@ -1,13 +1,11 @@
-"""
-Michael Craig
-July 21, 2017
-Import monthly hydropower generation from PNNL, and assign to each season considered in CE model.
-"""
+#
+# Import monthly hydropower generation from PNNL, and assign to each season considered in CE model.
+#
 
 import os
 from AuxFuncs import *
 from GAMSUtil.GAMSAuxFuncs import createGenSymbol
-from DemandFuncsCE import getHoursInMonths
+from PrepareData.DemandFuncsCE import getHoursInMonths
 import pandas as pd
 import pickle as pk
 import datetime as dt
@@ -28,8 +26,7 @@ def getHydroEPotential(fleet, demandZonal, repAndSpeHoursDict, currYear, genpara
 
     :param fleet: gen fleet
     :param demandZonal: zonal demand (dict)
-    :param repAndSpeHoursDict: rep hrs per season or special block (dict of block:rep hrs, where seasons are labled
-    by name and special hours are 'special')
+    :param repAndSpeHoursDict: rep hrs per season or special block (dict of block:rep hrs, where seasons are labeled by name and special hours are 'special')
     :param currYear: current year
     :param genparam: object of class Generalparameters
     :param curtailparam: object of class Curtailmentparameters
@@ -174,7 +171,7 @@ def getRepHrsDemand(demandZonal, repHrs):
 
 
 def sumDemandInHours(demand, hours):
-    """
+    """Get total demand in subset of hours
 
     :param demand: 1d list of demand (0-8759 idx)
     :param hours: 1d list of hours (1-8760 idx).
@@ -309,13 +306,15 @@ def getDailyHydroPotentialsUC(fleetUC, hydroData, daysUC, ucYear):
 def compute_max_daily_hydro(fleet, currYear, genparam, gcm):
     """ Converts monthly hydro capacity for each plant to daily hydro capacity
 
-    This conversion follows a simple linear rule with simulated water releases simulated by PNNL
+    This conversion follows a simple linear rule with simulated water releases simulated by PNNL.
 
-    $$P^{MAX}_{day} = P_{month}^{PNNL}\frac{r_{day}^{PNNL}}{\sum_{day \in month} r_{day}^{PNNL}}$$
+    .. math::
+       P^{MAX}_{day} = P_{month}^{PNNL}\\frac{r_{day}^{PNNL}}{\sum_{day \in month} r_{day}^{PNNL}}
 
-    :param fleet: gen fleet
-    :param currYear: current year
-    :param dataRoot: folder with input data
+
+    :param fleet: (2d list) gen fleet
+    :param currYear: (int) current year
+    :param dataRoot: (string) folder with input data
     :return: dictionary with daily hydro capacity {gensymbol: 1d list of daily capacities}
     """
 
@@ -363,9 +362,9 @@ def importHydroDailyReleases(currYear, dataRoot, gcm):
 
     Read file with daily hydro releases created by PNNL (Assumes format is the same as the monthly file)
 
-    :param currYear: (integer)
-    :param dataRoot: (string)
-    :param gcm: (string) GCM_RCP
+    :param currYear: (integer) current year
+    :param dataRoot: (string) path to folder with input data
+    :param gcm: (string) name of climate model instance (GCM_RCP)
     :return:
     """
     dataDir = os.path.join(dataRoot, 'HydroMonthlyDataPNNL')
@@ -419,7 +418,7 @@ def processHydroPotential(pathin, pathout):
     This routine reads the txt files created by Nathalie Voisin (PNNL) for each hydro generator in SERC and processes
     it in order to create the monthly hydro potential values (in MWh) used by the CE model
 
-    :return:
+    :meta private:
     """
 
     x = pd.read_table(os.path.join(pathin, 'PlantLocationEIA2003_2016.txt'),
@@ -508,7 +507,7 @@ def processDailyReleases(pathin, pathout):
 
     February 2019
 
-    :return:
+    :meta private:
     """
 
     # create tmp folder for processing data

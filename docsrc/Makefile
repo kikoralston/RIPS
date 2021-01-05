@@ -17,7 +17,7 @@ help:
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	@$(SPHINXBUILD) -aE -b $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 github:
 	@echo "---- Compiling latex file of diagram ------"
@@ -27,4 +27,4 @@ github:
 	@echo "---- Building html files ------"
 	@make html
 	@echo "---- Copying html files to ../docs/ ------"
-	@cp -a _build/html/. ../docs/
+	@cp -a _build/. ../docs/
