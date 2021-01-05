@@ -1122,9 +1122,67 @@ Note that sesaon can be ‘special’!</p>
 </dl>
 </dd></dl>
 
+<span class="target" id="module-GAMSUtil.GAMSAuxFuncs"></span><dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.add0dParam">
+<code class="sig-name descname">add0dParam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">paramName</span></em>, <em class="sig-param"><span class="n">paramDescrip</span></em>, <em class="sig-param"><span class="n">paramValue</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.add0dParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic function to add a scalar (0-dimension) parameter to database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams database object</p></li>
+<li><p><strong>paramName</strong> – (string) name of parameter</p></li>
+<li><p><strong>paramDescrip</strong> – (string) description of parameter</p></li>
+<li><p><strong>paramValue</strong> – (float) value of parameter</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
-<dt id="GAMSUtil.GAMSAddParamToDatabaseFuncs.add_NdParam">
-<code class="sig-name descname">add_NdParam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">paramDict</span></em>, <em class="sig-param"><span class="n">list_idxSet</span></em>, <em class="sig-param"><span class="n">paramName</span></em>, <em class="sig-param"><span class="n">paramDescrip</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAddParamToDatabaseFuncs.add_NdParam" title="Permalink to this definition">¶</a></dt>
+<dt id="GAMSUtil.GAMSAuxFuncs.add1dParam">
+<code class="sig-name descname">add1dParam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">paramDict</span></em>, <em class="sig-param"><span class="n">idxSet</span></em>, <em class="sig-param"><span class="n">setSymbols</span></em>, <em class="sig-param"><span class="n">paramName</span></em>, <em class="sig-param"><span class="n">paramDescrip</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.add1dParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic function to add a 1-dimensional (vector) parameter to database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams database object</p></li>
+<li><p><strong>paramDict</strong> – simple dictionary with data.</p></li>
+<li><p><strong>idxSet</strong> – gams set object of domain of parameter array</p></li>
+<li><p><strong>setSymbols</strong> – (list) list with symbol names</p></li>
+<li><p><strong>paramName</strong> – (string) name of parameter</p></li>
+<li><p><strong>paramDescrip</strong> – (string) description of parameter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>gams parameter object created</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.add2dParam">
+<code class="sig-name descname">add2dParam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">param2dDict</span></em>, <em class="sig-param"><span class="n">idxSet1</span></em>, <em class="sig-param"><span class="n">idxSet2</span></em>, <em class="sig-param"><span class="n">paramName</span></em>, <em class="sig-param"><span class="n">paramDescrip</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.add2dParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic function to add a 2-dimensional (matrix) parameter to database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – gams database object</p></li>
+<li><p><strong>param2dDict</strong> – dictionary with data. keys are a tuple (key1, key2)</p></li>
+<li><p><strong>idxSet1</strong> – gams set object of first domain of parameter array</p></li>
+<li><p><strong>idxSet2</strong> – gams set object of second domain of parameter array</p></li>
+<li><p><strong>paramName</strong> – (string) name of parameter</p></li>
+<li><p><strong>paramDescrip</strong> – (string) description of parameter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>gams parameter object created</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="GAMSUtil.GAMSAuxFuncs.add_NdParam">
+<code class="sig-name descname">add_NdParam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span></em>, <em class="sig-param"><span class="n">paramDict</span></em>, <em class="sig-param"><span class="n">list_idxSet</span></em>, <em class="sig-param"><span class="n">paramName</span></em>, <em class="sig-param"><span class="n">paramDescrip</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.add_NdParam" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generic function to add a N-dimensional parameter to database</p>
 <p>paramDict is a simple dictionary (it MUST NOT BE a nested dictionary). See function ‘nested_dict_to_dict()’
 to convert a nested dictionary into a simple dictionary where the key is a tuple with combination of nested keys</p>
@@ -1144,10 +1202,10 @@ to convert a nested dictionary into a simple dictionary where the key is a tuple
 </dl>
 </dd></dl>
 
-<span class="target" id="module-GAMSUtil.GAMSAuxFuncs"></span><dl class="py function">
+<dl class="py function">
 <dt id="GAMSUtil.GAMSAuxFuncs.createGenSymbol">
 <code class="sig-name descname">createGenSymbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">row</span></em>, <em class="sig-param"><span class="n">headers</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.createGenSymbol" title="Permalink to this definition">¶</a></dt>
-<dd><p>CREATE GEN SYMBOLS</p>
+<dd><p>Create gen symbols</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1156,7 +1214,7 @@ to convert a nested dictionary into a simple dictionary where the key is a tuple
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>strinf with gen code</p>
+<dd class="field-even"><p>string with gen code</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1164,7 +1222,7 @@ to convert a nested dictionary into a simple dictionary where the key is a tuple
 <dl class="py function">
 <dt id="GAMSUtil.GAMSAuxFuncs.createTechSymbol">
 <code class="sig-name descname">createTechSymbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">row</span></em>, <em class="sig-param"><span class="n">headers</span></em>, <em class="sig-param"><span class="n">ptCurtailed</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.createTechSymbol" title="Permalink to this definition">¶</a></dt>
-<dd><p>CREATE COOLING TECH SYMBOLS</p>
+<dd><p>Create cooling tech symbols</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1174,7 +1232,7 @@ to convert a nested dictionary into a simple dictionary where the key is a tuple
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
+<dd class="field-even"><p>string with symbol</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1239,7 +1297,7 @@ to convert a nested dictionary into a simple dictionary where the key is a tuple
 <dt id="GAMSUtil.GAMSAuxFuncs.getZoneNumFromSymbol">
 <code class="sig-name descname">getZoneNumFromSymbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">symbol</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.getZoneNumFromSymbol" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get zone number from zone symbol</p>
-<p>NOTE THAT THIS FUNCTION ONLY WORKS FOR UP TO 9 ZONES (IT ASSUMES ZONE NUMBER IS ONE DIGIT)</p>
+<p>note that this function only works for up to 9 zones (it assumes zone number is one digit)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>symbol</strong> – string with zone symbol (z1, z2, …)</p>
@@ -1268,7 +1326,7 @@ to convert a nested dictionary into a simple dictionary where the key is a tuple
 <dt id="GAMSUtil.GAMSAuxFuncs.createTechAndLocLabel">
 <code class="sig-name descname">createTechAndLocLabel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tech</span></em>, <em class="sig-param"><span class="n">loc</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.createTechAndLocLabel" title="Permalink to this definition">¶</a></dt>
 <dd><p>create tech and location symbol for GAMS</p>
-<p>IF MODIFY THIS FUNCTION, MODIFY NEXT FUNCTION!</p>
+<p><strong>if modify this function, modify next function!</strong></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1286,7 +1344,7 @@ to convert a nested dictionary into a simple dictionary where the key is a tuple
 <dt id="GAMSUtil.GAMSAuxFuncs.splitTechAndLocLabel">
 <code class="sig-name descname">splitTechAndLocLabel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">label</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.splitTechAndLocLabel" title="Permalink to this definition">¶</a></dt>
 <dd><p>split string with label of tech and location into tuple</p>
-<p>IF MODIFY THIS FUNCTION, MODIFY PRIOR FUNCTION!</p>
+<p><strong>if modify this function, modify prior function!</strong></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>label</strong> – label if tech and location candidate</p>
@@ -1389,17 +1447,17 @@ to convert a nested dictionary into a simple dictionary where the key is a tuple
 <dl class="py function">
 <dt id="GAMSUtil.GAMSAuxFuncs.extract2dVarResultsIntoDictNoLA">
 <code class="sig-name descname">extract2dVarResultsIntoDictNoLA</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">modelResults</span></em>, <em class="sig-param"><span class="n">varName</span></em>, <em class="sig-param"><span class="n">hoursOpt</span></em><span class="sig-paren">)</span><a class="headerlink" href="#GAMSUtil.GAMSAuxFuncs.extract2dVarResultsIntoDictNoLA" title="Permalink to this definition">¶</a></dt>
-<dd><p>EXTRACT RESULTS</p>
+<dd><p>Extract results of 2d variable</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>modelResults</strong> – </p></li>
-<li><p><strong>varName</strong> – </p></li>
-<li><p><strong>hoursOpt</strong> – </p></li>
+<li><p><strong>modelResults</strong> – GAMS model object</p></li>
+<li><p><strong>varName</strong> – string with variable name</p></li>
+<li><p><strong>hoursOpt</strong> – list with hours of optimization simulation</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
+<dd class="field-even"><p>dictionary with results {(gen,hour): value}</p>
 </dd>
 </dl>
 </dd></dl>
