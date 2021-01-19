@@ -224,7 +224,8 @@ enforcemindowntimecarryover(egu,h)$[ORD(h)<=pMdtcarriedhours(egu)] .. vOnoroff(e
 
 ******************STORAGE CONSTRAINTS******************
 *Limit generation to state of charge
-genandsoc(pumphydroegu,h).. vGen(pumphydroegu,h) =l= vSoc(pumphydroegu,h);
+genandsoc(pumphydroegu,h).. vGen(pumphydroegu,h) =l= pInitsoc(pumphydroegu)$[ord(h)=1] +
+                                                     vSoc(pumphydroegu,h-1);
 *
 *Link state of charge, charging, and discharging
 defsoc(pumphydroegu,h).. vSoc(pumphydroegu,h) =e= pInitsoc(pumphydroegu)$[ord(h)=1]

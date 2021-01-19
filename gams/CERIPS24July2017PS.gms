@@ -16,9 +16,7 @@ Sets
          solaregu(egu)                   existing solar generators
          hydroegu(egu)                   existing hydro generators
          pumphydroegu(egu)               existing pumped hydro generators
-*         type                            plant types (no cooling info)
          tech                            candidate plant types for new construction (with cooling info)
-*         tech2d(type, tech)              2d set mapping types to techs
          techcurtailed(tech)             plant types that can be curtailed for new construction
          techrenew(tech)                 renewable plant types for new construction
          technotcurtailed(tech)          plant types that are not curtailed and not renewables for new construction
@@ -77,12 +75,10 @@ Parameters
          pLife(tech)                     lifetime of tech [years]
          pCrf(tech)                      capital recovery factor
 *BUILD LIMITS ON NEW TECHS
-*         pNmax(z,type)                   max number techs built per zone and plant type (no cooling info)
          pNmaxReBlock(z, techrenew)      max number RE techs built per aggregated block and zone
 *ZONAL PARAMETERS
          pDemand(g,z,h)                  hourly electricity demand [GWh]
          pPlanningreserve(z)             planning margin reserve capacity [GW]
-*         pPeakhtozone(peakh)             peakh for each zone
          pEguzones(egu)                  zone EGU is in
          pCellzones(c)                   zone that each cell eligible for new tech builds is in
          pLinesources(l)                 which zone line carries power from
@@ -108,7 +104,6 @@ Parameters
 
 $if not set gdxincname $abort 'no include file name for data file provided'
 $gdxin %gdxincname%
-*******$load egu, windegu, solaregu, hydroegu, pumphydroegu, type, tech, tech2d, techcurtailed, techrenew, technotcurtailed, c, g
 $load egu, windegu, solaregu, hydroegu, pumphydroegu, tech, techcurtailed, techrenew, technotcurtailed, c, g
 $load h, h2, springh, summerh, winterh, fallh, specialh, z, l, peakh
 $load pCapac, pCapactech, pCapactechcurtailed, pOpcost, pOpcosttechcurt, pOpcosttechnotcurt, pOpcosttechrenew
@@ -202,7 +197,6 @@ Equations
          curtailedtechgen(g,c,techcurtailed,h)                   restrict electricity generation by new curtailed plants to number built and hourly capacities
          notcurtailedtechgen(g,z,technotcurtailed,h)             restrict elec gen by not curtailed plants to number built and constant capacity
          renewtechgen(g,z,techrenew,h)                           restrict electricity generation by new renewables to number built and capacity and capacity factor
-*         maxzonalbuild(z,type)                                   max number plant types built per zone
          egugen(g,egu,h)                                         restrict electricity generation by existing generators to hourly capacities
          eguwindgen(g,z,h)                                       restrict electricity generation by existing wind generation to maximum aggregate output per zone
          egusolargen(g,z,h)                                      restrict electricity generation by existing solar generation to maximum aggregate output per zone
@@ -315,18 +309,6 @@ renewtechgen(g,z,techrenew,h)$h2(g,h)..                  vPtechrenew(g,z,techren
 ***********************************************************************
 
 ******************BUILD DECISIONS******************
-* Limit total number builds to input value
-* build limits are imposed by zone and plant type. Plant types do not take into account cooling type, just fuel source.
-* So a upper bound of 10 on type 'Coal Steam', mean that the model can build [10 Coal/OT] or [5 Coal/OT + 5 Coal/RC] or ...
-* Syntax of the right hand side conditional assignment:
-* eq.. (expression) $ (logical condition) <======> if(logical condition) then {expression}
-*
-*maxzonalbuild(z,type)..  sum(c$[pCellzones(c)=ORD(z)], sum(techcurtailed$[tech2d(type,techcurtailed)], vNcurtailed(c,techcurtailed))) $ (sum(techcurtailed$[tech2d(type,techcurtailed)],1) > 0) +
-*                         sum(techrenew$[tech2d(type,techrenew)], vNrenew(z,techrenew)) $ (sum(techrenew$[tech2d(type,techrenew)],1) > 0) +
-*                         sum(technotcurtailed$[tech2d(type,technotcurtailed)], vNnotcurtailed(z,technotcurtailed)) $ (sum(technotcurtailed$[tech2d(type,technotcurtailed)],1) > 0) =l=
-*                         pNmax(z,type);
-
-
 * Fix an upper bound on integer build variables (otherwise GAMS automatically sets it to 100)
 * (note that the constraint above will still be applied)
 vNnotcurtailed.up(z,technotcurtailed) = 5000;
